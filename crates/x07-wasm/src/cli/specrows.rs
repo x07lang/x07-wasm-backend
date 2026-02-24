@@ -1,0 +1,459 @@
+use std::ffi::OsString;
+use std::io::Read as _;
+
+use anyhow::{Context, Result};
+use serde_json::{json, Value};
+
+use crate::cli::{CliSpecrowsCheckArgs, MachineArgs, Scope};
+use crate::diag::{Diagnostic, Severity, Stage};
+use crate::report;
+use crate::schema::SchemaStore;
+use crate::util;
+
+pub fn build_specrows_doc() -> Value {
+    json!({
+      "schema_version": "x07cli.specrows@0.1.0",
+      "app": {
+        "name": "x07-wasm",
+        "version": env!("CARGO_PKG_VERSION"),
+        "about": "x07-wasm: build x07 solve-pure programs to wasm32 and run them deterministically (Phase 0)."
+      },
+      "rows": [
+        ["root","about","Machine-first wasm toolchain for x07 (JSON reports + deterministic runner)."],
+        ["root","help","-h","--help","Print help"],
+        ["root","version","","--version","Print version"],
+
+        ["root","flag","","--cli-specrows","cli.specrows","Emit deterministic CLI surface table for agents (x07cli.specrows@0.1.0).",{"global":true}],
+        ["root","flag","","--json-schema","schema.json","Print the JSON Schema for the selected command scope and exit.",{"global":true}],
+        ["root","flag","","--json-schema-id","schema.id","Print the schema id/version string for the selected command scope and exit.",{"global":true}],
+        ["root","flag","","--quiet-json","report.quiet-json","Suppress JSON on stdout (use with --report-out).",{"global":true}],
+        ["root","flag","","--report-json","report.json-legacy","Hidden alias for --json (compat).",{"global":true,"hidden":true}],
+
+        ["root","opt","","--json","report.json","STR","Emit command report JSON to stdout (values: \"\" or \"pretty\").",{"global":true}],
+        ["root","opt","","--report-out","report.out","PATH","Write the same JSON report bytes to a file.",{"global":true}],
+
+        ["build","about","Build an x07 project to a wasm32 reactor module (exports x07_solve_v2)."],
+        ["build","flag","","--no-manifest","manifest.none","Do not write the artifact manifest file."],
+
+        ["build","opt","","--artifact-out","artifact.out","PATH","Artifact manifest output path."],
+        ["build","opt","","--check-exports","exports.check","STR","Validate required exports exist (true/false; default true)."],
+        ["build","opt","","--emit-dir","emit.dir","PATH","Directory for intermediate artifacts."],
+        ["build","opt","","--index","index","PATH","Path to wasm profile registry (default: arch/wasm/index.x07wasm.json)."],
+        ["build","opt","","--out","out","PATH","Output wasm path."],
+        ["build","opt","","--profile","profile.id","STR","Profile id (loaded from arch/wasm/index.x07wasm.json)."],
+        ["build","opt","","--profile-file","profile.file","PATH","Validate and use this profile JSON file directly (bypass registry)."],
+        ["build","opt","","--project","project","PATH","Path to x07 project manifest (default: x07.json)."],
+
+        ["cli-specrows-check","about","Validate x07-wasm --cli-specrows output against x07cli.specrows@0.1.0 + invariants. Alias: `x07-wasm cli specrows check` / `x07-wasm cli validate-specrows`."],
+        ["cli-specrows-check","flag","","--stdin","stdin","Read specrows JSON from stdin (mutually exclusive with --in)."],
+        ["cli-specrows-check","opt","","--expect-app-name","expect.app.name","STR","Expected app.name (default: x07-wasm).",{"required":false}],
+        ["cli-specrows-check","opt","","--in","in","PATH","Read specrows JSON from file (mutually exclusive with --stdin; default is self).",{"required":false}],
+
+        ["doctor","about","Check wasm toolchain prerequisites and emit a machine report."],
+
+        ["profile-validate","about","Validate arch/wasm/index.x07wasm.json and referenced profile files. Alias: `x07-wasm profile validate`."],
+        ["profile-validate","opt","","--index","index","PATH","Path to wasm profile registry (default: arch/wasm/index.x07wasm.json).",{"required":false}],
+        ["profile-validate","opt","","--profile","profile.id","STR","Validate only this profile id (looked up in the registry).",{"required":false}],
+        ["profile-validate","opt","","--profile-file","profile.file","PATH","Validate a profile JSON file directly (bypass registry).",{"required":false}],
+
+        ["run","about","Run a wasm module exporting x07_solve_v2 under Wasmtime; emit output bytes + JSON report."],
+        ["run","opt","","--arena-cap-bytes","arena.cap.bytes","U32","Arena capacity passed to x07_solve_v2 (bytes)."],
+        ["run","opt","","--index","index","PATH","Path to wasm profile registry (default: arch/wasm/index.x07wasm.json)."],
+        ["run","opt","","--input","input","PATH","Input bytes file path (mutually exclusive with --input-hex/--input-base64)."],
+        ["run","opt","","--input-base64","input.base64","STR","Input bytes as base64 (mutually exclusive with --input/--input-hex)."],
+        ["run","opt","","--input-hex","input.hex","BYTES_HEX","Input bytes as hex (mutually exclusive with --input/--input-base64)."],
+        ["run","opt","","--max-output-bytes","output.max.bytes","U32","Hard cap enforced on returned bytes_t.len."],
+        ["run","opt","","--output-out","output.out","PATH","Write output bytes to a file."],
+        ["run","opt","","--profile","profile.id","STR","Profile id (for defaults like arena/max-output)."],
+        ["run","opt","","--profile-file","profile.file","PATH","Validate and use this profile JSON file directly (bypass registry)."],
+        ["run","opt","","--wasm","wasm","PATH","Path to wasm module."]
+      ]
+    })
+}
+
+pub fn cmd_cli_specrows_check(
+    raw_argv: &[OsString],
+    scope: Scope,
+    machine: &MachineArgs,
+    args: CliSpecrowsCheckArgs,
+) -> Result<u8> {
+    let started = std::time::Instant::now();
+
+    let mut diagnostics: Vec<Diagnostic> = Vec::new();
+    let mut meta = report::meta::tool_meta(raw_argv, started);
+    meta.nondeterminism.uses_process = false;
+    meta.nondeterminism.uses_os_time = false;
+    meta.nondeterminism.uses_network = false;
+
+    let (mode, input_digest, bytes) = if args.stdin {
+        let mut buf = Vec::new();
+        match std::io::stdin().read_to_end(&mut buf) {
+            Ok(_) => ("stdin_v1", None, buf),
+            Err(err) => {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_SPECROWS_STDIN_IO_FAILED",
+                    Severity::Error,
+                    Stage::Run,
+                    format!("failed to read stdin: {err}"),
+                ));
+                ("stdin_v1", None, Vec::new())
+            }
+        }
+    } else if let Some(path) = &args.r#in {
+        let mut digest = report::meta::FileDigest {
+            path: path.display().to_string(),
+            sha256: "0".repeat(64),
+            bytes_len: 0,
+        };
+        let bytes = match std::fs::read(path) {
+            Ok(b) => {
+                digest.sha256 = util::sha256_hex(&b);
+                digest.bytes_len = b.len() as u64;
+                b
+            }
+            Err(err) => {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_SPECROWS_INPUT_READ_FAILED",
+                    Severity::Error,
+                    Stage::Parse,
+                    format!("failed to read input {}: {err}", path.display()),
+                ));
+                Vec::new()
+            }
+        };
+        meta.inputs.push(digest.clone());
+        ("file_v1", Some(digest), bytes)
+    } else {
+        (
+            "self_v1",
+            None,
+            report::canon::canonical_json_bytes(&build_specrows_doc())?,
+        )
+    };
+
+    let mut parsed_ok = true;
+    let doc: Value = match serde_json::from_slice(&bytes) {
+        Ok(v) => v,
+        Err(err) => {
+            parsed_ok = false;
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_SPECROWS_PARSE_FAILED",
+                Severity::Error,
+                Stage::Parse,
+                format!("failed to parse JSON: {err}"),
+            ));
+            json!(null)
+        }
+    };
+
+    let schema_id = "https://x07.org/spec/x07cli.specrows.schema.json";
+    let store = SchemaStore::new()?;
+
+    let mut schema_valid = false;
+    if parsed_ok {
+        match store.validate(schema_id, &doc) {
+            Ok(diags) => {
+                if diags.is_empty() {
+                    schema_valid = true;
+                } else {
+                    diagnostics.extend(diags);
+                }
+            }
+            Err(err) => {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_SCHEMA_VALIDATE_FAILED",
+                    Severity::Error,
+                    Stage::Run,
+                    format!("{err:#}"),
+                ));
+            }
+        }
+    }
+
+    let mut rows_count = 0u64;
+    let mut scopes: Vec<String> = Vec::new();
+    let mut app_name: Option<String> = None;
+    let mut app_version: Option<String> = None;
+    if parsed_ok {
+        if let Some(app) = doc.get("app").and_then(Value::as_object) {
+            app_name = app
+                .get("name")
+                .and_then(Value::as_str)
+                .map(|s| s.to_string());
+            app_version = app
+                .get("version")
+                .and_then(Value::as_str)
+                .map(|s| s.to_string());
+        }
+
+        if let Some(rows) = doc.get("rows").and_then(Value::as_array) {
+            rows_count = rows.len() as u64;
+            for r in rows {
+                if let Some(scope) = r.get(0).and_then(Value::as_str) {
+                    if !scopes.contains(&scope.to_string()) {
+                        scopes.push(scope.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    let (has_root_help, has_root_version, has_root_cli_specrows) = required_root_rows_present(&doc);
+
+    if parsed_ok && schema_valid {
+        if !has_root_help {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_SPECROWS_MISSING_ROOT_HELP",
+                Severity::Error,
+                Stage::Run,
+                "missing root help row".to_string(),
+            ));
+        }
+        if !has_root_version {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_SPECROWS_MISSING_ROOT_VERSION",
+                Severity::Error,
+                Stage::Run,
+                "missing root version row".to_string(),
+            ));
+        }
+        if !has_root_cli_specrows {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_SPECROWS_MISSING_ROOT_CLI_SPECROWS",
+                Severity::Error,
+                Stage::Run,
+                "missing root --cli-specrows row".to_string(),
+            ));
+        }
+    }
+
+    let ordering_checked = parsed_ok && schema_valid;
+    let ordering_ok = if ordering_checked {
+        match check_canonical_ordering(&doc) {
+            Ok(ok) => ok,
+            Err(err) => {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_SPECROWS_ORDERING_CHECK_FAILED",
+                    Severity::Error,
+                    Stage::Run,
+                    format!("{err:#}"),
+                ));
+                false
+            }
+        }
+    } else {
+        false
+    };
+    if ordering_checked && !ordering_ok {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_SPECROWS_ORDERING_INVALID",
+            Severity::Error,
+            Stage::Run,
+            "rows are not in canonical ordering".to_string(),
+        ));
+    }
+
+    if parsed_ok && schema_valid {
+        let dups = find_longopt_duplicates(&doc);
+        if !dups.is_empty() {
+            let mut d = Diagnostic::new(
+                "X07WASM_SPECROWS_DUPLICATE_LONGOPT",
+                Severity::Error,
+                Stage::Run,
+                "duplicate --longopt within a scope".to_string(),
+            );
+            d.data.insert("duplicates".to_string(), json!(dups));
+            diagnostics.push(d);
+        }
+    }
+
+    if parsed_ok && schema_valid && app_name.as_deref() != Some(args.expect_app_name.as_str()) {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_SPECROWS_APP_NAME_MISMATCH",
+            Severity::Error,
+            Stage::Run,
+            format!(
+                "unexpected app.name: got={:?} expect={:?}",
+                app_name, args.expect_app_name
+            ),
+        ));
+    }
+
+    let ok = diagnostics.iter().all(|d| d.severity != Severity::Error);
+    let exit_code = report::exit_code::exit_code_for_diagnostics(&diagnostics);
+
+    let report_doc = json!({
+        "schema_version": "x07.wasm.cli.specrows.check.report@0.1.0",
+        "command": "x07-wasm.cli.specrows.check",
+        "ok": ok,
+        "exit_code": exit_code,
+        "diagnostics": diagnostics,
+        "meta": meta,
+        "result": {
+          "mode": mode,
+          "input": input_digest,
+          "parsed_ok": parsed_ok,
+          "schema_id": schema_id,
+          "schema_valid": schema_valid,
+          "rows_count": rows_count,
+          "scopes": scopes,
+          "invariants": {
+            "expect_app_name": args.expect_app_name,
+            "app_name": app_name,
+            "app_version": app_version,
+            "has_root_help": has_root_help,
+            "has_root_version": has_root_version,
+            "has_root_cli_specrows": has_root_cli_specrows,
+            "ordering_checked": ordering_checked,
+            "ordering_ok": ordering_ok,
+          }
+        }
+    });
+
+    store
+        .validate_report_and_emit(scope, machine, started, raw_argv, report_doc)
+        .context("emit report")?;
+
+    Ok(exit_code)
+}
+
+fn required_root_rows_present(doc: &Value) -> (bool, bool, bool) {
+    let Some(rows) = doc.get("rows").and_then(Value::as_array) else {
+        return (false, false, false);
+    };
+
+    let mut has_help = false;
+    let mut has_version = false;
+    let mut has_cli_specrows = false;
+
+    for r in rows {
+        let Some(arr) = r.as_array() else { continue };
+        if arr.len() < 2 {
+            continue;
+        }
+        let Some(scope) = arr.first().and_then(Value::as_str) else {
+            continue;
+        };
+        if scope != "root" {
+            continue;
+        }
+        let Some(kind) = arr.get(1).and_then(Value::as_str) else {
+            continue;
+        };
+        match kind {
+            "help" => has_help = true,
+            "version" => has_version = true,
+            "flag" => {
+                if arr.get(3).and_then(Value::as_str) == Some("--cli-specrows") {
+                    has_cli_specrows = true;
+                }
+            }
+            _ => {}
+        }
+    }
+
+    (has_help, has_version, has_cli_specrows)
+}
+
+fn check_canonical_ordering(doc: &Value) -> Result<bool> {
+    let Some(rows) = doc.get("rows").and_then(Value::as_array) else {
+        return Ok(false);
+    };
+
+    let mut canon = rows.clone();
+    canon.sort_by_key(canonical_row_key);
+    Ok(&canon == rows)
+}
+
+fn canonical_row_key(row: &Value) -> (String, u8, String, String, String) {
+    let arr = row.as_array().cloned().unwrap_or_default();
+    let scope = arr
+        .first()
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    let kind = arr.get(1).and_then(Value::as_str).unwrap_or("").to_string();
+
+    let scope_key = if scope == "root" {
+        String::new()
+    } else {
+        scope.clone()
+    };
+
+    let kind_ord = match kind.as_str() {
+        "about" => 0,
+        "help" => 1,
+        "version" => 2,
+        "flag" => 3,
+        "opt" => 4,
+        "arg" => 5,
+        _ => 9,
+    };
+
+    let long_opt = arr.get(3).and_then(Value::as_str).unwrap_or("").to_string();
+    let short_opt = arr.get(2).and_then(Value::as_str).unwrap_or("").to_string();
+    let key = arr.get(4).and_then(Value::as_str).unwrap_or("").to_string();
+
+    (scope_key, kind_ord, long_opt, short_opt, key)
+}
+
+fn find_longopt_duplicates(doc: &Value) -> Vec<(String, String)> {
+    let Some(rows) = doc.get("rows").and_then(Value::as_array) else {
+        return Vec::new();
+    };
+
+    let mut seen = std::collections::BTreeSet::new();
+    let mut dups = std::collections::BTreeSet::new();
+
+    for r in rows {
+        let Some(arr) = r.as_array() else { continue };
+        if arr.len() < 4 {
+            continue;
+        }
+        let Some(scope) = arr.first().and_then(Value::as_str) else {
+            continue;
+        };
+        let Some(kind) = arr.get(1).and_then(Value::as_str) else {
+            continue;
+        };
+        if kind != "flag" && kind != "opt" {
+            continue;
+        }
+        let Some(longopt) = arr.get(3).and_then(Value::as_str) else {
+            continue;
+        };
+        if longopt.is_empty() {
+            continue;
+        }
+        let k = (scope.to_string(), longopt.to_string());
+        if !seen.insert(k.clone()) {
+            dups.insert(k);
+        }
+    }
+
+    dups.into_iter().collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn specrows_self_is_schema_valid_and_canonical() {
+        let doc = build_specrows_doc();
+        let store = SchemaStore::new().unwrap();
+
+        let diags = store
+            .validate("https://x07.org/spec/x07cli.specrows.schema.json", &doc)
+            .unwrap();
+        assert!(diags.is_empty(), "expected schema-valid doc: {diags:?}");
+
+        let (has_help, has_version, has_cli_specrows) = required_root_rows_present(&doc);
+        assert!(has_help);
+        assert!(has_version);
+        assert!(has_cli_specrows);
+
+        assert!(check_canonical_ordering(&doc).unwrap());
+        assert!(find_longopt_duplicates(&doc).is_empty());
+    }
+}

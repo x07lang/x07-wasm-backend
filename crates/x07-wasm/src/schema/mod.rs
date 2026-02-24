@@ -1,0 +1,166 @@
+use std::collections::BTreeMap;
+
+use anyhow::{Context, Result};
+use jsonschema::{Draft, Resource};
+use serde_json::Value;
+
+use crate::cli::{MachineArgs, Scope};
+use crate::diag::{Diagnostic, Severity, Stage};
+use crate::report;
+use crate::report::machine::{self, JsonMode};
+
+const X07DIAG_SCHEMA_BYTES: &[u8] = include_bytes!("../../../../spec/schemas/x07diag.schema.json");
+const X07CLI_SPECROWS_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07cli.specrows.schema.json");
+
+const X07_ARCH_WASM_INDEX_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-arch.wasm.index.schema.json");
+const X07_WASM_PROFILE_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.profile.schema.json");
+const X07_WASM_ARTIFACT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.artifact.schema.json");
+
+const X07_WASM_BUILD_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.build.report.schema.json");
+const X07_WASM_RUN_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.run.report.schema.json");
+const X07_WASM_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.profile.validate.report.schema.json");
+const X07_WASM_CLI_SPECROWS_CHECK_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.cli.specrows.check.report.schema.json");
+const X07_WASM_DOCTOR_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.doctor.report.schema.json");
+
+#[derive(Debug, Clone)]
+pub struct SchemaStore {
+    by_id: BTreeMap<String, Value>,
+}
+
+impl SchemaStore {
+    pub fn new() -> Result<Self> {
+        let mut by_id: BTreeMap<String, Value> = BTreeMap::new();
+        for bytes in [
+            X07DIAG_SCHEMA_BYTES,
+            X07CLI_SPECROWS_SCHEMA_BYTES,
+            X07_ARCH_WASM_INDEX_SCHEMA_BYTES,
+            X07_WASM_PROFILE_SCHEMA_BYTES,
+            X07_WASM_ARTIFACT_SCHEMA_BYTES,
+            X07_WASM_BUILD_REPORT_SCHEMA_BYTES,
+            X07_WASM_RUN_REPORT_SCHEMA_BYTES,
+            X07_WASM_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES,
+            X07_WASM_CLI_SPECROWS_CHECK_REPORT_SCHEMA_BYTES,
+            X07_WASM_DOCTOR_REPORT_SCHEMA_BYTES,
+        ] {
+            let doc: Value = serde_json::from_slice(bytes).context("parse embedded schema JSON")?;
+            let id = doc
+                .get("$id")
+                .and_then(Value::as_str)
+                .ok_or_else(|| anyhow::anyhow!("embedded schema missing $id"))?
+                .to_string();
+            by_id.insert(id, doc);
+        }
+        Ok(Self { by_id })
+    }
+
+    pub fn schema(&self, id: &str) -> Result<&Value> {
+        self.by_id
+            .get(id)
+            .ok_or_else(|| anyhow::anyhow!("missing embedded schema: {id:?}"))
+    }
+
+    pub fn validate(&self, schema_id: &str, instance: &Value) -> Result<Vec<Diagnostic>> {
+        let schema = self.schema(schema_id)?.clone();
+        let resources = self
+            .by_id
+            .iter()
+            .map(|(id, v)| (id.clone(), Resource::from_contents(v.clone())));
+
+        let validator = jsonschema::options()
+            .with_draft(Draft::Draft202012)
+            .with_resources(resources)
+            .build(&schema)
+            .map_err(|err| anyhow::anyhow!("{err}"))?;
+
+        let mut diags = Vec::new();
+        for err in validator.iter_errors(instance) {
+            diags.push(Diagnostic::new(
+                "X07WASM_SCHEMA_INVALID",
+                Severity::Error,
+                Stage::Parse,
+                format!("{err}"),
+            ));
+        }
+        Ok(diags)
+    }
+
+    pub fn validate_report_and_emit(
+        &self,
+        scope: Scope,
+        machine: &MachineArgs,
+        started: std::time::Instant,
+        raw_argv: &[std::ffi::OsString],
+        report_doc: Value,
+    ) -> Result<()> {
+        let schema_id = report_schema_id_for_scope(scope);
+        let diags = self.validate(schema_id, &report_doc)?;
+        if !diags.is_empty() {
+            anyhow::bail!(
+                "internal error: report failed schema validation for {schema_id:?}: {diags:?}"
+            );
+        }
+
+        let mode = machine::json_mode(machine).map_err(anyhow::Error::msg)?;
+        if mode == JsonMode::Off {
+            return Ok(());
+        }
+
+        let bytes = match mode {
+            JsonMode::Canon => report::canon::canonical_json_bytes(&report_doc)?,
+            JsonMode::Pretty => report::canon::canonical_pretty_json_bytes(&report_doc)?,
+            JsonMode::Off => unreachable!(),
+        };
+
+        report::schema::emit_bytes(&bytes, machine.report_out.as_deref(), machine.quiet_json)?;
+
+        let _ = (started, raw_argv);
+        Ok(())
+    }
+}
+
+fn report_schema_id_for_scope(scope: Scope) -> &'static str {
+    match scope {
+        Scope::Build => "https://x07.io/spec/x07-wasm.build.report.schema.json",
+        Scope::Run => "https://x07.io/spec/x07-wasm.run.report.schema.json",
+        Scope::Doctor => "https://x07.io/spec/x07-wasm.doctor.report.schema.json",
+        Scope::ProfileValidate => {
+            "https://x07.io/spec/x07-wasm.profile.validate.report.schema.json"
+        }
+        Scope::CliSpecrowsCheck => {
+            "https://x07.io/spec/x07-wasm.cli.specrows.check.report.schema.json"
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn embeds_expected_schema_ids() {
+        let store = SchemaStore::new().unwrap();
+        for id in [
+            "https://x07.io/spec/x07diag.schema.json",
+            "https://x07.org/spec/x07cli.specrows.schema.json",
+            "https://x07.io/spec/x07-arch.wasm.index.schema.json",
+            "https://x07.io/spec/x07-wasm.profile.schema.json",
+            "https://x07.io/spec/x07-wasm.artifact.schema.json",
+            "https://x07.io/spec/x07-wasm.build.report.schema.json",
+            "https://x07.io/spec/x07-wasm.run.report.schema.json",
+            "https://x07.io/spec/x07-wasm.profile.validate.report.schema.json",
+            "https://x07.io/spec/x07-wasm.cli.specrows.check.report.schema.json",
+            "https://x07.io/spec/x07-wasm.doctor.report.schema.json",
+        ] {
+            store.schema(id).unwrap();
+        }
+    }
+}

@@ -1,0 +1,416 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-wasm.artifact.schema.json",
+  "title": "x07.wasm.artifact@0.1.0",
+  "description": "Build artifact manifest for an x07 wasm module (solve_v2 via freestanding C ABI).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_id",
+    "wasm",
+    "abi",
+    "exports",
+    "memory",
+    "toolchain",
+    "repro"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "x07.wasm.artifact@0.1.0"
+    },
+    "artifact_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "profile": {
+      "$ref": "#/$defs/profile_ref"
+    },
+    "wasm": {
+      "$ref": "#/$defs/file_digest"
+    },
+    "abi": {
+      "$ref": "#/$defs/abi"
+    },
+    "exports": {
+      "$ref": "#/$defs/exports"
+    },
+    "memory": {
+      "$ref": "#/$defs/memory_plan"
+    },
+    "toolchain": {
+      "$ref": "#/$defs/toolchain"
+    },
+    "repro": {
+      "$ref": "#/$defs/repro"
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 16384
+    }
+  },
+  "$defs": {
+    "file_digest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "bytes_len": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "bytes_len"
+      ]
+    },
+    "profile_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+        },
+        "v": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "id",
+        "v"
+      ]
+    },
+    "memory_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "stack_first": {
+          "type": "boolean"
+        },
+        "stack_size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "initial_memory_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_memory_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "growable_memory": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "stack_first",
+        "stack_size_bytes",
+        "initial_memory_bytes",
+        "max_memory_bytes",
+        "growable_memory"
+      ]
+    },
+    "abi": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "c_signature",
+        "wasm_c_abi",
+        "calling_convention",
+        "params"
+      ],
+      "properties": {
+        "kind": {
+          "const": "x07_solve_v2"
+        },
+        "c_signature": {
+          "type": "string",
+          "description": "C source-level signature (freestanding mode).",
+          "const": "bytes_t x07_solve_v2(uint8_t* arena_mem, uint32_t arena_cap, const uint8_t* input_ptr, uint32_t input_len)"
+        },
+        "wasm_c_abi": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "v"
+          ],
+          "properties": {
+            "kind": {
+              "const": "basic_c_abi"
+            },
+            "v": {
+              "const": 1
+            }
+          }
+        },
+        "calling_convention": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "retptr_param_index",
+            "return_struct"
+          ],
+          "properties": {
+            "kind": {
+              "const": "sret_v1"
+            },
+            "retptr_param_index": {
+              "type": "integer",
+              "const": 0,
+              "description": "Index of the hidden sret pointer parameter in the wasm function signature."
+            },
+            "return_struct": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "size_bytes",
+                "align_bytes",
+                "fields"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "bytes_t"
+                },
+                "size_bytes": {
+                  "type": "integer",
+                  "const": 8
+                },
+                "align_bytes": {
+                  "type": "integer",
+                  "const": 4
+                },
+                "fields": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "$ref": "#/$defs/abi_field"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "params": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "items": {
+            "$ref": "#/$defs/abi_param"
+          },
+          "description": "Wasm-level parameter list including the sret pointer param."
+        }
+      }
+    },
+    "abi_field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "type",
+        "offset_bytes"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "enum": [
+            "ptr",
+            "len"
+          ]
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "i32"
+          ]
+        },
+        "offset_bytes": {
+          "type": "integer",
+          "enum": [
+            0,
+            4
+          ]
+        }
+      }
+    },
+    "abi_param": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "index",
+        "name",
+        "type",
+        "role"
+      ],
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4
+        },
+        "name": {
+          "type": "string",
+          "enum": [
+            "retptr",
+            "arena_mem",
+            "arena_cap",
+            "input_ptr",
+            "input_len"
+          ]
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "i32"
+          ]
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "sret_ptr",
+            "arena_ptr",
+            "arena_cap",
+            "input_ptr",
+            "input_len"
+          ]
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 1024
+        }
+      }
+    },
+    "exports": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "solve",
+        "memory",
+        "heap_base",
+        "data_end"
+      ],
+      "properties": {
+        "solve": {
+          "type": "string",
+          "const": "x07_solve_v2"
+        },
+        "memory": {
+          "type": "string",
+          "const": "memory"
+        },
+        "heap_base": {
+          "type": "string",
+          "const": "__heap_base"
+        },
+        "data_end": {
+          "type": "string",
+          "const": "__data_end"
+        },
+        "optional": {
+          "type": "object",
+          "additionalProperties": false,
+          "default": {},
+          "properties": {
+            "stack_pointer": {
+              "type": "string"
+            },
+            "x07_exit_code": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "toolchain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x07",
+        "x07_wasm",
+        "clang",
+        "wasm_ld"
+      ],
+      "properties": {
+        "x07": {
+          "type": "string",
+          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$",
+          "description": "x07 toolchain semver."
+        },
+        "x07_wasm": {
+          "type": "string",
+          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$",
+          "description": "x07-wasm tool semver."
+        },
+        "clang": {
+          "type": "string",
+          "description": "clang version string."
+        },
+        "wasm_ld": {
+          "type": "string",
+          "description": "wasm-ld (lld) version string."
+        },
+        "wasmtime": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null,
+          "description": "wasmtime version string (optional for build)."
+        }
+      }
+    },
+    "repro": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x07_build_args",
+        "clang_args",
+        "wasm_ld_args"
+      ],
+      "properties": {
+        "x07_build_args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Arguments passed to `x07 build` (excluding binary name)."
+        },
+        "clang_args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Arguments passed to clang for compilation (excluding input/output paths)."
+        },
+        "wasm_ld_args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Arguments passed to wasm-ld for linking (excluding input/output paths)."
+        }
+      }
+    }
+  }
+}

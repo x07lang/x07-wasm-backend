@@ -1,0 +1,14 @@
+/.DS_Store
+/target/
+/dist/
+/build/
+/.x07-wasm/
+/.wasi-sdk/
+/.wasmtime/
+**/build/
+**/dist/
+**/*.wasm
+**/*.wat
+**/*.o
+**/*.a
+**/*.d

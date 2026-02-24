@@ -1,0 +1,66 @@
+use std::path::Path;
+
+use anyhow::{Context, Result};
+use serde_json::Value;
+use sha2::{Digest as _, Sha256};
+
+use crate::report::meta::FileDigest;
+
+pub fn file_digest(path: &Path) -> Result<FileDigest> {
+    let bytes = std::fs::read(path).with_context(|| format!("read: {}", path.display()))?;
+    Ok(FileDigest {
+        path: path.display().to_string(),
+        sha256: sha256_hex(&bytes),
+        bytes_len: bytes.len() as u64,
+    })
+}
+
+pub fn sha256_hex(bytes: &[u8]) -> String {
+    let mut h = Sha256::new();
+    h.update(bytes);
+    hex_lower(&h.finalize())
+}
+
+pub fn hex_lower(bytes: &[u8]) -> String {
+    let mut out = String::with_capacity(bytes.len() * 2);
+    for &b in bytes {
+        out.push(nibble_to_hex((b >> 4) & 0xF));
+        out.push(nibble_to_hex(b & 0xF));
+    }
+    out
+}
+
+fn nibble_to_hex(n: u8) -> char {
+    match n {
+        0..=9 => (b'0' + n) as char,
+        10..=15 => (b'a' + (n - 10)) as char,
+        _ => '?',
+    }
+}
+
+pub fn canon_value_jcs(v: &mut Value) {
+    match v {
+        Value::Array(arr) => {
+            for x in arr {
+                canon_value_jcs(x);
+            }
+        }
+        Value::Object(map) => {
+            let mut entries: Vec<(String, Value)> =
+                map.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
+            entries.sort_by(|a, b| a.0.cmp(&b.0));
+            for (_, val) in entries.iter_mut() {
+                canon_value_jcs(val);
+            }
+            map.clear();
+            for (k, val) in entries {
+                map.insert(k, val);
+            }
+        }
+        _ => {}
+    }
+}
+
+pub fn wasmtime_version() -> Option<String> {
+    option_env!("X07_WASM_WASMTIME_VERSION").map(|s| s.to_string())
+}

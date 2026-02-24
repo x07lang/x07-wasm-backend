@@ -1,0 +1,174 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  rustfmt:
+    name: ci / rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+      - name: cargo fmt --check
+        run: cargo fmt --check
+
+  test:
+    name: ci / test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+      - name: cargo test
+        run: cargo test
+
+  clippy:
+    name: ci / clippy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+      - name: cargo clippy --all-targets -- -D warnings
+        run: cargo clippy --all-targets -- -D warnings
+
+  phase0:
+    name: ci / phase0 (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install deps (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang \
+            build-essential \
+            pkg-config \
+            libssl-dev \
+            libcurl4-openssl-dev \
+            liblzma-dev \
+            zlib1g-dev \
+            libsqlite3-dev \
+            xz-utils
+
+      - name: Install x07 (pinned tag)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.38 x07
+          x07 --version
+
+      - name: Install x07-wasm (repo)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo install --locked --path crates/x07-wasm
+          x07-wasm --version
+
+      - name: Install WASI SDK (pinned)
+        shell: bash
+        run: |
+          set -euo pipefail
+          V=30.0
+          TAG="wasi-sdk-30"
+          OS=""
+          ARCH=""
+          case "${RUNNER_OS}" in
+            Linux) OS="linux" ;;
+            macOS) OS="macos" ;;
+            Windows) OS="windows" ;;
+            *) echo "unsupported RUNNER_OS=${RUNNER_OS}" >&2; exit 1 ;;
+          esac
+          case "${RUNNER_ARCH}" in
+            X64) ARCH="x86_64" ;;
+            ARM64) ARCH="arm64" ;;
+            *) echo "unsupported RUNNER_ARCH=${RUNNER_ARCH}" >&2; exit 1 ;;
+          esac
+          ASSET="wasi-sdk-${V}-${ARCH}-${OS}.tar.gz"
+          URL="https://github.com/WebAssembly/wasi-sdk/releases/download/${TAG}/${ASSET}"
+          mkdir -p .wasi-sdk
+          curl -fsSL "$URL" -o .wasi-sdk/wasi-sdk.tar.gz
+          tar -xzf .wasi-sdk/wasi-sdk.tar.gz -C .wasi-sdk
+          echo "WASI_SDK_DIR=${GITHUB_WORKSPACE}/.wasi-sdk/wasi-sdk-${V}-${ARCH}-${OS}" >> "${GITHUB_ENV}"
+
+      - name: Install Wasmtime CLI (pinned)
+        shell: bash
+        run: |
+          set -euo pipefail
+          V=42.0.0
+          OS=""
+          ARCH=""
+          EXT=""
+          case "${RUNNER_OS}" in
+            Linux) OS="linux"; EXT="tar.xz" ;;
+            macOS) OS="macos"; EXT="tar.xz" ;;
+            Windows) OS="windows"; EXT="zip" ;;
+            *) echo "unsupported RUNNER_OS=${RUNNER_OS}" >&2; exit 1 ;;
+          esac
+          case "${RUNNER_ARCH}" in
+            X64) ARCH="x86_64" ;;
+            ARM64) ARCH="aarch64" ;;
+            *) echo "unsupported RUNNER_ARCH=${RUNNER_ARCH}" >&2; exit 1 ;;
+          esac
+          ASSET="wasmtime-v${V}-${ARCH}-${OS}.${EXT}"
+          URL="https://github.com/bytecodealliance/wasmtime/releases/download/v${V}/${ASSET}"
+          mkdir -p .wasmtime
+          curl -fsSL "$URL" -o ".wasmtime/wasmtime.${EXT}"
+          if [[ "${EXT}" == "zip" ]]; then
+            unzip -q ".wasmtime/wasmtime.${EXT}" -d .wasmtime
+          else
+            tar -xJf ".wasmtime/wasmtime.${EXT}" -C .wasmtime
+          fi
+          echo "${GITHUB_WORKSPACE}/.wasmtime/wasmtime-v${V}-${ARCH}-${OS}" >> "${GITHUB_PATH}"
+          wasmtime --version
+
+      - name: Freestanding smoke (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash examples/solve_pure_echo/ci/freestanding_smoke.sh
+
+      - name: Phase 0 WASM loop
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="${WASI_SDK_DIR}/bin:${PATH}"
+          bash scripts/ci/check_phase0.sh
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase0-${{ matrix.os }}
+          path: |
+            build/wasm
+            dist
+            .x07-wasm/incidents
+          if-no-files-found: ignore

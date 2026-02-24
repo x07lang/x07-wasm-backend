@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-wasm.profile.schema.json",
+  "title": "x07.wasm.profile@0.1.0",
+  "description": "WASM build profile for x07-wasm Phase 0 (x07 -> freestanding C -> wasm32).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "v",
+    "target",
+    "x07_build",
+    "clang",
+    "wasm_ld",
+    "defaults"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "x07.wasm.profile@0.1.0"
+    },
+    "id": {
+      "$ref": "#/$defs/id"
+    },
+    "v": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "target": {
+      "$ref": "#/$defs/target"
+    },
+    "x07_build": {
+      "$ref": "#/$defs/x07_build"
+    },
+    "clang": {
+      "$ref": "#/$defs/clang"
+    },
+    "wasm_ld": {
+      "$ref": "#/$defs/wasm_ld"
+    },
+    "defaults": {
+      "$ref": "#/$defs/defaults"
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 16384
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "u64": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "sym": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+    },
+    "flag_list": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 4096
+      },
+      "default": []
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "triple",
+        "wasm_c_abi",
+        "entry_export"
+      ],
+      "properties": {
+        "triple": {
+          "type": "string",
+          "enum": [
+            "wasm32-wasi",
+            "wasm32-unknown-unknown"
+          ]
+        },
+        "wasm_c_abi": {
+          "type": "string",
+          "enum": [
+            "basic_c_abi@1"
+          ],
+          "description": "Phase 0 expects LLVM/clang WebAssembly Basic C ABI behavior."
+        },
+        "entry_export": {
+          "$ref": "#/$defs/sym",
+          "default": "x07_solve_v2"
+        }
+      }
+    },
+    "x07_build": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "freestanding",
+        "emit_c_header"
+      ],
+      "properties": {
+        "freestanding": {
+          "type": "boolean",
+          "const": true,
+          "description": "Phase 0 requires x07 freestanding embedding output."
+        },
+        "emit_c_header": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "clang": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cflags"
+      ],
+      "properties": {
+        "cc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null,
+          "description": "Optional override path to clang/cc."
+        },
+        "cflags": {
+          "$ref": "#/$defs/flag_list"
+        }
+      }
+    },
+    "wasm_ld": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ldflags"
+      ],
+      "properties": {
+        "linker": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null,
+          "description": "Optional override path to wasm-ld."
+        },
+        "ldflags": {
+          "$ref": "#/$defs/flag_list"
+        }
+      }
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "arena_cap_bytes",
+        "max_output_bytes"
+      ],
+      "properties": {
+        "arena_cap_bytes": {
+          "$ref": "#/$defs/u64",
+          "description": "Default arena capacity passed to x07_solve_v2 (bytes)."
+        },
+        "max_output_bytes": {
+          "$ref": "#/$defs/u64",
+          "description": "Hard cap enforced by x07-wasm runner for returned bytes_t.len."
+        }
+      }
+    }
+  }
+}
