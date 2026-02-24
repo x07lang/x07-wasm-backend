@@ -53,5 +53,5 @@ It includes:
 
 - `input.bin`
 - `run.report.json`
-- `wasm.manifest.json` (if discoverable next to the wasm path)
+- `wasm.manifest.json` (copied from `<wasm>.manifest.json` when present; otherwise a synthesized Phase 0 incident manifest)
 - `stderr.txt` (trap + diagnostics, if any)

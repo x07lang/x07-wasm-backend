@@ -35,3 +35,14 @@ All Phase 0 commands support JSON reports with:
 - `--report-out` + `--quiet-json` for file-only emission
 
 Schemas live in `spec/schemas/` and are intended to be published under `https://x07.io/spec/`.
+
+## Incident bundles
+
+On `x07-wasm run` failures, an incident bundle is written under `.x07-wasm/incidents/<YYYY-MM-DD>/<run_id>/`.
+
+It always includes:
+
+- `input.bin`
+- `run.report.json`
+- `wasm.manifest.json` (copied from `<wasm>.manifest.json` when present; otherwise a synthesized manifest with `schema_version: x07.wasm.incident.manifest@0.1.0`)
+- `stderr.txt` (when available)

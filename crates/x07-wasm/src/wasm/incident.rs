@@ -23,7 +23,7 @@ pub fn write_incident_bundle(
     dir: &Path,
     input_bytes: &[u8],
     run_report_bytes: &[u8],
-    manifest_bytes: Option<&[u8]>,
+    manifest_bytes: &[u8],
     stderr_text: Option<&str>,
 ) -> Result<()> {
     std::fs::create_dir_all(dir).with_context(|| format!("create dir: {}", dir.display()))?;
@@ -33,10 +33,8 @@ pub fn write_incident_bundle(
     std::fs::write(dir.join("run.report.json"), run_report_bytes)
         .with_context(|| format!("write: {}", dir.join("run.report.json").display()))?;
 
-    if let Some(bytes) = manifest_bytes {
-        std::fs::write(dir.join("wasm.manifest.json"), bytes)
-            .with_context(|| format!("write: {}", dir.join("wasm.manifest.json").display()))?;
-    }
+    std::fs::write(dir.join("wasm.manifest.json"), manifest_bytes)
+        .with_context(|| format!("write: {}", dir.join("wasm.manifest.json").display()))?;
 
     if let Some(text) = stderr_text {
         if !text.trim().is_empty() {

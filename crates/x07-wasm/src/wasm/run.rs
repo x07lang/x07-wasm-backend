@@ -979,31 +979,106 @@ fn maybe_write_incident_bundle(report_doc: &Value, input_bytes: &[u8]) -> Result
 
     let report_bytes = report::canon::canonical_json_bytes(report_doc)?;
 
-    let manifest_bytes = guess_manifest_bytes(result.get("wasm"))?;
+    let manifest_bytes = incident_manifest_bytes(result);
     let stderr = trap_and_diagnostics_text(report_doc);
 
     incident::write_incident_bundle(
         &dir,
         input_bytes,
         &report_bytes,
-        manifest_bytes.as_deref(),
+        &manifest_bytes,
         stderr.as_deref(),
     )?;
     Ok(())
 }
 
-fn guess_manifest_bytes(wasm_doc: Option<&Value>) -> Result<Option<Vec<u8>>> {
-    let Some(path) = wasm_doc.and_then(|v| v.get("path")).and_then(Value::as_str) else {
-        return Ok(None);
-    };
-    // Prefer "<wasm>.manifest.json" (x07-wasm build default).
-    let manifest_path = format!("{path}.manifest.json");
-    let manifest = Path::new(&manifest_path);
-    if !manifest.is_file() {
-        return Ok(None);
+fn incident_manifest_bytes(result: &serde_json::Map<String, Value>) -> Vec<u8> {
+    let wasm_doc = result
+        .get("wasm")
+        .cloned()
+        .unwrap_or_else(|| json!({ "path": "", "sha256": "0".repeat(64), "bytes_len": 0 }));
+    let profile_doc = result.get("profile").cloned();
+
+    let wasm_path = wasm_doc
+        .get("path")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    let artifact_manifest_path = format!("{wasm_path}.manifest.json");
+
+    let mut artifact_manifest_present = false;
+    let mut artifact_manifest_read_error: Option<String> = None;
+    if !wasm_path.is_empty() {
+        let manifest_path = Path::new(&artifact_manifest_path);
+        artifact_manifest_present = manifest_path.is_file();
+        if artifact_manifest_present {
+            match std::fs::read(manifest_path) {
+                Ok(mut bytes) => {
+                    if bytes.last() != Some(&b'\n') {
+                        bytes.push(b'\n');
+                    }
+                    return bytes;
+                }
+                Err(err) => {
+                    artifact_manifest_read_error = Some(format!("{err:#}"));
+                }
+            }
+        }
     }
-    let bytes = std::fs::read(manifest).with_context(|| format!("read: {}", manifest.display()))?;
-    Ok(Some(bytes))
+
+    let mut obj = serde_json::Map::new();
+    obj.insert(
+        "schema_version".to_string(),
+        json!("x07.wasm.incident.manifest@0.1.0"),
+    );
+    if let Some(p) = profile_doc {
+        obj.insert("profile".to_string(), p);
+    }
+    obj.insert("wasm".to_string(), wasm_doc.clone());
+    obj.insert(
+        "artifact_manifest".to_string(),
+        json!({
+          "path": artifact_manifest_path,
+          "present": artifact_manifest_present,
+          "read_error": artifact_manifest_read_error,
+        }),
+    );
+
+    if !wasm_path.is_empty() {
+        match std::fs::read(&wasm_path) {
+            Ok(bytes) => match inspect::inspect(&bytes) {
+                Ok(info) => {
+                    obj.insert("exports".to_string(), json!(info.exports));
+                    if let Some(mem) = info.memory {
+                        obj.insert(
+                            "memory".to_string(),
+                            json!({
+                              "initial_bytes": mem.initial_bytes(),
+                              "max_bytes": mem.max_bytes().unwrap_or(mem.initial_bytes()),
+                              "growable": mem.growable(),
+                            }),
+                        );
+                    }
+                }
+                Err(err) => {
+                    obj.insert("inspect_error".to_string(), json!(format!("{err:#}")));
+                }
+            },
+            Err(err) => {
+                obj.insert("wasm_read_error".to_string(), json!(format!("{err:#}")));
+            }
+        }
+    }
+
+    match report::canon::canonical_json_bytes(&Value::Object(obj)) {
+        Ok(mut bytes) => {
+            if bytes.last() != Some(&b'\n') {
+                bytes.push(b'\n');
+            }
+            bytes
+        }
+        Err(_) => b"{\"schema_version\":\"x07.wasm.incident.manifest@0.1.0\"}\n".to_vec(),
+    }
 }
 
 fn trap_and_diagnostics_text(report_doc: &Value) -> Option<String> {
