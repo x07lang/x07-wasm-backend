@@ -82,6 +82,7 @@ jobs:
         run: |
           set -euo pipefail
           cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.38 x07
+          cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.38 x07-host-runner
           x07 --version
 
       - name: Install x07-wasm (repo)
