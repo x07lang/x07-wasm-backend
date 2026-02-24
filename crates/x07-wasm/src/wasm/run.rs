@@ -544,10 +544,7 @@ pub fn cmd_run(
             );
         }
     };
-    let max_output_u32 = match u32::try_from(max_output_bytes) {
-        Ok(v) => v,
-        Err(_) => u32::MAX,
-    };
+    let max_output_u32 = u32::try_from(max_output_bytes).unwrap_or(u32::MAX);
 
     let call_res = match abi_solve_v2::call_solve_v2(
         &mut store_rt,

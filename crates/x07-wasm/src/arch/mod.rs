@@ -249,14 +249,16 @@ pub fn cmd_profile_validate(
                 validate_profile_file(&store, &profile_path, Some(p), &mut meta, &mut diagnostics);
             profiles_status.push(status);
         }
-        if wanted.is_some() && profiles_status.is_empty() {
-            index_ok = false;
-            diagnostics.push(Diagnostic::new(
-                "X07WASM_WASM_INDEX_PROFILE_NOT_FOUND",
-                Severity::Error,
-                Stage::Parse,
-                format!("profile id not found: {:?}", wanted.unwrap()),
-            ));
+        if profiles_status.is_empty() {
+            if let Some(wanted) = wanted {
+                index_ok = false;
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_WASM_INDEX_PROFILE_NOT_FOUND",
+                    Severity::Error,
+                    Stage::Parse,
+                    format!("profile id not found: {:?}", wanted),
+                ));
+            }
         }
     }
 
