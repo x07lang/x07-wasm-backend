@@ -1,4 +1,4 @@
 [workspace]
 members = ["crates/x07-wasm"]
+exclude = ["guest/http-adapter", "guest/cli-adapter"]
 resolver = "2"
-

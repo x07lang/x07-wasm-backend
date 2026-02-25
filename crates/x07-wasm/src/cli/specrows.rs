@@ -49,6 +49,48 @@ pub fn build_specrows_doc() -> Value {
         ["cli-specrows-check","opt","","--expect-app-name","expect.app.name","STR","Expected app.name (default: x07-wasm).",{"required":false}],
         ["cli-specrows-check","opt","","--in","in","PATH","Read specrows JSON from file (mutually exclusive with --stdin; default is self).",{"required":false}],
 
+        ["component-build","about","Build an x07 project into an x07:solve component (and optional adapters). Alias: `x07-wasm component build`."],
+        ["component-build","flag","","--clean","clean","Delete out-dir before building."],
+        ["component-build","opt","","--emit","emit","STR","Artifact set to emit: solve|http-adapter|cli-adapter|all (default: all)."],
+        ["component-build","opt","","--index","index","PATH","Path to the component profile registry (default: arch/wasm/component/index.x07wasm.component.json)."],
+        ["component-build","opt","","--out-dir","out.dir","PATH","Output directory for component artifacts (default: target/x07-wasm/component)."],
+        ["component-build","opt","","--profile","profile.id","STR","Component profile id (loaded from arch/wasm/component/index.x07wasm.component.json)."],
+        ["component-build","opt","","--profile-file","profile.file","PATH","Validate and use this component profile JSON file directly (bypass registry)."],
+        ["component-build","opt","","--project","project","PATH","Path to x07 project manifest (default: x07.json)."],
+        ["component-build","opt","","--wasm-index","wasm.index","PATH","Path to wasm profile registry (default: arch/wasm/index.x07wasm.json)."],
+        ["component-build","opt","","--wasm-profile","wasm.profile.id","STR","WASM profile id (loaded from arch/wasm/index.x07wasm.json)."],
+        ["component-build","opt","","--wasm-profile-file","wasm.profile.file","PATH","Validate and use this wasm profile JSON file directly (bypass registry)."],
+
+            ["component-compose","about","Compose adapter component with solve component (wac plug) to produce runnable standard-world components. Alias: `x07-wasm component compose`."],
+            ["component-compose","flag","","--targets-check","targets.check","Also run a targets check on the output component."],
+            ["component-compose","opt","","--adapter","adapter","STR","Adapter kind: http|cli (alias: --target)."],
+            ["component-compose","opt","","--adapter-component","adapter.component","PATH","Path to adapter component (.wasm)."],
+            ["component-compose","opt","","--artifact-out","artifact.out","PATH","Artifact manifest output path."],
+            ["component-compose","opt","","--out","out","PATH","Output path for composed component (.wasm)."],
+            ["component-compose","opt","","--solve","solve","PATH","Path to solve component (.wasm)."],
+
+            ["component-profile-validate","about","Validate arch/wasm/component/index.x07wasm.component.json and referenced component profile files. Alias: `x07-wasm component profile validate`."],
+            ["component-profile-validate","flag","","--strict","strict","Treat warnings as errors."],
+            ["component-profile-validate","opt","","--index","index","PATH","Path to the component profile registry (default: arch/wasm/component/index.x07wasm.component.json)."],
+            ["component-profile-validate","opt","","--profile","profile.id","STR","Only validate specific profile id(s).",{"multiple":true}],
+
+            ["component-run","about","Run a wasi:cli/command component (export run) and emit a machine report. Alias: `x07-wasm component run`."],
+            ["component-run","opt","","--args-json","args.json","STR","Process args as JSON array of strings."],
+            ["component-run","opt","","--component","component","PATH","Path to component wasm to run."],
+            ["component-run","opt","","--incidents-dir","incidents.dir","PATH","Root directory for incident bundles (default: .x07-wasm/incidents)."],
+            ["component-run","opt","","--max-output-bytes","output.max.bytes","U32","Hard cap on stdout/stderr bytes captured by the host."],
+            ["component-run","opt","","--max-wall-ms","wall.max.ms","U32","Hard cap on wall time spent running the component (ms).",{"required":false}],
+            ["component-run","opt","","--stderr-out","stderr.out","PATH","Write stderr bytes to a file.",{"required":false}],
+            ["component-run","opt","","--stdin","stdin","PATH","Stdin bytes file path (mutually exclusive with --stdin-b64).",{"required":false}],
+            ["component-run","opt","","--stdin-b64","stdin.b64","STR","Stdin bytes as base64 (mutually exclusive with --stdin).",{"required":false}],
+            ["component-run","opt","","--stdout-out","stdout.out","PATH","Write stdout bytes to a file.",{"required":false}],
+
+            ["component-targets","about","Check that a component targets a given WIT world (wac targets). Alias: `x07-wasm component targets`."],
+            ["component-targets","flag","","--strict","strict","Treat warnings as errors."],
+            ["component-targets","opt","","--component","component","PATH","Path to component wasm to check."],
+            ["component-targets","opt","","--wit","wit","PATH","Path to a .wit file containing the world to target."],
+            ["component-targets","opt","","--world","world","STR","World name within the WIT file."],
+
         ["doctor","about","Check wasm toolchain prerequisites and emit a machine report."],
 
         ["profile-validate","about","Validate arch/wasm/index.x07wasm.json and referenced profile files. Alias: `x07-wasm profile validate`."],
@@ -65,8 +107,28 @@ pub fn build_specrows_doc() -> Value {
         ["run","opt","","--max-output-bytes","output.max.bytes","U32","Hard cap enforced on returned bytes_t.len."],
         ["run","opt","","--output-out","output.out","PATH","Write output bytes to a file."],
         ["run","opt","","--profile","profile.id","STR","Profile id (for defaults like arena/max-output)."],
-        ["run","opt","","--profile-file","profile.file","PATH","Validate and use this profile JSON file directly (bypass registry)."],
-        ["run","opt","","--wasm","wasm","PATH","Path to wasm module."]
+            ["run","opt","","--profile-file","profile.file","PATH","Validate and use this profile JSON file directly (bypass registry)."],
+            ["run","opt","","--wasm","wasm","PATH","Path to wasm module."],
+
+            ["serve","about","Run a wasi:http/proxy component as a local canary and emit a machine-readable serve report."],
+            ["serve","opt","","--addr","addr","STR","Listen address for mode=listen (e.g., 127.0.0.1:8080).",{"required":false}],
+            ["serve","opt","","--component","component","PATH","Path to HTTP component (.wasm)."],
+            ["serve","opt","","--incidents-dir","incidents.dir","PATH","Root directory for incident bundles (default: .x07-wasm/incidents)."],
+            ["serve","opt","","--max-concurrent","concurrency.max","U32","Hard cap on concurrent request handling."],
+            ["serve","opt","","--max-request-bytes","request.max.bytes","U32","Hard cap on request bytes (body + headers)."],
+            ["serve","opt","","--max-response-bytes","response.max.bytes","U32","Hard cap on response body bytes."],
+            ["serve","opt","","--max-wall-ms-per-request","wall.max.ms.per.request","U32","Hard cap on wall time spent per request (ms)."],
+            ["serve","opt","","--method","method","STR","Request method for canary mode.",{"required":false}],
+            ["serve","opt","","--mode","mode","STR","Mode: canary|listen.",{"required":false}],
+            ["serve","opt","","--path","path","STR","Request path for canary mode.",{"required":false}],
+            ["serve","opt","","--request-body","request.body","BYTES","Request body bytes for canary mode (hex:, b64:, @path).",{"required":false}],
+            ["serve","opt","","--stop-after","stop.after","U32","Stop after N requests (canary mode; or listen mode if nonzero).",{"required":false}],
+
+            ["wit-validate","about","Validate arch/wit/index.x07wit.json and all referenced WIT packages (offline)."],
+            ["wit-validate","flag","","--list","list","List packages discovered in the registry and exit (still emits a report)."],
+            ["wit-validate","flag","","--strict","strict","Treat warnings as errors."],
+            ["wit-validate","opt","","--index","index","PATH","Path to the WIT registry file (default: arch/wit/index.x07wit.json)."],
+        ["wit-validate","opt","","--package","package","STR","Only validate specific package id(s), e.g. wasi:http@0.2.8.",{"multiple":true}]
       ]
     })
 }

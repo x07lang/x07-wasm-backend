@@ -177,7 +177,10 @@
         "x07",
         "clang",
         "wasm_ld",
-        "wasmtime"
+        "wasmtime",
+        "wasm_tools",
+        "wit_bindgen",
+        "wac"
       ],
       "properties": {
         "x07": {
@@ -205,6 +208,18 @@
           ]
         },
         "wasm_tools": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "wit_bindgen": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "wac": {
           "type": [
             "string",
             "null"

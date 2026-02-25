@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-wasm.component.artifact.schema.json",
+  "title": "x07.wasm.component.artifact@0.1.0",
+  "description": "Artifact manifest for a WebAssembly component produced by x07-wasm Phase 1 tooling.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_id",
+    "kind",
+    "component",
+    "wit",
+    "toolchain"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "x07.wasm.component.artifact@0.1.0"
+    },
+    "artifact_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "solve",
+        "http-adapter",
+        "cli-adapter",
+        "http",
+        "cli"
+      ]
+    },
+    "component": {
+      "$ref": "#/$defs/file_digest"
+    },
+    "wit": {
+      "$ref": "#/$defs/wit_ref"
+    },
+    "profiles": {
+      "$ref": "#/$defs/profiles",
+      "default": {}
+    },
+    "toolchain": {
+      "$ref": "#/$defs/toolchain"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "u64": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 18446744073709551615
+    },
+    "file_digest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "bytes_len"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "bytes_len": {
+          "$ref": "#/$defs/u64"
+        }
+      }
+    },
+    "wit_package_id": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9_-]{0,31}:[a-z][a-z0-9_-]{0,63}@[0-9]+\\.[0-9]+\\.[0-9]+([+-][0-9A-Za-z.-]+)?$",
+      "description": "WIT package id: namespace:package@semver (e.g., wasi:http@0.2.8)."
+    },
+    "wit_ident": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+    },
+    "ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "v"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "v": {
+          "$ref": "#/$defs/u64"
+        }
+      }
+    },
+    "wit_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "package",
+        "world"
+      ],
+      "properties": {
+        "package": {
+          "$ref": "#/$defs/wit_package_id"
+        },
+        "world": {
+          "$ref": "#/$defs/wit_ident"
+        }
+      }
+    },
+    "profiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "component": {
+          "$ref": "#/$defs/ref"
+        },
+        "wasm": {
+          "$ref": "#/$defs/ref"
+        }
+      }
+    },
+    "toolchain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x07_wasm"
+      ],
+      "properties": {
+        "x07_wasm": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+([+-][0-9A-Za-z.-]+)?$"
+        },
+        "x07": {
+          "type": "string"
+        },
+        "clang": {
+          "type": "string"
+        },
+        "wasm_ld": {
+          "type": "string"
+        },
+        "wit_bindgen": {
+          "type": "string"
+        },
+        "wasm_tools": {
+          "type": "string"
+        },
+        "wac": {
+          "type": "string"
+        },
+        "cargo": {
+          "type": "string"
+        },
+        "rustc": {
+          "type": "string"
+        },
+        "wasmtime": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
+

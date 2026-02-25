@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-wasm.wit.validate.report.schema.json",
+  "title": "x07.wasm.wit.validate.report@0.1.0",
+  "description": "Machine-readable report emitted by `x07-wasm wit validate`.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "ok",
+    "exit_code",
+    "diagnostics",
+    "meta",
+    "result"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "x07.wasm.wit.validate.report@0.1.0"
+    },
+    "command": {
+      "type": "string",
+      "const": "x07-wasm.wit.validate"
+    },
+    "ok": { "type": "boolean" },
+    "exit_code": { "type": "integer", "minimum": 0, "maximum": 255 },
+    "diagnostics": {
+      "type": "array",
+      "items": { "$ref": "https://x07.io/spec/x07diag.schema.json#/$defs/diagnostic" },
+      "default": []
+    },
+    "meta": { "$ref": "#/$defs/meta" },
+    "result": { "$ref": "#/$defs/result" }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "u32": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "u64": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 18446744073709551615
+    },
+    "tool_meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "const": "x07-wasm" },
+        "version": { "type": "string" },
+        "git_sha": { "type": "string", "pattern": "^[0-9a-fA-F]{7,40}$" },
+        "rustc": { "type": "string" },
+        "clang": { "type": "string" },
+        "wasm_ld": { "type": "string" },
+        "wasmtime": { "type": "string" }
+      }
+    },
+    "file_digest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes_len"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1, "maxLength": 4096 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "bytes_len": { "$ref": "#/$defs/u64" }
+      }
+    },
+    "nondeterminism": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["uses_os_time", "uses_network", "uses_process"],
+      "properties": {
+        "uses_os_time": { "type": "boolean" },
+        "uses_network": { "type": "boolean" },
+        "uses_process": { "type": "boolean" }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tool", "elapsed_ms", "cwd", "argv", "inputs", "outputs", "nondeterminism"],
+      "properties": {
+        "tool": { "$ref": "#/$defs/tool_meta" },
+        "elapsed_ms": { "$ref": "#/$defs/u64" },
+        "cwd": { "type": "string" },
+        "argv": { "type": "array", "items": { "type": "string" } },
+        "inputs": { "type": "array", "items": { "$ref": "#/$defs/file_digest" }, "default": [] },
+        "outputs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/file_digest" },
+          "default": []
+        },
+        "nondeterminism": { "$ref": "#/$defs/nondeterminism" }
+      }
+    },
+    "wit_package_id": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9_-]{0,31}:[a-z][a-z0-9_-]{0,63}@[0-9]+\\.[0-9]+\\.[0-9]+([+-][0-9A-Za-z.-]+)?$",
+      "description": "WIT package id: namespace:package@semver (e.g., wasi:http@0.2.8)."
+    },
+    "wit_ident": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+    },
+    "package_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "path",
+        "kind",
+        "ok",
+        "worlds",
+        "dependencies"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/wit_package_id" },
+        "path": { "type": "string", "minLength": 1, "maxLength": 1024 },
+        "kind": { "type": "string", "enum": ["local", "vendored"] },
+        "ok": { "type": "boolean" },
+        "sha256_tree": { "$ref": "#/$defs/sha256" },
+        "worlds": {
+          "type": "array",
+          "maxItems": 128,
+          "items": { "$ref": "#/$defs/wit_ident" },
+          "default": []
+        },
+        "dependencies": {
+          "type": "array",
+          "maxItems": 256,
+          "items": { "$ref": "#/$defs/wit_package_id" },
+          "default": []
+        }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "strict",
+        "index",
+        "packages_total",
+        "packages_ok",
+        "packages_failed",
+        "packages"
+      ],
+      "properties": {
+        "mode": { "type": "string", "enum": ["validate", "list"] },
+        "strict": { "type": "boolean" },
+        "index": { "$ref": "#/$defs/file_digest" },
+        "packages_total": { "$ref": "#/$defs/u32" },
+        "packages_ok": { "$ref": "#/$defs/u32" },
+        "packages_failed": { "$ref": "#/$defs/u32" },
+        "packages": {
+          "type": "array",
+          "maxItems": 256,
+          "items": { "$ref": "#/$defs/package_summary" },
+          "default": []
+        }
+      }
+    }
+  }
+}
+

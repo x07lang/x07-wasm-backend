@@ -734,8 +734,13 @@ fn load_input_bytes(
     diagnostics: &mut Vec<Diagnostic>,
 ) -> Result<InputBytes> {
     if let Some(path) = args.input.as_ref() {
-        let bytes = match std::fs::read(path).with_context(|| format!("read: {}", path.display())) {
-            Ok(v) => v,
+        match crate::blob::load_file(path, meta) {
+            Ok(loaded) => {
+                return Ok(InputBytes {
+                    bytes: loaded.bytes,
+                    blob_ref: loaded.blob_ref,
+                })
+            }
             Err(err) => {
                 diagnostics.push(Diagnostic::new(
                     "X07WASM_INPUT_READ_FAILED",
@@ -745,61 +750,47 @@ fn load_input_bytes(
                 ));
                 anyhow::bail!("failed to read input")
             }
-        };
-        let len = bytes.len();
-        let sha = util::sha256_hex(&bytes);
-        meta.inputs.push(report::meta::FileDigest {
-            path: path.display().to_string(),
-            sha256: sha.clone(),
-            bytes_len: len as u64,
-        });
-        return Ok(InputBytes {
-            bytes,
-            blob_ref: json!({ "bytes_len": len as u64, "sha256": sha, "path": path.display().to_string() }),
-        });
+        }
     }
 
     if let Some(hex_s) = args.input_hex.as_deref() {
-        let bytes = match hex::decode(hex_s.trim()) {
-            Ok(v) => v,
+        match crate::blob::load_hex(hex_s) {
+            Ok(loaded) => {
+                return Ok(InputBytes {
+                    bytes: loaded.bytes,
+                    blob_ref: loaded.blob_ref,
+                })
+            }
             Err(err) => {
                 diagnostics.push(Diagnostic::new(
                     "X07WASM_INPUT_HEX_INVALID",
                     Severity::Error,
                     Stage::Parse,
-                    format!("failed to decode --input-hex: {err}"),
+                    format!("failed to decode --input-hex: {err:#}"),
                 ));
                 anyhow::bail!("invalid hex input")
             }
-        };
-        let len = bytes.len();
-        let sha = util::sha256_hex(&bytes);
-        return Ok(InputBytes {
-            bytes,
-            blob_ref: json!({ "bytes_len": len as u64, "sha256": sha }),
-        });
+        }
     }
 
     if let Some(b64) = args.input_base64.as_deref() {
-        let bytes = match base64::engine::general_purpose::STANDARD.decode(b64.trim()) {
-            Ok(v) => v,
+        match crate::blob::load_base64(b64) {
+            Ok(loaded) => {
+                return Ok(InputBytes {
+                    bytes: loaded.bytes,
+                    blob_ref: loaded.blob_ref,
+                })
+            }
             Err(err) => {
                 diagnostics.push(Diagnostic::new(
                     "X07WASM_INPUT_BASE64_INVALID",
                     Severity::Error,
                     Stage::Parse,
-                    format!("failed to decode --input-base64: {err}"),
+                    format!("failed to decode --input-base64: {err:#}"),
                 ));
                 anyhow::bail!("invalid base64 input")
             }
-        };
-        let len = bytes.len();
-        let sha = util::sha256_hex(&bytes);
-        let canon_b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
-        return Ok(InputBytes {
-            bytes,
-            blob_ref: json!({ "bytes_len": len as u64, "sha256": sha, "base64": canon_b64 }),
-        });
+        }
     }
 
     diagnostics.push(Diagnostic::new(

@@ -1,11 +1,18 @@
+#![recursion_limit = "256"]
+
 mod arch;
+mod blob;
 mod cli;
+mod cmdutil;
+mod component;
 mod diag;
 mod report;
 mod schema;
+mod serve;
 mod toolchain;
 mod util;
 mod wasm;
+mod wit;
 
 use std::io::Write as _;
 use std::process::ExitCode;

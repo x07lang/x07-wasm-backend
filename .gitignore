@@ -5,6 +5,7 @@
 /.x07-wasm/
 /.wasi-sdk/
 /.wasmtime/
+**/target/
 **/build/
 **/dist/
 **/*.wasm

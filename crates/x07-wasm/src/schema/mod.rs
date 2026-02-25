@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use anyhow::{Context, Result};
 use jsonschema::{Draft, Resource};
-use serde_json::Value;
+use serde_json::{json, Value};
 
 use crate::cli::{MachineArgs, Scope};
 use crate::diag::{Diagnostic, Severity, Stage};
@@ -15,8 +15,16 @@ const X07CLI_SPECROWS_SCHEMA_BYTES: &[u8] =
 
 const X07_ARCH_WASM_INDEX_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-arch.wasm.index.schema.json");
+const X07_ARCH_WIT_INDEX_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-arch.wit.index.schema.json");
+const X07_ARCH_WASM_COMPONENT_INDEX_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-arch.wasm.component.index.schema.json");
 const X07_WASM_PROFILE_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.profile.schema.json");
+const X07_WASM_COMPONENT_PROFILE_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.component.profile.schema.json");
+const X07_WASM_COMPONENT_ARTIFACT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.component.artifact.schema.json");
 const X07_WASM_ARTIFACT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.artifact.schema.json");
 
@@ -24,12 +32,27 @@ const X07_WASM_BUILD_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.build.report.schema.json");
 const X07_WASM_RUN_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.run.report.schema.json");
+const X07_WASM_SERVE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.serve.report.schema.json");
+const X07_WASM_COMPONENT_BUILD_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.component.build.report.schema.json");
+const X07_WASM_COMPONENT_COMPOSE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.component.compose.report.schema.json");
+const X07_WASM_COMPONENT_TARGETS_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.component.targets.report.schema.json");
+const X07_WASM_COMPONENT_RUN_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.component.run.report.schema.json");
 const X07_WASM_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.profile.validate.report.schema.json");
 const X07_WASM_CLI_SPECROWS_CHECK_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.cli.specrows.check.report.schema.json");
 const X07_WASM_DOCTOR_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.doctor.report.schema.json");
+const X07_WASM_WIT_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.wit.validate.report.schema.json");
+const X07_WASM_COMPONENT_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] = include_bytes!(
+    "../../../../spec/schemas/x07-wasm.component.profile.validate.report.schema.json"
+);
 
 #[derive(Debug, Clone)]
 pub struct SchemaStore {
@@ -43,13 +66,24 @@ impl SchemaStore {
             X07DIAG_SCHEMA_BYTES,
             X07CLI_SPECROWS_SCHEMA_BYTES,
             X07_ARCH_WASM_INDEX_SCHEMA_BYTES,
+            X07_ARCH_WIT_INDEX_SCHEMA_BYTES,
+            X07_ARCH_WASM_COMPONENT_INDEX_SCHEMA_BYTES,
             X07_WASM_PROFILE_SCHEMA_BYTES,
+            X07_WASM_COMPONENT_PROFILE_SCHEMA_BYTES,
+            X07_WASM_COMPONENT_ARTIFACT_SCHEMA_BYTES,
             X07_WASM_ARTIFACT_SCHEMA_BYTES,
             X07_WASM_BUILD_REPORT_SCHEMA_BYTES,
             X07_WASM_RUN_REPORT_SCHEMA_BYTES,
+            X07_WASM_SERVE_REPORT_SCHEMA_BYTES,
+            X07_WASM_COMPONENT_BUILD_REPORT_SCHEMA_BYTES,
+            X07_WASM_COMPONENT_COMPOSE_REPORT_SCHEMA_BYTES,
+            X07_WASM_COMPONENT_TARGETS_REPORT_SCHEMA_BYTES,
+            X07_WASM_COMPONENT_RUN_REPORT_SCHEMA_BYTES,
             X07_WASM_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES,
             X07_WASM_CLI_SPECROWS_CHECK_REPORT_SCHEMA_BYTES,
             X07_WASM_DOCTOR_REPORT_SCHEMA_BYTES,
+            X07_WASM_WIT_VALIDATE_REPORT_SCHEMA_BYTES,
+            X07_WASM_COMPONENT_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES,
         ] {
             let doc: Value = serde_json::from_slice(bytes).context("parse embedded schema JSON")?;
             let id = doc
@@ -83,12 +117,21 @@ impl SchemaStore {
 
         let mut diags = Vec::new();
         for err in validator.iter_errors(instance) {
-            diags.push(Diagnostic::new(
+            let mut d = Diagnostic::new(
                 "X07WASM_SCHEMA_INVALID",
                 Severity::Error,
                 Stage::Parse,
                 format!("{err}"),
-            ));
+            );
+            d.data.insert(
+                "instance_path".to_string(),
+                json!(err.instance_path().to_string()),
+            );
+            d.data.insert(
+                "schema_path".to_string(),
+                json!(err.schema_path().to_string()),
+            );
+            diags.push(d);
         }
         Ok(diags)
     }
@@ -131,6 +174,7 @@ fn report_schema_id_for_scope(scope: Scope) -> &'static str {
     match scope {
         Scope::Build => "https://x07.io/spec/x07-wasm.build.report.schema.json",
         Scope::Run => "https://x07.io/spec/x07-wasm.run.report.schema.json",
+        Scope::Serve => "https://x07.io/spec/x07-wasm.serve.report.schema.json",
         Scope::Doctor => "https://x07.io/spec/x07-wasm.doctor.report.schema.json",
         Scope::ProfileValidate => {
             "https://x07.io/spec/x07-wasm.profile.validate.report.schema.json"
@@ -138,6 +182,18 @@ fn report_schema_id_for_scope(scope: Scope) -> &'static str {
         Scope::CliSpecrowsCheck => {
             "https://x07.io/spec/x07-wasm.cli.specrows.check.report.schema.json"
         }
+        Scope::WitValidate => "https://x07.io/spec/x07-wasm.wit.validate.report.schema.json",
+        Scope::ComponentProfileValidate => {
+            "https://x07.io/spec/x07-wasm.component.profile.validate.report.schema.json"
+        }
+        Scope::ComponentBuild => "https://x07.io/spec/x07-wasm.component.build.report.schema.json",
+        Scope::ComponentCompose => {
+            "https://x07.io/spec/x07-wasm.component.compose.report.schema.json"
+        }
+        Scope::ComponentTargets => {
+            "https://x07.io/spec/x07-wasm.component.targets.report.schema.json"
+        }
+        Scope::ComponentRun => "https://x07.io/spec/x07-wasm.component.run.report.schema.json",
     }
 }
 
@@ -152,13 +208,24 @@ mod tests {
             "https://x07.io/spec/x07diag.schema.json",
             "https://x07.org/spec/x07cli.specrows.schema.json",
             "https://x07.io/spec/x07-arch.wasm.index.schema.json",
+            "https://x07.io/spec/x07-arch.wit.index.schema.json",
+            "https://x07.io/spec/x07-arch.wasm.component.index.schema.json",
             "https://x07.io/spec/x07-wasm.profile.schema.json",
+            "https://x07.io/spec/x07-wasm.component.profile.schema.json",
+            "https://x07.io/spec/x07-wasm.component.artifact.schema.json",
             "https://x07.io/spec/x07-wasm.artifact.schema.json",
             "https://x07.io/spec/x07-wasm.build.report.schema.json",
             "https://x07.io/spec/x07-wasm.run.report.schema.json",
+            "https://x07.io/spec/x07-wasm.serve.report.schema.json",
+            "https://x07.io/spec/x07-wasm.component.build.report.schema.json",
+            "https://x07.io/spec/x07-wasm.component.compose.report.schema.json",
+            "https://x07.io/spec/x07-wasm.component.targets.report.schema.json",
+            "https://x07.io/spec/x07-wasm.component.run.report.schema.json",
             "https://x07.io/spec/x07-wasm.profile.validate.report.schema.json",
             "https://x07.io/spec/x07-wasm.cli.specrows.check.report.schema.json",
             "https://x07.io/spec/x07-wasm.doctor.report.schema.json",
+            "https://x07.io/spec/x07-wasm.wit.validate.report.schema.json",
+            "https://x07.io/spec/x07-wasm.component.profile.validate.report.schema.json",
         ] {
             store.schema(id).unwrap();
         }

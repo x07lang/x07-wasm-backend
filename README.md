@@ -1,10 +1,18 @@
 # x07-wasm-backend
 
-Phase 0 WASM tooling for X07:
+Phase 0+1 WASM tooling for X07:
 
 - `x07-wasm build`: `x07 build --freestanding` → C → `clang` → `wasm-ld` → `.wasm` + manifest + build report
 - `x07-wasm run`: deterministic runner for the Phase 0 ABI (`x07_solve_v2` via WASM Basic C ABI sret)
 - `x07-wasm doctor`, `x07-wasm profile validate`, `x07-wasm cli specrows check`
+- Phase 1 (WASI 0.2 components):
+  - `x07-wasm wit validate`
+  - `x07-wasm component profile validate`
+  - `x07-wasm component build`
+  - `x07-wasm component compose`
+  - `x07-wasm component targets`
+  - `x07-wasm serve`
+  - `x07-wasm component run`
 
 ## Install (local)
 
@@ -32,15 +40,26 @@ x07-wasm run \
   --json
 ```
 
-## Phase 0 contracts-as-data
+## Phase 0 docs
+
+- `docs/phase0.md`
+
+## Phase 1 docs
+
+- `docs/phase1.md`
+
+## Contracts-as-data
 
 - WASM profile registry: `arch/wasm/index.x07wasm.json`
 - Profiles: `arch/wasm/profiles/*.json`
+- WIT registry: `arch/wit/index.x07wit.json`
+- Component profile registry: `arch/wasm/component/index.x07wasm.component.json`
 - Schemas (published to `https://x07.io/spec/`): `spec/schemas/*.schema.json`
 
 ## CI / smoke
 
 - Phase 0 gate: `scripts/ci/check_phase0.sh`
+- Phase 1 gate: `scripts/ci/check_phase1.sh`
 - Example freestanding smoke: `examples/solve_pure_echo/ci/freestanding_smoke.sh`
 
 ## Incidents

@@ -5,6 +5,7 @@ use anyhow::{Context, Result};
 use serde_json::{json, Value};
 
 use crate::cli::{BuildArgs, MachineArgs, Scope};
+use crate::cmdutil;
 use crate::diag::{Diagnostic, Severity, Stage};
 use crate::report;
 use crate::report::machine::{self, JsonMode};
@@ -197,7 +198,7 @@ pub fn cmd_build(
     if let Err(err) = std::fs::create_dir_all(&paths.emit_dir)
         .with_context(|| format!("create dir: {}", paths.emit_dir.display()))
     {
-        diagnostics.push(diag_io_failed(
+        diagnostics.push(cmdutil::diag_io_failed(
             "X07WASM_BUILD_IO_FAILED",
             Stage::Run,
             format!("failed to create emit dir: {}", paths.emit_dir.display()),
@@ -220,7 +221,7 @@ pub fn cmd_build(
         if let Err(err) = std::fs::create_dir_all(parent)
             .with_context(|| format!("create dir: {}", parent.display()))
         {
-            diagnostics.push(diag_io_failed(
+            diagnostics.push(cmdutil::diag_io_failed(
                 "X07WASM_BUILD_IO_FAILED",
                 Stage::Run,
                 format!("failed to create out dir: {}", parent.display()),
@@ -244,7 +245,7 @@ pub fn cmd_build(
         if let Err(err) = std::fs::create_dir_all(parent)
             .with_context(|| format!("create dir: {}", parent.display()))
         {
-            diagnostics.push(diag_io_failed(
+            diagnostics.push(cmdutil::diag_io_failed(
                 "X07WASM_BUILD_IO_FAILED",
                 Stage::Run,
                 format!("failed to create artifact dir: {}", parent.display()),
@@ -265,10 +266,10 @@ pub fn cmd_build(
         }
     }
 
-    let x07_out = match run_cmd_capture("x07", &x07_build_args) {
+    let x07_out = match cmdutil::run_cmd_capture("x07", &x07_build_args) {
         Ok(v) => v,
         Err(err) => {
-            diagnostics.push(diag_cmd_spawn_failed(
+            diagnostics.push(cmdutil::diag_cmd_spawn_failed(
                 "X07WASM_X07_BUILD_SPAWN_FAILED",
                 Stage::Codegen,
                 "x07 build",
@@ -289,7 +290,7 @@ pub fn cmd_build(
         }
     };
     if !x07_out.status.success() {
-        diagnostics.push(diag_cmd_failed(
+        diagnostics.push(cmdutil::diag_cmd_failed(
             "X07WASM_X07_BUILD_FAILED",
             Stage::Codegen,
             "x07 build",
@@ -313,7 +314,7 @@ pub fn cmd_build(
     let c_digest = match util::file_digest(&paths.c_path) {
         Ok(d) => d,
         Err(err) => {
-            diagnostics.push(diag_io_failed(
+            diagnostics.push(cmdutil::diag_io_failed(
                 "X07WASM_BUILD_OUTPUT_IO_FAILED",
                 Stage::Run,
                 format!("failed to digest output: {}", paths.c_path.display()),
@@ -338,7 +339,7 @@ pub fn cmd_build(
     let h_digest = match util::file_digest(&paths.h_path) {
         Ok(d) => d,
         Err(err) => {
-            diagnostics.push(diag_io_failed(
+            diagnostics.push(cmdutil::diag_io_failed(
                 "X07WASM_BUILD_OUTPUT_IO_FAILED",
                 Stage::Run,
                 format!("failed to digest output: {}", paths.h_path.display()),
@@ -368,7 +369,7 @@ pub fn cmd_build(
     {
         Ok(()) => match util::file_digest(&shim_c_path) {
             Ok(d) => meta.outputs.push(d),
-            Err(err) => diagnostics.push(diag_io_failed(
+            Err(err) => diagnostics.push(cmdutil::diag_io_failed(
                 "X07WASM_SHIM_DIGEST_IO_FAILED",
                 Stage::Run,
                 format!("failed to digest output: {}", shim_c_path.display()),
@@ -376,7 +377,7 @@ pub fn cmd_build(
             )),
         },
         Err(err) => {
-            diagnostics.push(diag_io_failed(
+            diagnostics.push(cmdutil::diag_io_failed(
                 "X07WASM_SHIM_WRITE_FAILED",
                 Stage::Run,
                 format!("failed to write shims: {}", shim_c_path.display()),
@@ -413,10 +414,10 @@ pub fn cmd_build(
         "-o".to_string(),
         paths.o_path.display().to_string(),
     ]);
-    let clang_out = match run_cmd_capture(&cc, &clang_full_args) {
+    let clang_out = match cmdutil::run_cmd_capture(&cc, &clang_full_args) {
         Ok(v) => v,
         Err(err) => {
-            diagnostics.push(diag_cmd_spawn_failed(
+            diagnostics.push(cmdutil::diag_cmd_spawn_failed(
                 "X07WASM_CLANG_SPAWN_FAILED",
                 Stage::Codegen,
                 "clang",
@@ -437,7 +438,7 @@ pub fn cmd_build(
         }
     };
     if !clang_out.status.success() {
-        diagnostics.push(diag_cmd_failed(
+        diagnostics.push(cmdutil::diag_cmd_failed(
             "X07WASM_CLANG_FAILED",
             Stage::Codegen,
             "clang",
@@ -468,10 +469,10 @@ pub fn cmd_build(
         "-o".to_string(),
         shim_o_path.display().to_string(),
     ]);
-    let clang_shim_out = match run_cmd_capture(&cc, &clang_shim_args) {
+    let clang_shim_out = match cmdutil::run_cmd_capture(&cc, &clang_shim_args) {
         Ok(v) => v,
         Err(err) => {
-            diagnostics.push(diag_cmd_spawn_failed(
+            diagnostics.push(cmdutil::diag_cmd_spawn_failed(
                 "X07WASM_CLANG_SHIM_SPAWN_FAILED",
                 Stage::Codegen,
                 "clang",
@@ -492,7 +493,7 @@ pub fn cmd_build(
         }
     };
     if !clang_shim_out.status.success() {
-        diagnostics.push(diag_cmd_failed(
+        diagnostics.push(cmdutil::diag_cmd_failed(
             "X07WASM_CLANG_SHIM_FAILED",
             Stage::Codegen,
             "clang",
@@ -523,10 +524,10 @@ pub fn cmd_build(
     wasm_ld_full_args.push(paths.o_path.display().to_string());
     wasm_ld_full_args.push(shim_o_path.display().to_string());
     wasm_ld_full_args.extend(["-o".to_string(), paths.out_wasm.display().to_string()]);
-    let ld_out = match run_cmd_capture(&linker, &wasm_ld_full_args) {
+    let ld_out = match cmdutil::run_cmd_capture(&linker, &wasm_ld_full_args) {
         Ok(v) => v,
         Err(err) => {
-            diagnostics.push(diag_cmd_spawn_failed(
+            diagnostics.push(cmdutil::diag_cmd_spawn_failed(
                 "X07WASM_WASM_LD_SPAWN_FAILED",
                 Stage::Link,
                 "wasm-ld",
@@ -547,7 +548,7 @@ pub fn cmd_build(
         }
     };
     if !ld_out.status.success() {
-        diagnostics.push(diag_cmd_failed(
+        diagnostics.push(cmdutil::diag_cmd_failed(
             "X07WASM_WASM_LD_FAILED",
             Stage::Link,
             "wasm-ld",
@@ -573,7 +574,7 @@ pub fn cmd_build(
     {
         Ok(b) => b,
         Err(err) => {
-            diagnostics.push(diag_io_failed(
+            diagnostics.push(cmdutil::diag_io_failed(
                 "X07WASM_BUILD_OUTPUT_IO_FAILED",
                 Stage::Link,
                 format!("failed to read output: {}", paths.out_wasm.display()),
@@ -742,14 +743,14 @@ pub fn cmd_build(
         {
             Ok(()) => match util::file_digest(&paths.artifact_out) {
                 Ok(d) => meta.outputs.push(d),
-                Err(err) => diagnostics.push(diag_io_failed(
+                Err(err) => diagnostics.push(cmdutil::diag_io_failed(
                     "X07WASM_MANIFEST_DIGEST_IO_FAILED",
                     Stage::Run,
                     format!("failed to digest output: {}", paths.artifact_out.display()),
                     &err,
                 )),
             },
-            Err(err) => diagnostics.push(diag_io_failed(
+            Err(err) => diagnostics.push(cmdutil::diag_io_failed(
                 "X07WASM_MANIFEST_WRITE_FAILED",
                 Stage::Run,
                 format!("failed to write manifest: {}", paths.artifact_out.display()),
@@ -778,50 +779,6 @@ pub fn cmd_build(
     let report_doc = build_report_doc(meta, diagnostics, Value::Object(result_obj));
 
     emit_build_report(&store, scope, machine, json_mode, report_doc)
-}
-
-struct CmdCapture {
-    status: std::process::ExitStatus,
-    code: i32,
-    stderr: String,
-}
-
-fn run_cmd_capture(program: &str, args: &[String]) -> Result<CmdCapture> {
-    let out = std::process::Command::new(program)
-        .args(args)
-        .output()
-        .with_context(|| format!("run: {program}"))?;
-    let code = out.status.code().unwrap_or(1);
-    Ok(CmdCapture {
-        status: out.status,
-        code,
-        stderr: String::from_utf8_lossy(&out.stderr).to_string(),
-    })
-}
-
-fn diag_cmd_failed(code: &str, stage: Stage, cmd: &str, exit: i32, stderr: &str) -> Diagnostic {
-    let mut d = Diagnostic::new(
-        code,
-        Severity::Error,
-        stage,
-        format!("{cmd} failed (code={exit})"),
-    );
-    d.data.insert("stderr".to_string(), json!(stderr));
-    d
-}
-
-fn diag_cmd_spawn_failed(code: &str, stage: Stage, cmd: &str, err: &anyhow::Error) -> Diagnostic {
-    let mut d = Diagnostic::new(code, Severity::Error, stage, format!("{cmd} spawn failed"));
-    d.data
-        .insert("error".to_string(), json!(format!("{err:#}")));
-    d
-}
-
-fn diag_io_failed(code: &str, stage: Stage, msg: String, err: &anyhow::Error) -> Diagnostic {
-    let mut d = Diagnostic::new(code, Severity::Error, stage, msg);
-    d.data
-        .insert("error".to_string(), json!(format!("{err:#}")));
-    d
 }
 
 #[derive(Clone)]

@@ -25,6 +25,8 @@ pub fn cmd_doctor(
     let wasm_ld = tool_first_line("wasm-ld", &["--version"]).ok();
     let wasmtime = tool_first_line("wasmtime", &["--version"]).ok();
     let wasm_tools = tool_first_line("wasm-tools", &["--version"]).ok();
+    let wit_bindgen = tool_first_line("wit-bindgen", &["--version"]).ok();
+    let wac = tool_first_line("wac", &["--version"]).ok();
 
     if x07.is_none() {
         diagnostics.push(Diagnostic::new(
@@ -58,6 +60,30 @@ pub fn cmd_doctor(
             "wasmtime not found on PATH".to_string(),
         ));
     }
+    if wasm_tools.is_none() {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_TOOL_MISSING_WASM_TOOLS",
+            Severity::Error,
+            Stage::Run,
+            "wasm-tools not found on PATH".to_string(),
+        ));
+    }
+    if wit_bindgen.is_none() {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_TOOL_MISSING_WIT_BINDGEN",
+            Severity::Error,
+            Stage::Run,
+            "wit-bindgen not found on PATH".to_string(),
+        ));
+    }
+    if wac.is_none() {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_TOOL_MISSING_WAC",
+            Severity::Error,
+            Stage::Run,
+            "wac not found on PATH".to_string(),
+        ));
+    }
 
     meta.tool.clang = clang.clone();
     meta.tool.wasm_ld = wasm_ld.clone();
@@ -79,6 +105,8 @@ pub fn cmd_doctor(
         "wasm_ld": wasm_ld,
         "wasmtime": wasmtime,
         "wasm_tools": wasm_tools,
+        "wit_bindgen": wit_bindgen,
+        "wac": wac,
       }
     });
 

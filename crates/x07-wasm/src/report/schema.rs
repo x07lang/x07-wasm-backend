@@ -10,12 +10,27 @@ const BUILD_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.build.report.schema.json");
 const RUN_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.run.report.schema.json");
+const SERVE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.serve.report.schema.json");
 const PROFILE_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.profile.validate.report.schema.json");
 const CLI_SPECROWS_CHECK_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.cli.specrows.check.report.schema.json");
 const DOCTOR_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.doctor.report.schema.json");
+const WIT_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.wit.validate.report.schema.json");
+const COMPONENT_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] = include_bytes!(
+    "../../../../spec/schemas/x07-wasm.component.profile.validate.report.schema.json"
+);
+const COMPONENT_BUILD_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.component.build.report.schema.json");
+const COMPONENT_COMPOSE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.component.compose.report.schema.json");
+const COMPONENT_TARGETS_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.component.targets.report.schema.json");
+const COMPONENT_RUN_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.component.run.report.schema.json");
 
 pub fn emit_schema_or_id(machine: &MachineArgs, scope: Scope) -> Result<u8> {
     let mode = machine::json_mode(machine).map_err(anyhow::Error::msg)?;
@@ -44,7 +59,14 @@ fn schema_bytes_for_scope(scope: Scope) -> Result<&'static [u8]> {
     match scope {
         Scope::Build => Ok(BUILD_REPORT_SCHEMA_BYTES),
         Scope::Run => Ok(RUN_REPORT_SCHEMA_BYTES),
+        Scope::Serve => Ok(SERVE_REPORT_SCHEMA_BYTES),
         Scope::Doctor => Ok(DOCTOR_REPORT_SCHEMA_BYTES),
+        Scope::WitValidate => Ok(WIT_VALIDATE_REPORT_SCHEMA_BYTES),
+        Scope::ComponentProfileValidate => Ok(COMPONENT_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES),
+        Scope::ComponentBuild => Ok(COMPONENT_BUILD_REPORT_SCHEMA_BYTES),
+        Scope::ComponentCompose => Ok(COMPONENT_COMPOSE_REPORT_SCHEMA_BYTES),
+        Scope::ComponentTargets => Ok(COMPONENT_TARGETS_REPORT_SCHEMA_BYTES),
+        Scope::ComponentRun => Ok(COMPONENT_RUN_REPORT_SCHEMA_BYTES),
         Scope::ProfileValidate => Ok(PROFILE_VALIDATE_REPORT_SCHEMA_BYTES),
         Scope::CliSpecrowsCheck => Ok(CLI_SPECROWS_CHECK_REPORT_SCHEMA_BYTES),
     }
@@ -54,7 +76,14 @@ fn schema_version_for_scope(scope: Scope) -> &'static str {
     match scope {
         Scope::Build => "x07.wasm.build.report@0.1.0",
         Scope::Run => "x07.wasm.run.report@0.1.0",
+        Scope::Serve => "x07.wasm.serve.report@0.1.0",
         Scope::Doctor => "x07.wasm.doctor.report@0.1.0",
+        Scope::WitValidate => "x07.wasm.wit.validate.report@0.1.0",
+        Scope::ComponentProfileValidate => "x07.wasm.component.profile.validate.report@0.1.0",
+        Scope::ComponentBuild => "x07.wasm.component.build.report@0.1.0",
+        Scope::ComponentCompose => "x07.wasm.component.compose.report@0.1.0",
+        Scope::ComponentTargets => "x07.wasm.component.targets.report@0.1.0",
+        Scope::ComponentRun => "x07.wasm.component.run.report@0.1.0",
         Scope::ProfileValidate => "x07.wasm.profile.validate.report@0.1.0",
         Scope::CliSpecrowsCheck => "x07.wasm.cli.specrows.check.report@0.1.0",
     }

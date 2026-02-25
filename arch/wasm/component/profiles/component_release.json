@@ -1,0 +1,27 @@
+{
+  "schema_version": "x07.wasm.component.profile@0.1.0",
+  "id": "component_release",
+  "v": 1,
+  "cfg": {
+    "wit_index_path": "arch/wit/index.x07wit.json",
+    "toolchain": {
+      "wit_bindgen": { "cmd": "wit-bindgen", "args": [], "env": {} },
+      "wasm_tools": { "cmd": "wasm-tools", "args": [], "env": {} },
+      "wac": { "cmd": "wac", "args": [], "env": {} },
+      "wasmtime": { "cmd": "wasmtime", "args": [], "env": {} }
+    },
+    "componentize": {
+      "mode": "wasm-tools-component-new_v1",
+      "solve_package": "x07:solve@0.1.0",
+      "solve_world": "solve"
+    },
+    "compose": { "mode": "wac-plug_v1" },
+    "targets": {
+      "http_package": "wasi:http@0.2.8",
+      "http_world": "proxy",
+      "cli_package": "wasi:cli@0.2.8",
+      "cli_world": "command"
+    }
+  }
+}
+

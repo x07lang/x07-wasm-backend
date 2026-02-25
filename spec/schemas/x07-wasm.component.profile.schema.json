@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-wasm.component.profile.schema.json",
+  "title": "x07.wasm.component.profile@0.1.0",
+  "description": "Pinned configuration for building and composing WebAssembly components from x07 solve-pure artifacts (Phase 1).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "v",
+    "cfg"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "x07.wasm.component.profile@0.1.0"
+    },
+    "id": {
+      "$ref": "#/$defs/id"
+    },
+    "v": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "cfg": {
+      "$ref": "#/$defs/cfg"
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "rel_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^(?![\\\\/])(?![A-Za-z]:)(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)).+"
+    },
+    "wit_package_id": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9_-]{0,31}:[a-z][a-z0-9_-]{0,63}@[0-9]+\\.[0-9]+\\.[0-9]+([+-][0-9A-Za-z.-]+)?$",
+      "description": "WIT package id: namespace:package@semver (e.g., wasi:http@0.2.8)."
+    },
+    "wit_ident": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_-]{0,63}$",
+      "description": "WIT identifier (kebab/lowercase)."
+    },
+    "tool_cmd": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cmd"
+      ],
+      "properties": {
+        "cmd": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "args": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "default": []
+        },
+        "env": {
+          "type": "object",
+          "default": {},
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{0,127}$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "maxLength": 65536
+          }
+        }
+      }
+    },
+    "toolchain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "wit_bindgen",
+        "wasm_tools",
+        "wac",
+        "wasmtime"
+      ],
+      "properties": {
+        "wit_bindgen": {
+          "$ref": "#/$defs/tool_cmd"
+        },
+        "wasm_tools": {
+          "$ref": "#/$defs/tool_cmd"
+        },
+        "wac": {
+          "$ref": "#/$defs/tool_cmd"
+        },
+        "wasmtime": {
+          "$ref": "#/$defs/tool_cmd"
+        }
+      }
+    },
+    "componentize_cfg": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "solve_package",
+        "solve_world"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "wasm-tools-component-new_v1"
+          ]
+        },
+        "solve_package": {
+          "$ref": "#/$defs/wit_package_id"
+        },
+        "solve_world": {
+          "$ref": "#/$defs/wit_ident"
+        }
+      }
+    },
+    "compose_cfg": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "wac-plug_v1"
+          ]
+        }
+      }
+    },
+    "targets_cfg": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "http_package",
+        "http_world",
+        "cli_package",
+        "cli_world"
+      ],
+      "properties": {
+        "http_package": {
+          "$ref": "#/$defs/wit_package_id"
+        },
+        "http_world": {
+          "$ref": "#/$defs/wit_ident"
+        },
+        "cli_package": {
+          "$ref": "#/$defs/wit_package_id"
+        },
+        "cli_world": {
+          "$ref": "#/$defs/wit_ident"
+        }
+      }
+    },
+    "cfg": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "wit_index_path",
+        "toolchain",
+        "componentize",
+        "compose",
+        "targets"
+      ],
+      "properties": {
+        "wit_index_path": {
+          "$ref": "#/$defs/rel_path",
+          "default": "arch/wit/index.x07wit.json"
+        },
+        "toolchain": {
+          "$ref": "#/$defs/toolchain"
+        },
+        "componentize": {
+          "$ref": "#/$defs/componentize_cfg"
+        },
+        "compose": {
+          "$ref": "#/$defs/compose_cfg"
+        },
+        "targets": {
+          "$ref": "#/$defs/targets_cfg"
+        }
+      }
+    }
+  }
+}
+
