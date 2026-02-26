@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-wasm.component.profile.schema.json",
-  "title": "x07.wasm.component.profile@0.1.0",
-  "description": "Pinned configuration for building and composing WebAssembly components from x07 solve-pure artifacts (Phase 1).",
+  "title": "x07.wasm.component.profile@0.2.0",
+  "description": "Pinned configuration for building and composing WebAssembly components from x07 solve-pure artifacts (Phase 1) and native backend targets (Phase 4B).",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -14,7 +14,7 @@
   "properties": {
     "schema_version": {
       "type": "string",
-      "const": "x07.wasm.component.profile@0.1.0"
+      "const": "x07.wasm.component.profile@0.2.0"
     },
     "id": {
       "$ref": "#/$defs/id"
@@ -39,6 +39,16 @@
       "minLength": 1,
       "maxLength": 1024,
       "pattern": "^(?![\\\\/])(?![A-Za-z]:)(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)).+"
+    },
+    "u32": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "u64": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 18446744073709551615
     },
     "wit_package_id": {
       "type": "string",
@@ -175,6 +185,142 @@
         }
       }
     },
+    "native_http_budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_request_body_bytes",
+        "max_response_body_bytes",
+        "max_headers",
+        "max_header_bytes_total",
+        "max_path_bytes",
+        "max_query_bytes",
+        "max_envelope_bytes"
+      ],
+      "properties": {
+        "max_request_body_bytes": {
+          "$ref": "#/$defs/u64",
+          "description": "Hard cap for total request body bytes read from the incoming-body stream."
+        },
+        "max_response_body_bytes": {
+          "$ref": "#/$defs/u64",
+          "description": "Hard cap for total response body bytes written to the outgoing-body stream."
+        },
+        "max_headers": {
+          "$ref": "#/$defs/u32",
+          "description": "Hard cap for number of request headers read and response headers emitted."
+        },
+        "max_header_bytes_total": {
+          "$ref": "#/$defs/u64",
+          "description": "Hard cap for total header bytes (names + values) processed."
+        },
+        "max_path_bytes": {
+          "$ref": "#/$defs/u64",
+          "description": "Hard cap for request path UTF-8 bytes."
+        },
+        "max_query_bytes": {
+          "$ref": "#/$defs/u64",
+          "description": "Hard cap for request query UTF-8 bytes."
+        },
+        "max_envelope_bytes": {
+          "$ref": "#/$defs/u64",
+          "description": "Hard cap for the generated JSON envelope size passed into x07_solve_v2 (bytes)."
+        }
+      }
+    },
+    "native_cli_budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_stdin_bytes",
+        "max_stdout_bytes",
+        "max_stderr_bytes"
+      ],
+      "properties": {
+        "max_stdin_bytes": {
+          "$ref": "#/$defs/u64",
+          "description": "Hard cap for total stdin bytes read."
+        },
+        "max_stdout_bytes": {
+          "$ref": "#/$defs/u64",
+          "description": "Hard cap for total stdout bytes written."
+        },
+        "max_stderr_bytes": {
+          "$ref": "#/$defs/u64",
+          "description": "Hard cap for total stderr bytes written."
+        }
+      }
+    },
+    "native_http_cfg": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "package",
+        "world",
+        "budgets"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "native-http-proxy_v1"
+          ]
+        },
+        "package": {
+          "$ref": "#/$defs/wit_package_id"
+        },
+        "world": {
+          "$ref": "#/$defs/wit_ident"
+        },
+        "budgets": {
+          "$ref": "#/$defs/native_http_budgets"
+        }
+      }
+    },
+    "native_cli_cfg": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "package",
+        "world",
+        "budgets"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "native-cli-command_v1"
+          ]
+        },
+        "package": {
+          "$ref": "#/$defs/wit_package_id"
+        },
+        "world": {
+          "$ref": "#/$defs/wit_ident"
+        },
+        "budgets": {
+          "$ref": "#/$defs/native_cli_budgets"
+        }
+      }
+    },
+    "native_targets_cfg": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "http",
+        "cli"
+      ],
+      "properties": {
+        "http": {
+          "$ref": "#/$defs/native_http_cfg"
+        },
+        "cli": {
+          "$ref": "#/$defs/native_cli_cfg"
+        }
+      }
+    },
     "cfg": {
       "type": "object",
       "additionalProperties": false,
@@ -183,7 +329,8 @@
         "toolchain",
         "componentize",
         "compose",
-        "targets"
+        "targets",
+        "native_targets"
       ],
       "properties": {
         "wit_index_path": {
@@ -201,9 +348,11 @@
         },
         "targets": {
           "$ref": "#/$defs/targets_cfg"
+        },
+        "native_targets": {
+          "$ref": "#/$defs/native_targets_cfg"
         }
       }
     }
   }
 }
-

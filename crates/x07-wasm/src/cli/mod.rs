@@ -572,6 +572,8 @@ pub struct ComponentProfileValidateArgs {
 #[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum ComponentBuildEmit {
     Solve,
+    Http,
+    Cli,
     #[value(name = "http-adapter")]
     HttpAdapter,
     #[value(name = "cli-adapter")]

@@ -95,7 +95,7 @@ pub fn build_specrows_doc() -> Value {
 
         ["component-build","about","Build an x07 project into an x07:solve component (and optional adapters). Alias: `x07-wasm component build`."],
         ["component-build","flag","","--clean","clean","Delete out-dir before building."],
-        ["component-build","opt","","--emit","emit","STR","Artifact set to emit: solve|http-adapter|cli-adapter|all (default: all)."],
+        ["component-build","opt","","--emit","emit","STR","Artifact set to emit: solve|http|cli|http-adapter|cli-adapter|all (default: all)."],
         ["component-build","opt","","--index","index","PATH","Path to the component profile registry (default: arch/wasm/component/index.x07wasm.component.json)."],
         ["component-build","opt","","--out-dir","out.dir","PATH","Output directory for component artifacts (default: target/x07-wasm/component)."],
         ["component-build","opt","","--profile","profile.id","STR","Component profile id (loaded from arch/wasm/component/index.x07wasm.component.json)."],

@@ -17,6 +17,10 @@ use crate::util;
 
 const SOLVE_BINDGEN_C_TEMPLATE: &str =
     include_str!("../support/component/solve_bindgen_c_template.c");
+const HTTP_PROXY_BINDGEN_C_TEMPLATE: &str =
+    include_str!("../support/component/http_proxy_bindgen_c_template.c");
+const CLI_COMMAND_BINDGEN_C_TEMPLATE: &str =
+    include_str!("../support/component/cli_command_bindgen_c_template.c");
 const PHASE0_SHIM_C: &str = include_str!("../wasm/phase0_shim.c");
 
 const DEFAULT_COMPONENT_PROFILE_ID: &str = "component_release";
@@ -87,12 +91,53 @@ struct TargetsCfg {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+struct NativeHttpBudgets {
+    max_request_body_bytes: u64,
+    max_response_body_bytes: u64,
+    max_headers: u32,
+    max_header_bytes_total: u64,
+    max_path_bytes: u64,
+    max_query_bytes: u64,
+    max_envelope_bytes: u64,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct NativeCliBudgets {
+    max_stdin_bytes: u64,
+    max_stdout_bytes: u64,
+    max_stderr_bytes: u64,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct NativeHttpCfg {
+    mode: String,
+    package: String,
+    world: String,
+    budgets: NativeHttpBudgets,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct NativeCliCfg {
+    mode: String,
+    package: String,
+    world: String,
+    budgets: NativeCliBudgets,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct NativeTargetsCfg {
+    http: NativeHttpCfg,
+    cli: NativeCliCfg,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 struct ComponentProfileCfg {
     wit_index_path: String,
     toolchain: ComponentProfileToolchain,
     componentize: ComponentizeCfg,
     compose: ComposeCfg,
     targets: TargetsCfg,
+    native_targets: NativeTargetsCfg,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -293,6 +338,60 @@ pub fn cmd_component_build(
                     artifacts.push(a);
                 }
             }
+            ComponentBuildEmit::Http => {
+                let built = match build_http_native_component(
+                    &store,
+                    &loaded_component_profile.doc,
+                    &loaded_wasm_profile.doc,
+                    &args.project,
+                    &args.out_dir,
+                    &component_profile_ref,
+                    &wasm_profile_ref,
+                    &mut meta,
+                    &mut diagnostics,
+                ) {
+                    Ok(v) => v,
+                    Err(err) => {
+                        diagnostics.push(Diagnostic::new(
+                            "X07WASM_INTERNAL_COMPONENT_BUILD_FAILED",
+                            Severity::Error,
+                            Stage::Run,
+                            format!("{err:#}"),
+                        ));
+                        None
+                    }
+                };
+                if let Some(a) = built {
+                    artifacts.push(a);
+                }
+            }
+            ComponentBuildEmit::Cli => {
+                let built = match build_cli_native_component(
+                    &store,
+                    &loaded_component_profile.doc,
+                    &loaded_wasm_profile.doc,
+                    &args.project,
+                    &args.out_dir,
+                    &component_profile_ref,
+                    &wasm_profile_ref,
+                    &mut meta,
+                    &mut diagnostics,
+                ) {
+                    Ok(v) => v,
+                    Err(err) => {
+                        diagnostics.push(Diagnostic::new(
+                            "X07WASM_INTERNAL_COMPONENT_BUILD_FAILED",
+                            Severity::Error,
+                            Stage::Run,
+                            format!("{err:#}"),
+                        ));
+                        None
+                    }
+                };
+                if let Some(a) = built {
+                    artifacts.push(a);
+                }
+            }
             ComponentBuildEmit::HttpAdapter => {
                 let built = match build_http_adapter_component(
                     &store,
@@ -372,11 +471,14 @@ pub fn cmd_component_build(
                     artifacts.push(a);
                 }
 
-                let built_http = match build_http_adapter_component(
+                let built_http = match build_http_native_component(
                     &store,
                     &loaded_component_profile.doc,
+                    &loaded_wasm_profile.doc,
+                    &args.project,
                     &args.out_dir,
                     &component_profile_ref,
+                    &wasm_profile_ref,
                     &mut meta,
                     &mut diagnostics,
                 ) {
@@ -394,11 +496,14 @@ pub fn cmd_component_build(
                 if let Some(a) = built_http {
                     artifacts.push(a);
                 }
-                let built_cli = match build_cli_adapter_component(
+                let built_cli = match build_cli_native_component(
                     &store,
                     &loaded_component_profile.doc,
+                    &loaded_wasm_profile.doc,
+                    &args.project,
                     &args.out_dir,
                     &component_profile_ref,
+                    &wasm_profile_ref,
                     &mut meta,
                     &mut diagnostics,
                 ) {
@@ -813,6 +918,752 @@ fn build_solve_component(
         solve_core_wasm: Some(solve_core_digest),
         solve_artifact: Some(artifact_doc),
     })
+}
+
+#[allow(clippy::too_many_arguments)]
+fn build_http_native_component(
+    store: &SchemaStore,
+    component_profile: &ComponentProfileDoc,
+    wasm_profile: &arch::WasmProfileDoc,
+    project_path: &Path,
+    out_dir: &Path,
+    component_profile_ref: &Value,
+    wasm_profile_ref: &Value,
+    meta: &mut report::meta::ReportMeta,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> Result<Option<Value>> {
+    let cfg = &component_profile.cfg;
+
+    if cfg.native_targets.http.mode.trim() != "native-http-proxy_v1" {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_NATIVE_HTTP_MODE_UNSUPPORTED",
+            Severity::Error,
+            Stage::Parse,
+            format!(
+                "unsupported cfg.native_targets.http.mode: {:?}",
+                cfg.native_targets.http.mode
+            ),
+        ));
+        return Ok(None);
+    }
+
+    let program_c = out_dir.join("program.c");
+    let x07_h = out_dir.join("x07.h");
+    let shim_c = out_dir.join("phase0_shim.c");
+    let shim_o = out_dir.join("phase0_shim.o");
+
+    let wit_out_dir = out_dir.join("wit-bindgen-http");
+    let wit_proxy_c = wit_out_dir.join("proxy.c");
+    let wit_proxy_o = out_dir.join("proxy_bindgen.o");
+    let wit_component_type_o = wit_out_dir.join("proxy_component_type.o");
+
+    let http_glue_c = out_dir.join("http_glue.c");
+    let http_glue_o = out_dir.join("http_glue.o");
+
+    let http_core_wasm = out_dir.join("http.core.wasm");
+    let http_component_wasm = out_dir.join("http.component.wasm");
+    let http_component_manifest = out_dir.join("http.component.wasm.manifest.json");
+
+    if let Err(err) = std::fs::create_dir_all(&wit_out_dir)
+        .with_context(|| format!("create dir: {}", wit_out_dir.display()))
+    {
+        diagnostics.push(cmdutil::diag_io_failed(
+            "X07WASM_COMPONENT_BUILD_IO_FAILED",
+            Stage::Run,
+            format!(
+                "failed to create wit-bindgen dir: {}",
+                wit_out_dir.display()
+            ),
+            &err,
+        ));
+        return Ok(None);
+    }
+
+    // Step A: x07 -> freestanding C
+    let x07_build_args = vec![
+        "build".to_string(),
+        "--project".to_string(),
+        project_path.display().to_string(),
+        "--out".to_string(),
+        program_c.display().to_string(),
+        "--emit-c-header".to_string(),
+        x07_h.display().to_string(),
+        "--freestanding".to_string(),
+    ];
+    let x07_out = match cmdutil::run_cmd_capture("x07", &x07_build_args) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(cmdutil::diag_cmd_spawn_failed(
+                "X07WASM_X07_BUILD_SPAWN_FAILED",
+                Stage::Codegen,
+                "x07 build",
+                &err,
+            ));
+            return Ok(None);
+        }
+    };
+    if !x07_out.status.success() {
+        diagnostics.push(cmdutil::diag_cmd_failed(
+            "X07WASM_X07_BUILD_FAILED",
+            Stage::Codegen,
+            "x07 build",
+            x07_out.code,
+            &x07_out.stderr,
+        ));
+        return Ok(None);
+    }
+    meta.outputs.push(util::file_digest(&program_c)?);
+    meta.outputs.push(util::file_digest(&x07_h)?);
+
+    // Step B: wit-bindgen c for wasi:http/proxy (bundled deps)
+    let http_wit_dir = resolve_wit_package_dir(
+        store,
+        Path::new(&cfg.wit_index_path),
+        &cfg.native_targets.http.package,
+        meta,
+        diagnostics,
+    )?;
+
+    let http_wit_dir_arg = match crate::wit::bundle::bundle_for_wit_path(
+        store,
+        Path::new(&cfg.wit_index_path),
+        &http_wit_dir,
+        meta,
+        diagnostics,
+    ) {
+        Ok(Some(bundle)) => bundle.dir,
+        Ok(None) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_WIT_BUNDLE_FAILED",
+                Severity::Error,
+                Stage::Run,
+                format!("failed to bundle WIT package: {}", http_wit_dir.display()),
+            ));
+            return Ok(None);
+        }
+        Err(err) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_WIT_BUNDLE_FAILED",
+                Severity::Error,
+                Stage::Run,
+                format!("{err:#}"),
+            ));
+            return Ok(None);
+        }
+    };
+
+    let mut wit_bindgen_args = cfg.toolchain.wit_bindgen.args.clone();
+    wit_bindgen_args.extend([
+        "c".to_string(),
+        http_wit_dir_arg.display().to_string(),
+        "--world".to_string(),
+        cfg.native_targets.http.world.clone(),
+        "--out-dir".to_string(),
+        wit_out_dir.display().to_string(),
+    ]);
+    let wit_out = match run_tool_cmd_capture(
+        &cfg.toolchain.wit_bindgen.cmd,
+        &wit_bindgen_args,
+        &cfg.toolchain.wit_bindgen.env,
+    ) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(cmdutil::diag_cmd_spawn_failed(
+                "X07WASM_WIT_BINDGEN_SPAWN_FAILED",
+                Stage::Codegen,
+                "wit-bindgen c",
+                &err,
+            ));
+            return Ok(None);
+        }
+    };
+    if !wit_out.status.success() {
+        diagnostics.push(cmdutil::diag_cmd_failed(
+            "X07WASM_WIT_BINDGEN_FAILED",
+            Stage::Codegen,
+            "wit-bindgen c",
+            wit_out.code,
+            &wit_out.stderr,
+        ));
+        return Ok(None);
+    }
+
+    meta.outputs.push(util::file_digest(&wit_proxy_c)?);
+    meta.outputs
+        .push(util::file_digest(&wit_out_dir.join("proxy.h"))?);
+    meta.outputs.push(util::file_digest(&wit_component_type_o)?);
+
+    // Step C: write shims + glue
+    std::fs::write(&shim_c, PHASE0_SHIM_C)
+        .with_context(|| format!("write: {}", shim_c.display()))?;
+    meta.outputs.push(util::file_digest(&shim_c)?);
+
+    let b = &cfg.native_targets.http.budgets;
+    let glue = format!(
+        "#define X07_SOLVE_ARENA_CAP_BYTES ({arena}u)\n#define X07_SOLVE_MAX_OUTPUT_BYTES ({max_out}u)\n#define X07_NATIVE_HTTP_MAX_REQUEST_BODY_BYTES ({max_req}ull)\n#define X07_NATIVE_HTTP_MAX_RESPONSE_BODY_BYTES ({max_resp}ull)\n#define X07_NATIVE_HTTP_MAX_HEADERS ({max_hdrs}u)\n#define X07_NATIVE_HTTP_MAX_HEADER_BYTES_TOTAL ({max_hdr_bytes}ull)\n#define X07_NATIVE_HTTP_MAX_PATH_BYTES ({max_path}ull)\n#define X07_NATIVE_HTTP_MAX_QUERY_BYTES ({max_query}ull)\n#define X07_NATIVE_HTTP_MAX_ENVELOPE_BYTES ({max_env}ull)\n{template}",
+        arena = wasm_profile.defaults.arena_cap_bytes,
+        max_out = wasm_profile.defaults.max_output_bytes,
+        max_req = b.max_request_body_bytes,
+        max_resp = b.max_response_body_bytes,
+        max_hdrs = b.max_headers,
+        max_hdr_bytes = b.max_header_bytes_total,
+        max_path = b.max_path_bytes,
+        max_query = b.max_query_bytes,
+        max_env = b.max_envelope_bytes,
+        template = HTTP_PROXY_BINDGEN_C_TEMPLATE
+    );
+    std::fs::write(&http_glue_c, glue)
+        .with_context(|| format!("write: {}", http_glue_c.display()))?;
+    meta.outputs.push(util::file_digest(&http_glue_c)?);
+
+    // Step D: clang compile
+    let cc = wasm_profile
+        .clang
+        .cc
+        .clone()
+        .unwrap_or_else(|| "clang".to_string());
+
+    let mut cflags = wasm_profile.clang.cflags.clone();
+    if !cflags.iter().any(|f| f.starts_with("--target=")) {
+        cflags.insert(0, format!("--target={}", wasm_profile.target.triple));
+    }
+
+    let program_o = out_dir.join("program.o");
+    compile_one_c(&cc, &cflags, &program_c, &program_o, &[], diagnostics)?;
+    compile_one_c(&cc, &cflags, &shim_c, &shim_o, &[], diagnostics)?;
+    compile_one_c(
+        &cc,
+        &cflags,
+        &wit_proxy_c,
+        &wit_proxy_o,
+        &[format!("-I{}", wit_out_dir.display())],
+        diagnostics,
+    )?;
+    compile_one_c(
+        &cc,
+        &cflags,
+        &http_glue_c,
+        &http_glue_o,
+        &[
+            format!("-I{}", wit_out_dir.display()),
+            format!("-I{}", out_dir.display()),
+        ],
+        diagnostics,
+    )?;
+
+    // Step E: wasm-ld link (core module)
+    let linker = wasm_profile
+        .wasm_ld
+        .linker
+        .clone()
+        .unwrap_or_else(|| "wasm-ld".to_string());
+    let mut ldflags = wasm_profile.wasm_ld.ldflags.clone();
+    ldflags.push(program_o.display().to_string());
+    ldflags.push(shim_o.display().to_string());
+    ldflags.push(wit_proxy_o.display().to_string());
+    ldflags.push(http_glue_o.display().to_string());
+    ldflags.push(wit_component_type_o.display().to_string());
+    ldflags.extend(["-o".to_string(), http_core_wasm.display().to_string()]);
+    let ld_out = match cmdutil::run_cmd_capture(&linker, &ldflags) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(cmdutil::diag_cmd_spawn_failed(
+                "X07WASM_WASM_LD_SPAWN_FAILED",
+                Stage::Link,
+                "wasm-ld",
+                &err,
+            ));
+            return Ok(None);
+        }
+    };
+    if !ld_out.status.success() {
+        diagnostics.push(cmdutil::diag_cmd_failed(
+            "X07WASM_WASM_LD_FAILED",
+            Stage::Link,
+            "wasm-ld",
+            ld_out.code,
+            &ld_out.stderr,
+        ));
+        return Ok(None);
+    }
+
+    let http_core_digest = util::file_digest(&http_core_wasm)?;
+    meta.outputs.push(http_core_digest);
+
+    // Step F: wasm-tools component new (component)
+    let mut wasm_tools_args = cfg.toolchain.wasm_tools.args.clone();
+    wasm_tools_args.extend([
+        "component".to_string(),
+        "new".to_string(),
+        http_core_wasm.display().to_string(),
+        "-o".to_string(),
+        http_component_wasm.display().to_string(),
+    ]);
+    let comp_out = match run_tool_cmd_capture(
+        &cfg.toolchain.wasm_tools.cmd,
+        &wasm_tools_args,
+        &cfg.toolchain.wasm_tools.env,
+    ) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(cmdutil::diag_cmd_spawn_failed(
+                "X07WASM_WASM_TOOLS_SPAWN_FAILED",
+                Stage::Link,
+                "wasm-tools component new",
+                &err,
+            ));
+            return Ok(None);
+        }
+    };
+    if !comp_out.status.success() {
+        diagnostics.push(cmdutil::diag_cmd_failed(
+            "X07WASM_WASM_TOOLS_FAILED",
+            Stage::Link,
+            "wasm-tools component new",
+            comp_out.code,
+            &comp_out.stderr,
+        ));
+        return Ok(None);
+    }
+
+    let http_component_digest = util::file_digest(&http_component_wasm)?;
+    meta.outputs.push(http_component_digest.clone());
+
+    // Step G: write component artifact manifest
+    let x07_semver = toolchain::x07_semver().unwrap_or_else(|_| "0.0.0".to_string());
+    let clang_ver = toolchain::tool_first_line(&cc, &["--version"]).ok();
+    let wasm_ld_ver = toolchain::tool_first_line(&linker, &["--version"]).ok();
+    let wit_bindgen_ver =
+        toolchain::tool_first_line(&cfg.toolchain.wit_bindgen.cmd, &["--version"]).ok();
+    let wasm_tools_ver =
+        toolchain::tool_first_line(&cfg.toolchain.wasm_tools.cmd, &["--version"]).ok();
+
+    meta.tool.clang = clang_ver.clone();
+    meta.tool.wasm_ld = wasm_ld_ver.clone();
+
+    let mut toolchain_obj = serde_json::Map::new();
+    toolchain_obj.insert("x07_wasm".to_string(), json!(env!("CARGO_PKG_VERSION")));
+    toolchain_obj.insert("x07".to_string(), json!(x07_semver));
+    if let Some(v) = clang_ver {
+        toolchain_obj.insert("clang".to_string(), json!(v));
+    }
+    if let Some(v) = wasm_ld_ver {
+        toolchain_obj.insert("wasm_ld".to_string(), json!(v));
+    }
+    if let Some(v) = wit_bindgen_ver {
+        toolchain_obj.insert("wit_bindgen".to_string(), json!(v));
+    }
+    if let Some(v) = wasm_tools_ver {
+        toolchain_obj.insert("wasm_tools".to_string(), json!(v));
+    }
+
+    let artifact_doc = json!({
+      "schema_version": "x07.wasm.component.artifact@0.1.0",
+      "artifact_id": format!("http-{}", &http_component_digest.sha256[..16]),
+      "kind": "http",
+      "component": http_component_digest,
+      "wit": { "package": cfg.native_targets.http.package.clone(), "world": cfg.native_targets.http.world.clone() },
+      "profiles": {
+        "component": component_profile_ref,
+        "wasm": wasm_profile_ref,
+      },
+      "toolchain": Value::Object(toolchain_obj)
+    });
+
+    let artifact_diags = store.validate(
+        "https://x07.io/spec/x07-wasm.component.artifact.schema.json",
+        &artifact_doc,
+    )?;
+    if artifact_diags.iter().any(|d| d.severity == Severity::Error) {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_COMPONENT_ARTIFACT_SCHEMA_INVALID",
+            Severity::Error,
+            Stage::Run,
+            format!(
+                "internal error: component artifact failed schema validation: {artifact_diags:?}"
+            ),
+        ));
+        return Ok(None);
+    }
+
+    let bytes = report::canon::canonical_json_bytes(&artifact_doc)?;
+    std::fs::write(&http_component_manifest, &bytes)
+        .with_context(|| format!("write: {}", http_component_manifest.display()))?;
+    meta.outputs
+        .push(util::file_digest(&http_component_manifest)?);
+
+    Ok(Some(artifact_doc))
+}
+
+#[allow(clippy::too_many_arguments)]
+fn build_cli_native_component(
+    store: &SchemaStore,
+    component_profile: &ComponentProfileDoc,
+    wasm_profile: &arch::WasmProfileDoc,
+    project_path: &Path,
+    out_dir: &Path,
+    component_profile_ref: &Value,
+    wasm_profile_ref: &Value,
+    meta: &mut report::meta::ReportMeta,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> Result<Option<Value>> {
+    let cfg = &component_profile.cfg;
+
+    if cfg.native_targets.cli.mode.trim() != "native-cli-command_v1" {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_NATIVE_CLI_MODE_UNSUPPORTED",
+            Severity::Error,
+            Stage::Parse,
+            format!(
+                "unsupported cfg.native_targets.cli.mode: {:?}",
+                cfg.native_targets.cli.mode
+            ),
+        ));
+        return Ok(None);
+    }
+
+    let program_c = out_dir.join("program.c");
+    let x07_h = out_dir.join("x07.h");
+    let shim_c = out_dir.join("phase0_shim.c");
+    let shim_o = out_dir.join("phase0_shim.o");
+
+    let wit_out_dir = out_dir.join("wit-bindgen-cli");
+    let wit_command_c = wit_out_dir.join("command.c");
+    let wit_command_o = out_dir.join("command_bindgen.o");
+    let wit_component_type_o = wit_out_dir.join("command_component_type.o");
+
+    let cli_glue_c = out_dir.join("cli_glue.c");
+    let cli_glue_o = out_dir.join("cli_glue.o");
+
+    let cli_core_wasm = out_dir.join("cli.core.wasm");
+    let cli_component_wasm = out_dir.join("cli.component.wasm");
+    let cli_component_manifest = out_dir.join("cli.component.wasm.manifest.json");
+
+    if let Err(err) = std::fs::create_dir_all(&wit_out_dir)
+        .with_context(|| format!("create dir: {}", wit_out_dir.display()))
+    {
+        diagnostics.push(cmdutil::diag_io_failed(
+            "X07WASM_COMPONENT_BUILD_IO_FAILED",
+            Stage::Run,
+            format!(
+                "failed to create wit-bindgen dir: {}",
+                wit_out_dir.display()
+            ),
+            &err,
+        ));
+        return Ok(None);
+    }
+
+    // Step A: x07 -> freestanding C
+    let x07_build_args = vec![
+        "build".to_string(),
+        "--project".to_string(),
+        project_path.display().to_string(),
+        "--out".to_string(),
+        program_c.display().to_string(),
+        "--emit-c-header".to_string(),
+        x07_h.display().to_string(),
+        "--freestanding".to_string(),
+    ];
+    let x07_out = match cmdutil::run_cmd_capture("x07", &x07_build_args) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(cmdutil::diag_cmd_spawn_failed(
+                "X07WASM_X07_BUILD_SPAWN_FAILED",
+                Stage::Codegen,
+                "x07 build",
+                &err,
+            ));
+            return Ok(None);
+        }
+    };
+    if !x07_out.status.success() {
+        diagnostics.push(cmdutil::diag_cmd_failed(
+            "X07WASM_X07_BUILD_FAILED",
+            Stage::Codegen,
+            "x07 build",
+            x07_out.code,
+            &x07_out.stderr,
+        ));
+        return Ok(None);
+    }
+    meta.outputs.push(util::file_digest(&program_c)?);
+    meta.outputs.push(util::file_digest(&x07_h)?);
+
+    // Step B: wit-bindgen c for wasi:cli/command (bundled deps)
+    let cli_wit_dir = resolve_wit_package_dir(
+        store,
+        Path::new(&cfg.wit_index_path),
+        &cfg.native_targets.cli.package,
+        meta,
+        diagnostics,
+    )?;
+
+    let cli_wit_dir_arg = match crate::wit::bundle::bundle_for_wit_path(
+        store,
+        Path::new(&cfg.wit_index_path),
+        &cli_wit_dir,
+        meta,
+        diagnostics,
+    ) {
+        Ok(Some(bundle)) => bundle.dir,
+        Ok(None) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_WIT_BUNDLE_FAILED",
+                Severity::Error,
+                Stage::Run,
+                format!("failed to bundle WIT package: {}", cli_wit_dir.display()),
+            ));
+            return Ok(None);
+        }
+        Err(err) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_WIT_BUNDLE_FAILED",
+                Severity::Error,
+                Stage::Run,
+                format!("{err:#}"),
+            ));
+            return Ok(None);
+        }
+    };
+
+    let mut wit_bindgen_args = cfg.toolchain.wit_bindgen.args.clone();
+    wit_bindgen_args.extend([
+        "c".to_string(),
+        cli_wit_dir_arg.display().to_string(),
+        "--world".to_string(),
+        cfg.native_targets.cli.world.clone(),
+        "--out-dir".to_string(),
+        wit_out_dir.display().to_string(),
+    ]);
+    let wit_out = match run_tool_cmd_capture(
+        &cfg.toolchain.wit_bindgen.cmd,
+        &wit_bindgen_args,
+        &cfg.toolchain.wit_bindgen.env,
+    ) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(cmdutil::diag_cmd_spawn_failed(
+                "X07WASM_WIT_BINDGEN_SPAWN_FAILED",
+                Stage::Codegen,
+                "wit-bindgen c",
+                &err,
+            ));
+            return Ok(None);
+        }
+    };
+    if !wit_out.status.success() {
+        diagnostics.push(cmdutil::diag_cmd_failed(
+            "X07WASM_WIT_BINDGEN_FAILED",
+            Stage::Codegen,
+            "wit-bindgen c",
+            wit_out.code,
+            &wit_out.stderr,
+        ));
+        return Ok(None);
+    }
+
+    meta.outputs.push(util::file_digest(&wit_command_c)?);
+    meta.outputs
+        .push(util::file_digest(&wit_out_dir.join("command.h"))?);
+    meta.outputs.push(util::file_digest(&wit_component_type_o)?);
+
+    // Step C: write shims + glue
+    std::fs::write(&shim_c, PHASE0_SHIM_C)
+        .with_context(|| format!("write: {}", shim_c.display()))?;
+    meta.outputs.push(util::file_digest(&shim_c)?);
+
+    let b = &cfg.native_targets.cli.budgets;
+    let glue = format!(
+        "#define X07_SOLVE_ARENA_CAP_BYTES ({arena}u)\n#define X07_SOLVE_MAX_OUTPUT_BYTES ({max_out}u)\n#define X07_NATIVE_CLI_MAX_STDIN_BYTES ({max_in}ull)\n#define X07_NATIVE_CLI_MAX_STDOUT_BYTES ({max_out_bytes}ull)\n#define X07_NATIVE_CLI_MAX_STDERR_BYTES ({max_err}ull)\n{template}",
+        arena = wasm_profile.defaults.arena_cap_bytes,
+        max_out = wasm_profile.defaults.max_output_bytes,
+        max_in = b.max_stdin_bytes,
+        max_out_bytes = b.max_stdout_bytes,
+        max_err = b.max_stderr_bytes,
+        template = CLI_COMMAND_BINDGEN_C_TEMPLATE
+    );
+    std::fs::write(&cli_glue_c, glue)
+        .with_context(|| format!("write: {}", cli_glue_c.display()))?;
+    meta.outputs.push(util::file_digest(&cli_glue_c)?);
+
+    // Step D: clang compile
+    let cc = wasm_profile
+        .clang
+        .cc
+        .clone()
+        .unwrap_or_else(|| "clang".to_string());
+
+    let mut cflags = wasm_profile.clang.cflags.clone();
+    if !cflags.iter().any(|f| f.starts_with("--target=")) {
+        cflags.insert(0, format!("--target={}", wasm_profile.target.triple));
+    }
+
+    let program_o = out_dir.join("program.o");
+    compile_one_c(&cc, &cflags, &program_c, &program_o, &[], diagnostics)?;
+    compile_one_c(&cc, &cflags, &shim_c, &shim_o, &[], diagnostics)?;
+    compile_one_c(
+        &cc,
+        &cflags,
+        &wit_command_c,
+        &wit_command_o,
+        &[format!("-I{}", wit_out_dir.display())],
+        diagnostics,
+    )?;
+    compile_one_c(
+        &cc,
+        &cflags,
+        &cli_glue_c,
+        &cli_glue_o,
+        &[
+            format!("-I{}", wit_out_dir.display()),
+            format!("-I{}", out_dir.display()),
+        ],
+        diagnostics,
+    )?;
+
+    // Step E: wasm-ld link (core module)
+    let linker = wasm_profile
+        .wasm_ld
+        .linker
+        .clone()
+        .unwrap_or_else(|| "wasm-ld".to_string());
+    let mut ldflags = wasm_profile.wasm_ld.ldflags.clone();
+    ldflags.push(program_o.display().to_string());
+    ldflags.push(shim_o.display().to_string());
+    ldflags.push(wit_command_o.display().to_string());
+    ldflags.push(cli_glue_o.display().to_string());
+    ldflags.push(wit_component_type_o.display().to_string());
+    ldflags.extend(["-o".to_string(), cli_core_wasm.display().to_string()]);
+    let ld_out = match cmdutil::run_cmd_capture(&linker, &ldflags) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(cmdutil::diag_cmd_spawn_failed(
+                "X07WASM_WASM_LD_SPAWN_FAILED",
+                Stage::Link,
+                "wasm-ld",
+                &err,
+            ));
+            return Ok(None);
+        }
+    };
+    if !ld_out.status.success() {
+        diagnostics.push(cmdutil::diag_cmd_failed(
+            "X07WASM_WASM_LD_FAILED",
+            Stage::Link,
+            "wasm-ld",
+            ld_out.code,
+            &ld_out.stderr,
+        ));
+        return Ok(None);
+    }
+
+    let cli_core_digest = util::file_digest(&cli_core_wasm)?;
+    meta.outputs.push(cli_core_digest);
+
+    // Step F: wasm-tools component new (component)
+    let mut wasm_tools_args = cfg.toolchain.wasm_tools.args.clone();
+    wasm_tools_args.extend([
+        "component".to_string(),
+        "new".to_string(),
+        cli_core_wasm.display().to_string(),
+        "-o".to_string(),
+        cli_component_wasm.display().to_string(),
+    ]);
+    let comp_out = match run_tool_cmd_capture(
+        &cfg.toolchain.wasm_tools.cmd,
+        &wasm_tools_args,
+        &cfg.toolchain.wasm_tools.env,
+    ) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(cmdutil::diag_cmd_spawn_failed(
+                "X07WASM_WASM_TOOLS_SPAWN_FAILED",
+                Stage::Link,
+                "wasm-tools component new",
+                &err,
+            ));
+            return Ok(None);
+        }
+    };
+    if !comp_out.status.success() {
+        diagnostics.push(cmdutil::diag_cmd_failed(
+            "X07WASM_WASM_TOOLS_FAILED",
+            Stage::Link,
+            "wasm-tools component new",
+            comp_out.code,
+            &comp_out.stderr,
+        ));
+        return Ok(None);
+    }
+
+    let cli_component_digest = util::file_digest(&cli_component_wasm)?;
+    meta.outputs.push(cli_component_digest.clone());
+
+    // Step G: write component artifact manifest
+    let x07_semver = toolchain::x07_semver().unwrap_or_else(|_| "0.0.0".to_string());
+    let clang_ver = toolchain::tool_first_line(&cc, &["--version"]).ok();
+    let wasm_ld_ver = toolchain::tool_first_line(&linker, &["--version"]).ok();
+    let wit_bindgen_ver =
+        toolchain::tool_first_line(&cfg.toolchain.wit_bindgen.cmd, &["--version"]).ok();
+    let wasm_tools_ver =
+        toolchain::tool_first_line(&cfg.toolchain.wasm_tools.cmd, &["--version"]).ok();
+
+    meta.tool.clang = clang_ver.clone();
+    meta.tool.wasm_ld = wasm_ld_ver.clone();
+
+    let mut toolchain_obj = serde_json::Map::new();
+    toolchain_obj.insert("x07_wasm".to_string(), json!(env!("CARGO_PKG_VERSION")));
+    toolchain_obj.insert("x07".to_string(), json!(x07_semver));
+    if let Some(v) = clang_ver {
+        toolchain_obj.insert("clang".to_string(), json!(v));
+    }
+    if let Some(v) = wasm_ld_ver {
+        toolchain_obj.insert("wasm_ld".to_string(), json!(v));
+    }
+    if let Some(v) = wit_bindgen_ver {
+        toolchain_obj.insert("wit_bindgen".to_string(), json!(v));
+    }
+    if let Some(v) = wasm_tools_ver {
+        toolchain_obj.insert("wasm_tools".to_string(), json!(v));
+    }
+
+    let artifact_doc = json!({
+      "schema_version": "x07.wasm.component.artifact@0.1.0",
+      "artifact_id": format!("cli-{}", &cli_component_digest.sha256[..16]),
+      "kind": "cli",
+      "component": cli_component_digest,
+      "wit": { "package": cfg.native_targets.cli.package.clone(), "world": cfg.native_targets.cli.world.clone() },
+      "profiles": {
+        "component": component_profile_ref,
+        "wasm": wasm_profile_ref,
+      },
+      "toolchain": Value::Object(toolchain_obj)
+    });
+
+    let artifact_diags = store.validate(
+        "https://x07.io/spec/x07-wasm.component.artifact.schema.json",
+        &artifact_doc,
+    )?;
+    if artifact_diags.iter().any(|d| d.severity == Severity::Error) {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_COMPONENT_ARTIFACT_SCHEMA_INVALID",
+            Severity::Error,
+            Stage::Run,
+            format!(
+                "internal error: component artifact failed schema validation: {artifact_diags:?}"
+            ),
+        ));
+        return Ok(None);
+    }
+
+    let bytes = report::canon::canonical_json_bytes(&artifact_doc)?;
+    std::fs::write(&cli_component_manifest, &bytes)
+        .with_context(|| format!("write: {}", cli_component_manifest.display()))?;
+    meta.outputs
+        .push(util::file_digest(&cli_component_manifest)?);
+
+    Ok(Some(artifact_doc))
 }
 
 fn build_http_adapter_component(
@@ -1263,6 +2114,8 @@ fn component_build_report_doc(
       "result": {
         "emit": match emit {
           ComponentBuildEmit::Solve => "solve",
+          ComponentBuildEmit::Http => "http",
+          ComponentBuildEmit::Cli => "cli",
           ComponentBuildEmit::HttpAdapter => "http-adapter",
           ComponentBuildEmit::CliAdapter => "cli-adapter",
           ComponentBuildEmit::All => "all",

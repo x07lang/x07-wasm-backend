@@ -7,6 +7,7 @@ mod cli;
 mod cmdutil;
 mod component;
 mod diag;
+mod guest_diag;
 mod http_component_host;
 mod report;
 mod schema;

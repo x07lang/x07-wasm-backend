@@ -13,6 +13,7 @@ use wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiCtxView, WasiView};
 use crate::blob;
 use crate::cli::{ComponentRunArgs, MachineArgs, Scope};
 use crate::diag::{Diagnostic, Severity, Stage};
+use crate::guest_diag;
 use crate::report;
 use crate::schema::SchemaStore;
 use crate::util;
@@ -262,6 +263,25 @@ pub fn cmd_component_run(
                 "component trapped during run".to_string(),
             ));
         }
+    }
+
+    match guest_diag::extract_guest_diag_from_stderr(&stderr_bytes) {
+        Ok(Some(gd)) => {
+            let mut d = Diagnostic::new(
+                gd.code,
+                Severity::Error,
+                Stage::Run,
+                "guest diagnostic via stderr sentinel".to_string(),
+            );
+            if let Some(Value::Object(map)) = gd.data_obj {
+                for (k, v) in map {
+                    d.data.insert(k, v);
+                }
+            }
+            diagnostics.push(d);
+        }
+        Ok(None) => {}
+        Err(err) => diagnostics.push(err.into_diagnostic()),
     }
 
     let ok = diagnostics.iter().all(|d| d.severity != Severity::Error);

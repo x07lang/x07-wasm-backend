@@ -27,6 +27,12 @@ wit_bindgen::generate!({
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
+const X07_HTTP_ADAPTER_MAX_REQUEST_BODY_BYTES: usize = 1024 * 1024;
+
+const X07_HTTP_ADAPTER_DIAG_HEADER_CODE: &str = "x-x07-diag-code";
+const X07_HTTP_ADAPTER_DIAG_CODE_REQ_BODY_TOO_LARGE: &str =
+    "X07WASM_BUDGET_EXCEEDED_HTTP_REQUEST_BODY";
+
 #[no_mangle]
 pub unsafe extern "C" fn cabi_realloc(
     old_ptr: *mut u8,
@@ -89,7 +95,16 @@ impl exports::wasi::http::incoming_handler::Guest for HttpAdapter {
         headers.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
 
         let body_bytes = match request.consume() {
-            Ok(body) => read_incoming_body(body),
+            Ok(body) => match read_incoming_body_limited(
+                body,
+                X07_HTTP_ADAPTER_MAX_REQUEST_BODY_BYTES,
+            ) {
+                Ok(v) => v,
+                Err(BodyTooLarge) => {
+                    respond_request_body_too_large(response_out);
+                    return;
+                }
+            },
             Err(()) => Vec::new(),
         };
 
@@ -175,12 +190,42 @@ fn http_path_and_query(path_with_query: Option<String>) -> (String, String) {
     }
 }
 
-fn read_incoming_body(body: wasi::http::types::IncomingBody) -> Vec<u8> {
+fn respond_request_body_too_large(response_out: wasi::http::types::ResponseOutparam) {
+    let mut headers = Vec::new();
+    headers.push((
+        String::from(X07_HTTP_ADAPTER_DIAG_HEADER_CODE),
+        X07_HTTP_ADAPTER_DIAG_CODE_REQ_BODY_TOO_LARGE.as_bytes().to_vec(),
+    ));
+    let fields =
+        wasi::http::types::Fields::from_list(&headers).expect("response headers invalid for wasi:http");
+
+    let outgoing = wasi::http::types::OutgoingResponse::new(fields);
+    outgoing
+        .set_status_code(413)
+        .expect("invalid status code");
+
+    let out_body = outgoing.body().expect("outgoing-response.body failed");
+    let out_stream = out_body.write().expect("outgoing-body.write failed");
+    out_stream
+        .blocking_write_and_flush(b"request too large")
+        .expect("write response body");
+    drop(out_stream);
+    wasi::http::types::OutgoingBody::finish(out_body, None).expect("finish response body");
+
+    wasi::http::types::ResponseOutparam::set(response_out, Ok(outgoing));
+}
+
+struct BodyTooLarge;
+
+fn read_incoming_body_limited(
+    body: wasi::http::types::IncomingBody,
+    max_bytes: usize,
+) -> Result<Vec<u8>, BodyTooLarge> {
     let stream = match body.stream() {
         Ok(s) => s,
         Err(()) => {
             let _ = wasi::http::types::IncomingBody::finish(body);
-            return Vec::new();
+            return Ok(Vec::new());
         }
     };
 
@@ -190,6 +235,11 @@ fn read_incoming_body(body: wasi::http::types::IncomingBody) -> Vec<u8> {
             Ok(chunk) => {
                 if chunk.is_empty() {
                     break;
+                }
+                if out.len().saturating_add(chunk.len()) > max_bytes {
+                    drop(stream);
+                    let _trailers = wasi::http::types::IncomingBody::finish(body);
+                    return Err(BodyTooLarge);
                 }
                 out.extend_from_slice(&chunk);
             }
@@ -202,7 +252,7 @@ fn read_incoming_body(body: wasi::http::types::IncomingBody) -> Vec<u8> {
 
     drop(stream);
     let _trailers = wasi::http::types::IncomingBody::finish(body);
-    out
+    Ok(out)
 }
 
 fn request_envelope_bytes(

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-wasm.component.build.report.schema.json",
   "title": "x07.wasm.component.build.report@0.1.0",
-  "description": "Machine-readable report emitted by `x07-wasm component build` (Phase 1).",
+  "description": "Machine-readable report emitted by `x07-wasm component build` (Phase 1 + Phase 4B).",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -221,6 +221,8 @@
           "type": "string",
           "enum": [
             "solve",
+            "http",
+            "cli",
             "http-adapter",
             "cli-adapter",
             "all"
@@ -255,4 +257,3 @@
     }
   }
 }
-

@@ -34,10 +34,29 @@ x07-wasm component profile validate --json
 
 ## Component pipeline
 
-Build a solve component (and optionally adapters):
+Build solve and native targets (Phase 4 default):
 
 ```sh
 x07-wasm component build --project examples/http_echo/x07.json --emit all --json
+```
+
+Build only the runnable native HTTP target:
+
+```sh
+x07-wasm component build --project examples/http_echo/x07.json --emit http --json
+```
+
+Build only the runnable native CLI target:
+
+```sh
+x07-wasm component build --project examples/solve_pure_echo/x07.json --emit cli --json
+```
+
+Legacy compose path (Phase 1 adapters + `wac plug`):
+
+```sh
+x07-wasm component build --project examples/http_echo/x07.json --emit solve --json
+x07-wasm component build --project examples/solve_pure_echo/x07.json --emit http-adapter --json
 ```
 
 Compose a runnable target (via `wac plug`):
@@ -66,6 +85,12 @@ Run a CLI component:
 x07-wasm component run --component dist/app.cli.component.wasm --stdin @examples/solve_pure_echo/tests/fixtures/in_hello.bin --stdout-out dist/stdout.bin --json
 ```
 
+## Phase 4
+
+Phase 4 documents native backend targets, budgets, and diagnostic channels in:
+
+- `docs/phase4.md`
+
 ## Working with x07 programs (x07AST)
 
 The Phase 1 examples are x07AST JSON (`*.x07.json`). For safe editing:
@@ -73,4 +98,3 @@ The Phase 1 examples are x07AST JSON (`*.x07.json`). For safe editing:
 - `x07 fmt --check|--write <path>`
 - `x07 lint --input <path>`
 - `x07 fix --input <path> --write`
-

@@ -42,7 +42,7 @@ Outputs (minimum):
 
 - `dist/app/app.bundle.json`
 - `dist/app/frontend/*` (host assets + `app.wasm` + `app.manifest.json`)
-- `dist/app/backend/*` (composed `wasi:http/proxy` component)
+- `dist/app/backend/*` (runnable `wasi:http/proxy` backend component)
 
 ## Serve
 
@@ -83,4 +83,3 @@ Convert an app test incident bundle into a deterministic regression fixture set:
 ```sh
 x07-wasm app regress from-incident .x07-wasm/incidents/app/<YYYY-MM-DD>/<id> --out-dir tests/regress --name incident --json
 ```
-

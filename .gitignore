@@ -5,6 +5,7 @@
 /.x07-wasm/
 /.wasi-sdk/
 /.wasmtime/
+/tmp_wit_bindgen/
 **/target/
 **/build/
 **/dist/

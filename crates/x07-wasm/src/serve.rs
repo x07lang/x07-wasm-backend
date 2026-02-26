@@ -23,6 +23,7 @@ use wasmtime_wasi_http::{WasiHttpCtx, WasiHttpView};
 use crate::blob;
 use crate::cli::{MachineArgs, Scope, ServeArgs, ServeMode};
 use crate::diag::{Diagnostic, Severity, Stage};
+use crate::guest_diag;
 use crate::report;
 use crate::schema::SchemaStore;
 use crate::util;
@@ -453,8 +454,83 @@ async fn serve_canary(
         match handle_one_request(engine, proxy, req, budgets).await {
             Ok(buf) => {
                 let wall_ms = started.elapsed().as_millis() as u64;
+                let (req_env_bytes, req_env_doc, _req_sha) =
+                    request_envelope_bytes(&method, &uri, &headers, &body_loaded.bytes);
+
+                let mut response_ok = true;
+                match guest_diag::extract_guest_diag_from_http_headers(&buf.headers) {
+                    Ok(Some(gd)) => {
+                        response_ok = false;
+                        let mut d = Diagnostic::new(
+                            gd.code,
+                            Severity::Error,
+                            Stage::Run,
+                            "guest diagnostic via response header".to_string(),
+                        );
+                        if let Some(Value::Object(map)) = gd.data_obj {
+                            for (k, v) in map {
+                                d.data.insert(k, v);
+                            }
+                        }
+                        diagnostics.push(d.clone());
+
+                        match write_http_incident(
+                            &args.incidents_dir,
+                            component,
+                            &req_env_bytes,
+                            &req_env_doc,
+                            &body_loaded.bytes,
+                            Some(buf.status),
+                            Some(&buf),
+                            diagnostics,
+                            format!("guest diagnostic: {}", d.code),
+                            budgets,
+                        ) {
+                            Ok(dir) => {
+                                meta.nondeterminism.uses_os_time = true;
+                                incident_dirs.push(dir);
+                            }
+                            Err(err) => diagnostics.push(Diagnostic::new(
+                                "X07WASM_INCIDENT_BUNDLE_WRITE_FAILED",
+                                Severity::Warning,
+                                Stage::Run,
+                                format!("{err:#}"),
+                            )),
+                        }
+                    }
+                    Ok(None) => {}
+                    Err(err) => {
+                        response_ok = false;
+                        let d = err.into_diagnostic();
+                        diagnostics.push(d.clone());
+
+                        match write_http_incident(
+                            &args.incidents_dir,
+                            component,
+                            &req_env_bytes,
+                            &req_env_doc,
+                            &body_loaded.bytes,
+                            Some(buf.status),
+                            Some(&buf),
+                            diagnostics,
+                            d.message.clone(),
+                            budgets,
+                        ) {
+                            Ok(dir) => {
+                                meta.nondeterminism.uses_os_time = true;
+                                incident_dirs.push(dir);
+                            }
+                            Err(err) => diagnostics.push(Diagnostic::new(
+                                "X07WASM_INCIDENT_BUNDLE_WRITE_FAILED",
+                                Severity::Warning,
+                                Stage::Run,
+                                format!("{err:#}"),
+                            )),
+                        }
+                    }
+                }
                 responses.push(ServeResponseSummary {
-                    ok: true,
+                    ok: response_ok,
                     status: buf.status,
                     body: blob_ref_for_bytes(&buf.body),
                     wall_ms,
@@ -536,6 +612,8 @@ async fn serve_listen(
         std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
     let incident_dirs_acc: std::sync::Arc<std::sync::Mutex<Vec<PathBuf>>> =
         std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+    let diagnostics_acc: std::sync::Arc<std::sync::Mutex<Vec<Diagnostic>>> =
+        std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
 
     let addr: SocketAddr = match args.addr.parse() {
         Ok(v) => v,
@@ -605,6 +683,7 @@ async fn serve_listen(
         let incidents_dir = args.incidents_dir.clone();
         let responses_acc = responses_acc.clone();
         let incident_dirs_acc = incident_dirs_acc.clone();
+        let diagnostics_acc = diagnostics_acc.clone();
 
         let svc = hyper::service::service_fn(move |req: Request<Incoming>| {
             let proxy = proxy.clone();
@@ -613,6 +692,7 @@ async fn serve_listen(
             let incidents_dir = incidents_dir.clone();
             let responses_acc = responses_acc.clone();
             let incident_dirs_acc = incident_dirs_acc.clone();
+            let diagnostics_acc = diagnostics_acc.clone();
             async move {
                 let (parts, body) = req.into_parts();
                 let body_bytes =
@@ -643,8 +723,82 @@ async fn serve_listen(
                 match handle_one_request(engine, &proxy, req2, &budgets).await {
                     Ok(buf) => {
                         let wall_ms = started.elapsed().as_millis() as u64;
+                        let mut response_ok = true;
+                        match guest_diag::extract_guest_diag_from_http_headers(&buf.headers) {
+                            Ok(Some(gd)) => {
+                                response_ok = false;
+                                let mut d = Diagnostic::new(
+                                    gd.code,
+                                    Severity::Error,
+                                    Stage::Run,
+                                    "guest diagnostic via response header".to_string(),
+                                );
+                                if let Some(Value::Object(map)) = gd.data_obj {
+                                    for (k, v) in map {
+                                        d.data.insert(k, v);
+                                    }
+                                }
+                                diagnostics_acc.lock().unwrap().push(d.clone());
+
+                                let (req_env_bytes, req_env_doc, _req_sha) =
+                                    request_envelope_bytes(&method, &uri, &headers, &body_bytes);
+                                match write_http_incident(
+                                    &incidents_dir,
+                                    &component,
+                                    &req_env_bytes,
+                                    &req_env_doc,
+                                    &body_bytes,
+                                    Some(buf.status),
+                                    Some(&buf),
+                                    &mut Vec::new(),
+                                    format!("guest diagnostic: {}", d.code),
+                                    &budgets,
+                                ) {
+                                    Ok(dir) => incident_dirs_acc.lock().unwrap().push(dir),
+                                    Err(err) => {
+                                        diagnostics_acc.lock().unwrap().push(Diagnostic::new(
+                                            "X07WASM_INCIDENT_BUNDLE_WRITE_FAILED",
+                                            Severity::Warning,
+                                            Stage::Run,
+                                            format!("{err:#}"),
+                                        ))
+                                    }
+                                }
+                            }
+                            Ok(None) => {}
+                            Err(err) => {
+                                response_ok = false;
+                                let d = err.into_diagnostic();
+                                diagnostics_acc.lock().unwrap().push(d.clone());
+
+                                let (req_env_bytes, req_env_doc, _req_sha) =
+                                    request_envelope_bytes(&method, &uri, &headers, &body_bytes);
+                                match write_http_incident(
+                                    &incidents_dir,
+                                    &component,
+                                    &req_env_bytes,
+                                    &req_env_doc,
+                                    &body_bytes,
+                                    Some(buf.status),
+                                    Some(&buf),
+                                    &mut Vec::new(),
+                                    d.message.clone(),
+                                    &budgets,
+                                ) {
+                                    Ok(dir) => incident_dirs_acc.lock().unwrap().push(dir),
+                                    Err(err) => {
+                                        diagnostics_acc.lock().unwrap().push(Diagnostic::new(
+                                            "X07WASM_INCIDENT_BUNDLE_WRITE_FAILED",
+                                            Severity::Warning,
+                                            Stage::Run,
+                                            format!("{err:#}"),
+                                        ))
+                                    }
+                                }
+                            }
+                        }
                         responses_acc.lock().unwrap().push(ServeResponseSummary {
-                            ok: true,
+                            ok: response_ok,
                             status: buf.status,
                             body: blob_ref_for_bytes(&buf.body),
                             wall_ms,
@@ -665,6 +819,12 @@ async fn serve_listen(
                     }
                     Err(err) => {
                         let wall_ms = started.elapsed().as_millis() as u64;
+                        diagnostics_acc.lock().unwrap().push(Diagnostic::new(
+                            "X07WASM_SERVE_REQUEST_FAILED",
+                            Severity::Error,
+                            Stage::Run,
+                            format!("{err:#}"),
+                        ));
                         let (_req_env_bytes, req_env_doc, _req_sha) =
                             request_envelope_bytes(&method, &uri, &headers, &body_bytes);
                         let incident = write_http_incident(
@@ -715,6 +875,8 @@ async fn serve_listen(
 
     let responses = responses_acc.lock().unwrap().clone();
     let incident_dirs = incident_dirs_acc.lock().unwrap().clone();
+    let request_diags = diagnostics_acc.lock().unwrap().clone();
+    diagnostics.extend(request_diags);
 
     if !incident_dirs.is_empty() {
         meta.nondeterminism.uses_os_time = true;

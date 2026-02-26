@@ -5,9 +5,8 @@ use anyhow::{Context, Result};
 use serde_json::json;
 
 use crate::cli::{
-    AppBuildArgs, AppBuildEmit, ComponentBuildArgs, ComponentBuildEmit,
-    ComponentComposeAdapterKind, ComponentComposeArgs, MachineArgs, Scope, WebUiBuildArgs,
-    WebUiBuildFormat,
+    AppBuildArgs, AppBuildEmit, ComponentBuildArgs, ComponentBuildEmit, MachineArgs, Scope,
+    WebUiBuildArgs, WebUiBuildFormat,
 };
 use crate::diag::{Diagnostic, Severity, Stage};
 use crate::report;
@@ -358,7 +357,6 @@ fn build_backend(
 
     let component_out_dir = emit_dir.join("component");
     let component_build_report = emit_dir.join("component.build.report.json");
-    let component_compose_report = emit_dir.join("component.compose.report.json");
 
     let nested_machine_build = MachineArgs {
         json: Some("".to_string()),
@@ -377,7 +375,7 @@ fn build_backend(
         wasm_profile_file: None,
         wasm_index: PathBuf::from("arch/wasm/index.x07wasm.json"),
         out_dir: component_out_dir.clone(),
-        emit: ComponentBuildEmit::All,
+        emit: ComponentBuildEmit::Http,
         clean: true,
     };
 
@@ -397,41 +395,41 @@ fn build_backend(
         return Ok(());
     }
 
-    let solve_component = component_out_dir.join("solve.component.wasm");
-    let http_adapter_component = component_out_dir.join("http-adapter.component.wasm");
-
     let out_component = out_dir.join(&profile.backend.out_rel);
     let out_manifest = out_dir.join("backend").join("backend.manifest.json");
 
-    let nested_machine_compose = MachineArgs {
-        json: Some("".to_string()),
-        report_json: None,
-        report_out: Some(component_compose_report.clone()),
-        quiet_json: true,
-        json_schema: false,
-        json_schema_id: false,
-    };
-    let compose_args = ComponentComposeArgs {
-        adapter: ComponentComposeAdapterKind::Http,
-        solve: solve_component,
-        adapter_component: Some(http_adapter_component),
-        out: out_component,
-        artifact_out: Some(out_manifest),
-        targets_check: false,
-    };
+    if let Some(parent) = out_component.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    let _ = std::fs::create_dir_all(out_manifest.parent().unwrap_or(out_dir));
 
-    let code = crate::component::compose::cmd_component_compose(
-        &[],
-        Scope::ComponentCompose,
-        &nested_machine_compose,
-        compose_args,
-    )?;
-    if code != 0 {
+    let built_component = component_out_dir.join("http.component.wasm");
+    let built_manifest = component_out_dir.join("http.component.wasm.manifest.json");
+
+    if let Err(err) = std::fs::copy(&built_component, &out_component) {
         diagnostics.push(Diagnostic::new(
-            "X07WASM_APP_COMPONENT_COMPOSE_FAILED",
+            "X07WASM_APP_BACKEND_COMPONENT_COPY_FAILED",
             Severity::Error,
             Stage::Run,
-            format!("x07-wasm component compose failed (exit_code={code})"),
+            format!(
+                "failed to copy backend component {} -> {}: {err:#}",
+                built_component.display(),
+                out_component.display()
+            ),
+        ));
+        return Ok(());
+    }
+
+    if let Err(err) = std::fs::copy(&built_manifest, &out_manifest) {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_APP_BACKEND_MANIFEST_COPY_FAILED",
+            Severity::Error,
+            Stage::Run,
+            format!(
+                "failed to copy backend manifest {} -> {}: {err:#}",
+                built_manifest.display(),
+                out_manifest.display()
+            ),
         ));
     }
 
