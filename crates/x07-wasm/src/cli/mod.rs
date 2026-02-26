@@ -116,6 +116,27 @@ pub enum Command {
     #[command(name = "web-ui-regress-from-incident")]
     WebUiRegressFromIncident(WebUiRegressFromIncidentArgs),
 
+    /// App bundle tooling (Phase 3).
+    App(AppArgs),
+    /// Alias for `x07-wasm app contracts validate`.
+    #[command(name = "app-contracts-validate")]
+    AppContractsValidate(AppContractsValidateArgs),
+    /// Alias for `x07-wasm app profile validate`.
+    #[command(name = "app-profile-validate")]
+    AppProfileValidate(AppProfileValidateArgs),
+    /// Alias for `x07-wasm app build`.
+    #[command(name = "app-build")]
+    AppBuild(AppBuildArgs),
+    /// Alias for `x07-wasm app serve`.
+    #[command(name = "app-serve")]
+    AppServe(AppServeArgs),
+    /// Alias for `x07-wasm app test`.
+    #[command(name = "app-test")]
+    AppTest(AppTestArgs),
+    /// Alias for `x07-wasm app regress from-incident`.
+    #[command(name = "app-regress-from-incident")]
+    AppRegressFromIncident(AppRegressFromIncidentArgs),
+
     /// Validate arch/wasm/index.x07wasm.json and referenced profile files.
     Profile(ProfileArgs),
     /// Alias for `x07-wasm profile validate`.
@@ -237,6 +258,57 @@ impl Command {
             }
             Command::WebUiRegressFromIncident(v) => {
                 crate::web_ui::regress_from_incident::cmd_web_ui_regress_from_incident(
+                    raw_argv, scope, machine, v,
+                )
+            }
+            Command::App(args) => match args.cmd {
+                AppCommand::Contracts(c) => match c.cmd {
+                    AppContractsCommand::Validate(v) => {
+                        crate::app::contracts_validate::cmd_app_contracts_validate(
+                            raw_argv, scope, machine, v,
+                        )
+                    }
+                },
+                AppCommand::Profile(p) => match p.cmd {
+                    AppProfileCommand::Validate(v) => {
+                        crate::app::profile_validate::cmd_app_profile_validate(
+                            raw_argv, scope, machine, v,
+                        )
+                    }
+                },
+                AppCommand::Build(v) => {
+                    crate::app::build::cmd_app_build(raw_argv, scope, machine, v)
+                }
+                AppCommand::Serve(v) => {
+                    crate::app::serve::cmd_app_serve(raw_argv, scope, machine, v)
+                }
+                AppCommand::Test(v) => crate::app::test::cmd_app_test(raw_argv, scope, machine, v),
+                AppCommand::RegressFromIncident(v) => {
+                    crate::app::regress_from_incident::cmd_app_regress_from_incident(
+                        raw_argv, scope, machine, v,
+                    )
+                }
+                AppCommand::Regress(r) => match r.cmd {
+                    AppRegressCommand::FromIncident(v) => {
+                        crate::app::regress_from_incident::cmd_app_regress_from_incident(
+                            raw_argv, scope, machine, v,
+                        )
+                    }
+                },
+            },
+            Command::AppContractsValidate(v) => {
+                crate::app::contracts_validate::cmd_app_contracts_validate(
+                    raw_argv, scope, machine, v,
+                )
+            }
+            Command::AppProfileValidate(v) => {
+                crate::app::profile_validate::cmd_app_profile_validate(raw_argv, scope, machine, v)
+            }
+            Command::AppBuild(v) => crate::app::build::cmd_app_build(raw_argv, scope, machine, v),
+            Command::AppServe(v) => crate::app::serve::cmd_app_serve(raw_argv, scope, machine, v),
+            Command::AppTest(v) => crate::app::test::cmd_app_test(raw_argv, scope, machine, v),
+            Command::AppRegressFromIncident(v) => {
+                crate::app::regress_from_incident::cmd_app_regress_from_incident(
                     raw_argv, scope, machine, v,
                 )
             }
@@ -874,6 +946,240 @@ pub struct WebUiRegressFromIncidentArgs {
 
 #[derive(Debug, Clone, Args)]
 #[command(subcommand_required = true)]
+pub struct AppArgs {
+    #[command(subcommand)]
+    pub cmd: AppCommand,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum AppCommand {
+    Contracts(AppContractsArgs),
+    Profile(AppProfileArgs),
+    Build(AppBuildArgs),
+    Serve(AppServeArgs),
+    Test(AppTestArgs),
+    /// Alias for `x07-wasm app regress from-incident`.
+    #[command(name = "regress-from-incident")]
+    RegressFromIncident(AppRegressFromIncidentArgs),
+    Regress(AppRegressArgs),
+}
+
+#[derive(Debug, Clone, Args)]
+#[command(subcommand_required = true)]
+pub struct AppProfileArgs {
+    #[command(subcommand)]
+    pub cmd: AppProfileCommand,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum AppProfileCommand {
+    Validate(AppProfileValidateArgs),
+}
+
+#[derive(Debug, Clone, Args)]
+#[command(subcommand_required = true)]
+pub struct AppContractsArgs {
+    #[command(subcommand)]
+    pub cmd: AppContractsCommand,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum AppContractsCommand {
+    Validate(AppContractsValidateArgs),
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct AppContractsValidateArgs {
+    /// Validate only specific fixture files.
+    #[arg(long, value_name = "PATH")]
+    pub fixture: Vec<PathBuf>,
+
+    /// List discovered schemas and fixtures and exit (still emits a report).
+    #[arg(long)]
+    pub list: bool,
+
+    /// Treat warnings as errors.
+    #[arg(long)]
+    pub strict: bool,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct AppProfileValidateArgs {
+    /// Path to arch/app/index.x07app.json.
+    #[arg(
+        long,
+        value_name = "PATH",
+        default_value = "arch/app/index.x07app.json"
+    )]
+    pub index: PathBuf,
+
+    /// Validate only this app profile id (looked up in the app index).
+    #[arg(long, value_name = "ID", conflicts_with = "profile_file")]
+    pub profile: Option<String>,
+
+    /// Validate this app profile file directly (bypass index).
+    #[arg(long, value_name = "PATH")]
+    pub profile_file: Option<PathBuf>,
+
+    /// Path to arch/web_ui/index.x07webui.json for cross-checking web_ui_profile_id.
+    #[arg(
+        long,
+        value_name = "PATH",
+        default_value = "arch/web_ui/index.x07webui.json"
+    )]
+    pub web_ui_index: PathBuf,
+
+    /// Path to the wasm component profile registry for cross-checking component_profile_id.
+    #[arg(
+        long,
+        value_name = "PATH",
+        default_value = "arch/wasm/component/index.x07wasm.component.json"
+    )]
+    pub component_index: PathBuf,
+
+    /// Treat warnings as errors.
+    #[arg(long)]
+    pub strict: bool,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum AppBuildEmit {
+    All,
+    Frontend,
+    Backend,
+    Bundle,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct AppBuildArgs {
+    /// Path to arch/app/index.x07app.json.
+    #[arg(
+        long,
+        value_name = "PATH",
+        default_value = "arch/app/index.x07app.json"
+    )]
+    pub index: PathBuf,
+
+    /// App profile id to build (from the app index).
+    #[arg(long, value_name = "ID", default_value = "app_dev")]
+    pub profile: String,
+
+    /// Build using this app profile file directly (bypass index).
+    #[arg(long, value_name = "PATH")]
+    pub profile_file: Option<PathBuf>,
+
+    /// Output directory for the app bundle.
+    #[arg(long, value_name = "DIR", default_value = "dist/app")]
+    pub out_dir: PathBuf,
+
+    /// Emit selection.
+    #[arg(long, value_enum, default_value = "all")]
+    pub emit: AppBuildEmit,
+
+    /// Delete out-dir before writing bundle artifacts.
+    #[arg(long)]
+    pub clean: bool,
+
+    /// Treat warnings as errors.
+    #[arg(long)]
+    pub strict: bool,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum AppServeMode {
+    Listen,
+    Smoke,
+    Canary,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct AppServeArgs {
+    /// Directory containing the app bundle.
+    #[arg(long, value_name = "DIR", default_value = "dist/app")]
+    pub dir: PathBuf,
+
+    /// Bind address in host:port form. Port 0 selects an ephemeral port.
+    #[arg(long, value_name = "STR", default_value = "127.0.0.1:0")]
+    pub addr: String,
+
+    /// Serve mode.
+    #[arg(long, value_enum, default_value = "listen")]
+    pub mode: AppServeMode,
+
+    /// API route prefix override (default comes from app profile).
+    #[arg(long, value_name = "STR", default_value = "/api")]
+    pub api_prefix: String,
+
+    /// Fail if .wasm is not served as application/wasm (exact, no parameters).
+    #[arg(long)]
+    pub strict_mime: bool,
+
+    /// Treat warnings as errors.
+    #[arg(long)]
+    pub strict: bool,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct AppTestArgs {
+    /// Directory containing the app bundle.
+    #[arg(long, value_name = "DIR", default_value = "dist/app")]
+    pub dir: PathBuf,
+
+    /// Path to x07.app.trace@... JSON to replay.
+    #[arg(long, value_name = "PATH")]
+    pub trace: PathBuf,
+
+    /// Maximum number of trace steps to replay.
+    #[arg(long, value_name = "N", default_value_t = 10000)]
+    pub max_steps: u32,
+
+    /// Update golden outputs from current outputs.
+    #[arg(long)]
+    pub update_golden: bool,
+
+    /// Treat warnings as errors.
+    #[arg(long)]
+    pub strict: bool,
+}
+
+#[derive(Debug, Clone, Args)]
+#[command(subcommand_required = true)]
+pub struct AppRegressArgs {
+    #[command(subcommand)]
+    pub cmd: AppRegressCommand,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum AppRegressCommand {
+    #[command(name = "from-incident")]
+    FromIncident(AppRegressFromIncidentArgs),
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct AppRegressFromIncidentArgs {
+    /// Path to an app incident bundle directory.
+    #[arg(value_name = "INCIDENT_DIR")]
+    pub incident_dir: PathBuf,
+
+    /// Output directory for generated regression assets.
+    #[arg(long, value_name = "DIR", default_value = "tests/regress")]
+    pub out_dir: PathBuf,
+
+    /// Base name for generated case files.
+    #[arg(long, value_name = "STR", default_value = "incident")]
+    pub name: String,
+
+    /// Do not write files; validate and emit report only.
+    #[arg(long)]
+    pub dry_run: bool,
+
+    /// Treat warnings as errors.
+    #[arg(long)]
+    pub strict: bool,
+}
+
+#[derive(Debug, Clone, Args)]
+#[command(subcommand_required = true)]
 pub struct ProfileArgs {
     #[command(subcommand)]
     pub cmd: ProfileCommand,
@@ -963,6 +1269,12 @@ pub enum Scope {
     WebUiServe,
     WebUiTest,
     WebUiRegressFromIncident,
+    AppContractsValidate,
+    AppProfileValidate,
+    AppBuild,
+    AppServe,
+    AppTest,
+    AppRegressFromIncident,
     ProfileValidate,
     CliSpecrowsCheck,
 }
@@ -1001,6 +1313,21 @@ pub fn scope_for_command(cmd: Option<&Command>) -> Scope {
         Some(Command::WebUiServe(_)) => Scope::WebUiServe,
         Some(Command::WebUiTest(_)) => Scope::WebUiTest,
         Some(Command::WebUiRegressFromIncident(_)) => Scope::WebUiRegressFromIncident,
+        Some(Command::App(args)) => match args.cmd {
+            AppCommand::Contracts(_) => Scope::AppContractsValidate,
+            AppCommand::Profile(_) => Scope::AppProfileValidate,
+            AppCommand::Build(_) => Scope::AppBuild,
+            AppCommand::Serve(_) => Scope::AppServe,
+            AppCommand::Test(_) => Scope::AppTest,
+            AppCommand::RegressFromIncident(_) => Scope::AppRegressFromIncident,
+            AppCommand::Regress(_) => Scope::AppRegressFromIncident,
+        },
+        Some(Command::AppContractsValidate(_)) => Scope::AppContractsValidate,
+        Some(Command::AppProfileValidate(_)) => Scope::AppProfileValidate,
+        Some(Command::AppBuild(_)) => Scope::AppBuild,
+        Some(Command::AppServe(_)) => Scope::AppServe,
+        Some(Command::AppTest(_)) => Scope::AppTest,
+        Some(Command::AppRegressFromIncident(_)) => Scope::AppRegressFromIncident,
         Some(Command::Profile(_)) => Scope::ProfileValidate,
         Some(Command::ProfileValidate(_)) => Scope::ProfileValidate,
         Some(Command::Cli(_)) => Scope::CliSpecrowsCheck,

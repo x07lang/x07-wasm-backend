@@ -1,0 +1,11 @@
+{
+  "schema_version": "x07.arch.app.index@0.1.0",
+  "profiles": [
+    { "id": "app_release", "path": "arch/app/profiles/app_release.json" },
+    { "id": "app_dev", "path": "arch/app/profiles/app_dev.json" }
+  ],
+  "defaults": {
+    "default_profile_id": "app_dev"
+  }
+}
+

@@ -28,6 +28,19 @@ const WEB_UI_TEST_REPORT_SCHEMA_BYTES: &[u8] =
 const WEB_UI_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES: &[u8] = include_bytes!(
     "../../../../spec/schemas/x07-wasm.web_ui.regress.from.incident.report.schema.json"
 );
+const APP_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.app.profile.validate.report.schema.json");
+const APP_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.app.contracts.validate.report.schema.json");
+const APP_BUILD_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.app.build.report.schema.json");
+const APP_SERVE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.app.serve.report.schema.json");
+const APP_TEST_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.app.test.report.schema.json");
+const APP_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES: &[u8] = include_bytes!(
+    "../../../../spec/schemas/x07-wasm.app.regress.from_incident.report.schema.json"
+);
 const CLI_SPECROWS_CHECK_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.cli.specrows.check.report.schema.json");
 const DOCTOR_REPORT_SCHEMA_BYTES: &[u8] =
@@ -88,6 +101,12 @@ fn schema_bytes_for_scope(scope: Scope) -> Result<&'static [u8]> {
         Scope::WebUiServe => Ok(WEB_UI_SERVE_REPORT_SCHEMA_BYTES),
         Scope::WebUiTest => Ok(WEB_UI_TEST_REPORT_SCHEMA_BYTES),
         Scope::WebUiRegressFromIncident => Ok(WEB_UI_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES),
+        Scope::AppContractsValidate => Ok(APP_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES),
+        Scope::AppProfileValidate => Ok(APP_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES),
+        Scope::AppBuild => Ok(APP_BUILD_REPORT_SCHEMA_BYTES),
+        Scope::AppServe => Ok(APP_SERVE_REPORT_SCHEMA_BYTES),
+        Scope::AppTest => Ok(APP_TEST_REPORT_SCHEMA_BYTES),
+        Scope::AppRegressFromIncident => Ok(APP_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES),
         Scope::CliSpecrowsCheck => Ok(CLI_SPECROWS_CHECK_REPORT_SCHEMA_BYTES),
     }
 }
@@ -111,6 +130,12 @@ fn schema_version_for_scope(scope: Scope) -> &'static str {
         Scope::WebUiServe => "x07.wasm.web_ui.serve.report@0.1.0",
         Scope::WebUiTest => "x07.wasm.web_ui.test.report@0.1.0",
         Scope::WebUiRegressFromIncident => "x07.wasm.web_ui.regress.from.incident.report@0.1.0",
+        Scope::AppContractsValidate => "x07.wasm.app.contracts.validate.report@0.1.0",
+        Scope::AppProfileValidate => "x07.wasm.app.profile.validate.report@0.1.0",
+        Scope::AppBuild => "x07.wasm.app.build.report@0.1.0",
+        Scope::AppServe => "x07.wasm.app.serve.report@0.1.0",
+        Scope::AppTest => "x07.wasm.app.test.report@0.1.0",
+        Scope::AppRegressFromIncident => "x07.wasm.app.regress.from_incident.report@0.1.0",
         Scope::CliSpecrowsCheck => "x07.wasm.cli.specrows.check.report@0.1.0",
     }
 }

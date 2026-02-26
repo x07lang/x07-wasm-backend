@@ -857,31 +857,38 @@ fn request_envelope_value(
 
     let headers_json = hdrs
         .into_iter()
-        .map(|(k, v)| json!([k, v]))
+        .map(|(k, v)| json!({ "k": k, "v": v }))
         .collect::<Vec<_>>();
 
     json!({
-      "v": 1,
-      "kind": "x07.http.request",
+      "schema_version": "x07.http.request.envelope@0.1.0",
+      "id": "req0",
       "method": method.as_str(),
       "path": path,
       "query": query,
       "headers": headers_json,
-      "body_b64": base64::engine::general_purpose::STANDARD.encode(body),
+      "body": crate::stream_payload::bytes_to_stream_payload(body),
     })
 }
 
-fn response_envelope_value(status: u16, headers: &[(String, String)], body: &[u8]) -> Value {
-    let hdrs = headers
-        .iter()
-        .map(|(k, v)| json!([k, v]))
+fn response_envelope_value(
+    request_id: &str,
+    status: u16,
+    headers: &[(String, String)],
+    body: &[u8],
+) -> Value {
+    let mut hdrs = headers.to_vec();
+    hdrs.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
+    let hdrs = hdrs
+        .into_iter()
+        .map(|(k, v)| json!({ "k": k, "v": v }))
         .collect::<Vec<_>>();
     json!({
-      "v": 1,
-      "kind": "x07.http.response",
+      "schema_version": "x07.http.response.envelope@0.1.0",
+      "request_id": request_id,
       "status": status,
       "headers": hdrs,
-      "body_b64": base64::engine::general_purpose::STANDARD.encode(body),
+      "body": crate::stream_payload::bytes_to_stream_payload(body),
     })
 }
 
@@ -916,13 +923,18 @@ fn write_http_incident(
     )
     .with_context(|| format!("write: {}", dir.join("request.body.sha256").display()))?;
 
+    let request_id = request_envelope_doc
+        .get("id")
+        .and_then(Value::as_str)
+        .unwrap_or("req0");
+
     if let Some(resp) = response {
-        let env = response_envelope_value(resp.status, &resp.headers, &resp.body);
+        let env = response_envelope_value(request_id, resp.status, &resp.headers, &resp.body);
         let bytes = report::canon::canonical_json_bytes(&env)?;
         std::fs::write(dir.join("response.envelope.json"), bytes)
             .with_context(|| format!("write: {}", dir.join("response.envelope.json").display()))?;
     } else if let Some(status) = response_status {
-        let env = response_envelope_value(status, &[], &[]);
+        let env = response_envelope_value(request_id, status, &[], &[]);
         let bytes = report::canon::canonical_json_bytes(&env)?;
         let _ = std::fs::write(dir.join("response.envelope.json"), bytes);
     }

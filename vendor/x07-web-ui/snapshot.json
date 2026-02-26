@@ -14,7 +14,7 @@
     },
     "examples/web_ui_counter/x07.json": {
       "bytes_len": 218,
-      "sha256": "52919751a013c0646cb3b8e24bb1f6e2a915893adb8bc628de025d47faf46247"
+      "sha256": "7beec9c563c3978081a0af40285bfbc65996b94823a828308ac46394633f1376"
     },
     "examples/web_ui_counter/x07.lock.json": {
       "bytes_len": 64,
@@ -34,45 +34,49 @@
     },
     "examples/web_ui_form/x07.json": {
       "bytes_len": 218,
-      "sha256": "52919751a013c0646cb3b8e24bb1f6e2a915893adb8bc628de025d47faf46247"
+      "sha256": "7beec9c563c3978081a0af40285bfbc65996b94823a828308ac46394633f1376"
     },
     "examples/web_ui_form/x07.lock.json": {
       "bytes_len": 63,
       "sha256": "3381e3077b949a91303e2553042cb35ed7bd76fcbc613b9ae039f1bc93b4da24"
     },
     "host/app-host.mjs": {
-      "bytes_len": 16700,
-      "sha256": "5eaf4e8257a32adec9305f2371b9b48891ad188ff757b09f0077e10454d8965b"
+      "bytes_len": 23799,
+      "sha256": "0580bfc6371070d5e7b3d16b28f35358be85a3b83eea1b527699160e5e0549f3"
     },
     "host/index.html": {
-      "bytes_len": 968,
-      "sha256": "0d965a0e565fbcb226fd252f27999b5d31d6169a560ecac93d347855b07c0b18"
+      "bytes_len": 1632,
+      "sha256": "223a09ad5abc0916d38c34d477b363e2789f248e0c34c889ed7c3ee3e40b1fe3"
     },
-    "packages/std-web-ui/0.1.1/modules/std/web_ui/patch.x07.json": {
+    "packages/std-web-ui/0.1.2/modules/std/web_ui/effects/http.x07.json": {
+      "bytes_len": 3174,
+      "sha256": "1cad483ce9238d66f5f812d727aa8a4739803361b756f32b9521f4adeb38bb51"
+    },
+    "packages/std-web-ui/0.1.2/modules/std/web_ui/patch.x07.json": {
       "bytes_len": 2989,
       "sha256": "95de46bed3c008dbbfa21486459c8d116ed980bb60b0cbb1529c697deaa30af9"
     },
-    "packages/std-web-ui/0.1.1/modules/std/web_ui/runtime.x07.json": {
+    "packages/std-web-ui/0.1.2/modules/std/web_ui/runtime.x07.json": {
       "bytes_len": 2725,
       "sha256": "102355b8ef2505966ee15d1ff0357ed6a2b8a01f964d5c82a87aa4fee2f268bd"
     },
-    "packages/std-web-ui/0.1.1/modules/std/web_ui/schema.x07.json": {
+    "packages/std-web-ui/0.1.2/modules/std/web_ui/schema.x07.json": {
       "bytes_len": 3475,
       "sha256": "a0fcae80b2cac1dcda3f1a331dade381dc102b0455d3e72ccf79d81e679da6c8"
     },
-    "packages/std-web-ui/0.1.1/modules/std/web_ui/test.x07.json": {
+    "packages/std-web-ui/0.1.2/modules/std/web_ui/test.x07.json": {
       "bytes_len": 980,
       "sha256": "3e7b0ab69a700c741da8bd5d6aae2df86507537317993d0e0da6f77fd0e71713"
     },
-    "packages/std-web-ui/0.1.1/modules/std/web_ui/tests.x07.json": {
-      "bytes_len": 6367,
-      "sha256": "9b80827f95e064cfe81808d8afb8c9db4d8a2eae56d667b0804fc94ce58fa248"
+    "packages/std-web-ui/0.1.2/modules/std/web_ui/tests.x07.json": {
+      "bytes_len": 9209,
+      "sha256": "4de8337542e01bd9ec6883f9b22f4a12a411951cdeceb50dba36469a19db9dc0"
     },
-    "packages/std-web-ui/0.1.1/modules/std/web_ui/trace.x07.json": {
+    "packages/std-web-ui/0.1.2/modules/std/web_ui/trace.x07.json": {
       "bytes_len": 1235,
       "sha256": "41b192f0ec0116a48da7fc1d4f587e13539f15f73b274a6da9b938adc5d9b483"
     },
-    "packages/std-web-ui/0.1.1/modules/std/web_ui/vdom.x07.json": {
+    "packages/std-web-ui/0.1.2/modules/std/web_ui/vdom.x07.json": {
       "bytes_len": 8701,
       "sha256": "a4a374b96aa02ed0f8c78cc96f1d6b187de38a084f094cec2257e5a078bcd55f"
     },

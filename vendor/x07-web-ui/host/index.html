@@ -28,17 +28,35 @@
       import { mountWebUiApp } from "./app-host.mjs";
 
       const root = document.getElementById("app");
-      let componentEsmUrl = null;
+
+      let manifest = null;
       try {
-        await import("./transpiled/app.mjs");
-        componentEsmUrl = "./transpiled/app.mjs";
+        const resp = await fetch("./app.manifest.json", { cache: "no-store" });
+        if (resp.ok) manifest = await resp.json();
       } catch (_) {}
 
-      mountWebUiApp({
-        wasmUrl: "./app.wasm",
+      const wasmUrl = manifest?.wasmUrl ?? manifest?.wasm_url ?? "./app.wasm";
+      const apiPrefix = manifest?.apiPrefix ?? manifest?.api_prefix ?? null;
+      const appMeta = manifest?.app ?? null;
+
+      let componentEsmUrl = null;
+      if (manifest?.componentEsmUrl || manifest?.component_esm_url) {
+        componentEsmUrl = manifest.componentEsmUrl ?? manifest.component_esm_url ?? null;
+      } else {
+        try {
+          await import("./transpiled/app.mjs");
+          componentEsmUrl = "./transpiled/app.mjs";
+        } catch (_) {}
+      }
+
+      const mounted = await mountWebUiApp({
+        wasmUrl,
         componentEsmUrl,
         root,
+        apiPrefix,
+        appMeta,
       });
+      globalThis.__x07 = mounted;
     </script>
   </body>
 </html>

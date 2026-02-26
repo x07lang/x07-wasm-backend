@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-app.profile.schema.json",
+  "title": "x07.app.profile@0.1.0",
+  "description": "Full-stack app profile tying together a web-ui frontend and a wasi:http/proxy backend component.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "v",
+    "frontend",
+    "backend",
+    "routing",
+    "budgets",
+    "devserver"
+  ],
+  "properties": {
+    "schema_version": { "const": "x07.app.profile@0.1.0" },
+    "id": { "$ref": "#/$defs/id" },
+    "v": { "type": "integer", "minimum": 1 },
+
+    "frontend": { "$ref": "#/$defs/frontend" },
+    "backend": { "$ref": "#/$defs/backend" },
+    "routing": { "$ref": "#/$defs/routing" },
+    "budgets": { "$ref": "#/$defs/budgets" },
+    "devserver": { "$ref": "#/$defs/devserver" },
+
+    "notes": { "type": "string", "maxLength": 16384 }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "rel_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^(?![\\\\/])(?![A-Za-z]:)(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)).+"
+    },
+    "u64": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "api_prefix": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^/[^\\s]*$"
+    },
+
+    "frontend": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format",
+        "project",
+        "web_ui_profile_id",
+        "out_dir_rel"
+      ],
+      "properties": {
+        "format": {
+          "type": "string",
+          "enum": ["core_wasm_v1", "component_jco_v1"],
+          "description": "Frontend delivery format. Phase 3 defaults to core_wasm_v1; component_jco_v1 is Phase 2B+ compatible."
+        },
+        "project": {
+          "$ref": "#/$defs/rel_path",
+          "description": "Path to frontend x07.json project."
+        },
+        "web_ui_profile_id": {
+          "$ref": "#/$defs/id",
+          "description": "References an id in arch/web_ui/index.x07webui.json."
+        },
+        "out_dir_rel": {
+          "$ref": "#/$defs/rel_path",
+          "description": "Frontend output directory relative to bundle root."
+        }
+      }
+    },
+
+    "backend": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "adapter",
+        "project",
+        "component_profile_id",
+        "out_rel"
+      ],
+      "properties": {
+        "adapter": {
+          "type": "string",
+          "enum": ["wasi_http_proxy_v1"]
+        },
+        "project": {
+          "$ref": "#/$defs/rel_path",
+          "description": "Path to backend x07.json project."
+        },
+        "component_profile_id": {
+          "$ref": "#/$defs/id",
+          "description": "References a backend component profile id (from the wasm/component arch registry used by the toolchain)."
+        },
+        "out_rel": {
+          "$ref": "#/$defs/rel_path",
+          "description": "Backend component output path relative to bundle root."
+        }
+      }
+    },
+
+    "routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["api_prefix"],
+      "properties": {
+        "api_prefix": { "$ref": "#/$defs/api_prefix" }
+      }
+    },
+
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_dispatch_bytes",
+        "max_frame_bytes",
+        "max_http_body_bytes",
+        "max_concurrency",
+        "max_request_wall_ms"
+      ],
+      "properties": {
+        "max_dispatch_bytes": { "$ref": "#/$defs/u64" },
+        "max_frame_bytes": { "$ref": "#/$defs/u64" },
+        "max_http_body_bytes": { "$ref": "#/$defs/u64" },
+        "max_concurrency": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1048576
+        },
+        "max_request_wall_ms": { "$ref": "#/$defs/u64" }
+      }
+    },
+
+    "devserver": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "addr",
+        "strict_wasm_mime"
+      ],
+      "properties": {
+        "addr": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[^\\s]+$",
+          "description": "Bind address in host:port form. Port 0 means ephemeral."
+        },
+        "strict_wasm_mime": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

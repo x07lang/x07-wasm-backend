@@ -1,0 +1,39 @@
+{
+  "schema_version": "x07.app.bundle@0.1.0",
+  "profile_id": "app_dev",
+  "frontend": {
+    "format": "core_wasm_v1",
+    "dir_rel": "frontend",
+    "artifacts": [
+      {
+        "path": "frontend/index.html",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes_len": 0
+      },
+      {
+        "path": "frontend/app-host.mjs",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes_len": 0
+      },
+      {
+        "path": "frontend/app.manifest.json",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes_len": 0
+      },
+      {
+        "path": "frontend/app.wasm",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes_len": 0
+      }
+    ]
+  },
+  "backend": {
+    "adapter": "wasi_http_proxy_v1",
+    "artifact": {
+      "path": "backend/app.http.component.wasm",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes_len": 0
+    }
+  }
+}
+

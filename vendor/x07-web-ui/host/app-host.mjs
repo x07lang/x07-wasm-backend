@@ -1,5 +1,6 @@
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder("utf-8", { fatal: false });
+const textDecoderStrict = new TextDecoder("utf-8", { fatal: true });
 
 function alignUp(x, align) {
   if (align <= 1) return x;
@@ -343,12 +344,100 @@ function downloadJson(filename, doc) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function bytesToBase64(bytes) {
+  const chunkSize = 0x8000;
+  let s = "";
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    s += String.fromCharCode(...chunk);
+  }
+  return btoa(s);
+}
+
+function base64ToBytes(b64) {
+  const s = atob(String(b64 ?? ""));
+  const out = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i) & 0xff;
+  return out;
+}
+
+function joinUrlPath(prefix, path) {
+  const pfx = String(prefix ?? "");
+  const p = String(path ?? "");
+  if (!pfx || pfx === "/") return p;
+  if (!p) return pfx;
+  if (p.startsWith(pfx + "/") || p === pfx) return p;
+  if (pfx.endsWith("/") && p.startsWith("/")) return pfx + p.slice(1);
+  if (!pfx.endsWith("/") && !p.startsWith("/")) return `${pfx}/${p}`;
+  return pfx + p;
+}
+
+function sortedHeaderPairsFromHeaders(headers) {
+  const out = [];
+  if (Array.isArray(headers)) {
+    for (const h of headers) {
+      if (!h || typeof h !== "object") continue;
+      const k = String(h.k ?? "");
+      if (!k) continue;
+      out.push([k, String(h.v ?? "")]);
+    }
+  } else if (headers && typeof headers.forEach === "function") {
+    headers.forEach((v, k) => out.push([String(k), String(v)]));
+  } else if (headers && typeof headers === "object") {
+    for (const [k, v] of Object.entries(headers)) out.push([String(k), String(v)]);
+  }
+  out.sort((a, b) => a[0].localeCompare(b[0]) || a[1].localeCompare(b[1]));
+  return out;
+}
+
+function streamPayloadToBytes(payload) {
+  if (!payload || typeof payload !== "object") return new Uint8Array();
+  const bytesLen = Number(payload.bytes_len ?? 0);
+  if (!Number.isFinite(bytesLen) || bytesLen < 0) throw new Error("invalid stream_payload.bytes_len");
+
+  if (typeof payload.base64 === "string") {
+    const bytes = base64ToBytes(payload.base64);
+    if (bytes.length !== bytesLen) throw new Error("stream_payload.bytes_len mismatch (base64)");
+    return bytes;
+  }
+  if (typeof payload.text === "string") {
+    const bytes = textEncoder.encode(payload.text);
+    if (bytes.length !== bytesLen) throw new Error("stream_payload.bytes_len mismatch (text)");
+    return bytes;
+  }
+  if (bytesLen === 0) return new Uint8Array();
+  throw new Error("stream_payload missing base64/text for non-empty body");
+}
+
+function bytesToStreamPayload(bytes) {
+  const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || []);
+  const payload = { bytes_len: u8.length, base64: bytesToBase64(u8) };
+  try {
+    const txt = textDecoderStrict.decode(u8);
+    payload.text = txt;
+  } catch (_) {}
+  return payload;
+}
+
+function parseHttpRequestEffect(effect) {
+  if (!effect || typeof effect !== "object") return null;
+  if (effect.v !== 1 || effect.kind !== "x07.web_ui.effect.http.request") return null;
+  const req = effect.request;
+  if (!req || typeof req !== "object") throw new Error("invalid http request effect.request");
+  if (req.schema_version !== "x07.http.request.envelope@0.1.0") {
+    throw new Error(`unsupported http request schema_version: ${String(req.schema_version ?? "")}`);
+  }
+  return req;
+}
+
 export async function mountWebUiApp({
   wasmUrl,
   componentEsmUrl,
   root,
   arenaCapBytes = 1 << 20,
   maxOutputBytes = 1 << 20,
+  apiPrefix = null,
+  appMeta = null,
 } = {}) {
   if (!wasmUrl && !componentEsmUrl) throw new Error("missing wasmUrl/componentEsmUrl");
   if (!root) throw new Error("missing root");
@@ -363,6 +452,19 @@ export async function mountWebUiApp({
       startedAtUnixMs: Date.now(),
     },
   };
+
+  const appTrace =
+    apiPrefix != null
+      ? {
+          schema_version: "x07.app.trace@0.1.0",
+          meta: {
+            tool: { name: "x07-web-ui", version: "0.0.0" },
+            app: appMeta && typeof appMeta === "object" ? appMeta : null,
+            created_utc: new Date().toISOString(),
+          },
+          steps: [],
+        }
+      : null;
 
   let app = null;
   if (componentEsmUrl) {
@@ -402,21 +504,10 @@ export async function mountWebUiApp({
   let ui = null;
   let allowedEvents = new Map();
 
-  async function dispatch(event) {
-    const env = { v: 1, kind: "x07.web_ui.dispatch", state, event };
-    const inputBytes = textEncoder.encode(JSON.stringify(env));
-
-    const started = performance.now();
-    const outBytes = await app.step(inputBytes);
-    const wallMs = performance.now() - started;
-
-    const frameText = textDecoder.decode(outBytes);
-    const frame = JSON.parse(frameText);
-    trace.steps.push({ env, frame, wallMs });
-
-    const nextState = frame.state;
-    const nextUi = frame.ui;
-    const patches = frame.patches;
+  function commitFrame(frame) {
+    const nextState = frame?.state ?? null;
+    const nextUi = frame?.ui ?? null;
+    const patches = frame?.patches ?? [];
 
     if (ui != null) {
       const patched = applyJsonPatch(JSON.parse(stableJson(ui)), patches);
@@ -433,29 +524,139 @@ export async function mountWebUiApp({
     allowedEvents = new Map();
     if (ui && typeof ui === "object") buildAllowedEventsMap(ui.root, allowedEvents);
     render(root, prevUi, ui);
+  }
+
+  async function callReducer(env, initCall) {
+    const inputBytes = textEncoder.encode(JSON.stringify(env));
+    const started = performance.now();
+    const outBytes = initCall ? await app.init() : await app.step(inputBytes);
+    const wallMs = performance.now() - started;
+
+    const frameText = textDecoder.decode(outBytes);
+    const frame = JSON.parse(frameText);
+    trace.steps.push({ env, frame, wallMs });
+    return { frame, wallMs };
+  }
+
+  async function runHttpEffectsLoop(event, env0, firstFrame, uiWallMs0) {
+    let frame = firstFrame;
+    let uiMs = uiWallMs0;
+    let httpMs = 0;
+    const exchanges = [];
+
+    const maxLoops = 16;
+    for (let i = 0; i < maxLoops; i++) {
+      const effects = Array.isArray(frame?.effects) ? frame.effects : [];
+      const reqs = [];
+      for (const eff of effects) {
+        const req = parseHttpRequestEffect(eff);
+        if (req) reqs.push(req);
+      }
+      if (reqs.length === 0) break;
+      if (reqs.length !== 1) throw new Error("expected exactly one http request effect");
+
+      const req0 = reqs[0];
+      if (typeof req0.id !== "string" || !req0.id) throw new Error("http request effect missing id");
+      if (typeof req0.path !== "string" || !req0.path) throw new Error("http request effect missing path");
+      const execPath = joinUrlPath(apiPrefix, req0.path);
+      const url =
+        execPath +
+        (typeof req0.query === "string" && req0.query ? `?${String(req0.query)}` : "");
+
+      const reqEnv = {
+        schema_version: "x07.http.request.envelope@0.1.0",
+        id: String(req0.id ?? ""),
+        method: String(req0.method ?? "GET"),
+        path: execPath,
+        query: typeof req0.query === "string" ? req0.query : "",
+        headers: Array.isArray(req0.headers)
+          ? req0.headers
+              .map((h) =>
+                h && typeof h === "object" ? { k: String(h.k ?? ""), v: String(h.v ?? "") } : null,
+              )
+              .filter((x) => x && x.k)
+          : [],
+        body: req0.body && typeof req0.body === "object" ? req0.body : { bytes_len: 0 },
+      };
+
+      const reqBodyBytes = streamPayloadToBytes(reqEnv.body);
+      const reqHeaders = new Headers();
+      for (const [k, v] of sortedHeaderPairsFromHeaders(reqEnv.headers)) {
+        if (!k) continue;
+        reqHeaders.set(k, v);
+      }
+
+      const startedHttp = performance.now();
+      const resp = await fetch(url, {
+        method: reqEnv.method,
+        headers: reqHeaders,
+        body: reqBodyBytes.length ? reqBodyBytes : undefined,
+      });
+      const respBuf = new Uint8Array(await resp.arrayBuffer());
+      httpMs += performance.now() - startedHttp;
+
+      const respHeadersPairs = sortedHeaderPairsFromHeaders(resp.headers).map(([k, v]) => ({
+        k,
+        v,
+      }));
+      const respEnv = {
+        schema_version: "x07.http.response.envelope@0.1.0",
+        request_id: reqEnv.id,
+        status: resp.status,
+        headers: respHeadersPairs,
+        body: bytesToStreamPayload(respBuf),
+      };
+
+      exchanges.push({ request: reqEnv, response: respEnv });
+
+      const injectedState = state && typeof state === "object" ? { ...state } : {};
+      injectedState.__x07_http = { response: respEnv };
+      const env = { v: 1, kind: "x07.web_ui.dispatch", state: injectedState, event };
+      const out = await callReducer(env, false);
+      uiMs += out.wallMs;
+      frame = out.frame;
+      commitFrame(frame);
+    }
+
+    if (appTrace) {
+      const totalMs = uiMs + httpMs;
+      appTrace.steps.push({
+        i: appTrace.steps.length,
+        ui_dispatch: env0,
+        ui_frame: frame,
+        http: exchanges,
+        timing: {
+          ui_ms: Math.round(uiMs),
+          http_ms: Math.round(httpMs),
+          total_ms: Math.round(totalMs),
+        },
+      });
+    }
+
     return frame;
   }
 
-  try {
-    const started = performance.now();
-    const outBytes = await app.init();
-    const wallMs = performance.now() - started;
-    const frameText = textDecoder.decode(outBytes);
-    const frame = JSON.parse(frameText);
-    const env = { v: 1, kind: "x07.web_ui.dispatch", state: null, event: { type: "init" } };
-    trace.steps.push({ env, frame, wallMs });
+  async function dispatch(event) {
+    const env0 = { v: 1, kind: "x07.web_ui.dispatch", state, event };
+    const out = await callReducer(env0, false);
+    commitFrame(out.frame);
+    if (appTrace) return runHttpEffectsLoop(event, env0, out.frame, out.wallMs);
+    return out.frame;
+  }
 
-    state = frame.state;
-    ui = frame.ui;
-    allowedEvents = new Map();
-    if (ui && typeof ui === "object") buildAllowedEventsMap(ui.root, allowedEvents);
-    render(root, null, ui);
+  try {
+    const event = { type: "init" };
+    const env0 = { v: 1, kind: "x07.web_ui.dispatch", state: null, event };
+    const out = await callReducer(env0, true);
+    commitFrame(out.frame);
+    if (appTrace) await runHttpEffectsLoop(event, env0, out.frame, out.wallMs);
   } catch (err) {
     const incident = {
       v: 1,
       kind: "x07.web_ui.incident",
       error: String(err?.stack || err),
       trace,
+      appTrace,
     };
     console.error(err);
     downloadJson("incident.json", incident);
@@ -520,6 +721,8 @@ export async function mountWebUiApp({
     getState: () => state,
     getUi: () => ui,
     trace,
+    appTrace,
     downloadTrace: () => downloadJson("trace.json", trace),
+    downloadAppTrace: () => (appTrace ? downloadJson("app.trace.json", appTrace) : null),
   };
 }

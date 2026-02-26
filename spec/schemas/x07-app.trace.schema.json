@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-app.trace.schema.json",
+  "title": "x07.app.trace@0.1.0",
+  "description": "Combined deterministic E2E trace: UI dispatch -> UI frame plus any HTTP exchanges executed by the host backend proxy.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "meta",
+    "steps"
+  ],
+  "properties": {
+    "schema_version": { "const": "x07.app.trace@0.1.0" },
+    "meta": { "$ref": "#/$defs/meta" },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10000,
+      "items": { "$ref": "#/$defs/step" }
+    }
+  },
+  "$defs": {
+    "semverish": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+([+-][0-9A-Za-z.-]+)?$"
+    },
+    "tool_meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*$"
+        },
+        "version": { "$ref": "#/$defs/semverish" }
+      }
+    },
+    "app_meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "version": { "$ref": "#/$defs/semverish" }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tool"],
+      "properties": {
+        "tool": { "$ref": "#/$defs/tool_meta" },
+        "app": { "$ref": "#/$defs/app_meta" },
+        "created_utc": { "type": "string", "maxLength": 64 }
+      }
+    },
+    "timing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ui_ms", "http_ms", "total_ms"],
+      "properties": {
+        "ui_ms": { "type": "integer", "minimum": 0 },
+        "http_ms": { "type": "integer", "minimum": 0 },
+        "total_ms": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "http_exchange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["request", "response"],
+      "properties": {
+        "request": { "$ref": "https://x07.io/spec/x07-http.request.envelope.schema.json" },
+        "response": { "$ref": "https://x07.io/spec/x07-http.response.envelope.schema.json" }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["i", "ui_dispatch", "ui_frame", "http", "timing"],
+      "properties": {
+        "i": { "type": "integer", "minimum": 0 },
+        "ui_dispatch": { "$ref": "https://x07.io/spec/x07-web_ui.dispatch.schema.json" },
+        "ui_frame": { "$ref": "https://x07.io/spec/x07-web_ui.frame.schema.json" },
+        "http": {
+          "type": "array",
+          "maxItems": 256,
+          "items": { "$ref": "#/$defs/http_exchange" },
+          "default": []
+        },
+        "timing": { "$ref": "#/$defs/timing" }
+      }
+    }
+  }
+}

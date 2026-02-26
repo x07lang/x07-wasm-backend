@@ -1,0 +1,222 @@
+{
+  "schema_version": "x07.app.trace@0.1.0",
+  "meta": {
+    "tool": {
+      "name": "x07-wasm",
+      "version": "0.0.0"
+    },
+    "app": {
+      "name": "app_fullstack_hello",
+      "version": "0.0.0"
+    },
+    "created_utc": "1970-01-01T00:00:00Z"
+  },
+  "steps": [
+    {
+      "i": 0,
+      "ui_dispatch": {
+        "v": 1,
+        "kind": "x07.web_ui.dispatch",
+        "state": null,
+        "event": {
+          "type": "init"
+        }
+      },
+      "ui_frame": {
+        "v": 1,
+        "kind": "x07.web_ui.frame",
+        "state": {
+          "status": "ready"
+        },
+        "ui": {
+          "v": 1,
+          "kind": "x07.web_ui.tree",
+          "root": {
+            "k": "el",
+            "tag": "div",
+            "key": "root",
+            "props": {
+              "attrs": {},
+              "class": [],
+              "style": {}
+            },
+            "on": [],
+            "children": [
+              {
+                "k": "el",
+                "tag": "button",
+                "key": "btn_ping",
+                "props": {
+                  "attrs": {
+                    "type": "button"
+                  },
+                  "class": [],
+                  "style": {}
+                },
+                "on": [
+                  {
+                    "type": "click",
+                    "target": "btn_ping"
+                  }
+                ],
+                "children": [
+                  {
+                    "k": "text",
+                    "key": "txt_ping",
+                    "text": "Ping"
+                  }
+                ]
+              },
+              {
+                "k": "el",
+                "tag": "span",
+                "key": "lbl_result",
+                "props": {
+                  "attrs": {},
+                  "class": [],
+                  "style": {}
+                },
+                "on": [],
+                "children": [
+                  {
+                    "k": "text",
+                    "key": "txt_result",
+                    "text": "result: (none)"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "patches": [],
+        "effects": [],
+        "telemetry": {
+          "compute_ms": 0
+        }
+      },
+      "http": [],
+      "timing": {
+        "ui_ms": 0,
+        "http_ms": 0,
+        "total_ms": 0
+      }
+    },
+    {
+      "i": 1,
+      "ui_dispatch": {
+        "v": 1,
+        "kind": "x07.web_ui.dispatch",
+        "state": {
+          "status": "ready"
+        },
+        "event": {
+          "type": "click",
+          "target": "btn_ping"
+        }
+      },
+      "ui_frame": {
+        "v": 1,
+        "kind": "x07.web_ui.frame",
+        "state": {
+          "status": "ready",
+          "last": "pong"
+        },
+        "ui": {
+          "v": 1,
+          "kind": "x07.web_ui.tree",
+          "root": {
+            "k": "el",
+            "tag": "div",
+            "key": "root",
+            "props": {
+              "attrs": {},
+              "class": [],
+              "style": {}
+            },
+            "on": [],
+            "children": [
+              {
+                "k": "el",
+                "tag": "button",
+                "key": "btn_ping",
+                "props": {
+                  "attrs": {
+                    "type": "button"
+                  },
+                  "class": [],
+                  "style": {}
+                },
+                "on": [
+                  {
+                    "type": "click",
+                    "target": "btn_ping"
+                  }
+                ],
+                "children": [
+                  {
+                    "k": "text",
+                    "key": "txt_ping",
+                    "text": "Ping"
+                  }
+                ]
+              },
+              {
+                "k": "el",
+                "tag": "span",
+                "key": "lbl_result",
+                "props": {
+                  "attrs": {},
+                  "class": [],
+                  "style": {}
+                },
+                "on": [],
+                "children": [
+                  {
+                    "k": "text",
+                    "key": "txt_result",
+                    "text": "result: pong"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "patches": [],
+        "effects": [],
+        "telemetry": {
+          "compute_ms": 0
+        }
+      },
+      "http": [
+        {
+          "request": {
+            "schema_version": "x07.http.request.envelope@0.1.0",
+            "id": "req1",
+            "method": "GET",
+            "path": "/api/ping",
+            "headers": [],
+            "body": {
+              "bytes_len": 0
+            }
+          },
+          "response": {
+            "schema_version": "x07.http.response.envelope@0.1.0",
+            "request_id": "req1",
+            "status": 200,
+            "headers": [],
+            "body": {
+              "bytes_len": 4,
+              "text": "pong"
+            }
+          }
+        }
+      ],
+      "timing": {
+        "ui_ms": 0,
+        "http_ms": 0,
+        "total_ms": 0
+      }
+    }
+  ]
+}
+

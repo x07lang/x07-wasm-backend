@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-wasm.app.serve.report.schema.json",
+  "title": "x07.wasm.app.serve.report@0.1.0",
+  "description": "Machine-readable report for x07-wasm app serve.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "command", "ok", "exit_code", "diagnostics", "meta", "result"],
+  "properties": {
+    "schema_version": { "const": "x07.wasm.app.serve.report@0.1.0" },
+    "command": { "const": "x07-wasm.app.serve" },
+    "ok": { "type": "boolean" },
+    "exit_code": { "type": "integer", "minimum": 0, "maximum": 255 },
+    "diagnostics": {
+      "type": "array",
+      "items": { "$ref": "https://x07.io/spec/x07diag.schema.json#/$defs/diagnostic" },
+      "default": []
+    },
+    "meta": { "$ref": "#/$defs/meta" },
+    "result": { "$ref": "#/$defs/result" }
+  },
+  "$defs": {
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tool", "elapsed_ms", "cwd", "argv", "inputs", "outputs", "nondeterminism"],
+      "properties": {
+        "tool": { "$ref": "#/$defs/tool_meta" },
+        "elapsed_ms": { "type": "integer", "minimum": 0 },
+        "cwd": { "type": "string" },
+        "argv": { "type": "array", "items": { "type": "string" } },
+        "inputs": { "type": "array", "items": { "$ref": "#/$defs/file_digest" }, "default": [] },
+        "outputs": { "type": "array", "items": { "$ref": "#/$defs/file_digest" }, "default": [] },
+        "nondeterminism": { "$ref": "#/$defs/nondeterminism" }
+      }
+    },
+    "tool_meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "const": "x07-wasm" },
+        "version": { "type": "string" },
+        "git_sha": { "type": "string", "pattern": "^[0-9a-fA-F]{7,40}$" },
+        "rustc": { "type": "string" }
+      }
+    },
+    "file_digest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes_len"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1, "maxLength": 4096 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "bytes_len": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "nondeterminism": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["uses_os_time", "uses_network", "uses_process"],
+      "properties": {
+        "uses_os_time": { "type": "boolean" },
+        "uses_network": { "type": "boolean" },
+        "uses_process": { "type": "boolean" }
+      }
+    },
+    "stream_payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bytes_len"],
+      "properties": {
+        "bytes_len": { "type": "integer", "minimum": 0 },
+        "text": { "type": "string" },
+        "base64": { "type": "string" }
+      }
+    },
+    "stdout_json": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dir", "addr", "mode", "api_prefix", "strict_wasm_mime", "wasm_mime_ok"],
+      "properties": {
+        "dir": { "type": "string", "minLength": 1, "maxLength": 4096 },
+        "addr": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "mode": { "type": "string", "enum": ["listen", "smoke", "canary"] },
+        "api_prefix": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "strict_wasm_mime": { "type": "boolean" },
+        "wasm_mime_ok": { "type": "boolean" }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stdout", "stderr", "stdout_json"],
+      "properties": {
+        "stdout": { "$ref": "#/$defs/stream_payload" },
+        "stderr": { "$ref": "#/$defs/stream_payload" },
+        "stdout_json": { "$ref": "#/$defs/stdout_json" }
+      }
+    }
+  }
+}

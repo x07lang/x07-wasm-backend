@@ -1,0 +1,260 @@
+{
+  "schema_version": "x07.x07ast@0.3.0",
+  "kind": "module",
+  "module_id": "std.web_ui.tests",
+  "imports": [
+    "std.test",
+    "std.web_ui.schema",
+    "std.web_ui.vdom",
+    "std.web_ui.runtime",
+    "std.web_ui.patch",
+    "std.web_ui.effects.http"
+  ],
+  "decls": [
+    {
+      "kind": "export",
+      "names": [
+        "std.web_ui.tests.test_dispatch_init_v1",
+        "std.web_ui.tests.test_event_input_v1",
+        "std.web_ui.tests.test_vdom_text_v1",
+        "std.web_ui.tests.test_vdom_fragment_v1",
+        "std.web_ui.tests.test_vdom_on_input_v1",
+        "std.web_ui.tests.test_patch_roundtrip_v1",
+        "std.web_ui.tests.test_frame_builder_v1",
+        "std.web_ui.tests.test_http_effect_get_v1",
+        "std.web_ui.tests.test_http_dispatch_response_extract_v1"
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.tests.test_dispatch_init_v1",
+      "params": [],
+      "result": "result_i32",
+      "body": [
+        "begin",
+        ["let", "state", ["bytes.lit", "null"]],
+        ["let", "event", ["std.web_ui.schema.event_init_v1"]],
+        ["let", "dispatch", ["std.web_ui.schema.dispatch_v1", ["bytes.view", "state"], ["bytes.view", "event"]]],
+        ["let", "want", ["bytes.lit", "{\"v\":1,\"kind\":\"x07.web_ui.dispatch\",\"state\":null,\"event\":{\"type\":\"init\"}}"]],
+        ["try", ["std.test.assert_bytes_eq", "dispatch", "want", ["std.test.code_assert_bytes_eq"]]],
+        ["std.test.pass"]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.tests.test_event_input_v1",
+      "params": [],
+      "result": "result_i32",
+      "body": [
+        "begin",
+        ["let", "target", ["bytes.lit", "\"t\""]],
+        ["let", "value", ["bytes.lit", "\"v\""]],
+        [
+          "let",
+          "event",
+          [
+            "std.web_ui.schema.event_input_v1",
+            ["bytes.view", "target"],
+            ["bytes.view", "value"]
+          ]
+        ],
+        ["let", "want", ["bytes.lit", "{\"type\":\"input\",\"target\":\"t\",\"value\":\"v\"}"]],
+        ["try", ["std.test.assert_bytes_eq", "event", "want", ["std.test.code_assert_bytes_eq"]]],
+        ["std.test.pass"]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.tests.test_vdom_text_v1",
+      "params": [],
+      "result": "result_i32",
+      "body": [
+        "begin",
+        ["let", "key", ["bytes.lit", "\"k\""]],
+        ["let", "txt", ["bytes.lit", "\"hello\""]],
+        ["let", "node", ["std.web_ui.vdom.text_v1", ["bytes.view", "key"], ["bytes.view", "txt"]]],
+        ["let", "want", ["bytes.lit", "{\"k\":\"text\",\"key\":\"k\",\"text\":\"hello\"}"]],
+        ["try", ["std.test.assert_bytes_eq", "node", "want", ["std.test.code_assert_bytes_eq"]]],
+        ["std.test.pass"]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.tests.test_vdom_fragment_v1",
+      "params": [],
+      "result": "result_i32",
+      "body": [
+        "begin",
+        ["let", "key", ["bytes.lit", "\"k\""]],
+        ["let", "children", ["std.web_ui.vdom.children0_v1"]],
+        [
+          "let",
+          "node",
+          [
+            "std.web_ui.vdom.fragment_v1",
+            ["bytes.view", "key"],
+            ["bytes.view", "children"]
+          ]
+        ],
+        [
+          "let",
+          "want",
+          [
+            "bytes.lit",
+            "{\"k\":\"el\",\"tag\":\"x07-fragment\",\"key\":\"k\",\"props\":{\"attrs\":{},\"class\":[],\"style\":{\"display\":\"contents\"}},\"on\":[],\"children\":[]}"
+          ]
+        ],
+        ["try", ["std.test.assert_bytes_eq", "node", "want", ["std.test.code_assert_bytes_eq"]]],
+        ["std.test.pass"]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.tests.test_vdom_on_input_v1",
+      "params": [],
+      "result": "result_i32",
+      "body": [
+        "begin",
+        ["let", "key", ["bytes.lit", "\"k\""]],
+        ["let", "on", ["std.web_ui.vdom.on_input_v1", ["bytes.view", "key"]]],
+        ["let", "want", ["bytes.lit", "[{\"type\":\"input\",\"target\":\"k\"}]"]],
+        ["try", ["std.test.assert_bytes_eq", "on", "want", ["std.test.code_assert_bytes_eq"]]],
+        ["std.test.pass"]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.tests.test_patch_roundtrip_v1",
+      "params": [],
+      "result": "result_i32",
+      "body": [
+        "begin",
+        ["let", "a", ["bytes.lit", "{\"a\":1}"]],
+        ["let", "b", ["bytes.lit", "{\"a\":2}"]],
+        ["let", "empty", ["std.web_ui.patch.empty_v1"]],
+        ["let", "a2", ["std.web_ui.patch.apply_v1", ["bytes.view", "a"], ["bytes.view", "empty"]]],
+        ["let", "a_want", ["bytes.lit", "{\"a\":1}"]],
+        ["try", ["std.test.assert_bytes_eq", "a2", "a_want", ["std.test.code_assert_bytes_eq"]]],
+        ["let", "ps1", ["std.web_ui.patch.diff_v1", ["bytes.view", "a"], ["bytes.view", "b"]]],
+        ["let", "ps2", ["std.web_ui.patch.diff_v1", ["bytes.view", "a"], ["bytes.view", "b"]]],
+        ["try", ["std.test.assert_view_eq", ["bytes.view", "ps1"], ["bytes.view", "ps2"], ["std.test.code_assert_view_eq"]]],
+        ["let", "b2", ["std.web_ui.patch.apply_v1", ["bytes.view", "a"], ["bytes.view", "ps1"]]],
+        ["try", ["std.test.assert_bytes_eq", "b2", "b", ["std.test.code_assert_bytes_eq"]]],
+        ["std.test.pass"]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.tests.test_frame_builder_v1",
+      "params": [],
+      "result": "result_i32",
+      "body": [
+        "begin",
+        ["let", "state", ["bytes.lit", "{\"count\":1}"]],
+        ["let", "ui", ["bytes.lit", "{\"v\":1,\"kind\":\"x07.web_ui.tree\",\"root\":null}"]],
+        ["let", "patches", ["bytes.lit", "[]"]],
+        ["let", "effects", ["bytes.lit", "[]"]],
+        ["let", "telemetry", ["bytes.lit", "{}"]],
+        [
+          "let",
+          "frame",
+          [
+            "std.web_ui.runtime.frame_v1",
+            ["bytes.view", "state"],
+            ["bytes.view", "ui"],
+            ["bytes.view", "patches"],
+            ["bytes.view", "effects"],
+            ["bytes.view", "telemetry"]
+          ]
+        ],
+        [
+          "let",
+          "want",
+          [
+            "bytes.lit",
+            "{\"v\":1,\"kind\":\"x07.web_ui.frame\",\"state\":{\"count\":1},\"ui\":{\"v\":1,\"kind\":\"x07.web_ui.tree\",\"root\":null},\"patches\":[],\"effects\":[],\"telemetry\":{}}\n"
+          ]
+        ],
+        ["try", ["std.test.assert_bytes_eq", "frame", "want", ["std.test.code_assert_bytes_eq"]]],
+        ["std.test.pass"]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.tests.test_http_effect_get_v1",
+      "params": [],
+      "result": "result_i32",
+      "body": [
+        "begin",
+        ["let", "id", ["bytes.lit", "\"req1\""]],
+        ["let", "path", ["bytes.lit", "\"/ping\""]],
+        ["let", "eff", ["std.web_ui.effects.http.request_get_v1", ["bytes.view", "id"], ["bytes.view", "path"]]],
+        [
+          "let",
+          "want",
+          [
+            "bytes.lit",
+            "{\"v\":1,\"kind\":\"x07.web_ui.effect.http.request\",\"request\":{\"schema_version\":\"x07.http.request.envelope@0.1.0\",\"id\":\"req1\",\"method\":\"GET\",\"path\":\"/ping\",\"headers\":[],\"body\":{\"bytes_len\":0}}}"
+          ]
+        ],
+        [
+          "try",
+          [
+            "std.test.assert_view_eq",
+            ["bytes.view", "eff"],
+            ["bytes.view", "want"],
+            ["std.test.code_assert_view_eq"]
+          ]
+        ],
+        ["let", "effects", ["std.web_ui.effects.http.effects1_v1", ["bytes.view", "eff"]]],
+        ["let", "effects_want", ["bytes.concat", ["bytes.concat", ["bytes.lit", "["], "want"], ["bytes.lit", "]"]]],
+        [
+          "try",
+          [
+            "std.test.assert_view_eq",
+            ["bytes.view", "effects"],
+            ["bytes.view", "effects_want"],
+            ["std.test.code_assert_view_eq"]
+          ]
+        ],
+        ["std.test.pass"]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.tests.test_http_dispatch_response_extract_v1",
+      "params": [],
+      "result": "result_i32",
+      "body": [
+        "begin",
+        [
+          "let",
+          "dispatch",
+          [
+            "bytes.lit",
+            "{\"v\":1,\"kind\":\"x07.web_ui.dispatch\",\"state\":{\"__x07_http\":{\"response\":{\"schema_version\":\"x07.http.response.envelope@0.1.0\",\"request_id\":\"req1\",\"status\":200,\"headers\":[],\"body\":{\"bytes_len\":4,\"text\":\"pong\"}}}},\"event\":{\"type\":\"click\",\"target\":\"t\"}}"
+          ]
+        ],
+        [
+          "let",
+          "status",
+          [
+            "std.web_ui.effects.http.dispatch_response_status_canon_or_err_v1",
+            ["bytes.view", "dispatch"]
+          ]
+        ],
+        ["try", ["std.test.assert_bytes_eq", "status", ["bytes.lit", "200"], ["std.test.code_assert_bytes_eq"]]],
+        [
+          "let",
+          "text",
+          [
+            "std.web_ui.effects.http.dispatch_response_body_text_canon_or_err_v1",
+            ["bytes.view", "dispatch"]
+          ]
+        ],
+        ["try", ["std.test.assert_bytes_eq", "text", ["bytes.lit", "\"pong\""], ["std.test.code_assert_bytes_eq"]]],
+        ["std.test.pass"]
+      ]
+    }
+  ]
+}

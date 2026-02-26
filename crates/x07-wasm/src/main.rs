@@ -1,14 +1,17 @@
 #![recursion_limit = "512"]
 
+mod app;
 mod arch;
 mod blob;
 mod cli;
 mod cmdutil;
 mod component;
 mod diag;
+mod http_component_host;
 mod report;
 mod schema;
 mod serve;
+mod stream_payload;
 mod toolchain;
 mod util;
 mod wasm;

@@ -65,45 +65,51 @@ fn panic(_info: &PanicInfo) -> ! {
 }
 
 struct HttpResponseEnvelope {
-    v: u32,
-    kind: String,
     status: u16,
+    request_id: String,
     headers: Vec<(String, String)>,
-    body_b64: String,
+    body: Vec<u8>,
 }
 
 struct HttpAdapter;
 
 impl exports::wasi::http::incoming_handler::Guest for HttpAdapter {
     fn handle(request: wasi::http::types::IncomingRequest, response_out: wasi::http::types::ResponseOutparam) {
+        let request_id = "req0";
         let method = http_method_string(request.method());
         let (path, query) = http_path_and_query(request.path_with_query());
 
         let headers_resource = request.headers();
-        let headers = headers_resource
+        let mut headers = headers_resource
             .entries()
             .into_iter()
             .map(|(k, v)| (k, String::from_utf8_lossy(&v).into_owned()))
             .collect::<Vec<_>>();
         drop(headers_resource);
+        headers.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
 
         let body_bytes = match request.consume() {
             Ok(body) => read_incoming_body(body),
             Err(()) => Vec::new(),
         };
 
+        let body_bytes_len = body_bytes.len();
         let body_b64 = base64::engine::general_purpose::STANDARD.encode(body_bytes);
-        let env_bytes = request_envelope_bytes(&method, &path, &query, &headers, &body_b64);
+        let env_bytes = request_envelope_bytes(
+            request_id,
+            &method,
+            &path,
+            &query,
+            &headers,
+            body_bytes_len,
+            &body_b64,
+        );
 
         let resp_bytes = x07::solve::handler::solve(&env_bytes);
         let resp: HttpResponseEnvelope = parse_response_envelope(&resp_bytes);
-        if resp.v != 1 || resp.kind != "x07.http.response" {
+        if resp.request_id != request_id {
             panic_invalid_response_envelope();
         }
-
-        let body = base64::engine::general_purpose::STANDARD
-            .decode(resp.body_b64.as_bytes())
-            .unwrap_or_else(|_| panic_invalid_response_envelope());
 
         let header_entries = resp
             .headers
@@ -119,9 +125,9 @@ impl exports::wasi::http::incoming_handler::Guest for HttpAdapter {
             .expect("invalid status code");
 
         let out_body = outgoing.body().expect("outgoing-response.body failed");
-        if !body.is_empty() {
+        if !resp.body.is_empty() {
             let out_stream = out_body.write().expect("outgoing-body.write failed");
-            for chunk in body.chunks(4096) {
+            for chunk in resp.body.chunks(4096) {
                 out_stream
                     .blocking_write_and_flush(chunk)
                     .expect("write response body");
@@ -200,14 +206,18 @@ fn read_incoming_body(body: wasi::http::types::IncomingBody) -> Vec<u8> {
 }
 
 fn request_envelope_bytes(
+    id: &str,
     method: &str,
     path: &str,
     query: &str,
     headers: &[(String, String)],
+    body_bytes_len: usize,
     body_b64: &str,
 ) -> Vec<u8> {
     let mut out = Vec::new();
-    out.extend_from_slice(br#"{"v":1,"kind":"x07.http.request","method":"#);
+    out.extend_from_slice(br#"{"schema_version":"x07.http.request.envelope@0.1.0","id":"#);
+    push_json_string(&mut out, id);
+    out.extend_from_slice(br#","method":"#);
     push_json_string(&mut out, method);
     out.extend_from_slice(br#","path":"#);
     push_json_string(&mut out, path);
@@ -218,16 +228,34 @@ fn request_envelope_bytes(
         if i != 0 {
             out.push(b',');
         }
-        out.push(b'[');
+        out.extend_from_slice(br#"{"k":"#);
         push_json_string(&mut out, k);
-        out.push(b',');
+        out.extend_from_slice(br#","v":"#);
         push_json_string(&mut out, v);
-        out.push(b']');
+        out.push(b'}');
     }
-    out.extend_from_slice(br#"],"body_b64":"#);
+    out.extend_from_slice(br#"],"body":{"bytes_len":"#);
+    push_u64_dec(&mut out, body_bytes_len as u64);
+    out.extend_from_slice(br#","base64":"#);
     push_json_string(&mut out, body_b64);
-    out.extend_from_slice(br#"}"#);
+    out.extend_from_slice(br#"}}"#);
     out
+}
+
+fn push_u64_dec(out: &mut Vec<u8>, mut n: u64) {
+    if n == 0 {
+        out.push(b'0');
+        return;
+    }
+    let mut buf = [0u8; 20];
+    let mut i = buf.len();
+    while n != 0 {
+        let d = (n % 10) as u8;
+        n /= 10;
+        i -= 1;
+        buf[i] = b'0' + d;
+    }
+    out.extend_from_slice(&buf[i..]);
 }
 
 fn push_json_string(out: &mut Vec<u8>, s: &str) {
@@ -253,11 +281,11 @@ fn parse_response_envelope(bytes: &[u8]) -> HttpResponseEnvelope {
     cur.skip_ws();
     cur.expect_byte(b'{');
 
-    let mut v: Option<u32> = None;
-    let mut kind: Option<String> = None;
+    let mut schema_version: Option<String> = None;
+    let mut request_id: Option<String> = None;
     let mut status: Option<u16> = None;
     let mut headers: Option<Vec<(String, String)>> = None;
-    let mut body_b64: Option<String> = None;
+    let mut body: Option<Vec<u8>> = None;
 
     cur.skip_ws();
     if cur.peek_byte() == Some(b'}') {
@@ -272,11 +300,11 @@ fn parse_response_envelope(bytes: &[u8]) -> HttpResponseEnvelope {
         cur.skip_ws();
 
         match key.as_str() {
-            "v" => v = Some(cur.parse_u32()),
-            "kind" => kind = Some(cur.parse_string()),
+            "schema_version" => schema_version = Some(cur.parse_string()),
+            "request_id" => request_id = Some(cur.parse_string()),
             "status" => status = Some(cur.parse_u16()),
             "headers" => headers = Some(cur.parse_headers()),
-            "body_b64" => body_b64 = Some(cur.parse_string()),
+            "body" => body = Some(cur.parse_stream_payload()),
             _ => cur.skip_value(),
         }
 
@@ -288,10 +316,13 @@ fn parse_response_envelope(bytes: &[u8]) -> HttpResponseEnvelope {
         }
     }
 
-    let Some(v) = v else {
+    let Some(schema_version) = schema_version else {
         panic_invalid_response_envelope();
     };
-    let Some(kind) = kind else {
+    if schema_version != "x07.http.response.envelope@0.1.0" {
+        panic_invalid_response_envelope();
+    }
+    let Some(request_id) = request_id else {
         panic_invalid_response_envelope();
     };
     let Some(status) = status else {
@@ -300,16 +331,15 @@ fn parse_response_envelope(bytes: &[u8]) -> HttpResponseEnvelope {
     let Some(headers) = headers else {
         panic_invalid_response_envelope();
     };
-    let Some(body_b64) = body_b64 else {
+    let Some(body) = body else {
         panic_invalid_response_envelope();
     };
 
     HttpResponseEnvelope {
-        v,
-        kind,
+        request_id,
         status,
         headers,
-        body_b64,
+        body,
     }
 }
 
@@ -460,15 +490,37 @@ impl<'a> Cursor<'a> {
         }
         loop {
             self.skip_ws();
-            self.expect_byte(b'[');
+            self.expect_byte(b'{');
             self.skip_ws();
-            let k = self.parse_string();
-            self.skip_ws();
-            self.expect_byte(b',');
-            self.skip_ws();
-            let v = self.parse_string();
-            self.skip_ws();
-            self.expect_byte(b']');
+            let mut k: Option<String> = None;
+            let mut v: Option<String> = None;
+            if self.peek_byte() == Some(b'}') {
+                panic_invalid_response_envelope();
+            }
+            loop {
+                self.skip_ws();
+                let key = self.parse_string();
+                self.skip_ws();
+                self.expect_byte(b':');
+                self.skip_ws();
+                match key.as_str() {
+                    "k" => k = Some(self.parse_string()),
+                    "v" => v = Some(self.parse_string()),
+                    _ => self.skip_value(),
+                }
+                self.skip_ws();
+                match self.next_byte() {
+                    Some(b',') => continue,
+                    Some(b'}') => break,
+                    _ => panic_invalid_response_envelope(),
+                }
+            }
+            let Some(k) = k else {
+                panic_invalid_response_envelope();
+            };
+            let Some(v) = v else {
+                panic_invalid_response_envelope();
+            };
             out.push((k, v));
 
             self.skip_ws();
@@ -479,6 +531,69 @@ impl<'a> Cursor<'a> {
             }
         }
         out
+    }
+
+    fn parse_stream_payload(&mut self) -> Vec<u8> {
+        self.expect_byte(b'{');
+        self.skip_ws();
+
+        let mut bytes_len: Option<u32> = None;
+        let mut b64: Option<String> = None;
+        let mut text: Option<String> = None;
+
+        if self.peek_byte() == Some(b'}') {
+            panic_invalid_response_envelope();
+        }
+        loop {
+            self.skip_ws();
+            let key = self.parse_string();
+            self.skip_ws();
+            self.expect_byte(b':');
+            self.skip_ws();
+
+            match key.as_str() {
+                "bytes_len" => bytes_len = Some(self.parse_u32()),
+                "base64" => b64 = Some(self.parse_string()),
+                "text" => text = Some(self.parse_string()),
+                _ => self.skip_value(),
+            }
+
+            self.skip_ws();
+            match self.next_byte() {
+                Some(b',') => continue,
+                Some(b'}') => break,
+                _ => panic_invalid_response_envelope(),
+            }
+        }
+
+        let Some(bytes_len) = bytes_len else {
+            panic_invalid_response_envelope();
+        };
+        let bytes_len = bytes_len as usize;
+
+        if let Some(b64) = b64 {
+            let bytes = base64::engine::general_purpose::STANDARD
+                .decode(b64.as_bytes())
+                .unwrap_or_else(|_| panic_invalid_response_envelope());
+            if bytes.len() != bytes_len {
+                panic_invalid_response_envelope();
+            }
+            return bytes;
+        }
+
+        if let Some(text) = text {
+            let bytes = text.into_bytes();
+            if bytes.len() != bytes_len {
+                panic_invalid_response_envelope();
+            }
+            return bytes;
+        }
+
+        if bytes_len == 0 {
+            return Vec::new();
+        }
+
+        panic_invalid_response_envelope();
     }
 
     fn skip_value(&mut self) {

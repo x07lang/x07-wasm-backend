@@ -21,6 +21,8 @@ const X07_ARCH_WASM_COMPONENT_INDEX_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-arch.wasm.component.index.schema.json");
 const X07_ARCH_WEB_UI_INDEX_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-arch.web_ui.index.schema.json");
+const X07_ARCH_APP_INDEX_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-arch.app.index.schema.json");
 const X07_WASM_PROFILE_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.profile.schema.json");
 const X07_WASM_COMPONENT_PROFILE_SCHEMA_BYTES: &[u8] =
@@ -42,6 +44,17 @@ const X07_WEB_UI_FRAME_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-web_ui.frame.schema.json");
 const X07_WEB_UI_TRACE_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-web_ui.trace.schema.json");
+
+const X07_APP_PROFILE_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-app.profile.schema.json");
+const X07_APP_BUNDLE_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-app.bundle.schema.json");
+const X07_HTTP_REQUEST_ENVELOPE_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-http.request.envelope.schema.json");
+const X07_HTTP_RESPONSE_ENVELOPE_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-http.response.envelope.schema.json");
+const X07_APP_TRACE_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-app.trace.schema.json");
 
 const X07_WASM_BUILD_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.build.report.schema.json");
@@ -73,6 +86,19 @@ const X07_WASM_WEB_UI_TEST_REPORT_SCHEMA_BYTES: &[u8] =
 const X07_WASM_WEB_UI_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES: &[u8] = include_bytes!(
     "../../../../spec/schemas/x07-wasm.web_ui.regress.from.incident.report.schema.json"
 );
+const X07_WASM_APP_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.app.profile.validate.report.schema.json");
+const X07_WASM_APP_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.app.contracts.validate.report.schema.json");
+const X07_WASM_APP_BUILD_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.app.build.report.schema.json");
+const X07_WASM_APP_SERVE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.app.serve.report.schema.json");
+const X07_WASM_APP_TEST_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.app.test.report.schema.json");
+const X07_WASM_APP_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES: &[u8] = include_bytes!(
+    "../../../../spec/schemas/x07-wasm.app.regress.from_incident.report.schema.json"
+);
 const X07_WASM_CLI_SPECROWS_CHECK_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.cli.specrows.check.report.schema.json");
 const X07_WASM_DOCTOR_REPORT_SCHEMA_BYTES: &[u8] =
@@ -98,6 +124,7 @@ impl SchemaStore {
             X07_ARCH_WIT_INDEX_SCHEMA_BYTES,
             X07_ARCH_WASM_COMPONENT_INDEX_SCHEMA_BYTES,
             X07_ARCH_WEB_UI_INDEX_SCHEMA_BYTES,
+            X07_ARCH_APP_INDEX_SCHEMA_BYTES,
             X07_WASM_PROFILE_SCHEMA_BYTES,
             X07_WASM_COMPONENT_PROFILE_SCHEMA_BYTES,
             X07_WASM_COMPONENT_ARTIFACT_SCHEMA_BYTES,
@@ -108,6 +135,11 @@ impl SchemaStore {
             X07_WEB_UI_PATCHSET_SCHEMA_BYTES,
             X07_WEB_UI_FRAME_SCHEMA_BYTES,
             X07_WEB_UI_TRACE_SCHEMA_BYTES,
+            X07_APP_PROFILE_SCHEMA_BYTES,
+            X07_APP_BUNDLE_SCHEMA_BYTES,
+            X07_HTTP_REQUEST_ENVELOPE_SCHEMA_BYTES,
+            X07_HTTP_RESPONSE_ENVELOPE_SCHEMA_BYTES,
+            X07_APP_TRACE_SCHEMA_BYTES,
             X07_WASM_BUILD_REPORT_SCHEMA_BYTES,
             X07_WASM_RUN_REPORT_SCHEMA_BYTES,
             X07_WASM_SERVE_REPORT_SCHEMA_BYTES,
@@ -122,6 +154,12 @@ impl SchemaStore {
             X07_WASM_WEB_UI_SERVE_REPORT_SCHEMA_BYTES,
             X07_WASM_WEB_UI_TEST_REPORT_SCHEMA_BYTES,
             X07_WASM_WEB_UI_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES,
+            X07_WASM_APP_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES,
+            X07_WASM_APP_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES,
+            X07_WASM_APP_BUILD_REPORT_SCHEMA_BYTES,
+            X07_WASM_APP_SERVE_REPORT_SCHEMA_BYTES,
+            X07_WASM_APP_TEST_REPORT_SCHEMA_BYTES,
+            X07_WASM_APP_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES,
             X07_WASM_CLI_SPECROWS_CHECK_REPORT_SCHEMA_BYTES,
             X07_WASM_DOCTOR_REPORT_SCHEMA_BYTES,
             X07_WASM_WIT_VALIDATE_REPORT_SCHEMA_BYTES,
@@ -233,6 +271,18 @@ fn report_schema_id_for_scope(scope: Scope) -> &'static str {
         Scope::WebUiRegressFromIncident => {
             "https://x07.io/spec/x07-wasm.web_ui.regress.from.incident.report.schema.json"
         }
+        Scope::AppContractsValidate => {
+            "https://x07.io/spec/x07-wasm.app.contracts.validate.report.schema.json"
+        }
+        Scope::AppProfileValidate => {
+            "https://x07.io/spec/x07-wasm.app.profile.validate.report.schema.json"
+        }
+        Scope::AppBuild => "https://x07.io/spec/x07-wasm.app.build.report.schema.json",
+        Scope::AppServe => "https://x07.io/spec/x07-wasm.app.serve.report.schema.json",
+        Scope::AppTest => "https://x07.io/spec/x07-wasm.app.test.report.schema.json",
+        Scope::AppRegressFromIncident => {
+            "https://x07.io/spec/x07-wasm.app.regress.from_incident.report.schema.json"
+        }
         Scope::CliSpecrowsCheck => {
             "https://x07.io/spec/x07-wasm.cli.specrows.check.report.schema.json"
         }
@@ -265,6 +315,7 @@ mod tests {
             "https://x07.io/spec/x07-arch.wit.index.schema.json",
             "https://x07.io/spec/x07-arch.wasm.component.index.schema.json",
             "https://x07.io/spec/x07-arch.web_ui.index.schema.json",
+            "https://x07.io/spec/x07-arch.app.index.schema.json",
             "https://x07.io/spec/x07-wasm.profile.schema.json",
             "https://x07.io/spec/x07-wasm.component.profile.schema.json",
             "https://x07.io/spec/x07-wasm.component.artifact.schema.json",
@@ -275,6 +326,11 @@ mod tests {
             "https://x07.io/spec/x07-web_ui.patchset.schema.json",
             "https://x07.io/spec/x07-web_ui.frame.schema.json",
             "https://x07.io/spec/x07-web_ui.trace.schema.json",
+            "https://x07.io/spec/x07-app.profile.schema.json",
+            "https://x07.io/spec/x07-app.bundle.schema.json",
+            "https://x07.io/spec/x07-http.request.envelope.schema.json",
+            "https://x07.io/spec/x07-http.response.envelope.schema.json",
+            "https://x07.io/spec/x07-app.trace.schema.json",
             "https://x07.io/spec/x07-wasm.build.report.schema.json",
             "https://x07.io/spec/x07-wasm.run.report.schema.json",
             "https://x07.io/spec/x07-wasm.serve.report.schema.json",
@@ -289,6 +345,12 @@ mod tests {
             "https://x07.io/spec/x07-wasm.web_ui.serve.report.schema.json",
             "https://x07.io/spec/x07-wasm.web_ui.test.report.schema.json",
             "https://x07.io/spec/x07-wasm.web_ui.regress.from.incident.report.schema.json",
+            "https://x07.io/spec/x07-wasm.app.profile.validate.report.schema.json",
+            "https://x07.io/spec/x07-wasm.app.contracts.validate.report.schema.json",
+            "https://x07.io/spec/x07-wasm.app.build.report.schema.json",
+            "https://x07.io/spec/x07-wasm.app.serve.report.schema.json",
+            "https://x07.io/spec/x07-wasm.app.test.report.schema.json",
+            "https://x07.io/spec/x07-wasm.app.regress.from_incident.report.schema.json",
             "https://x07.io/spec/x07-wasm.cli.specrows.check.report.schema.json",
             "https://x07.io/spec/x07-wasm.doctor.report.schema.json",
             "https://x07.io/spec/x07-wasm.wit.validate.report.schema.json",

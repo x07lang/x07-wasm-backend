@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-http.response.envelope.schema.json",
+  "title": "x07.http.response.envelope@0.1.0",
+  "description": "Deterministic HTTP response envelope for app traces and wasi-http proxy routing.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_id",
+    "status",
+    "headers",
+    "body"
+  ],
+  "properties": {
+    "schema_version": { "const": "x07.http.response.envelope@0.1.0" },
+    "request_id": { "$ref": "#/$defs/id" },
+    "status": {
+      "type": "integer",
+      "minimum": 100,
+      "maximum": 599
+    },
+    "headers": {
+      "type": "array",
+      "maxItems": 256,
+      "items": { "$ref": "#/$defs/header" },
+      "default": []
+    },
+    "body": { "$ref": "#/$defs/stream_payload" }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+    },
+    "header": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["k", "v"],
+      "properties": {
+        "k": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[A-Za-z0-9-]{1,64}$"
+        },
+        "v": {
+          "type": "string",
+          "maxLength": 4096
+        }
+      }
+    },
+    "stream_payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bytes_len"],
+      "properties": {
+        "bytes_len": { "type": "integer", "minimum": 0 },
+        "text": { "type": "string" },
+        "base64": { "type": "string" }
+      }
+    }
+  }
+}
