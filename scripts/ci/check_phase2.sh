@@ -22,31 +22,6 @@ print(doc.get("git_sha",""))
 PY
 }
 
-clone_x07_web_ui_at_sha() {
-  local sha="$1"
-  local dst="$2"
-  local url=""
-  rm -rf "$dst"
-  mkdir -p "$(dirname "$dst")"
-
-  # Prefer local workspace checkout when present to avoid global `insteadOf` URL
-  # rewrites (and to keep this gate runnable offline for local development).
-  if [[ -d "../x07-web-ui/.git" ]]; then
-    url="../x07-web-ui"
-  else
-    url="https://github.com/x07lang/x07-web-ui.git"
-    if git config --global --get-regexp '^url\\..*\\.insteadof$' 2>/dev/null | grep -q 'https://github.com/x07lang/x07$'; then
-      url="ssh://git@github.com/x07lang/x07-web-ui.git"
-    fi
-  fi
-
-  git clone --no-checkout "${url}" "$dst"
-  if [[ "${url}" == https:* || "${url}" == ssh:* ]]; then
-    git -C "$dst" fetch --depth 1 origin "$sha"
-  fi
-  git -C "$dst" checkout "$sha"
-}
-
 write_incident_from_trace() {
   local trace_path="$1"
   local out_path="$2"
@@ -85,14 +60,15 @@ if [[ "${sha}" == "" ]]; then
   echo "missing vendor/x07-web-ui/snapshot.json git_sha" >&2
   exit 1
 fi
-upstream_dir="target/x07-web-ui-upstream"
-clone_x07_web_ui_at_sha "${sha}" "${upstream_dir}"
-${PYTHON} scripts/vendor_x07_web_ui.py check --src "${upstream_dir}"
+${PYTHON} scripts/vendor_x07_web_ui.py check
 
-counter_project="${upstream_dir}/examples/web_ui_counter/x07.json"
-counter_trace="${upstream_dir}/examples/web_ui_counter/tests/counter.trace.json"
-form_project="${upstream_dir}/examples/web_ui_form/x07.json"
-form_trace="${upstream_dir}/examples/web_ui_form/tests/form.trace.json"
+web_ui_root="$(cd "vendor/x07-web-ui" && pwd)"
+export X07_WORKSPACE_ROOT="${web_ui_root}"
+
+counter_project="${web_ui_root}/examples/web_ui_counter/x07.json"
+counter_trace="${web_ui_root}/examples/web_ui_counter/tests/counter.trace.json"
+form_project="${web_ui_root}/examples/web_ui_form/x07.json"
+form_trace="${web_ui_root}/examples/web_ui_form/tests/form.trace.json"
 
 echo "==> gate: core build + serve + test (counter)"
 counter_core_dir="dist/web_ui_counter_core"

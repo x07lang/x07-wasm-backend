@@ -1,0 +1,297 @@
+{
+  "schema_version": "x07.x07ast@0.3.0",
+  "kind": "module",
+  "module_id": "std.web_ui.vdom",
+  "imports": [],
+  "decls": [
+    {
+      "kind": "export",
+      "names": [
+        "std.web_ui.vdom.props_v1",
+        "std.web_ui.vdom.on_empty_v1",
+        "std.web_ui.vdom.on_click_v1",
+        "std.web_ui.vdom.on_input_v1",
+        "std.web_ui.vdom.on_change_v1",
+        "std.web_ui.vdom.on_submit_v1",
+        "std.web_ui.vdom.text_v1",
+        "std.web_ui.vdom.children0_v1",
+        "std.web_ui.vdom.children1_v1",
+        "std.web_ui.vdom.children2_v1",
+        "std.web_ui.vdom.children3_v1",
+        "std.web_ui.vdom.el_v1",
+        "std.web_ui.vdom.tree_v1"
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.vdom.props_v1",
+      "params": [
+        { "name": "attrs_json", "ty": "bytes_view" },
+        { "name": "class_json", "ty": "bytes_view" },
+        { "name": "style_json", "ty": "bytes_view" }
+      ],
+      "result": "bytes",
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          [
+            "bytes.concat",
+            [
+              "bytes.concat",
+              [
+                "bytes.concat",
+                ["bytes.lit", "{\"attrs\":"],
+                ["view.to_bytes", "attrs_json"]
+              ],
+              ["bytes.lit", ",\"class\":"]
+            ],
+            ["view.to_bytes", "class_json"]
+          ],
+          ["bytes.lit", ",\"style\":"]
+        ],
+        [
+          "bytes.concat",
+          ["view.to_bytes", "style_json"],
+          ["bytes.lit", "}"]
+        ]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.vdom.on_empty_v1",
+      "params": [],
+      "result": "bytes",
+      "body": ["bytes.lit", "[]"]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.vdom.on_click_v1",
+      "params": [
+        { "name": "target_json", "ty": "bytes_view" }
+      ],
+      "result": "bytes",
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          ["bytes.lit", "[{\"type\":\"click\",\"target\":"],
+          ["view.to_bytes", "target_json"]
+        ],
+        ["bytes.lit", "}]"]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.vdom.on_input_v1",
+      "params": [
+        { "name": "target_json", "ty": "bytes_view" }
+      ],
+      "result": "bytes",
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          ["bytes.lit", "[{\"type\":\"input\",\"target\":"],
+          ["view.to_bytes", "target_json"]
+        ],
+        ["bytes.lit", "}]"]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.vdom.on_change_v1",
+      "params": [
+        { "name": "target_json", "ty": "bytes_view" }
+      ],
+      "result": "bytes",
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          ["bytes.lit", "[{\"type\":\"change\",\"target\":"],
+          ["view.to_bytes", "target_json"]
+        ],
+        ["bytes.lit", "}]"]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.vdom.on_submit_v1",
+      "params": [
+        { "name": "target_json", "ty": "bytes_view" }
+      ],
+      "result": "bytes",
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          ["bytes.lit", "[{\"type\":\"submit\",\"target\":"],
+          ["view.to_bytes", "target_json"]
+        ],
+        ["bytes.lit", "}]"]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.vdom.text_v1",
+      "params": [
+        { "name": "key_json", "ty": "bytes_view" },
+        { "name": "text_json", "ty": "bytes_view" }
+      ],
+      "result": "bytes",
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          [
+            "bytes.concat",
+            [
+              "bytes.concat",
+              ["bytes.lit", "{\"k\":\"text\",\"key\":"],
+              ["view.to_bytes", "key_json"]
+            ],
+            ["bytes.lit", ",\"text\":"]
+          ],
+          ["view.to_bytes", "text_json"]
+        ],
+        ["bytes.lit", "}"]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.vdom.children0_v1",
+      "params": [],
+      "result": "bytes",
+      "body": ["bytes.lit", "[]"]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.vdom.children1_v1",
+      "params": [
+        { "name": "a", "ty": "bytes_view" }
+      ],
+      "result": "bytes",
+      "body": [
+        "bytes.concat",
+        ["bytes.concat", ["bytes.lit", "["], ["view.to_bytes", "a"]],
+        ["bytes.lit", "]"]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.vdom.children2_v1",
+      "params": [
+        { "name": "a", "ty": "bytes_view" },
+        { "name": "b", "ty": "bytes_view" }
+      ],
+      "result": "bytes",
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          [
+            "bytes.concat",
+            ["bytes.concat", ["bytes.lit", "["], ["view.to_bytes", "a"]],
+            ["bytes.lit", ","]
+          ],
+          ["view.to_bytes", "b"]
+        ],
+        ["bytes.lit", "]"]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.vdom.children3_v1",
+      "params": [
+        { "name": "a", "ty": "bytes_view" },
+        { "name": "b", "ty": "bytes_view" },
+        { "name": "c", "ty": "bytes_view" }
+      ],
+      "result": "bytes",
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          [
+            "bytes.concat",
+            [
+              "bytes.concat",
+              [
+                "bytes.concat",
+                ["bytes.concat", ["bytes.lit", "["], ["view.to_bytes", "a"]],
+                ["bytes.lit", ","]
+              ],
+              ["view.to_bytes", "b"]
+            ],
+            ["bytes.lit", ","]
+          ],
+          ["view.to_bytes", "c"]
+        ],
+        ["bytes.lit", "]"]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.vdom.el_v1",
+      "params": [
+        { "name": "tag_json", "ty": "bytes_view" },
+        { "name": "key_json", "ty": "bytes_view" },
+        { "name": "props_json", "ty": "bytes_view" },
+        { "name": "on_json", "ty": "bytes_view" },
+        { "name": "children_json", "ty": "bytes_view" }
+      ],
+      "result": "bytes",
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          [
+            "bytes.concat",
+            [
+              "bytes.concat",
+              [
+                "bytes.concat",
+                [
+                  "bytes.concat",
+                  [
+                    "bytes.concat",
+                    [
+                      "bytes.concat",
+                      ["bytes.lit", "{\"k\":\"el\",\"tag\":"],
+                      ["view.to_bytes", "tag_json"]
+                    ],
+                    ["bytes.lit", ",\"key\":"]
+                  ],
+                  ["view.to_bytes", "key_json"]
+                ],
+                ["bytes.lit", ",\"props\":"]
+              ],
+              ["view.to_bytes", "props_json"]
+            ],
+            ["bytes.lit", ",\"on\":"]
+          ],
+          ["view.to_bytes", "on_json"]
+        ],
+        [
+          "bytes.concat",
+          ["bytes.concat", ["bytes.lit", ",\"children\":"], ["view.to_bytes", "children_json"]],
+          ["bytes.lit", "}"]
+        ]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.vdom.tree_v1",
+      "params": [
+        { "name": "root_json", "ty": "bytes_view" }
+      ],
+      "result": "bytes",
+      "body": [
+        "bytes.concat",
+        ["bytes.concat", ["bytes.lit", "{\"v\":1,\"kind\":\"x07.web_ui.tree\",\"root\":"], ["view.to_bytes", "root_json"]],
+        ["bytes.lit", "}"]
+      ]
+    }
+  ]
+}

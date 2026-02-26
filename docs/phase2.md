@@ -97,12 +97,14 @@ x07-wasm web-ui regress-from-incident --incident incident.json --out-dir tests/r
 Vendored/synced inputs from `x07-web-ui`:
 
 - host assets: `vendor/x07-web-ui/host/*`
+- examples + traces: `vendor/x07-web-ui/examples/*`
+- `std-web-ui` modules: `vendor/x07-web-ui/packages/std-web-ui/0.1.0/modules/*`
 - WIT contract: `wit/x07/web_ui/0.2.0/*`
 
 Update/check:
 
 ```sh
 python3 scripts/vendor_x07_web_ui.py update --src ../x07-web-ui
+python3 scripts/vendor_x07_web_ui.py check
 python3 scripts/vendor_x07_web_ui.py check --src ../x07-web-ui
 ```
-

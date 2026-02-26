@@ -15,6 +15,7 @@ from dataclasses import dataclass
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 SNAPSHOT_PATH = REPO_ROOT / "vendor" / "x07-web-ui" / "snapshot.json"
+VENDORED_REPO_DIR = REPO_ROOT / "vendor" / "x07-web-ui"
 VENDORED_HOST_DIR = REPO_ROOT / "vendor" / "x07-web-ui" / "host"
 
 HOST_FILES = [
@@ -26,6 +27,21 @@ WIT_FILES = [
     (
         "wit/x07/web_ui/0.2.0/web-ui-app.wit",
         REPO_ROOT / "wit" / "x07" / "web_ui" / "0.2.0" / "web-ui-app.wit",
+    ),
+]
+
+TREE_DIRS = [
+    (
+        "packages/std-web-ui/0.1.0/modules",
+        VENDORED_REPO_DIR / "packages" / "std-web-ui" / "0.1.0" / "modules",
+    ),
+    (
+        "examples/web_ui_counter",
+        VENDORED_REPO_DIR / "examples" / "web_ui_counter",
+    ),
+    (
+        "examples/web_ui_form",
+        VENDORED_REPO_DIR / "examples" / "web_ui_form",
     ),
 ]
 
@@ -72,22 +88,45 @@ def copy_file(src: pathlib.Path, dst: pathlib.Path) -> None:
     shutil.copy2(src, dst)
 
 
-def compute_vendor_digests() -> dict[str, dict]:
-    out: dict[str, dict] = {}
+def compute_vendor_files() -> dict[str, pathlib.Path]:
+    out: dict[str, pathlib.Path] = {}
 
     for rel, dst in HOST_FILES:
         if not dst.is_file():
             raise RuntimeError(f"missing vendored file: {dst}")
-        d = sha256_file(dst)
-        out[rel] = {"sha256": d.sha256, "bytes_len": d.bytes_len}
+        out[rel] = dst
 
     for rel, dst in WIT_FILES:
         if not dst.is_file():
             raise RuntimeError(f"missing synced WIT file: {dst}")
-        d = sha256_file(dst)
-        out[rel] = {"sha256": d.sha256, "bytes_len": d.bytes_len}
+        out[rel] = dst
+
+    for src_rel_dir, dst_dir in TREE_DIRS:
+        if not dst_dir.is_dir():
+            raise RuntimeError(f"missing vendored dir: {dst_dir}")
+        paths = sorted([p for p in dst_dir.rglob("*") if p.is_file()])
+        for path in paths:
+            rel = path.relative_to(dst_dir).as_posix()
+            if rel == "":
+                raise RuntimeError(f"unexpected empty relpath for {path}")
+            out[f"{src_rel_dir}/{rel}"] = path
 
     return out
+
+
+def compute_vendor_digests() -> dict[str, dict]:
+    out: dict[str, dict] = {}
+    for rel, dst in sorted(compute_vendor_files().items()):
+        d = sha256_file(dst)
+        out[rel] = {"sha256": d.sha256, "bytes_len": d.bytes_len}
+    return out
+
+
+def copy_tree(src: pathlib.Path, dst: pathlib.Path) -> None:
+    if dst.exists():
+        shutil.rmtree(dst)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(src, dst, copy_function=shutil.copy2)
 
 
 def cmd_update(src_repo: pathlib.Path, source: str) -> int:
@@ -107,6 +146,12 @@ def cmd_update(src_repo: pathlib.Path, source: str) -> int:
         if not src.is_file():
             raise RuntimeError(f"missing upstream file: {src}")
         copy_file(src, dst)
+
+    for rel, dst in TREE_DIRS:
+        src = src_repo / rel
+        if not src.is_dir():
+            raise RuntimeError(f"missing upstream dir: {src}")
+        copy_tree(src, dst)
 
     digests = compute_vendor_digests()
 
@@ -149,7 +194,8 @@ def cmd_check(src_repo: pathlib.Path | None) -> int:
 
     failures: list[str] = []
 
-    want_vendor = compute_vendor_digests()
+    vendor_files = compute_vendor_files()
+    want_vendor = {rel: sha256_file(dst).as_json() for rel, dst in vendor_files.items()}
     for rel, want in digests.items():
         got = want_vendor.get(rel)
         if got is None:
@@ -157,6 +203,10 @@ def cmd_check(src_repo: pathlib.Path | None) -> int:
             continue
         if want != got:
             failures.append(f"digest mismatch for {rel!r}: want={want} got={got}")
+
+    for rel in want_vendor.keys():
+        if rel not in digests:
+            failures.append(f"missing snapshot digest entry for {rel!r}")
 
     if src_repo is not None:
         if not (src_repo / ".git").exists():
@@ -166,13 +216,7 @@ def cmd_check(src_repo: pathlib.Path | None) -> int:
         if head != git_sha:
             failures.append(f"upstream HEAD mismatch: snapshot={git_sha} upstream={head}")
 
-        for rel, dst in HOST_FILES:
-            src = src_repo / rel
-            ok, msg = compare_file(src, dst)
-            if not ok:
-                failures.append(msg)
-
-        for rel, dst in WIT_FILES:
+        for rel, dst in sorted(vendor_files.items()):
             src = src_repo / rel
             ok, msg = compare_file(src, dst)
             if not ok:
@@ -213,4 +257,3 @@ def main(argv: list[str]) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv[1:]))
-

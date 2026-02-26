@@ -1,0 +1,241 @@
+{
+  "kind": "x07.web_ui.trace",
+  "meta": {
+    "name": "web_ui_counter",
+    "steps": 3
+  },
+  "steps": [
+    {
+      "env": {
+        "event": {
+          "type": "init"
+        },
+        "kind": "x07.web_ui.dispatch",
+        "state": null,
+        "v": 1
+      },
+      "frame": {
+        "effects": [],
+        "kind": "x07.web_ui.frame",
+        "patches": [
+          {
+            "op": "replace",
+            "path": "/root/children/0/text",
+            "value": "Count: 0"
+          }
+        ],
+        "state": {
+          "count": 0
+        },
+        "telemetry": {},
+        "ui": {
+          "kind": "x07.web_ui.tree",
+          "root": {
+            "children": [
+              {
+                "k": "text",
+                "key": "t1",
+                "text": "Count: 0"
+              },
+              {
+                "children": [
+                  {
+                    "k": "text",
+                    "key": "t2",
+                    "text": "+"
+                  }
+                ],
+                "k": "el",
+                "key": "btn_inc",
+                "on": [
+                  {
+                    "target": "btn_inc",
+                    "type": "click"
+                  }
+                ],
+                "props": {
+                  "attrs": {
+                    "type": "button"
+                  },
+                  "class": [],
+                  "style": {}
+                },
+                "tag": "button"
+              }
+            ],
+            "k": "el",
+            "key": "root",
+            "on": [],
+            "props": {
+              "attrs": {},
+              "class": [
+                "app"
+              ],
+              "style": {}
+            },
+            "tag": "div"
+          },
+          "v": 1
+        },
+        "v": 1
+      }
+    },
+    {
+      "env": {
+        "event": {
+          "target": "btn_inc",
+          "type": "click"
+        },
+        "kind": "x07.web_ui.dispatch",
+        "state": {
+          "count": 0
+        },
+        "v": 1
+      },
+      "frame": {
+        "effects": [],
+        "kind": "x07.web_ui.frame",
+        "patches": [
+          {
+            "op": "replace",
+            "path": "/root/children/0/text",
+            "value": "Count: 1"
+          }
+        ],
+        "state": {
+          "count": 1
+        },
+        "telemetry": {},
+        "ui": {
+          "kind": "x07.web_ui.tree",
+          "root": {
+            "children": [
+              {
+                "k": "text",
+                "key": "t1",
+                "text": "Count: 1"
+              },
+              {
+                "children": [
+                  {
+                    "k": "text",
+                    "key": "t2",
+                    "text": "+"
+                  }
+                ],
+                "k": "el",
+                "key": "btn_inc",
+                "on": [
+                  {
+                    "target": "btn_inc",
+                    "type": "click"
+                  }
+                ],
+                "props": {
+                  "attrs": {
+                    "type": "button"
+                  },
+                  "class": [],
+                  "style": {}
+                },
+                "tag": "button"
+              }
+            ],
+            "k": "el",
+            "key": "root",
+            "on": [],
+            "props": {
+              "attrs": {},
+              "class": [
+                "app"
+              ],
+              "style": {}
+            },
+            "tag": "div"
+          },
+          "v": 1
+        },
+        "v": 1
+      }
+    },
+    {
+      "env": {
+        "event": {
+          "target": "btn_inc",
+          "type": "click"
+        },
+        "kind": "x07.web_ui.dispatch",
+        "state": {
+          "count": 1
+        },
+        "v": 1
+      },
+      "frame": {
+        "effects": [],
+        "kind": "x07.web_ui.frame",
+        "patches": [
+          {
+            "op": "replace",
+            "path": "/root/children/0/text",
+            "value": "Count: 2"
+          }
+        ],
+        "state": {
+          "count": 2
+        },
+        "telemetry": {},
+        "ui": {
+          "kind": "x07.web_ui.tree",
+          "root": {
+            "children": [
+              {
+                "k": "text",
+                "key": "t1",
+                "text": "Count: 2"
+              },
+              {
+                "children": [
+                  {
+                    "k": "text",
+                    "key": "t2",
+                    "text": "+"
+                  }
+                ],
+                "k": "el",
+                "key": "btn_inc",
+                "on": [
+                  {
+                    "target": "btn_inc",
+                    "type": "click"
+                  }
+                ],
+                "props": {
+                  "attrs": {
+                    "type": "button"
+                  },
+                  "class": [],
+                  "style": {}
+                },
+                "tag": "button"
+              }
+            ],
+            "k": "el",
+            "key": "root",
+            "on": [],
+            "props": {
+              "attrs": {},
+              "class": [
+                "app"
+              ],
+              "style": {}
+            },
+            "tag": "div"
+          },
+          "v": 1
+        },
+        "v": 1
+      }
+    }
+  ],
+  "v": 1
+}

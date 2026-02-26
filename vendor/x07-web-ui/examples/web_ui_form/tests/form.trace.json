@@ -1,0 +1,787 @@
+{
+  "kind": "x07.web_ui.trace",
+  "meta": {
+    "name": "web_ui_form",
+    "steps": 3
+  },
+  "steps": [
+    {
+      "env": {
+        "event": {
+          "type": "init"
+        },
+        "kind": "x07.web_ui.dispatch",
+        "state": null,
+        "v": 1
+      },
+      "frame": {
+        "effects": [],
+        "kind": "x07.web_ui.frame",
+        "patches": [
+          {
+            "op": "replace",
+            "path": "",
+            "value": {
+              "kind": "x07.web_ui.tree",
+              "root": {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "t_lbl",
+                            "text": "Text:"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "lbl",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [],
+                          "style": {}
+                        },
+                        "tag": "label"
+                      },
+                      {
+                        "children": [],
+                        "k": "el",
+                        "key": "in_text",
+                        "on": [
+                          {
+                            "target": "in_text",
+                            "type": "input"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "text",
+                            "value": ""
+                          },
+                          "class": [],
+                          "style": {}
+                        },
+                        "tag": "input"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "t_btn",
+                            "text": "Submit"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn",
+                        "on": [],
+                        "props": {
+                          "attrs": {
+                            "type": "submit"
+                          },
+                          "class": [],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "form",
+                    "on": [
+                      {
+                        "target": "form",
+                        "type": "submit"
+                      }
+                    ],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "form"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "form"
+                  },
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "t_val",
+                        "text": ""
+                      }
+                    ],
+                    "k": "el",
+                    "key": "p",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [],
+                      "style": {}
+                    },
+                    "tag": "p"
+                  }
+                ],
+                "k": "el",
+                "key": "root",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "app"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              "v": 1
+            }
+          }
+        ],
+        "state": {
+          "submitted": false,
+          "text": ""
+        },
+        "telemetry": {},
+        "ui": {
+          "kind": "x07.web_ui.tree",
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "t_lbl",
+                        "text": "Text:"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "lbl",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [],
+                      "style": {}
+                    },
+                    "tag": "label"
+                  },
+                  {
+                    "children": [],
+                    "k": "el",
+                    "key": "in_text",
+                    "on": [
+                      {
+                        "target": "in_text",
+                        "type": "input"
+                      }
+                    ],
+                    "props": {
+                      "attrs": {
+                        "type": "text",
+                        "value": ""
+                      },
+                      "class": [],
+                      "style": {}
+                    },
+                    "tag": "input"
+                  },
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "t_btn",
+                        "text": "Submit"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "btn",
+                    "on": [],
+                    "props": {
+                      "attrs": {
+                        "type": "submit"
+                      },
+                      "class": [],
+                      "style": {}
+                    },
+                    "tag": "button"
+                  }
+                ],
+                "k": "el",
+                "key": "form",
+                "on": [
+                  {
+                    "target": "form",
+                    "type": "submit"
+                  }
+                ],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "form"
+                  ],
+                  "style": {}
+                },
+                "tag": "form"
+              },
+              {
+                "children": [
+                  {
+                    "k": "text",
+                    "key": "t_val",
+                    "text": ""
+                  }
+                ],
+                "k": "el",
+                "key": "p",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [],
+                  "style": {}
+                },
+                "tag": "p"
+              }
+            ],
+            "k": "el",
+            "key": "root",
+            "on": [],
+            "props": {
+              "attrs": {},
+              "class": [
+                "app"
+              ],
+              "style": {}
+            },
+            "tag": "div"
+          },
+          "v": 1
+        },
+        "v": 1
+      }
+    },
+    {
+      "env": {
+        "event": {
+          "target": "in_text",
+          "type": "input",
+          "value": "hello"
+        },
+        "kind": "x07.web_ui.dispatch",
+        "state": {
+          "submitted": false,
+          "text": ""
+        },
+        "v": 1
+      },
+      "frame": {
+        "effects": [],
+        "kind": "x07.web_ui.frame",
+        "patches": [
+          {
+            "op": "replace",
+            "path": "",
+            "value": {
+              "kind": "x07.web_ui.tree",
+              "root": {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "t_lbl",
+                            "text": "Text:"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "lbl",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [],
+                          "style": {}
+                        },
+                        "tag": "label"
+                      },
+                      {
+                        "children": [],
+                        "k": "el",
+                        "key": "in_text",
+                        "on": [
+                          {
+                            "target": "in_text",
+                            "type": "input"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "text",
+                            "value": "hello"
+                          },
+                          "class": [],
+                          "style": {}
+                        },
+                        "tag": "input"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "t_btn",
+                            "text": "Submit"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn",
+                        "on": [],
+                        "props": {
+                          "attrs": {
+                            "type": "submit"
+                          },
+                          "class": [],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "form",
+                    "on": [
+                      {
+                        "target": "form",
+                        "type": "submit"
+                      }
+                    ],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "form"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "form"
+                  },
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "t_val",
+                        "text": "hello"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "p",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [],
+                      "style": {}
+                    },
+                    "tag": "p"
+                  }
+                ],
+                "k": "el",
+                "key": "root",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "app"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              "v": 1
+            }
+          }
+        ],
+        "state": {
+          "submitted": false,
+          "text": "hello"
+        },
+        "telemetry": {},
+        "ui": {
+          "kind": "x07.web_ui.tree",
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "t_lbl",
+                        "text": "Text:"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "lbl",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [],
+                      "style": {}
+                    },
+                    "tag": "label"
+                  },
+                  {
+                    "children": [],
+                    "k": "el",
+                    "key": "in_text",
+                    "on": [
+                      {
+                        "target": "in_text",
+                        "type": "input"
+                      }
+                    ],
+                    "props": {
+                      "attrs": {
+                        "type": "text",
+                        "value": "hello"
+                      },
+                      "class": [],
+                      "style": {}
+                    },
+                    "tag": "input"
+                  },
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "t_btn",
+                        "text": "Submit"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "btn",
+                    "on": [],
+                    "props": {
+                      "attrs": {
+                        "type": "submit"
+                      },
+                      "class": [],
+                      "style": {}
+                    },
+                    "tag": "button"
+                  }
+                ],
+                "k": "el",
+                "key": "form",
+                "on": [
+                  {
+                    "target": "form",
+                    "type": "submit"
+                  }
+                ],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "form"
+                  ],
+                  "style": {}
+                },
+                "tag": "form"
+              },
+              {
+                "children": [
+                  {
+                    "k": "text",
+                    "key": "t_val",
+                    "text": "hello"
+                  }
+                ],
+                "k": "el",
+                "key": "p",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [],
+                  "style": {}
+                },
+                "tag": "p"
+              }
+            ],
+            "k": "el",
+            "key": "root",
+            "on": [],
+            "props": {
+              "attrs": {},
+              "class": [
+                "app"
+              ],
+              "style": {}
+            },
+            "tag": "div"
+          },
+          "v": 1
+        },
+        "v": 1
+      }
+    },
+    {
+      "env": {
+        "event": {
+          "target": "form",
+          "type": "submit"
+        },
+        "kind": "x07.web_ui.dispatch",
+        "state": {
+          "submitted": false,
+          "text": "hello"
+        },
+        "v": 1
+      },
+      "frame": {
+        "effects": [],
+        "kind": "x07.web_ui.frame",
+        "patches": [
+          {
+            "op": "replace",
+            "path": "",
+            "value": {
+              "kind": "x07.web_ui.tree",
+              "root": {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "t_lbl",
+                            "text": "Text:"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "lbl",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [],
+                          "style": {}
+                        },
+                        "tag": "label"
+                      },
+                      {
+                        "children": [],
+                        "k": "el",
+                        "key": "in_text",
+                        "on": [
+                          {
+                            "target": "in_text",
+                            "type": "input"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "text",
+                            "value": "hello"
+                          },
+                          "class": [],
+                          "style": {}
+                        },
+                        "tag": "input"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "t_btn",
+                            "text": "Submit"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn",
+                        "on": [],
+                        "props": {
+                          "attrs": {
+                            "type": "submit"
+                          },
+                          "class": [],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "form",
+                    "on": [
+                      {
+                        "target": "form",
+                        "type": "submit"
+                      }
+                    ],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "form"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "form"
+                  },
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "t_val",
+                        "text": "hello"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "p",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [],
+                      "style": {}
+                    },
+                    "tag": "p"
+                  }
+                ],
+                "k": "el",
+                "key": "root",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "app"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              "v": 1
+            }
+          }
+        ],
+        "state": {
+          "submitted": true,
+          "text": "hello"
+        },
+        "telemetry": {},
+        "ui": {
+          "kind": "x07.web_ui.tree",
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "t_lbl",
+                        "text": "Text:"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "lbl",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [],
+                      "style": {}
+                    },
+                    "tag": "label"
+                  },
+                  {
+                    "children": [],
+                    "k": "el",
+                    "key": "in_text",
+                    "on": [
+                      {
+                        "target": "in_text",
+                        "type": "input"
+                      }
+                    ],
+                    "props": {
+                      "attrs": {
+                        "type": "text",
+                        "value": "hello"
+                      },
+                      "class": [],
+                      "style": {}
+                    },
+                    "tag": "input"
+                  },
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "t_btn",
+                        "text": "Submit"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "btn",
+                    "on": [],
+                    "props": {
+                      "attrs": {
+                        "type": "submit"
+                      },
+                      "class": [],
+                      "style": {}
+                    },
+                    "tag": "button"
+                  }
+                ],
+                "k": "el",
+                "key": "form",
+                "on": [
+                  {
+                    "target": "form",
+                    "type": "submit"
+                  }
+                ],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "form"
+                  ],
+                  "style": {}
+                },
+                "tag": "form"
+              },
+              {
+                "children": [
+                  {
+                    "k": "text",
+                    "key": "t_val",
+                    "text": "hello"
+                  }
+                ],
+                "k": "el",
+                "key": "p",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [],
+                  "style": {}
+                },
+                "tag": "p"
+              }
+            ],
+            "k": "el",
+            "key": "root",
+            "on": [],
+            "props": {
+              "attrs": {},
+              "class": [
+                "app"
+              ],
+              "style": {}
+            },
+            "tag": "div"
+          },
+          "v": 1
+        },
+        "v": 1
+      }
+    }
+  ],
+  "v": 1
+}
