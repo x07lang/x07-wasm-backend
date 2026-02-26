@@ -64,25 +64,25 @@ pub fn cmd_doctor(
     if wasm_tools.is_none() {
         diagnostics.push(Diagnostic::new(
             "X07WASM_TOOL_MISSING_WASM_TOOLS",
-            Severity::Error,
+            Severity::Warning,
             Stage::Run,
-            "wasm-tools not found on PATH".to_string(),
+            "wasm-tools not found on PATH (required for Phase 1 component tooling)".to_string(),
         ));
     }
     if wit_bindgen.is_none() {
         diagnostics.push(Diagnostic::new(
             "X07WASM_TOOL_MISSING_WIT_BINDGEN",
-            Severity::Error,
+            Severity::Warning,
             Stage::Run,
-            "wit-bindgen not found on PATH".to_string(),
+            "wit-bindgen not found on PATH (required for Phase 1 component tooling)".to_string(),
         ));
     }
     if wac.is_none() {
         diagnostics.push(Diagnostic::new(
             "X07WASM_TOOL_MISSING_WAC",
-            Severity::Error,
+            Severity::Warning,
             Stage::Run,
-            "wac not found on PATH".to_string(),
+            "wac not found on PATH (required for Phase 1 component tooling)".to_string(),
         ));
     }
     if jco.is_none() {
