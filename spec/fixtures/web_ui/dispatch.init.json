@@ -1,0 +1,7 @@
+{
+  "v": 1,
+  "kind": "x07.web_ui.dispatch",
+  "state": null,
+  "event": { "type": "init" }
+}
+

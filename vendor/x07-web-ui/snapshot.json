@@ -1,0 +1,18 @@
+{
+  "digests": {
+    "host/app-host.mjs": {
+      "bytes_len": 16700,
+      "sha256": "5eaf4e8257a32adec9305f2371b9b48891ad188ff757b09f0077e10454d8965b"
+    },
+    "host/index.html": {
+      "bytes_len": 968,
+      "sha256": "0d965a0e565fbcb226fd252f27999b5d31d6169a560ecac93d347855b07c0b18"
+    },
+    "wit/x07/web_ui/0.2.0/web-ui-app.wit": {
+      "bytes_len": 417,
+      "sha256": "23987f7afcd9bec97a983c4e5f1682373cee253347202cc1da149ad66d90d1f3"
+    }
+  },
+  "git_sha": "ceffb39fdfc18423d23888a6093e03d1a5f5cc85",
+  "source": "https://github.com/x07lang/x07-web-ui.git"
+}

@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-web_ui.patchset.schema.json",
+  "title": "x07.web_ui.patchset@0.1.0",
+  "description": "Web UI patchset (JSON Patch subset: add/remove/replace).",
+  "type": "array",
+  "items": { "$ref": "#/$defs/op" },
+  "default": [],
+  "$defs": {
+    "path": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 4096,
+      "pattern": "^$|^/.*$",
+      "description": "JSON Pointer path (RFC 6901). Empty string refers to the document root."
+    },
+    "op": {
+      "oneOf": [
+        { "$ref": "#/$defs/op_add" },
+        { "$ref": "#/$defs/op_remove" },
+        { "$ref": "#/$defs/op_replace" }
+      ]
+    },
+    "op_add": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "path", "value"],
+      "properties": {
+        "op": { "type": "string", "const": "add" },
+        "path": { "$ref": "#/$defs/path" },
+        "value": {}
+      }
+    },
+    "op_remove": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "path"],
+      "properties": {
+        "op": { "type": "string", "const": "remove" },
+        "path": { "$ref": "#/$defs/path" }
+      }
+    },
+    "op_replace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "path", "value"],
+      "properties": {
+        "op": { "type": "string", "const": "replace" },
+        "path": { "$ref": "#/$defs/path" },
+        "value": {}
+      }
+    }
+  }
+}
+

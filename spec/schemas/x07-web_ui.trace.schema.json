@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-web_ui.trace.schema.json",
+  "title": "x07.web_ui.trace@0.1.0",
+  "description": "Web UI trace (dispatch/frame steps) captured by a host.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["v", "kind", "steps"],
+  "properties": {
+    "v": { "type": "integer", "const": 1 },
+    "kind": { "type": "string", "const": "x07.web_ui.trace" },
+    "meta": { "type": "object", "additionalProperties": true, "default": {} },
+    "steps": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/step" },
+      "default": []
+    }
+  },
+  "$defs": {
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["env", "frame"],
+      "properties": {
+        "env": { "$ref": "https://x07.io/spec/x07-web_ui.dispatch.schema.json" },
+        "frame": { "$ref": "https://x07.io/spec/x07-web_ui.frame.schema.json" },
+        "wallMs": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}
+

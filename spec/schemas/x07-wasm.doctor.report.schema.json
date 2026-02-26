@@ -224,6 +224,12 @@
             "string",
             "null"
           ]
+        },
+        "jco": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       }
     }

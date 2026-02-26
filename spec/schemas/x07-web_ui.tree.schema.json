@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-web_ui.tree.schema.json",
+  "title": "x07.web_ui.tree@0.1.0",
+  "description": "Web UI view tree document (VDOM-like JSON).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["v", "kind", "root"],
+  "properties": {
+    "v": { "type": "integer", "const": 1 },
+    "kind": { "type": "string", "const": "x07.web_ui.tree" },
+    "root": { "$ref": "#/$defs/node" }
+  },
+  "$defs": {
+    "node_key": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9._-]{0,63}$"
+    },
+    "tag": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9-]{0,63}$"
+    },
+    "props": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attrs", "class", "style"],
+      "properties": {
+        "attrs": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "default": {}
+        },
+        "class": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        },
+        "style": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "default": {}
+        }
+      }
+    },
+    "handler": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "target"],
+      "properties": {
+        "type": { "type": "string", "enum": ["click", "input", "change", "submit"] },
+        "target": { "$ref": "#/$defs/node_key" }
+      }
+    },
+    "node": {
+      "oneOf": [{ "$ref": "#/$defs/node_text" }, { "$ref": "#/$defs/node_el" }]
+    },
+    "node_text": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["k", "key", "text"],
+      "properties": {
+        "k": { "type": "string", "const": "text" },
+        "key": { "$ref": "#/$defs/node_key" },
+        "text": { "type": "string", "maxLength": 65536 }
+      }
+    },
+    "node_el": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["k", "tag", "key", "props", "on", "children"],
+      "properties": {
+        "k": { "type": "string", "const": "el" },
+        "tag": { "$ref": "#/$defs/tag" },
+        "key": { "$ref": "#/$defs/node_key" },
+        "props": { "$ref": "#/$defs/props" },
+        "on": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/handler" },
+          "default": []
+        },
+        "children": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/node" },
+          "default": []
+        }
+      }
+    }
+  }
+}

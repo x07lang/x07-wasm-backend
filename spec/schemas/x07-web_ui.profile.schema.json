@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-web_ui.profile.schema.json",
+  "title": "x07.web_ui.profile@0.1.0",
+  "description": "Web UI profile for x07-wasm Phase 2 (core wasm or component build + host budgets).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "v", "wasm_profile_id", "defaults"],
+  "properties": {
+    "schema_version": { "const": "x07.web_ui.profile@0.1.0" },
+    "id": { "$ref": "#/$defs/id" },
+    "v": { "type": "integer", "minimum": 1 },
+    "wasm_profile_id": { "$ref": "#/$defs/id" },
+    "defaults": { "$ref": "#/$defs/defaults" },
+    "notes": { "type": "string", "maxLength": 16384 }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "u64": { "type": "integer", "minimum": 0 },
+    "u16": { "type": "integer", "minimum": 0, "maximum": 65535 },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["arena_cap_bytes", "max_input_bytes", "max_output_bytes", "serve", "build"],
+      "properties": {
+        "arena_cap_bytes": { "$ref": "#/$defs/u64" },
+        "max_input_bytes": { "$ref": "#/$defs/u64" },
+        "max_output_bytes": { "$ref": "#/$defs/u64" },
+        "serve": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["port", "strict_mime"],
+          "properties": {
+            "port": { "$ref": "#/$defs/u16" },
+            "strict_mime": { "type": "boolean" }
+          }
+        },
+        "build": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["format", "emit_host_assets"],
+          "properties": {
+            "format": { "type": "string", "enum": ["core", "component"] },
+            "emit_host_assets": { "type": "boolean" }
+          }
+        }
+      }
+    }
+  }
+}
+

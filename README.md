@@ -1,6 +1,6 @@
 # x07-wasm-backend
 
-Phase 0+1 WASM tooling for X07:
+Phase 0–2 WASM tooling for X07:
 
 - `x07-wasm build`: `x07 build --freestanding` → C → `clang` → `wasm-ld` → `.wasm` + manifest + build report
 - `x07-wasm run`: deterministic runner for the Phase 0 ABI (`x07_solve_v2` via WASM Basic C ABI sret)
@@ -13,6 +13,13 @@ Phase 0+1 WASM tooling for X07:
   - `x07-wasm component targets`
   - `x07-wasm serve`
   - `x07-wasm component run`
+- Phase 2 (web-ui):
+  - `x07-wasm web-ui contracts validate`
+  - `x07-wasm web-ui profile validate`
+  - `x07-wasm web-ui build`
+  - `x07-wasm web-ui serve`
+  - `x07-wasm web-ui test`
+  - `x07-wasm web-ui regress-from-incident`
 
 ## Install (local)
 
@@ -48,18 +55,24 @@ x07-wasm run \
 
 - `docs/phase1.md`
 
+## Phase 2 docs
+
+- `docs/phase2.md`
+
 ## Contracts-as-data
 
 - WASM profile registry: `arch/wasm/index.x07wasm.json`
 - Profiles: `arch/wasm/profiles/*.json`
 - WIT registry: `arch/wit/index.x07wit.json`
 - Component profile registry: `arch/wasm/component/index.x07wasm.component.json`
+- Web UI profile registry: `arch/web_ui/index.x07webui.json`
 - Schemas (published to `https://x07.io/spec/`): `spec/schemas/*.schema.json`
 
 ## CI / smoke
 
 - Phase 0 gate: `scripts/ci/check_phase0.sh`
 - Phase 1 gate: `scripts/ci/check_phase1.sh`
+- Phase 2 gate: `scripts/ci/check_phase2.sh`
 - Example freestanding smoke: `examples/solve_pure_echo/ci/freestanding_smoke.sh`
 
 ## Incidents

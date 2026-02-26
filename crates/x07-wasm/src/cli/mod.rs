@@ -94,6 +94,28 @@ pub enum Command {
     #[command(name = "component-targets")]
     ComponentTargets(ComponentTargetsArgs),
 
+    /// Web UI tooling (Phase 2).
+    #[command(name = "web-ui")]
+    WebUi(WebUiArgs),
+    /// Alias for `x07-wasm web-ui contracts validate`.
+    #[command(name = "web-ui-contracts-validate")]
+    WebUiContractsValidate(WebUiContractsValidateArgs),
+    /// Alias for `x07-wasm web-ui profile validate`.
+    #[command(name = "web-ui-profile-validate")]
+    WebUiProfileValidate(WebUiProfileValidateArgs),
+    /// Alias for `x07-wasm web-ui build`.
+    #[command(name = "web-ui-build")]
+    WebUiBuild(WebUiBuildArgs),
+    /// Alias for `x07-wasm web-ui serve`.
+    #[command(name = "web-ui-serve")]
+    WebUiServe(WebUiServeArgs),
+    /// Alias for `x07-wasm web-ui test`.
+    #[command(name = "web-ui-test")]
+    WebUiTest(WebUiTestArgs),
+    /// Alias for `x07-wasm web-ui regress from-incident`.
+    #[command(name = "web-ui-regress-from-incident")]
+    WebUiRegressFromIncident(WebUiRegressFromIncidentArgs),
+
     /// Validate arch/wasm/index.x07wasm.json and referenced profile files.
     Profile(ProfileArgs),
     /// Alias for `x07-wasm profile validate`.
@@ -156,6 +178,67 @@ impl Command {
             }
             Command::ComponentTargets(v) => {
                 crate::component::targets::cmd_component_targets(raw_argv, scope, machine, v)
+            }
+            Command::WebUi(args) => match args.cmd {
+                WebUiCommand::Contracts(c) => match c.cmd {
+                    WebUiContractsCommand::Validate(v) => {
+                        crate::web_ui::contracts_validate::cmd_web_ui_contracts_validate(
+                            raw_argv, scope, machine, v,
+                        )
+                    }
+                },
+                WebUiCommand::Profile(p) => match p.cmd {
+                    WebUiProfileCommand::Validate(v) => {
+                        crate::web_ui::profile_validate::cmd_web_ui_profile_validate(
+                            raw_argv, scope, machine, v,
+                        )
+                    }
+                },
+                WebUiCommand::Build(v) => {
+                    crate::web_ui::build::cmd_web_ui_build(raw_argv, scope, machine, v)
+                }
+                WebUiCommand::Serve(v) => {
+                    crate::web_ui::serve::cmd_web_ui_serve(raw_argv, scope, machine, v)
+                }
+                WebUiCommand::Test(v) => {
+                    crate::web_ui::test::cmd_web_ui_test(raw_argv, scope, machine, v)
+                }
+                WebUiCommand::RegressFromIncident(v) => {
+                    crate::web_ui::regress_from_incident::cmd_web_ui_regress_from_incident(
+                        raw_argv, scope, machine, v,
+                    )
+                }
+                WebUiCommand::Regress(r) => match r.cmd {
+                    WebUiRegressCommand::FromIncident(v) => {
+                        crate::web_ui::regress_from_incident::cmd_web_ui_regress_from_incident(
+                            raw_argv, scope, machine, v,
+                        )
+                    }
+                },
+            },
+            Command::WebUiContractsValidate(v) => {
+                crate::web_ui::contracts_validate::cmd_web_ui_contracts_validate(
+                    raw_argv, scope, machine, v,
+                )
+            }
+            Command::WebUiProfileValidate(v) => {
+                crate::web_ui::profile_validate::cmd_web_ui_profile_validate(
+                    raw_argv, scope, machine, v,
+                )
+            }
+            Command::WebUiBuild(v) => {
+                crate::web_ui::build::cmd_web_ui_build(raw_argv, scope, machine, v)
+            }
+            Command::WebUiServe(v) => {
+                crate::web_ui::serve::cmd_web_ui_serve(raw_argv, scope, machine, v)
+            }
+            Command::WebUiTest(v) => {
+                crate::web_ui::test::cmd_web_ui_test(raw_argv, scope, machine, v)
+            }
+            Command::WebUiRegressFromIncident(v) => {
+                crate::web_ui::regress_from_incident::cmd_web_ui_regress_from_incident(
+                    raw_argv, scope, machine, v,
+                )
             }
             Command::Profile(args) => match args.cmd {
                 ProfileCommand::Validate(v) => {
@@ -568,6 +651,229 @@ pub struct ComponentRunArgs {
 
 #[derive(Debug, Clone, Args)]
 #[command(subcommand_required = true)]
+pub struct WebUiArgs {
+    #[command(subcommand)]
+    pub cmd: WebUiCommand,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum WebUiCommand {
+    Contracts(WebUiContractsArgs),
+    Profile(WebUiProfileArgs),
+    Build(WebUiBuildArgs),
+    Serve(WebUiServeArgs),
+    Test(WebUiTestArgs),
+    /// Alias for `x07-wasm web-ui regress from-incident`.
+    #[command(name = "regress-from-incident")]
+    RegressFromIncident(WebUiRegressFromIncidentArgs),
+    Regress(WebUiRegressArgs),
+}
+
+#[derive(Debug, Clone, Args)]
+#[command(subcommand_required = true)]
+pub struct WebUiContractsArgs {
+    #[command(subcommand)]
+    pub cmd: WebUiContractsCommand,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum WebUiContractsCommand {
+    Validate(WebUiContractsValidateArgs),
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct WebUiContractsValidateArgs {
+    /// Validate only specific fixture files.
+    #[arg(long, value_name = "PATH")]
+    pub fixture: Vec<PathBuf>,
+
+    /// List discovered schemas and fixtures and exit (still emits a report).
+    #[arg(long)]
+    pub list: bool,
+
+    /// Treat warnings as errors.
+    #[arg(long)]
+    pub strict: bool,
+}
+
+#[derive(Debug, Clone, Args)]
+#[command(subcommand_required = true)]
+pub struct WebUiProfileArgs {
+    #[command(subcommand)]
+    pub cmd: WebUiProfileCommand,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum WebUiProfileCommand {
+    Validate(WebUiProfileValidateArgs),
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct WebUiProfileValidateArgs {
+    /// Path to the web-ui profile registry.
+    #[arg(
+        long,
+        value_name = "PATH",
+        default_value = "arch/web_ui/index.x07webui.json"
+    )]
+    pub index: PathBuf,
+
+    /// Only validate specific profile id(s).
+    #[arg(long, value_name = "ID")]
+    pub profile: Vec<String>,
+
+    /// Validate and use this web-ui profile JSON file directly (bypass registry).
+    #[arg(long, value_name = "PATH")]
+    pub profile_file: Option<PathBuf>,
+
+    /// Treat warnings as errors.
+    #[arg(long)]
+    pub strict: bool,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum WebUiBuildFormat {
+    Core,
+    Component,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct WebUiBuildArgs {
+    /// Path to x07 project manifest.
+    #[arg(long, value_name = "PATH", default_value = "x07.json")]
+    pub project: PathBuf,
+
+    /// Web UI profile id (loaded from arch/web_ui/index.x07webui.json).
+    #[arg(long, value_name = "ID")]
+    pub profile: Option<String>,
+
+    /// Validate and use this web-ui profile JSON file directly (bypass registry).
+    #[arg(long, value_name = "PATH", conflicts_with = "profile")]
+    pub profile_file: Option<PathBuf>,
+
+    /// Path to the web-ui profile registry.
+    #[arg(
+        long,
+        value_name = "PATH",
+        default_value = "arch/web_ui/index.x07webui.json"
+    )]
+    pub index: PathBuf,
+
+    /// Path to wasm profile registry.
+    #[arg(
+        long,
+        value_name = "PATH",
+        default_value = "arch/wasm/index.x07wasm.json"
+    )]
+    pub wasm_index: PathBuf,
+
+    /// Override build output format (default comes from the web-ui profile).
+    #[arg(long, value_enum)]
+    pub format: Option<WebUiBuildFormat>,
+
+    /// Output directory for dist artifacts.
+    #[arg(long, value_name = "DIR", default_value = "dist")]
+    pub out_dir: PathBuf,
+
+    /// Delete out-dir before writing artifacts.
+    #[arg(long)]
+    pub clean: bool,
+
+    /// Treat warnings as errors.
+    #[arg(long)]
+    pub strict: bool,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum WebUiServeMode {
+    Listen,
+    Smoke,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct WebUiServeArgs {
+    /// Directory to serve.
+    #[arg(long, value_name = "DIR", default_value = "dist")]
+    pub dir: PathBuf,
+
+    /// Bind address (host:port). Port 0 selects an ephemeral port.
+    #[arg(long, value_name = "STR", default_value = "127.0.0.1:0")]
+    pub addr: String,
+
+    /// Serve mode.
+    #[arg(long, value_enum, default_value = "listen")]
+    pub mode: WebUiServeMode,
+
+    /// Fail if .wasm is not served as application/wasm.
+    #[arg(long)]
+    pub strict_mime: bool,
+
+    /// Root directory for incident bundles.
+    #[arg(long, value_name = "DIR", default_value = ".x07-wasm/incidents")]
+    pub incidents_dir: PathBuf,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct WebUiTestArgs {
+    /// Directory containing built dist artifacts.
+    #[arg(long, value_name = "DIR", default_value = "dist")]
+    pub dist_dir: PathBuf,
+
+    /// Trace case file(s) to replay.
+    #[arg(long, value_name = "PATH")]
+    pub case: Vec<PathBuf>,
+
+    /// Maximum number of trace steps to replay per case.
+    #[arg(long, value_name = "N", default_value_t = 1000)]
+    pub max_steps: u32,
+
+    /// Update trace fixtures in-place from current outputs.
+    #[arg(long)]
+    pub update_golden: bool,
+
+    /// Treat warnings as errors.
+    #[arg(long)]
+    pub strict: bool,
+
+    /// Root directory for incident bundles.
+    #[arg(long, value_name = "DIR", default_value = ".x07-wasm/incidents")]
+    pub incidents_dir: PathBuf,
+}
+
+#[derive(Debug, Clone, Args)]
+#[command(subcommand_required = true)]
+pub struct WebUiRegressArgs {
+    #[command(subcommand)]
+    pub cmd: WebUiRegressCommand,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum WebUiRegressCommand {
+    #[command(name = "from-incident")]
+    FromIncident(WebUiRegressFromIncidentArgs),
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct WebUiRegressFromIncidentArgs {
+    /// Path to incident artifact JSON captured by the web-ui host.
+    #[arg(long, value_name = "PATH")]
+    pub incident: PathBuf,
+
+    /// Output directory for generated regression assets.
+    #[arg(long, value_name = "DIR", default_value = "tests/regress")]
+    pub out_dir: PathBuf,
+
+    /// Base name for generated case files.
+    #[arg(long, value_name = "STR", default_value = "incident")]
+    pub name: String,
+
+    /// Treat warnings as errors.
+    #[arg(long)]
+    pub strict: bool,
+}
+
+#[derive(Debug, Clone, Args)]
+#[command(subcommand_required = true)]
 pub struct ProfileArgs {
     #[command(subcommand)]
     pub cmd: ProfileCommand,
@@ -651,6 +957,12 @@ pub enum Scope {
     ComponentCompose,
     ComponentTargets,
     ComponentRun,
+    WebUiContractsValidate,
+    WebUiProfileValidate,
+    WebUiBuild,
+    WebUiServe,
+    WebUiTest,
+    WebUiRegressFromIncident,
     ProfileValidate,
     CliSpecrowsCheck,
 }
@@ -674,6 +986,21 @@ pub fn scope_for_command(cmd: Option<&Command>) -> Scope {
         Some(Command::ComponentBuild(_)) => Scope::ComponentBuild,
         Some(Command::ComponentCompose(_)) => Scope::ComponentCompose,
         Some(Command::ComponentTargets(_)) => Scope::ComponentTargets,
+        Some(Command::WebUi(args)) => match args.cmd {
+            WebUiCommand::Contracts(_) => Scope::WebUiContractsValidate,
+            WebUiCommand::Profile(_) => Scope::WebUiProfileValidate,
+            WebUiCommand::Build(_) => Scope::WebUiBuild,
+            WebUiCommand::Serve(_) => Scope::WebUiServe,
+            WebUiCommand::Test(_) => Scope::WebUiTest,
+            WebUiCommand::RegressFromIncident(_) => Scope::WebUiRegressFromIncident,
+            WebUiCommand::Regress(_) => Scope::WebUiRegressFromIncident,
+        },
+        Some(Command::WebUiContractsValidate(_)) => Scope::WebUiContractsValidate,
+        Some(Command::WebUiProfileValidate(_)) => Scope::WebUiProfileValidate,
+        Some(Command::WebUiBuild(_)) => Scope::WebUiBuild,
+        Some(Command::WebUiServe(_)) => Scope::WebUiServe,
+        Some(Command::WebUiTest(_)) => Scope::WebUiTest,
+        Some(Command::WebUiRegressFromIncident(_)) => Scope::WebUiRegressFromIncident,
         Some(Command::Profile(_)) => Scope::ProfileValidate,
         Some(Command::ProfileValidate(_)) => Scope::ProfileValidate,
         Some(Command::Cli(_)) => Scope::CliSpecrowsCheck,

@@ -27,6 +27,7 @@ pub fn cmd_doctor(
     let wasm_tools = tool_first_line("wasm-tools", &["--version"]).ok();
     let wit_bindgen = tool_first_line("wit-bindgen", &["--version"]).ok();
     let wac = tool_first_line("wac", &["--version"]).ok();
+    let jco = tool_first_line("jco", &["--version"]).ok();
 
     if x07.is_none() {
         diagnostics.push(Diagnostic::new(
@@ -84,6 +85,14 @@ pub fn cmd_doctor(
             "wac not found on PATH".to_string(),
         ));
     }
+    if jco.is_none() {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_TOOL_MISSING_JCO",
+            Severity::Warning,
+            Stage::Run,
+            "jco not found on PATH (required for Phase 2 component transpile)".to_string(),
+        ));
+    }
 
     meta.tool.clang = clang.clone();
     meta.tool.wasm_ld = wasm_ld.clone();
@@ -107,6 +116,7 @@ pub fn cmd_doctor(
         "wasm_tools": wasm_tools,
         "wit_bindgen": wit_bindgen,
         "wac": wac,
+        "jco": jco,
       }
     });
 

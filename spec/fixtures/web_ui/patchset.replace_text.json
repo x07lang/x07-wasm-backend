@@ -1,0 +1,4 @@
+[
+  { "op": "replace", "path": "/root/children/0/text", "value": "Hello" }
+]
+

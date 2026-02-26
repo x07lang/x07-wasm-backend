@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-wasm.web_ui.build.report.schema.json",
+  "title": "x07.wasm.web_ui.build.report@0.1.0",
+  "description": "Machine-readable report emitted by `x07-wasm web-ui build` (Phase 2).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "command", "ok", "exit_code", "diagnostics", "meta", "result"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "x07.wasm.web_ui.build.report@0.1.0"
+    },
+    "command": { "type": "string", "const": "x07-wasm.web-ui.build" },
+    "ok": { "type": "boolean" },
+    "exit_code": { "type": "integer", "minimum": 0, "maximum": 255 },
+    "diagnostics": {
+      "type": "array",
+      "items": { "$ref": "https://x07.io/spec/x07diag.schema.json#/$defs/diagnostic" },
+      "default": []
+    },
+    "meta": { "$ref": "#/$defs/meta" },
+    "result": { "$ref": "#/$defs/result" }
+  },
+  "$defs": {
+    "tool_meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "const": "x07-wasm" },
+        "version": { "type": "string" },
+        "git_sha": { "type": "string", "pattern": "^[0-9a-fA-F]{7,40}$" },
+        "rustc": { "type": "string" },
+        "clang": { "type": "string" },
+        "wasm_ld": { "type": "string" },
+        "wasmtime": { "type": "string" }
+      },
+      "required": ["name", "version"]
+    },
+    "file_digest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string", "minLength": 1, "maxLength": 4096 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "bytes_len": { "type": "integer", "minimum": 0 }
+      },
+      "required": ["path", "sha256", "bytes_len"]
+    },
+    "nondeterminism": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "uses_os_time": { "type": "boolean" },
+        "uses_network": { "type": "boolean" },
+        "uses_process": { "type": "boolean" }
+      },
+      "required": ["uses_os_time", "uses_network", "uses_process"]
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tool": { "$ref": "#/$defs/tool_meta" },
+        "elapsed_ms": { "type": "integer", "minimum": 0 },
+        "cwd": { "type": "string" },
+        "argv": { "type": "array", "items": { "type": "string" } },
+        "inputs": { "type": "array", "items": { "$ref": "#/$defs/file_digest" }, "default": [] },
+        "outputs": { "type": "array", "items": { "$ref": "#/$defs/file_digest" }, "default": [] },
+        "nondeterminism": { "$ref": "#/$defs/nondeterminism" }
+      },
+      "required": ["tool", "elapsed_ms", "cwd", "argv", "inputs", "outputs", "nondeterminism"]
+    },
+    "profile_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "v"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+        },
+        "v": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "host_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "git_sha", "files"],
+      "properties": {
+        "source": { "type": "string", "minLength": 1, "maxLength": 1024 },
+        "git_sha": { "type": "string", "pattern": "^[0-9a-fA-F]{7,40}$" },
+        "files": { "type": "array", "items": { "$ref": "#/$defs/file_digest" }, "default": [] }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "format", "dist_dir", "artifacts"],
+      "properties": {
+        "profile": { "$ref": "#/$defs/profile_ref" },
+        "format": { "type": "string", "enum": ["core", "component"] },
+        "dist_dir": { "type": "string", "minLength": 1, "maxLength": 4096 },
+        "artifacts": { "type": "array", "items": { "$ref": "#/$defs/file_digest" }, "default": [] },
+        "host_snapshot": { "$ref": "#/$defs/host_snapshot" }
+      }
+    }
+  }
+}
+

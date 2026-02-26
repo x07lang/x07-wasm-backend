@@ -1,4 +1,4 @@
-#![recursion_limit = "256"]
+#![recursion_limit = "512"]
 
 mod arch;
 mod blob;
@@ -12,6 +12,7 @@ mod serve;
 mod toolchain;
 mod util;
 mod wasm;
+mod web_ui;
 mod wit;
 
 use std::io::Write as _;

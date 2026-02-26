@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-web_ui.dispatch.schema.json",
+  "title": "x07.web_ui.dispatch@0.1.0",
+  "description": "Web UI dispatch envelope passed into a solve-pure web-ui app.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["v", "kind", "state", "event"],
+  "properties": {
+    "v": { "type": "integer", "const": 1 },
+    "kind": { "type": "string", "const": "x07.web_ui.dispatch" },
+    "state": {
+      "oneOf": [{ "type": "null" }, { "type": "object" }]
+    },
+    "event": { "$ref": "#/$defs/event" }
+  },
+  "$defs": {
+    "node_key": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9._-]{0,63}$",
+      "description": "Stable node key within a view tree."
+    },
+    "event": {
+      "description": "User event descriptor emitted by the host and consumed by the app.",
+      "oneOf": [
+        { "$ref": "#/$defs/event_init" },
+        { "$ref": "#/$defs/event_click" },
+        { "$ref": "#/$defs/event_input" },
+        { "$ref": "#/$defs/event_change" },
+        { "$ref": "#/$defs/event_submit" }
+      ]
+    },
+    "event_init": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "const": "init" }
+      }
+    },
+    "event_click": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "target"],
+      "properties": {
+        "type": { "type": "string", "const": "click" },
+        "target": { "$ref": "#/$defs/node_key" }
+      }
+    },
+    "event_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "target", "value"],
+      "properties": {
+        "type": { "type": "string", "const": "input" },
+        "target": { "$ref": "#/$defs/node_key" },
+        "value": { "type": "string", "maxLength": 4096 }
+      }
+    },
+    "event_change": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "target", "value"],
+      "properties": {
+        "type": { "type": "string", "const": "change" },
+        "target": { "$ref": "#/$defs/node_key" },
+        "value": { "type": "string", "maxLength": 4096 }
+      }
+    },
+    "event_submit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "target"],
+      "properties": {
+        "type": { "type": "string", "const": "submit" },
+        "target": { "$ref": "#/$defs/node_key" }
+      }
+    }
+  }
+}
+

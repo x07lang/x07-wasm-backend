@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-web_ui.frame.schema.json",
+  "title": "x07.web_ui.frame@0.1.0",
+  "description": "Web UI frame emitted by a web-ui reducer step.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["v", "kind", "state", "ui", "patches", "effects", "telemetry"],
+  "properties": {
+    "v": { "type": "integer", "const": 1 },
+    "kind": { "type": "string", "const": "x07.web_ui.frame" },
+    "state": { "oneOf": [{ "type": "null" }, { "type": "object" }] },
+    "ui": { "$ref": "https://x07.io/spec/x07-web_ui.tree.schema.json" },
+    "patches": { "$ref": "https://x07.io/spec/x07-web_ui.patchset.schema.json" },
+    "effects": { "type": "array", "items": {}, "default": [] },
+    "telemetry": { "type": "object", "additionalProperties": true, "default": {} }
+  }
+}

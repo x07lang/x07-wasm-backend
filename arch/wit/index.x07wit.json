@@ -8,6 +8,18 @@
       "sha256_tree": "bb63b291a45fb4828c5fc9e72a240310fa8f943e4de2cf5517a7c64c37577af0"
     },
     {
+      "id": "x07:web-ui@0.2.0",
+      "path": "wit/x07/web_ui/0.2.0",
+      "kind": "local",
+      "sha256_tree": "36cb5929f2872050333cde89340426beecf549d6c8e1edade110f8078b7b3d91"
+    },
+    {
+      "id": "x07:web-ui-adapter@0.1.0",
+      "path": "wit/x07/web_ui_adapter/0.1.0",
+      "kind": "local",
+      "sha256_tree": "cfce54b02f13e8c4d31611880e3ddc7438877ac1295dce61b1f7aaca3b4a90d5"
+    },
+    {
       "id": "x07:cli-adapter@0.1.0",
       "path": "wit/x07/cli_adapter/0.1.0",
       "kind": "local",
