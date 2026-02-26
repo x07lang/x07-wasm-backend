@@ -16,6 +16,7 @@
         "std.web_ui.tests.test_dispatch_init_v1",
         "std.web_ui.tests.test_event_input_v1",
         "std.web_ui.tests.test_vdom_text_v1",
+        "std.web_ui.tests.test_vdom_fragment_v1",
         "std.web_ui.tests.test_vdom_on_input_v1",
         "std.web_ui.tests.test_patch_roundtrip_v1",
         "std.web_ui.tests.test_frame_builder_v1"
@@ -70,6 +71,36 @@
         ["let", "txt", ["bytes.lit", "\"hello\""]],
         ["let", "node", ["std.web_ui.vdom.text_v1", ["bytes.view", "key"], ["bytes.view", "txt"]]],
         ["let", "want", ["bytes.lit", "{\"k\":\"text\",\"key\":\"k\",\"text\":\"hello\"}"]],
+        ["try", ["std.test.assert_bytes_eq", "node", "want", ["std.test.code_assert_bytes_eq"]]],
+        ["std.test.pass"]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.tests.test_vdom_fragment_v1",
+      "params": [],
+      "result": "result_i32",
+      "body": [
+        "begin",
+        ["let", "key", ["bytes.lit", "\"k\""]],
+        ["let", "children", ["std.web_ui.vdom.children0_v1"]],
+        [
+          "let",
+          "node",
+          [
+            "std.web_ui.vdom.fragment_v1",
+            ["bytes.view", "key"],
+            ["bytes.view", "children"]
+          ]
+        ],
+        [
+          "let",
+          "want",
+          [
+            "bytes.lit",
+            "{\"k\":\"el\",\"tag\":\"x07-fragment\",\"key\":\"k\",\"props\":{\"attrs\":{},\"class\":[],\"style\":{\"display\":\"contents\"}},\"on\":[],\"children\":[]}"
+          ]
+        ],
         ["try", ["std.test.assert_bytes_eq", "node", "want", ["std.test.code_assert_bytes_eq"]]],
         ["std.test.pass"]
       ]

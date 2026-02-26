@@ -14,6 +14,7 @@
         "std.web_ui.vdom.on_change_v1",
         "std.web_ui.vdom.on_submit_v1",
         "std.web_ui.vdom.text_v1",
+        "std.web_ui.vdom.fragment_v1",
         "std.web_ui.vdom.children0_v1",
         "std.web_ui.vdom.children1_v1",
         "std.web_ui.vdom.children2_v1",
@@ -156,6 +157,41 @@
           ["view.to_bytes", "text_json"]
         ],
         ["bytes.lit", "}"]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.vdom.fragment_v1",
+      "params": [
+        { "name": "key_json", "ty": "bytes_view" },
+        { "name": "children_json", "ty": "bytes_view" }
+      ],
+      "result": "bytes",
+      "body": [
+        "begin",
+        ["let", "tag", ["bytes.lit", "\"x07-fragment\""]],
+        ["let", "attrs", ["bytes.lit", "{}"]],
+        ["let", "cls", ["bytes.lit", "[]"]],
+        ["let", "style", ["bytes.lit", "{\"display\":\"contents\"}"]],
+        [
+          "let",
+          "props",
+          [
+            "std.web_ui.vdom.props_v1",
+            ["bytes.view", "attrs"],
+            ["bytes.view", "cls"],
+            ["bytes.view", "style"]
+          ]
+        ],
+        ["let", "on", ["std.web_ui.vdom.on_empty_v1"]],
+        [
+          "std.web_ui.vdom.el_v1",
+          ["bytes.view", "tag"],
+          "key_json",
+          ["bytes.view", "props"],
+          ["bytes.view", "on"],
+          "children_json"
+        ]
       ]
     },
     {

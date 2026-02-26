@@ -32,8 +32,8 @@ WIT_FILES = [
 
 TREE_DIRS = [
     (
-        "packages/std-web-ui/0.1.0/modules",
-        VENDORED_REPO_DIR / "packages" / "std-web-ui" / "0.1.0" / "modules",
+        "packages/std-web-ui/0.1.1/modules",
+        VENDORED_REPO_DIR / "packages" / "std-web-ui" / "0.1.1" / "modules",
     ),
     (
         "examples/web_ui_counter",
