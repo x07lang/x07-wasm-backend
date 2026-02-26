@@ -419,24 +419,26 @@ pub fn cmd_web_ui_test(
                 .unwrap_or_else(|| "web-ui test failure".to_string());
             let wasm_digest = Some(&core.wasm);
             let trace_doc = json!({
-              "v": 1,
-              "kind": "x07.web_ui.trace",
-              "steps": observed_steps,
-              "meta": {
-                "case": case_path.display().to_string(),
-              }
-            });
+            "v": 1,
+            "kind": "x07.web_ui.trace",
+            "steps": observed_steps,
+            "meta": {
+              "case": case_path.display().to_string(),
+                  }
+              });
             let _ = write_web_ui_test_incident(
-                &args.incidents_dir,
-                wasm_digest,
-                case_digest.as_ref(),
-                case_path,
-                &error,
-                &trace_doc,
-                failed_step,
-                failed_env.as_ref(),
-                failed_expected_frame.as_ref(),
-                failed_actual_frame.as_ref(),
+                WebUiTestIncidentArgs {
+                    incidents_dir: &args.incidents_dir,
+                    wasm_digest,
+                    case_digest: case_digest.as_ref(),
+                    case_path,
+                    error: &error,
+                    trace: &trace_doc,
+                    failed_step,
+                    failed_env: failed_env.as_ref(),
+                    failed_expected_frame: failed_expected_frame.as_ref(),
+                    failed_actual_frame: failed_actual_frame.as_ref(),
+                },
                 &mut meta,
                 &mut diagnostics,
             );
@@ -463,28 +465,32 @@ pub fn cmd_web_ui_test(
     )
 }
 
-fn write_web_ui_test_incident(
-    incidents_dir: &Path,
-    wasm_digest: Option<&report::meta::FileDigest>,
-    case_digest: Option<&report::meta::FileDigest>,
-    case_path: &Path,
-    error: &str,
-    trace: &Value,
+struct WebUiTestIncidentArgs<'a> {
+    incidents_dir: &'a Path,
+    wasm_digest: Option<&'a report::meta::FileDigest>,
+    case_digest: Option<&'a report::meta::FileDigest>,
+    case_path: &'a Path,
+    error: &'a str,
+    trace: &'a Value,
     failed_step: Option<usize>,
-    failed_env: Option<&Value>,
-    failed_expected_frame: Option<&Value>,
-    failed_actual_frame: Option<&Value>,
+    failed_env: Option<&'a Value>,
+    failed_expected_frame: Option<&'a Value>,
+    failed_actual_frame: Option<&'a Value>,
+}
+
+fn write_web_ui_test_incident(
+    args: WebUiTestIncidentArgs<'_>,
     meta: &mut report::meta::ReportMeta,
     diagnostics: &mut Vec<Diagnostic>,
 ) -> Option<PathBuf> {
-    let wasm_sha = wasm_digest.map(|d| d.sha256.as_str()).unwrap_or("");
-    let case_sha = case_digest.map(|d| d.sha256.as_str()).unwrap_or("");
-    let step = failed_step.unwrap_or(0);
+    let wasm_sha = args.wasm_digest.map(|d| d.sha256.as_str()).unwrap_or("");
+    let case_sha = args.case_digest.map(|d| d.sha256.as_str()).unwrap_or("");
+    let step = args.failed_step.unwrap_or(0);
     let seed = format!("web-ui-test:{wasm_sha}:{case_sha}:{step}");
     let id = util::sha256_hex(seed.as_bytes());
     let id = id.chars().take(32).collect::<String>();
 
-    let dir = incidents_dir.join("web-ui-test").join(id);
+    let dir = args.incidents_dir.join("web-ui-test").join(id);
     if let Err(err) = std::fs::create_dir_all(&dir) {
         diagnostics.push(Diagnostic::new(
             "X07WASM_WEB_UI_TEST_INCIDENT_DIR_CREATE_FAILED",
@@ -498,18 +504,18 @@ fn write_web_ui_test_incident(
     let doc = json!({
       "v": 1,
       "kind": "x07.web_ui.incident",
-      "error": error,
-      "trace": trace,
+      "error": args.error,
+      "trace": args.trace,
       "failed": {
-        "case": case_path.display().to_string(),
-        "step": failed_step,
-        "env": failed_env,
-        "expected_frame": failed_expected_frame,
-        "actual_frame": failed_actual_frame,
+        "case": args.case_path.display().to_string(),
+        "step": args.failed_step,
+        "env": args.failed_env,
+        "expected_frame": args.failed_expected_frame,
+        "actual_frame": args.failed_actual_frame,
       },
       "inputs": {
-        "wasm": wasm_digest,
-        "case": case_digest,
+        "wasm": args.wasm_digest,
+        "case": args.case_digest,
       }
     });
 
@@ -531,7 +537,10 @@ fn write_web_ui_test_incident(
             "X07WASM_WEB_UI_TEST_INCIDENT_WRITE_FAILED",
             Severity::Warning,
             Stage::Run,
-            format!("failed to write incident {}: {err}", incident_path.display()),
+            format!(
+                "failed to write incident {}: {err}",
+                incident_path.display()
+            ),
         ));
         return None;
     }
@@ -544,7 +553,10 @@ fn write_web_ui_test_incident(
             "X07WASM_WEB_UI_TEST_INCIDENT_DIGEST_FAILED",
             Severity::Warning,
             Stage::Run,
-            format!("failed to digest incident {}: {err:#}", incident_path.display()),
+            format!(
+                "failed to digest incident {}: {err:#}",
+                incident_path.display()
+            ),
         )),
     }
 
