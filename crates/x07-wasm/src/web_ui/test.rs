@@ -1,5 +1,5 @@
 use std::ffi::OsString;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use serde::Deserialize;
@@ -38,6 +38,8 @@ pub fn cmd_web_ui_test(
     meta.nondeterminism.uses_network = false;
     meta.nondeterminism.uses_os_time = false;
 
+    let incident_dir = args.incidents_dir.display().to_string();
+
     let mut diagnostics: Vec<Diagnostic> = Vec::new();
     let mut case_results: Vec<Value> = Vec::new();
 
@@ -57,7 +59,7 @@ pub fn cmd_web_ui_test(
             meta,
             diagnostics,
             case_results,
-            None,
+            Some(incident_dir.clone()),
             args.strict,
         );
     }
@@ -79,7 +81,7 @@ pub fn cmd_web_ui_test(
             meta,
             diagnostics,
             case_results,
-            None,
+            Some(incident_dir.clone()),
             args.strict,
         );
     }
@@ -121,16 +123,28 @@ pub fn cmd_web_ui_test(
     for case_path in &args.case {
         let mut case_ok = true;
         let mut snapshot_path: Option<String> = None;
+        let mut case_error: Option<String> = None;
+        let mut observed_steps: Vec<Value> = Vec::new();
+        let mut failed_step: Option<usize> = None;
+        let mut failed_env: Option<Value> = None;
+        let mut failed_expected_frame: Option<Value> = None;
+        let mut failed_actual_frame: Option<Value> = None;
 
-        match util::file_digest(case_path) {
-            Ok(d) => meta.inputs.push(d),
-            Err(err) => diagnostics.push(Diagnostic::new(
-                "X07WASM_WEB_UI_TEST_CASE_READ_FAILED",
-                Severity::Error,
-                Stage::Parse,
-                format!("failed to digest case {}: {err:#}", case_path.display()),
-            )),
-        }
+        let case_digest = match util::file_digest(case_path) {
+            Ok(d) => {
+                meta.inputs.push(d.clone());
+                Some(d)
+            }
+            Err(err) => {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_WEB_UI_TEST_CASE_READ_FAILED",
+                    Severity::Error,
+                    Stage::Parse,
+                    format!("failed to digest case {}: {err:#}", case_path.display()),
+                ));
+                None
+            }
+        };
 
         let bytes = match std::fs::read(case_path) {
             Ok(v) => v,
@@ -205,6 +219,10 @@ pub fn cmd_web_ui_test(
                         Stage::Run,
                         format!("step {i}: {err:#}"),
                     ));
+                    case_error = Some(format!("step {i}: call failed: {err:#}"));
+                    failed_step = Some(i);
+                    failed_env = Some(env);
+                    failed_expected_frame = Some(expected_frame);
                     case_ok = false;
                     break;
                 }
@@ -218,14 +236,33 @@ pub fn cmd_web_ui_test(
                         Stage::Run,
                         format!("step {i}: output is not JSON: {err}"),
                     ));
+                    case_error = Some(format!("step {i}: output is not JSON: {err}"));
+                    failed_step = Some(i);
+                    failed_env = Some(env);
+                    failed_expected_frame = Some(expected_frame);
                     case_ok = false;
                     break;
                 }
             };
+            let frame_diag_before = diagnostics.len();
             diagnostics.extend(store.validate(
                 "https://x07.io/spec/x07-web_ui.frame.schema.json",
                 &actual_frame,
             )?);
+            if diagnostics[frame_diag_before..]
+                .iter()
+                .any(|d| d.severity == Severity::Error)
+            {
+                case_error = Some(format!("step {i}: frame schema invalid"));
+                failed_step = Some(i);
+                failed_env = Some(env);
+                failed_expected_frame = Some(expected_frame);
+                failed_actual_frame = Some(actual_frame);
+                case_ok = false;
+                break;
+            }
+
+            observed_steps.push(json!({ "env": env.clone(), "frame": actual_frame.clone() }));
 
             if let Some(ui) = actual_frame.get("ui") {
                 let next_ui = ui.clone();
@@ -242,6 +279,12 @@ pub fn cmd_web_ui_test(
                                         Stage::Run,
                                         format!("step {i}: patches do not match ui tree"),
                                     ));
+                                    case_error =
+                                        Some(format!("step {i}: patches do not match ui tree"));
+                                    failed_step = Some(i);
+                                    failed_env = Some(env);
+                                    failed_expected_frame = Some(expected_frame);
+                                    failed_actual_frame = Some(actual_frame);
                                     case_ok = false;
                                     break;
                                 }
@@ -253,6 +296,11 @@ pub fn cmd_web_ui_test(
                                     Stage::Run,
                                     format!("step {i}: {err:#}"),
                                 ));
+                                case_error = Some(format!("step {i}: patch apply failed: {err:#}"));
+                                failed_step = Some(i);
+                                failed_env = Some(env);
+                                failed_expected_frame = Some(expected_frame);
+                                failed_actual_frame = Some(actual_frame);
                                 case_ok = false;
                                 break;
                             }
@@ -283,6 +331,11 @@ pub fn cmd_web_ui_test(
                         Stage::Run,
                         format!("step {i}: frame mismatch"),
                     ));
+                    case_error = Some(format!("step {i}: frame mismatch"));
+                    failed_step = Some(i);
+                    failed_env = Some(env);
+                    failed_expected_frame = Some(expected_frame);
+                    failed_actual_frame = Some(actual_frame);
                     case_ok = false;
                     break;
                 }
@@ -340,6 +393,7 @@ pub fn cmd_web_ui_test(
                                     Stage::Run,
                                     format!("component step {i}: frame mismatch"),
                                 ));
+                                case_error = Some(format!("component step {i}: frame mismatch"));
                                 case_ok = false;
                                 break;
                             }
@@ -353,9 +407,39 @@ pub fn cmd_web_ui_test(
                         Stage::Run,
                         format!("{err:#}"),
                     ));
+                    case_error = Some(format!("component run failed: {err:#}"));
                     case_ok = false;
                 }
             }
+        }
+
+        if !case_ok {
+            let error = case_error
+                .clone()
+                .unwrap_or_else(|| "web-ui test failure".to_string());
+            let wasm_digest = Some(&core.wasm);
+            let trace_doc = json!({
+              "v": 1,
+              "kind": "x07.web_ui.trace",
+              "steps": observed_steps,
+              "meta": {
+                "case": case_path.display().to_string(),
+              }
+            });
+            let _ = write_web_ui_test_incident(
+                &args.incidents_dir,
+                wasm_digest,
+                case_digest.as_ref(),
+                case_path,
+                &error,
+                &trace_doc,
+                failed_step,
+                failed_env.as_ref(),
+                failed_expected_frame.as_ref(),
+                failed_actual_frame.as_ref(),
+                &mut meta,
+                &mut diagnostics,
+            );
         }
 
         case_results.push(json!({
@@ -365,7 +449,6 @@ pub fn cmd_web_ui_test(
         }));
     }
 
-    let incident_dir: Option<String> = None;
     emit_test_report(
         &store,
         scope,
@@ -375,9 +458,97 @@ pub fn cmd_web_ui_test(
         meta,
         diagnostics,
         case_results,
-        incident_dir,
+        Some(incident_dir),
         args.strict,
     )
+}
+
+fn write_web_ui_test_incident(
+    incidents_dir: &Path,
+    wasm_digest: Option<&report::meta::FileDigest>,
+    case_digest: Option<&report::meta::FileDigest>,
+    case_path: &Path,
+    error: &str,
+    trace: &Value,
+    failed_step: Option<usize>,
+    failed_env: Option<&Value>,
+    failed_expected_frame: Option<&Value>,
+    failed_actual_frame: Option<&Value>,
+    meta: &mut report::meta::ReportMeta,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> Option<PathBuf> {
+    let wasm_sha = wasm_digest.map(|d| d.sha256.as_str()).unwrap_or("");
+    let case_sha = case_digest.map(|d| d.sha256.as_str()).unwrap_or("");
+    let step = failed_step.unwrap_or(0);
+    let seed = format!("web-ui-test:{wasm_sha}:{case_sha}:{step}");
+    let id = util::sha256_hex(seed.as_bytes());
+    let id = id.chars().take(32).collect::<String>();
+
+    let dir = incidents_dir.join("web-ui-test").join(id);
+    if let Err(err) = std::fs::create_dir_all(&dir) {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_WEB_UI_TEST_INCIDENT_DIR_CREATE_FAILED",
+            Severity::Warning,
+            Stage::Run,
+            format!("failed to create incident dir {}: {err}", dir.display()),
+        ));
+        return None;
+    }
+
+    let doc = json!({
+      "v": 1,
+      "kind": "x07.web_ui.incident",
+      "error": error,
+      "trace": trace,
+      "failed": {
+        "case": case_path.display().to_string(),
+        "step": failed_step,
+        "env": failed_env,
+        "expected_frame": failed_expected_frame,
+        "actual_frame": failed_actual_frame,
+      },
+      "inputs": {
+        "wasm": wasm_digest,
+        "case": case_digest,
+      }
+    });
+
+    let incident_path = dir.join("incident.json");
+    let bytes = match report::canon::canonical_pretty_json_bytes(&doc) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_WEB_UI_TEST_INCIDENT_CANON_FAILED",
+                Severity::Warning,
+                Stage::Run,
+                format!("failed to canonicalize incident JSON: {err:#}"),
+            ));
+            return None;
+        }
+    };
+    if let Err(err) = std::fs::write(&incident_path, bytes) {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_WEB_UI_TEST_INCIDENT_WRITE_FAILED",
+            Severity::Warning,
+            Stage::Run,
+            format!("failed to write incident {}: {err}", incident_path.display()),
+        ));
+        return None;
+    }
+
+    match util::file_digest(&incident_path) {
+        Ok(d) => {
+            meta.outputs.push(d);
+        }
+        Err(err) => diagnostics.push(Diagnostic::new(
+            "X07WASM_WEB_UI_TEST_INCIDENT_DIGEST_FAILED",
+            Severity::Warning,
+            Stage::Run,
+            format!("failed to digest incident {}: {err:#}", incident_path.display()),
+        )),
+    }
+
+    Some(dir)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -476,6 +647,7 @@ fn load_web_ui_budgets(
 }
 
 struct CoreWasmRunner {
+    wasm: report::meta::FileDigest,
     store: Store<()>,
     memory: wasmtime::Memory,
     func: wasmtime::TypedFunc<(i32, i32, i32, i32, i32), ()>,
@@ -495,11 +667,12 @@ impl CoreWasmRunner {
     ) -> Result<Self> {
         let wasm_bytes =
             std::fs::read(wasm_path).with_context(|| format!("read: {}", wasm_path.display()))?;
-        meta.inputs.push(report::meta::FileDigest {
+        let wasm_digest = report::meta::FileDigest {
             path: wasm_path.display().to_string(),
             sha256: util::sha256_hex(&wasm_bytes),
             bytes_len: wasm_bytes.len() as u64,
-        });
+        };
+        meta.inputs.push(wasm_digest.clone());
 
         let mut config = Config::new();
         config.max_wasm_stack(2 * 1024 * 1024);
@@ -526,6 +699,7 @@ impl CoreWasmRunner {
         let data_end = read_global_u32(&mut store, &instance, "__data_end")?;
 
         Ok(Self {
+            wasm: wasm_digest,
             store,
             memory,
             func,

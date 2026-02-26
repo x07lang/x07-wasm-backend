@@ -48,6 +48,7 @@ pub fn cmd_web_ui_regress_from_incident(
                 diagnostics,
                 &args,
                 generated,
+                args.strict,
             );
         }
     };
@@ -71,6 +72,7 @@ pub fn cmd_web_ui_regress_from_incident(
                 diagnostics,
                 &args,
                 generated,
+                args.strict,
             );
         }
     };
@@ -93,6 +95,7 @@ pub fn cmd_web_ui_regress_from_incident(
             diagnostics,
             &args,
             generated,
+            args.strict,
         );
     }
 
@@ -100,15 +103,20 @@ pub fn cmd_web_ui_regress_from_incident(
     let mut trace_clean = trace.clone();
 
     // Normalize unstable fields for deterministic fixtures.
+    let mut normalized_started_at = false;
     if let Some(meta_obj) = trace_clean.get_mut("meta").and_then(Value::as_object_mut) {
         if meta_obj.contains_key("startedAtUnixMs") {
             meta_obj.insert("startedAtUnixMs".to_string(), json!(0));
+            normalized_started_at = true;
         }
     }
+    let mut removed_wall_ms = 0usize;
     if let Some(steps) = trace_clean.get_mut("steps").and_then(Value::as_array_mut) {
         for step in steps.iter_mut() {
             if let Some(obj) = step.as_object_mut() {
-                obj.remove("wallMs");
+                if obj.remove("wallMs").is_some() {
+                    removed_wall_ms += 1;
+                }
             }
         }
     }
@@ -118,6 +126,24 @@ pub fn cmd_web_ui_regress_from_incident(
         &trace_clean,
     )?;
     diagnostics.extend(diags);
+
+    if normalized_started_at {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_WEB_UI_INCIDENT_NORMALIZED_STARTED_AT",
+            Severity::Warning,
+            Stage::Parse,
+            "normalized trace.meta.startedAtUnixMs to 0".to_string(),
+        ));
+    }
+    if removed_wall_ms > 0 {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_WEB_UI_INCIDENT_NORMALIZED_WALLMS",
+            Severity::Warning,
+            Stage::Parse,
+            format!("removed wallMs from {removed_wall_ms} trace step(s)"),
+        ));
+    }
+
     if diagnostics.iter().any(|d| d.severity == Severity::Error) {
         return emit_regress_report(
             &store,
@@ -129,6 +155,7 @@ pub fn cmd_web_ui_regress_from_incident(
             diagnostics,
             &args,
             generated,
+            args.strict,
         );
     }
 
@@ -151,6 +178,7 @@ pub fn cmd_web_ui_regress_from_incident(
             diagnostics,
             &args,
             generated,
+            args.strict,
         );
     }
 
@@ -194,6 +222,7 @@ pub fn cmd_web_ui_regress_from_incident(
         diagnostics,
         &args,
         generated,
+        args.strict,
     )
 }
 
@@ -205,10 +234,18 @@ fn emit_regress_report(
     started: std::time::Instant,
     raw_argv: &[OsString],
     meta: report::meta::ReportMeta,
-    diagnostics: Vec<Diagnostic>,
+    mut diagnostics: Vec<Diagnostic>,
     args: &WebUiRegressFromIncidentArgs,
     generated: Vec<report::meta::FileDigest>,
+    strict: bool,
 ) -> Result<u8> {
+    if strict {
+        for d in diagnostics.iter_mut() {
+            if d.severity == Severity::Warning {
+                d.severity = Severity::Error;
+            }
+        }
+    }
     let ok = diagnostics.iter().all(|d| d.severity != Severity::Error);
     let exit_code = report::exit_code::exit_code_for_diagnostics(&diagnostics);
     let report_doc = json!({

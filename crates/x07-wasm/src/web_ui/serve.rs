@@ -25,6 +25,8 @@ pub fn cmd_web_ui_serve(
     meta.nondeterminism.uses_network = true;
     meta.nondeterminism.uses_os_time = false;
 
+    let incident_dir = args.incidents_dir.display().to_string();
+
     let mut diagnostics: Vec<Diagnostic> = Vec::new();
 
     if !args.dir.is_dir() {
@@ -46,7 +48,7 @@ pub fn cmd_web_ui_serve(
             None,
             None,
             None,
-            None,
+            Some(incident_dir.clone()),
         );
     }
 
@@ -71,7 +73,7 @@ pub fn cmd_web_ui_serve(
                 None,
                 None,
                 None,
-                None,
+                Some(incident_dir.clone()),
             );
         }
     };
@@ -97,7 +99,7 @@ pub fn cmd_web_ui_serve(
                 None,
                 None,
                 None,
-                None,
+                Some(incident_dir.clone()),
             );
         }
     };
@@ -133,7 +135,7 @@ pub fn cmd_web_ui_serve(
                 bound,
                 None,
                 None,
-                None,
+                Some(incident_dir.clone()),
             )
         }
         WebUiServeMode::Smoke => {
@@ -172,7 +174,7 @@ pub fn cmd_web_ui_serve(
                 Some(bound_addr.to_string()),
                 Some(wasm_mime),
                 Some(wasm_mime_ok),
-                None,
+                Some(incident_dir.clone()),
             )
         }
     }
