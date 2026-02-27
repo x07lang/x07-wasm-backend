@@ -38,6 +38,15 @@ Phase 0–4 WASM tooling for X07:
   - `x07-wasm http serve`
   - `x07-wasm http test`
   - `x07-wasm http regress from-incident`
+- Phase 6 (ops / policy / SLO / deploy / provenance):
+  - `x07-wasm ops validate`
+  - `x07-wasm caps validate`
+  - `x07-wasm policy validate`
+  - `x07-wasm slo validate`
+  - `x07-wasm slo eval`
+  - `x07-wasm deploy plan`
+  - `x07-wasm provenance attest`
+  - `x07-wasm provenance verify`
 
 ## Install (local)
 
@@ -89,6 +98,10 @@ x07-wasm run \
 
 - `docs/phase5.md`
 
+## Phase 6 docs
+
+- `docs/phase6.md`
+
 ## Contracts-as-data
 
 - WASM profile registry: `arch/wasm/index.x07wasm.json`
@@ -107,6 +120,7 @@ x07-wasm run \
 - Phase 3 gate: `scripts/ci/check_phase3.sh`
 - Phase 4 gate: `scripts/ci/check_phase4.sh`
 - Phase 5 gate: `scripts/ci/check_phase5.sh`
+- Phase 6 gate: `scripts/ci/check_phase6.sh`
 - Example freestanding smoke: `examples/solve_pure_echo/ci/freestanding_smoke.sh`
 
 ## Incidents

@@ -1,0 +1,18 @@
+{
+  "schema_version": "x07.policy.card@0.1.0",
+  "id": "policy_deploy_deny_blue_green",
+  "v": 1,
+  "rules": [
+    {
+      "id": "require_blue_green_strategy",
+      "target": "deploy_plan",
+      "effect": "deny",
+      "assertions": [
+        { "op": "eq", "path": "/strategy/type", "value": "blue_green" }
+      ],
+      "patches": [],
+      "reason": "deploy plan must use blue_green strategy"
+    }
+  ]
+}
+

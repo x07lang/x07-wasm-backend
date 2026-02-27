@@ -869,3 +869,149 @@ jobs:
             dist
             .x07-wasm/incidents
           if-no-files-found: ignore
+
+  phase6:
+    name: ci / phase6 (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install deps (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang \
+            build-essential \
+            pkg-config \
+            libssl-dev \
+            libcurl4-openssl-dev \
+            liblzma-dev \
+            zlib1g-dev \
+            libsqlite3-dev \
+            xz-utils
+
+      - name: Install x07 (pinned tag)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.38 x07
+          cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.38 x07-host-runner
+          x07 --version
+
+      - name: Install x07-wasm (repo)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo install --locked --path crates/x07-wasm
+          x07-wasm --version
+
+      - name: Set up Node (pinned)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install jco (pinned)
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install -g @bytecodealliance/jco@1.16.1
+          jco --version
+
+      - name: Install WASI SDK (pinned)
+        shell: bash
+        run: |
+          set -euo pipefail
+          V=30.0
+          TAG="wasi-sdk-30"
+          OS=""
+          ARCH=""
+          case "${RUNNER_OS}" in
+            Linux) OS="linux" ;;
+            macOS) OS="macos" ;;
+            Windows) OS="windows" ;;
+            *) echo "unsupported RUNNER_OS=${RUNNER_OS}" >&2; exit 1 ;;
+          esac
+          case "${RUNNER_ARCH}" in
+            X64) ARCH="x86_64" ;;
+            ARM64) ARCH="arm64" ;;
+            *) echo "unsupported RUNNER_ARCH=${RUNNER_ARCH}" >&2; exit 1 ;;
+          esac
+          ASSET="wasi-sdk-${V}-${ARCH}-${OS}.tar.gz"
+          URL="https://github.com/WebAssembly/wasi-sdk/releases/download/${TAG}/${ASSET}"
+          mkdir -p .wasi-sdk
+          curl -fsSL --retry 10 --retry-connrefused --retry-all-errors --retry-delay 2 "$URL" -o .wasi-sdk/wasi-sdk.tar.gz
+          tar -xzf .wasi-sdk/wasi-sdk.tar.gz -C .wasi-sdk
+          echo "WASI_SDK_DIR=${GITHUB_WORKSPACE}/.wasi-sdk/wasi-sdk-${V}-${ARCH}-${OS}" >> "${GITHUB_ENV}"
+
+      - name: Install Wasmtime CLI (pinned)
+        shell: bash
+        run: |
+          set -euo pipefail
+          V=42.0.0
+          OS=""
+          ARCH=""
+          EXT=""
+          case "${RUNNER_OS}" in
+            Linux) OS="linux"; EXT="tar.xz" ;;
+            macOS) OS="macos"; EXT="tar.xz" ;;
+            Windows) OS="windows"; EXT="zip" ;;
+            *) echo "unsupported RUNNER_OS=${RUNNER_OS}" >&2; exit 1 ;;
+          esac
+          case "${RUNNER_ARCH}" in
+            X64) ARCH="x86_64" ;;
+            ARM64) ARCH="aarch64" ;;
+            *) echo "unsupported RUNNER_ARCH=${RUNNER_ARCH}" >&2; exit 1 ;;
+          esac
+          ASSET="wasmtime-v${V}-${ARCH}-${OS}.${EXT}"
+          URL="https://github.com/bytecodealliance/wasmtime/releases/download/v${V}/${ASSET}"
+          mkdir -p .wasmtime
+          curl -fsSL --retry 10 --retry-connrefused --retry-all-errors --retry-delay 2 "$URL" -o ".wasmtime/wasmtime.${EXT}"
+          if [[ "${EXT}" == "zip" ]]; then
+            unzip -q ".wasmtime/wasmtime.${EXT}" -d .wasmtime
+          else
+            tar -xJf ".wasmtime/wasmtime.${EXT}" -C .wasmtime
+          fi
+          wasmtime_dir="${PWD}/.wasmtime/wasmtime-v${V}-${ARCH}-${OS}"
+          echo "${wasmtime_dir}" >> "${GITHUB_PATH}"
+          export PATH="${wasmtime_dir}:${PATH}"
+          wasmtime --version
+
+      - name: Install component tooling (pinned)
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup target add wasm32-wasip2
+          cargo install --locked --version 1.245.1 wasm-tools
+          cargo install --locked --version 0.53.1 wit-bindgen-cli
+          cargo install --locked --version 0.9.0 wac-cli
+          wasm-tools --version
+          wit-bindgen --version
+          wac --version
+
+      - name: Phase 6 operational loop
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="${WASI_SDK_DIR}/bin:${PATH}"
+          bash scripts/ci/check_phase6.sh
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase6-${{ matrix.os }}
+          path: |
+            build
+            dist
+            .x07-wasm/incidents
+          if-no-files-found: ignore

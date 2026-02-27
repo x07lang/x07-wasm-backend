@@ -309,6 +309,26 @@ pub fn apply_json_patch(mut doc: Value, patchset: &Value) -> Result<Value> {
                 apply_set(&mut doc, &tokens, value, kind == "add")?;
             }
             "remove" => apply_remove(&mut doc, &tokens)?,
+            "copy" => {
+                let from = op.get("from").and_then(Value::as_str).unwrap_or("");
+                let from_tokens = parse_json_pointer(from)?;
+                let value = navigate(&doc, &from_tokens)?.clone();
+                apply_set(&mut doc, &tokens, value, true)?;
+            }
+            "move" => {
+                let from = op.get("from").and_then(Value::as_str).unwrap_or("");
+                let from_tokens = parse_json_pointer(from)?;
+                let value = navigate(&doc, &from_tokens)?.clone();
+                apply_remove(&mut doc, &from_tokens)?;
+                apply_set(&mut doc, &tokens, value, true)?;
+            }
+            "test" => {
+                let want = op.get("value").cloned().unwrap_or(Value::Null);
+                let got = navigate(&doc, &tokens)?;
+                if got != &want {
+                    anyhow::bail!("test failed at {path:?}");
+                }
+            }
             _ => anyhow::bail!("unsupported op: {kind:?}"),
         }
     }
@@ -337,6 +357,9 @@ fn apply_set(doc: &mut Value, tokens: &[String], value: Value, is_add: bool) -> 
     let parent = navigate_mut(doc, parent_tokens)?;
     let last = &last[0];
     if let Some(obj) = parent.as_object_mut() {
+        if !is_add && !obj.contains_key(last) {
+            anyhow::bail!("replace key missing: {last:?}");
+        }
         obj.insert(last.clone(), value);
         return Ok(());
     }
@@ -370,7 +393,9 @@ fn apply_remove(doc: &mut Value, tokens: &[String]) -> Result<()> {
     let parent = navigate_mut(doc, parent_tokens)?;
     let last = &last[0];
     if let Some(obj) = parent.as_object_mut() {
-        obj.remove(last);
+        if obj.remove(last).is_none() {
+            anyhow::bail!("remove key missing: {last:?}");
+        }
         return Ok(());
     }
     if let Some(arr) = parent.as_array_mut() {
@@ -402,6 +427,29 @@ fn navigate_mut<'a>(doc: &'a mut Value, tokens: &[String]) -> Result<&'a mut Val
                 .get_mut(idx)
                 .ok_or_else(|| anyhow::anyhow!("index out of bounds: {idx}"))?;
             navigate_mut(child, &tokens[1..])
+        }
+        _ => anyhow::bail!("invalid container in path at token {t:?}"),
+    }
+}
+
+fn navigate<'a>(doc: &'a Value, tokens: &[String]) -> Result<&'a Value> {
+    if tokens.is_empty() {
+        return Ok(doc);
+    }
+    let t = &tokens[0];
+    match doc {
+        Value::Object(map) => {
+            let child = map
+                .get(t)
+                .ok_or_else(|| anyhow::anyhow!("missing key in path: {t:?}"))?;
+            navigate(child, &tokens[1..])
+        }
+        Value::Array(arr) => {
+            let idx: usize = t.parse().context("array index")?;
+            let child = arr
+                .get(idx)
+                .ok_or_else(|| anyhow::anyhow!("index out of bounds: {idx}"))?;
+            navigate(child, &tokens[1..])
         }
         _ => anyhow::bail!("invalid container in path at token {t:?}"),
     }

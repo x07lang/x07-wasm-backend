@@ -41,12 +41,12 @@
       "sha256": "3381e3077b949a91303e2553042cb35ed7bd76fcbc613b9ae039f1bc93b4da24"
     },
     "host/app-host.mjs": {
-      "bytes_len": 31481,
-      "sha256": "7a40dbd7347333057f529e807b472d236bc7f48704726ca7c61b976c03a85326"
+      "bytes_len": 33765,
+      "sha256": "97ca6e5ea51e460724ba7703592673efc9af96adf3a5c7fd84a44a107b6550f9"
     },
     "host/index.html": {
-      "bytes_len": 1632,
-      "sha256": "223a09ad5abc0916d38c34d477b363e2789f248e0c34c889ed7c3ee3e40b1fe3"
+      "bytes_len": 2237,
+      "sha256": "c853b2ded2029dec966ced0f9312cb1de165fce3254960425532ec04be49fb62"
     },
     "packages/std-web-ui/0.1.2/modules/std/web_ui/effects/http.x07.json": {
       "bytes_len": 3174,
@@ -129,6 +129,6 @@
       "sha256": "23987f7afcd9bec97a983c4e5f1682373cee253347202cc1da149ad66d90d1f3"
     }
   },
-  "git_sha": "752d7736641ce997434dc68a86e2df8831da6264",
+  "git_sha": "0265be73eb93e0caf79aba70047bc163885900fa",
   "source": "https://github.com/x07lang/x07-web-ui.git"
 }

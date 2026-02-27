@@ -85,7 +85,18 @@
         "mode": { "type": "string", "enum": ["listen", "smoke", "canary"] },
         "api_prefix": { "type": "string", "minLength": 1, "maxLength": 256 },
         "strict_wasm_mime": { "type": "boolean" },
-        "wasm_mime_ok": { "type": "boolean" }
+        "wasm_mime_ok": { "type": "boolean" },
+        "canary": { "$ref": "#/$defs/canary" }
+      }
+    },
+    "canary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metrics_snapshot", "slo_decision", "slo_violations"],
+      "properties": {
+        "metrics_snapshot": { "$ref": "https://x07.io/spec/x07-metrics.snapshot.schema.json" },
+        "slo_decision": { "type": "string", "enum": ["promote", "rollback", "inconclusive"] },
+        "slo_violations": { "type": "integer", "minimum": 0 }
       }
     },
     "result": {

@@ -18,12 +18,19 @@ use wasmtime::component::{Component, Linker, ResourceTable};
 use wasmtime::{Config, Engine, Store};
 use wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiCtxView, WasiView};
 use wasmtime_wasi_http::bindings::ProxyPre;
+use wasmtime_wasi_http::body::HyperOutgoingBody;
+use wasmtime_wasi_http::types::{
+    default_send_request, HostFutureIncomingResponse, OutgoingRequestConfig,
+};
 use wasmtime_wasi_http::{WasiHttpCtx, WasiHttpView};
 
 use crate::blob;
+use crate::caps::doc::CapabilitiesDoc;
+use crate::caps::enforce::build_wasi_ctx_from_caps;
 use crate::cli::{MachineArgs, Scope, ServeArgs, ServeMode};
 use crate::diag::{Diagnostic, Severity, Stage};
 use crate::guest_diag;
+use crate::ops::load_ops_profile_with_refs;
 use crate::report;
 use crate::schema::SchemaStore;
 use crate::util;
@@ -74,6 +81,62 @@ pub fn cmd_serve(
         max_wall_ms_per_request: args.max_wall_ms_per_request,
         max_concurrent: args.max_concurrent as usize,
     };
+
+    let mut caps: Option<std::sync::Arc<CapabilitiesDoc>> = None;
+    let wasi_base_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    if let Some(ops_path) = args.ops.as_ref() {
+        let loaded_ops = load_ops_profile_with_refs(&store, ops_path, &mut meta, &mut diagnostics)?;
+        let Some(loaded_ops) = loaded_ops else {
+            let report_doc = serve_report_doc(
+                meta,
+                diagnostics,
+                &args,
+                budgets,
+                component_digest,
+                None,
+                Vec::new(),
+                Vec::new(),
+            );
+            let exit_code = report_doc
+                .get("exit_code")
+                .and_then(Value::as_u64)
+                .unwrap_or(1) as u8;
+            store.validate_report_and_emit(scope, machine, started, raw_argv, report_doc)?;
+            return Ok(exit_code);
+        };
+
+        match serde_json::from_value::<CapabilitiesDoc>(loaded_ops.capabilities.doc_json.clone()) {
+            Ok(v) => caps = Some(std::sync::Arc::new(v)),
+            Err(err) => diagnostics.push(Diagnostic::new(
+                "X07WASM_CAPS_SCHEMA_INVALID",
+                Severity::Error,
+                Stage::Parse,
+                format!("failed to parse capabilities doc: {err}"),
+            )),
+        }
+
+        if diagnostics
+            .iter()
+            .any(|d| d.severity == Severity::Error && d.stage == Stage::Parse)
+        {
+            let report_doc = serve_report_doc(
+                meta,
+                diagnostics,
+                &args,
+                budgets,
+                component_digest,
+                None,
+                Vec::new(),
+                Vec::new(),
+            );
+            let exit_code = report_doc
+                .get("exit_code")
+                .and_then(Value::as_u64)
+                .unwrap_or(1) as u8;
+            store.validate_report_and_emit(scope, machine, started, raw_argv, report_doc)?;
+            return Ok(exit_code);
+        }
+    }
 
     let mut config = Config::new();
     config.async_support(true);
@@ -283,6 +346,8 @@ pub fn cmd_serve(
                         &engine,
                         &proxy_pre,
                         &runtime_limits,
+                        caps.clone(),
+                        &wasi_base_dir,
                         &args,
                         &component_digest,
                         &mut meta,
@@ -296,6 +361,8 @@ pub fn cmd_serve(
                         &engine,
                         &proxy_pre,
                         &runtime_limits,
+                        caps.clone(),
+                        &wasi_base_dir,
                         &args,
                         &component_digest,
                         &mut meta,
@@ -344,6 +411,12 @@ struct ServeBudgets {
     max_concurrent: usize,
 }
 
+#[derive(Debug, Default, Clone, Copy)]
+struct ServeRequestNondeterminism {
+    uses_network: bool,
+    uses_os_time: bool,
+}
+
 #[derive(Debug, Clone)]
 struct ServeResponseSummary {
     ok: bool,
@@ -356,6 +429,9 @@ struct ServeState {
     table: ResourceTable,
     wasi: WasiCtx,
     http: WasiHttpCtx,
+    caps: Option<std::sync::Arc<CapabilitiesDoc>>,
+    diagnostics: Vec<Diagnostic>,
+    nondeterminism: ServeRequestNondeterminism,
     limiter: WasmResourceLimiter,
     outgoing_body_chunk_size: usize,
     outgoing_body_buffer_chunks: usize,
@@ -386,6 +462,48 @@ impl WasiHttpView for ServeState {
     fn outgoing_body_buffer_chunks(&mut self) -> usize {
         self.outgoing_body_buffer_chunks
     }
+
+    fn send_request(
+        &mut self,
+        request: hyper::Request<HyperOutgoingBody>,
+        config: OutgoingRequestConfig,
+    ) -> wasmtime_wasi_http::HttpResult<HostFutureIncomingResponse> {
+        if let Some(caps) = self.caps.as_ref() {
+            let scheme = if config.use_tls { "https" } else { "http" };
+            let Some(host) = request.uri().host() else {
+                self.diagnostics.push(Diagnostic::new(
+                    "X07WASM_CAPS_NET_DENIED",
+                    Severity::Error,
+                    Stage::Run,
+                    "wasi:http send_request denied (missing host)".to_string(),
+                ));
+                return Err(
+                    wasmtime_wasi_http::bindings::http::types::ErrorCode::HttpRequestDenied.into(),
+                );
+            };
+            let port = request
+                .uri()
+                .port_u16()
+                .unwrap_or(if config.use_tls { 443 } else { 80 });
+            if !caps.network_allows(scheme, host, port) {
+                self.diagnostics.push(Diagnostic::new(
+                    "X07WASM_CAPS_NET_DENIED",
+                    Severity::Error,
+                    Stage::Run,
+                    format!(
+                        "wasi:http send_request denied by capabilities: {}://{}:{}",
+                        scheme, host, port
+                    ),
+                ));
+                return Err(
+                    wasmtime_wasi_http::bindings::http::types::ErrorCode::HttpRequestDenied.into(),
+                );
+            }
+        }
+
+        self.nondeterminism.uses_network = true;
+        Ok(default_send_request(request, config))
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -393,6 +511,8 @@ async fn serve_canary(
     engine: &Engine,
     proxy: &ProxyPre<ServeState>,
     runtime_limits: &crate::arch::WasmRuntimeLimits,
+    caps: Option<std::sync::Arc<CapabilitiesDoc>>,
+    wasi_base_dir: &Path,
     args: &ServeArgs,
     component: &report::meta::FileDigest,
     meta: &mut report::meta::ReportMeta,
@@ -487,8 +607,24 @@ async fn serve_canary(
         let headers = req.headers().clone();
 
         let started = std::time::Instant::now();
-        match handle_one_request(engine, proxy, runtime_limits, req, budgets).await {
-            Ok(buf) => {
+        let mut request_diags: Vec<Diagnostic> = Vec::new();
+        match handle_one_request(
+            engine,
+            proxy,
+            runtime_limits,
+            req,
+            budgets,
+            caps.clone(),
+            wasi_base_dir,
+            &mut request_diags,
+        )
+        .await
+        {
+            Ok((buf, nondeterminism)) => {
+                meta.nondeterminism.uses_network |= nondeterminism.uses_network;
+                meta.nondeterminism.uses_os_time |= nondeterminism.uses_os_time;
+                diagnostics.extend(request_diags);
+
                 let wall_ms = started.elapsed().as_millis() as u64;
                 let (req_env_bytes, req_env_doc, _req_sha) =
                     request_envelope_bytes(&method, &uri, &headers, &body_loaded.bytes);
@@ -573,6 +709,7 @@ async fn serve_canary(
                 });
             }
             Err(err) => {
+                diagnostics.extend(request_diags);
                 let wall_ms = started.elapsed().as_millis() as u64;
                 if let Some(kind) = wasmtime_limits::classify_budget_exceeded(&err) {
                     let (code, msg) = match kind {
@@ -661,6 +798,8 @@ async fn serve_listen(
     engine: &Engine,
     proxy: &ProxyPre<ServeState>,
     runtime_limits: &crate::arch::WasmRuntimeLimits,
+    caps: Option<std::sync::Arc<CapabilitiesDoc>>,
+    wasi_base_dir: &Path,
     args: &ServeArgs,
     component: &report::meta::FileDigest,
     meta: &mut report::meta::ReportMeta,
@@ -751,6 +890,8 @@ async fn serve_listen(
         let responses_acc = responses_acc.clone();
         let incident_dirs_acc = incident_dirs_acc.clone();
         let diagnostics_acc = diagnostics_acc.clone();
+        let caps = caps.clone();
+        let wasi_base_dir = wasi_base_dir.to_path_buf();
 
         let svc = hyper::service::service_fn(move |req: Request<Incoming>| {
             let proxy = proxy.clone();
@@ -761,6 +902,8 @@ async fn serve_listen(
             let responses_acc = responses_acc.clone();
             let incident_dirs_acc = incident_dirs_acc.clone();
             let diagnostics_acc = diagnostics_acc.clone();
+            let caps = caps.clone();
+            let wasi_base_dir = wasi_base_dir.clone();
             async move {
                 let (parts, body) = req.into_parts();
                 let body_bytes =
@@ -788,8 +931,23 @@ async fn serve_listen(
                 let uri = req2.uri().clone();
                 let headers = req2.headers().clone();
                 let started = std::time::Instant::now();
-                match handle_one_request(engine, &proxy, &runtime_limits, req2, &budgets).await {
-                    Ok(buf) => {
+                let mut request_diags: Vec<Diagnostic> = Vec::new();
+                match handle_one_request(
+                    engine,
+                    &proxy,
+                    &runtime_limits,
+                    req2,
+                    &budgets,
+                    caps.clone(),
+                    &wasi_base_dir,
+                    &mut request_diags,
+                )
+                .await
+                {
+                    Ok((buf, _nondeterminism)) => {
+                        if !request_diags.is_empty() {
+                            diagnostics_acc.lock().unwrap().extend(request_diags);
+                        }
                         let wall_ms = started.elapsed().as_millis() as u64;
                         let mut response_ok = true;
                         match guest_diag::extract_guest_diag_from_http_headers(&buf.headers) {
@@ -886,6 +1044,9 @@ async fn serve_listen(
                         Ok::<_, hyper::Error>(resp)
                     }
                     Err(err) => {
+                        if !request_diags.is_empty() {
+                            diagnostics_acc.lock().unwrap().extend(request_diags);
+                        }
                         let wall_ms = started.elapsed().as_millis() as u64;
                         if let Some(kind) = wasmtime_limits::classify_budget_exceeded(&err) {
                             let (code, msg) = match kind {
@@ -992,13 +1153,17 @@ struct BufferedResponse {
     body: Vec<u8>,
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn handle_one_request<B>(
     engine: &Engine,
     proxy: &ProxyPre<ServeState>,
     runtime_limits: &crate::arch::WasmRuntimeLimits,
     req: Request<B>,
     budgets: &ServeBudgets,
-) -> Result<BufferedResponse>
+    caps: Option<std::sync::Arc<CapabilitiesDoc>>,
+    wasi_base_dir: &Path,
+    request_diagnostics: &mut Vec<Diagnostic>,
+) -> Result<(BufferedResponse, ServeRequestNondeterminism)>
 where
     B: http_body::Body<Data = Bytes, Error = hyper::Error> + Send + Sync + 'static,
 {
@@ -1008,11 +1173,21 @@ where
         .div_ceil(outgoing_body_chunk_size)
         .max(1);
 
-    let wasi = WasiCtxBuilder::new().build();
+    let wasi = if let Some(caps) = caps.as_deref() {
+        match build_wasi_ctx_from_caps(caps, wasi_base_dir, request_diagnostics)? {
+            Some(v) => v,
+            None => anyhow::bail!("capabilities denied building WASI ctx"),
+        }
+    } else {
+        WasiCtxBuilder::new().build()
+    };
     let state = ServeState {
         table: ResourceTable::new(),
         wasi,
         http: WasiHttpCtx::new(),
+        caps,
+        diagnostics: Vec::new(),
+        nondeterminism: ServeRequestNondeterminism::default(),
         limiter: WasmResourceLimiter::new(
             runtime_limits.max_memory_bytes,
             runtime_limits.max_table_elements,
@@ -1023,14 +1198,35 @@ where
     let mut store = Store::new(engine, state);
     store.data_mut().table.set_max_capacity(1024);
     store.limiter(|s| &mut s.limiter);
-    wasmtime_limits::store_add_fuel(&mut store, runtime_limits)?;
+    if let Err(err) = wasmtime_limits::store_add_fuel(&mut store, runtime_limits) {
+        request_diagnostics.append(&mut store.data_mut().diagnostics);
+        return Err(err);
+    }
 
-    let proxy = proxy.instantiate_async(&mut store).await?;
+    let proxy = match proxy.instantiate_async(&mut store).await {
+        Ok(v) => v,
+        Err(err) => {
+            request_diagnostics.append(&mut store.data_mut().diagnostics);
+            return Err(err);
+        }
+    };
 
     let scheme = wasmtime_wasi_http::bindings::http::types::Scheme::Http;
-    let req = store.data_mut().new_incoming_request(scheme, req)?;
+    let req = match store.data_mut().new_incoming_request(scheme, req) {
+        Ok(v) => v,
+        Err(err) => {
+            request_diagnostics.append(&mut store.data_mut().diagnostics);
+            return Err(err);
+        }
+    };
     let (sender, receiver) = tokio::sync::oneshot::channel();
-    let out = store.data_mut().new_response_outparam(sender)?;
+    let out = match store.data_mut().new_response_outparam(sender) {
+        Ok(v) => v,
+        Err(err) => {
+            request_diagnostics.append(&mut store.data_mut().diagnostics);
+            return Err(err);
+        }
+    };
 
     let fut = proxy
         .wasi_http_incoming_handler()
@@ -1044,11 +1240,30 @@ where
 
     match res {
         Ok(Ok(())) => {}
-        Ok(Err(err)) => anyhow::bail!("{err:#}"),
-        Err(_) => anyhow::bail!("timeout"),
-    }
+        Ok(Err(err)) => {
+            request_diagnostics.append(&mut store.data_mut().diagnostics);
+            return Err(anyhow::anyhow!("{err:#}"));
+        }
+        Err(_) => {
+            request_diagnostics.append(&mut store.data_mut().diagnostics);
+            return Err(anyhow::anyhow!("timeout"));
+        }
+    };
 
-    let resp = receiver.await.context("response_outparam recv")??;
+    let resp = match receiver.await.context("response_outparam recv") {
+        Ok(v) => v,
+        Err(err) => {
+            request_diagnostics.append(&mut store.data_mut().diagnostics);
+            return Err(err);
+        }
+    };
+    let resp = match resp {
+        Ok(v) => v,
+        Err(err) => {
+            request_diagnostics.append(&mut store.data_mut().diagnostics);
+            return Err(err.into());
+        }
+    };
     let (parts, body) = resp.into_parts();
     let status = parts.status.as_u16();
     let mut headers = Vec::new();
@@ -1058,13 +1273,25 @@ where
         }
     }
 
-    let body_bytes = collect_body_with_limit(body, budgets.max_response_bytes).await?;
+    let body_bytes = match collect_body_with_limit(body, budgets.max_response_bytes).await {
+        Ok(v) => v,
+        Err(err) => {
+            request_diagnostics.append(&mut store.data_mut().diagnostics);
+            return Err(err);
+        }
+    };
 
-    Ok(BufferedResponse {
-        status,
-        headers,
-        body: body_bytes,
-    })
+    let nondeterminism = store.data().nondeterminism;
+    request_diagnostics.append(&mut store.data_mut().diagnostics);
+
+    Ok((
+        BufferedResponse {
+            status,
+            headers,
+            body: body_bytes,
+        },
+        nondeterminism,
+    ))
 }
 
 fn full_body(bytes: Vec<u8>) -> impl http_body::Body<Data = Bytes, Error = hyper::Error> {

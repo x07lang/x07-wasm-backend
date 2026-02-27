@@ -14,6 +14,22 @@ const SERVE_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.serve.report.schema.json");
 const TOOLCHAIN_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.toolchain.validate.report.schema.json");
+const OPS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.ops.validate.report.schema.json");
+const CAPS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.caps.validate.report.schema.json");
+const POLICY_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.policy.validate.report.schema.json");
+const SLO_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.slo.validate.report.schema.json");
+const SLO_EVAL_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.slo.eval.report.schema.json");
+const DEPLOY_PLAN_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.deploy.plan.report.schema.json");
+const PROVENANCE_ATTEST_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.provenance.attest.report.schema.json");
+const PROVENANCE_VERIFY_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.provenance.verify.report.schema.json");
 const PROFILE_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.profile.validate.report.schema.json");
 const WEB_UI_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] = include_bytes!(
@@ -104,6 +120,14 @@ fn schema_bytes_for_scope(scope: Scope) -> Result<&'static [u8]> {
         Scope::Serve => Ok(SERVE_REPORT_SCHEMA_BYTES),
         Scope::Doctor => Ok(DOCTOR_REPORT_SCHEMA_BYTES),
         Scope::ToolchainValidate => Ok(TOOLCHAIN_VALIDATE_REPORT_SCHEMA_BYTES),
+        Scope::OpsValidate => Ok(OPS_VALIDATE_REPORT_SCHEMA_BYTES),
+        Scope::CapsValidate => Ok(CAPS_VALIDATE_REPORT_SCHEMA_BYTES),
+        Scope::PolicyValidate => Ok(POLICY_VALIDATE_REPORT_SCHEMA_BYTES),
+        Scope::SloValidate => Ok(SLO_VALIDATE_REPORT_SCHEMA_BYTES),
+        Scope::SloEval => Ok(SLO_EVAL_REPORT_SCHEMA_BYTES),
+        Scope::DeployPlan => Ok(DEPLOY_PLAN_REPORT_SCHEMA_BYTES),
+        Scope::ProvenanceAttest => Ok(PROVENANCE_ATTEST_REPORT_SCHEMA_BYTES),
+        Scope::ProvenanceVerify => Ok(PROVENANCE_VERIFY_REPORT_SCHEMA_BYTES),
         Scope::WitValidate => Ok(WIT_VALIDATE_REPORT_SCHEMA_BYTES),
         Scope::ComponentProfileValidate => Ok(COMPONENT_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES),
         Scope::ComponentBuild => Ok(COMPONENT_BUILD_REPORT_SCHEMA_BYTES),
@@ -140,6 +164,14 @@ fn schema_version_for_scope(scope: Scope) -> &'static str {
         Scope::Serve => "x07.wasm.serve.report@0.1.0",
         Scope::Doctor => "x07.wasm.doctor.report@0.1.0",
         Scope::ToolchainValidate => "x07.wasm.toolchain.validate.report@0.1.0",
+        Scope::OpsValidate => "x07.wasm.ops.validate.report@0.1.0",
+        Scope::CapsValidate => "x07.wasm.caps.validate.report@0.1.0",
+        Scope::PolicyValidate => "x07.wasm.policy.validate.report@0.1.0",
+        Scope::SloValidate => "x07.wasm.slo.validate.report@0.1.0",
+        Scope::SloEval => "x07.wasm.slo.eval.report@0.1.0",
+        Scope::DeployPlan => "x07.wasm.deploy.plan.report@0.1.0",
+        Scope::ProvenanceAttest => "x07.wasm.provenance.attest.report@0.1.0",
+        Scope::ProvenanceVerify => "x07.wasm.provenance.verify.report@0.1.0",
         Scope::WitValidate => "x07.wasm.wit.validate.report@0.1.0",
         Scope::ComponentProfileValidate => "x07.wasm.component.profile.validate.report@0.1.0",
         Scope::ComponentBuild => "x07.wasm.component.build.report@0.1.0",

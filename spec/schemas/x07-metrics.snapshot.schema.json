@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-metrics.snapshot.schema.json",
+  "title": "x07.metrics.snapshot@0.1.0",
+  "description": "Metrics snapshot used for offline SLO evaluation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "v", "taken_at_utc", "service", "metrics"],
+  "properties": {
+    "schema_version": { "const": "x07.metrics.snapshot@0.1.0" },
+    "v": { "type": "integer", "const": 1 },
+    "taken_at_utc": { "type": "string", "format": "date-time" },
+    "service": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "metrics": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "items": { "$ref": "#/$defs/metric" }
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "maxLength": 256 },
+      "default": {}
+    }
+  },
+  "$defs": {
+    "metric_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "value"],
+      "properties": {
+        "name": { "$ref": "#/$defs/metric_name" },
+        "value": { "type": "number" },
+        "unit": {
+          "oneOf": [
+            { "type": "null" },
+            { "type": "string", "enum": ["ratio", "ms", "count"] }
+          ],
+          "default": null
+        }
+      }
+    }
+  }
+}

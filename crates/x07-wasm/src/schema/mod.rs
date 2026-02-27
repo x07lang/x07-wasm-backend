@@ -23,6 +23,22 @@ const X07_ARCH_WEB_UI_INDEX_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-arch.web_ui.index.schema.json");
 const X07_ARCH_APP_INDEX_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-arch.app.index.schema.json");
+const X07_ARCH_APP_OPS_INDEX_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-arch.app.ops.index.schema.json");
+const X07_APP_OPS_PROFILE_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-app.ops.profile.schema.json");
+const X07_APP_CAPABILITIES_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-app.capabilities.schema.json");
+const X07_POLICY_CARD_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-policy.card.schema.json");
+const X07_SLO_PROFILE_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-slo.profile.schema.json");
+const X07_METRICS_SNAPSHOT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-metrics.snapshot.schema.json");
+const X07_DEPLOY_PLAN_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-deploy.plan.schema.json");
+const X07_PROVENANCE_SLSA_ATTESTATION_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-provenance.slsa.attestation.schema.json");
 const X07_ARCH_WASM_TOOLCHAIN_INDEX_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-arch.wasm.toolchain.index.schema.json");
 const X07_WASM_PROFILE_SCHEMA_BYTES: &[u8] =
@@ -77,6 +93,22 @@ const X07_APP_TRACE_SCHEMA_BYTES: &[u8] =
 
 const X07_WASM_TOOLCHAIN_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.toolchain.validate.report.schema.json");
+const X07_WASM_OPS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.ops.validate.report.schema.json");
+const X07_WASM_CAPS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.caps.validate.report.schema.json");
+const X07_WASM_POLICY_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.policy.validate.report.schema.json");
+const X07_WASM_SLO_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.slo.validate.report.schema.json");
+const X07_WASM_SLO_EVAL_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.slo.eval.report.schema.json");
+const X07_WASM_DEPLOY_PLAN_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.deploy.plan.report.schema.json");
+const X07_WASM_PROVENANCE_ATTEST_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.provenance.attest.report.schema.json");
+const X07_WASM_PROVENANCE_VERIFY_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.provenance.verify.report.schema.json");
 const X07_WASM_BUILD_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.build.report.schema.json");
 const X07_WASM_RUN_REPORT_SCHEMA_BYTES: &[u8] =
@@ -160,6 +192,7 @@ impl SchemaStore {
             X07_ARCH_WASM_COMPONENT_INDEX_SCHEMA_BYTES,
             X07_ARCH_WEB_UI_INDEX_SCHEMA_BYTES,
             X07_ARCH_APP_INDEX_SCHEMA_BYTES,
+            X07_ARCH_APP_OPS_INDEX_SCHEMA_BYTES,
             X07_ARCH_WASM_TOOLCHAIN_INDEX_SCHEMA_BYTES,
             X07_WASM_PROFILE_SCHEMA_BYTES,
             X07_WASM_RUNTIME_LIMITS_SCHEMA_BYTES,
@@ -184,7 +217,22 @@ impl SchemaStore {
             X07_HTTP_FRAME_SCHEMA_BYTES,
             X07_HTTP_TRACE_SCHEMA_BYTES,
             X07_APP_TRACE_SCHEMA_BYTES,
+            X07_APP_OPS_PROFILE_SCHEMA_BYTES,
+            X07_APP_CAPABILITIES_SCHEMA_BYTES,
+            X07_POLICY_CARD_SCHEMA_BYTES,
+            X07_SLO_PROFILE_SCHEMA_BYTES,
+            X07_METRICS_SNAPSHOT_SCHEMA_BYTES,
+            X07_DEPLOY_PLAN_SCHEMA_BYTES,
+            X07_PROVENANCE_SLSA_ATTESTATION_SCHEMA_BYTES,
             X07_WASM_TOOLCHAIN_VALIDATE_REPORT_SCHEMA_BYTES,
+            X07_WASM_OPS_VALIDATE_REPORT_SCHEMA_BYTES,
+            X07_WASM_CAPS_VALIDATE_REPORT_SCHEMA_BYTES,
+            X07_WASM_POLICY_VALIDATE_REPORT_SCHEMA_BYTES,
+            X07_WASM_SLO_VALIDATE_REPORT_SCHEMA_BYTES,
+            X07_WASM_SLO_EVAL_REPORT_SCHEMA_BYTES,
+            X07_WASM_DEPLOY_PLAN_REPORT_SCHEMA_BYTES,
+            X07_WASM_PROVENANCE_ATTEST_REPORT_SCHEMA_BYTES,
+            X07_WASM_PROVENANCE_VERIFY_REPORT_SCHEMA_BYTES,
             X07_WASM_BUILD_REPORT_SCHEMA_BYTES,
             X07_WASM_RUN_REPORT_SCHEMA_BYTES,
             X07_WASM_SERVE_REPORT_SCHEMA_BYTES,
@@ -310,6 +358,18 @@ fn report_schema_id_for_scope(scope: Scope) -> &'static str {
         Scope::ToolchainValidate => {
             "https://x07.io/spec/x07-wasm.toolchain.validate.report.schema.json"
         }
+        Scope::OpsValidate => "https://x07.io/spec/x07-wasm.ops.validate.report.schema.json",
+        Scope::CapsValidate => "https://x07.io/spec/x07-wasm.caps.validate.report.schema.json",
+        Scope::PolicyValidate => "https://x07.io/spec/x07-wasm.policy.validate.report.schema.json",
+        Scope::SloValidate => "https://x07.io/spec/x07-wasm.slo.validate.report.schema.json",
+        Scope::SloEval => "https://x07.io/spec/x07-wasm.slo.eval.report.schema.json",
+        Scope::DeployPlan => "https://x07.io/spec/x07-wasm.deploy.plan.report.schema.json",
+        Scope::ProvenanceAttest => {
+            "https://x07.io/spec/x07-wasm.provenance.attest.report.schema.json"
+        }
+        Scope::ProvenanceVerify => {
+            "https://x07.io/spec/x07-wasm.provenance.verify.report.schema.json"
+        }
         Scope::ProfileValidate => {
             "https://x07.io/spec/x07-wasm.profile.validate.report.schema.json"
         }
@@ -380,6 +440,7 @@ mod tests {
             "https://x07.io/spec/x07-arch.wasm.component.index.schema.json",
             "https://x07.io/spec/x07-arch.web_ui.index.schema.json",
             "https://x07.io/spec/x07-arch.app.index.schema.json",
+            "https://x07.io/spec/x07-arch.app.ops.index.schema.json",
             "https://x07.io/spec/x07-arch.wasm.toolchain.index.schema.json",
             "https://x07.io/spec/x07-wasm.profile.schema.json",
             "https://x07.io/spec/x07-wasm.runtime.limits.schema.json",
@@ -397,6 +458,13 @@ mod tests {
             "https://x07.io/spec/x07-app.profile.schema.json",
             "https://x07.io/spec/x07-app.bundle.schema.json",
             "https://x07.io/spec/x07-app.pack.schema.json",
+            "https://x07.io/spec/x07-app.ops.profile.schema.json",
+            "https://x07.io/spec/x07-app.capabilities.schema.json",
+            "https://x07.io/spec/x07-policy.card.schema.json",
+            "https://x07.io/spec/x07-slo.profile.schema.json",
+            "https://x07.io/spec/x07-metrics.snapshot.schema.json",
+            "https://x07.io/spec/x07-deploy.plan.schema.json",
+            "https://x07.io/spec/x07-provenance.slsa.attestation.schema.json",
             "https://x07.io/spec/x07-http.request.envelope.schema.json",
             "https://x07.io/spec/x07-http.response.envelope.schema.json",
             "https://x07.io/spec/x07-http.effect.schema.json",
@@ -405,6 +473,14 @@ mod tests {
             "https://x07.io/spec/x07-http.trace.schema.json",
             "https://x07.io/spec/x07-app.trace.schema.json",
             "https://x07.io/spec/x07-wasm.toolchain.validate.report.schema.json",
+            "https://x07.io/spec/x07-wasm.ops.validate.report.schema.json",
+            "https://x07.io/spec/x07-wasm.caps.validate.report.schema.json",
+            "https://x07.io/spec/x07-wasm.policy.validate.report.schema.json",
+            "https://x07.io/spec/x07-wasm.slo.validate.report.schema.json",
+            "https://x07.io/spec/x07-wasm.slo.eval.report.schema.json",
+            "https://x07.io/spec/x07-wasm.deploy.plan.report.schema.json",
+            "https://x07.io/spec/x07-wasm.provenance.attest.report.schema.json",
+            "https://x07.io/spec/x07-wasm.provenance.verify.report.schema.json",
             "https://x07.io/spec/x07-wasm.build.report.schema.json",
             "https://x07.io/spec/x07-wasm.run.report.schema.json",
             "https://x07.io/spec/x07-wasm.serve.report.schema.json",

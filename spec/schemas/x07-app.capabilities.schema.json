@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-app.capabilities.schema.json",
+  "title": "x07.app.capabilities@0.1.0",
+  "description": "Capability allowlists for app runtime execution (deny-by-default).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "v", "fs", "env", "secrets", "network", "clocks", "random"],
+  "properties": {
+    "schema_version": { "const": "x07.app.capabilities@0.1.0" },
+    "id": { "$ref": "#/$defs/id" },
+    "v": { "type": "integer", "minimum": 1 },
+    "fs": { "$ref": "#/$defs/fs" },
+    "env": { "$ref": "#/$defs/env" },
+    "secrets": { "$ref": "#/$defs/secrets" },
+    "network": { "$ref": "#/$defs/network" },
+    "clocks": { "$ref": "#/$defs/clocks" },
+    "random": { "$ref": "#/$defs/random" },
+    "notes": { "type": "string", "maxLength": 16384 }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "rel_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^(?![\\\\/])(?![A-Za-z]:)(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)).+"
+    },
+    "env_key": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Z][A-Z0-9_]{0,127}$"
+    },
+    "secret_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"
+    },
+    "host": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 253,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9.:-]{0,252}$"
+    },
+    "fs_preopen": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "mode"],
+      "properties": {
+        "path": { "$ref": "#/$defs/rel_path" },
+        "mode": { "type": "string", "enum": ["ro", "rw"] }
+      }
+    },
+    "fs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["preopens"],
+      "properties": {
+        "preopens": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/fs_preopen" },
+          "default": []
+        }
+      }
+    },
+    "env": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allow"],
+      "properties": {
+        "allow": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/env_key" },
+          "default": []
+        }
+      }
+    },
+    "secrets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allow"],
+      "properties": {
+        "allow": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/secret_id" },
+          "default": []
+        }
+      }
+    },
+    "net_endpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["host", "port", "proto"],
+      "properties": {
+        "host": { "$ref": "#/$defs/host" },
+        "port": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "proto": { "type": "string", "enum": ["tcp", "udp", "http", "https"] }
+      }
+    },
+    "network": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "allowlist"],
+      "properties": {
+        "mode": { "type": "string", "enum": ["deny", "allowlist"] },
+        "allowlist": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/net_endpoint" },
+          "default": []
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "mode": { "const": "deny" } }, "required": ["mode"] },
+          "then": { "properties": { "allowlist": { "maxItems": 0 } } }
+        },
+        {
+          "if": { "properties": { "mode": { "const": "allowlist" } }, "required": ["mode"] },
+          "then": { "properties": { "allowlist": { "minItems": 1 } } }
+        }
+      ]
+    },
+    "clocks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": { "type": "string", "enum": ["deny", "record", "allow"] }
+      }
+    },
+    "random": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": { "type": "string", "enum": ["deny", "record", "allow"] }
+      }
+    }
+  }
+}

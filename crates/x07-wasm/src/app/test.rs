@@ -870,7 +870,9 @@ async fn execute_http_request(
         .body(http_component_host::full_body(body_bytes))
         .context("build request")?;
 
-    let resp = host.handle_request(req, budgets).await?;
+    let resp = host
+        .handle_request(req, budgets, None, Path::new("."), &mut Vec::new())
+        .await?;
 
     let mut headers = Vec::new();
     for (k, v) in resp.headers {

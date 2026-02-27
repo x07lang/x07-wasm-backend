@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-deploy.plan.schema.json",
+  "title": "x07.deploy.plan@0.1.0",
+  "description": "Machine-readable progressive delivery plan (canary/blue-green) derived from app pack + ops profile + policy + SLO.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "v",
+    "pack_manifest",
+    "ops_profile",
+    "policy_cards",
+    "slo_profile",
+    "strategy",
+    "outputs"
+  ],
+  "properties": {
+    "schema_version": { "const": "x07.deploy.plan@0.1.0" },
+    "id": { "$ref": "#/$defs/id" },
+    "v": { "type": "integer", "minimum": 1 },
+    "pack_manifest": { "$ref": "#/$defs/file_digest" },
+    "ops_profile": { "$ref": "#/$defs/file_digest" },
+    "policy_cards": { "type": "array", "items": { "$ref": "#/$defs/file_digest" }, "default": [] },
+    "slo_profile": {
+      "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/file_digest" }],
+      "default": null
+    },
+    "strategy": { "$ref": "#/$defs/strategy" },
+    "outputs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": { "$ref": "#/$defs/file_digest" }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "file_digest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes_len"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1, "maxLength": 4096 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "bytes_len": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "step_set_weight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["set_weight"],
+      "properties": {
+        "set_weight": { "type": "integer", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "step_pause": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pause_s"],
+      "properties": {
+        "pause_s": { "type": "integer", "minimum": 0, "maximum": 86400 }
+      }
+    },
+    "step_analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["analysis"],
+      "properties": {
+        "analysis": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "require_decision"],
+          "properties": {
+            "kind": { "type": "string", "const": "slo.eval" },
+            "require_decision": { "type": "string", "enum": ["promote", "rollback"] }
+          }
+        }
+      }
+    },
+    "step": {
+      "oneOf": [
+        { "$ref": "#/$defs/step_set_weight" },
+        { "$ref": "#/$defs/step_pause" },
+        { "$ref": "#/$defs/step_analysis" }
+      ]
+    },
+    "canary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["steps"],
+      "properties": {
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": { "$ref": "#/$defs/step" }
+        }
+      }
+    },
+    "blue_green": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["auto_promote"],
+      "properties": {
+        "auto_promote": { "type": "boolean" }
+      }
+    },
+    "strategy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "enum": ["canary", "blue_green"] },
+        "canary": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/canary" }], "default": null },
+        "blue_green": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/blue_green" }],
+          "default": null
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "canary" } }, "required": ["type"] },
+          "then": { "required": ["canary"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "blue_green" } }, "required": ["type"] },
+          "then": { "required": ["blue_green"] }
+        }
+      ]
+    }
+  }
+}

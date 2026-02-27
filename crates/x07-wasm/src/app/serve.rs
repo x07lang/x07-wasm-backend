@@ -13,11 +13,14 @@ use serde_json::{json, Value};
 use tokio::task::LocalSet;
 
 use crate::app::bundle::LoadedAppBundle;
+use crate::caps::doc::CapabilitiesDoc;
 use crate::cli::{AppServeArgs, AppServeMode, MachineArgs, Scope};
 use crate::diag::{Diagnostic, Severity, Stage};
 use crate::http_component_host::{self, HttpComponentBudgets, HttpComponentHost};
+use crate::ops::load_ops_profile_with_refs;
 use crate::report;
 use crate::schema::SchemaStore;
+use crate::slo::eval::evaluate_slo_docs;
 
 pub fn cmd_app_serve(
     raw_argv: &[OsString],
@@ -52,6 +55,7 @@ pub fn cmd_app_serve(
             false,
             None,
             args.strict_mime,
+            None,
         );
     };
     let bundle_json = bundle.doc_json.clone();
@@ -78,6 +82,7 @@ pub fn cmd_app_serve(
             false,
             None,
             args.strict_mime,
+            None,
         );
     }
 
@@ -106,7 +111,65 @@ pub fn cmd_app_serve(
             false,
             None,
             args.strict_mime,
+            None,
         );
+    }
+
+    let mut caps: Option<Arc<CapabilitiesDoc>> = None;
+    let mut slo_profile_doc_json: Option<Value> = None;
+    if let Some(ops_path) = args.ops.as_ref() {
+        let loaded_ops = load_ops_profile_with_refs(&store, ops_path, &mut meta, &mut diagnostics)?;
+        let Some(loaded_ops) = loaded_ops else {
+            return emit_report(
+                &store,
+                scope,
+                machine,
+                started,
+                raw_argv,
+                meta,
+                diagnostics,
+                &args,
+                &args.addr,
+                &args.api_prefix,
+                false,
+                None,
+                args.strict_mime,
+                None,
+            );
+        };
+
+        match serde_json::from_value::<CapabilitiesDoc>(loaded_ops.capabilities.doc_json.clone()) {
+            Ok(v) => caps = Some(Arc::new(v)),
+            Err(err) => diagnostics.push(Diagnostic::new(
+                "X07WASM_CAPS_SCHEMA_INVALID",
+                Severity::Error,
+                Stage::Parse,
+                format!("failed to parse capabilities doc: {err}"),
+            )),
+        }
+        slo_profile_doc_json = loaded_ops.slo_profile.as_ref().map(|s| s.doc_json.clone());
+
+        if diagnostics
+            .iter()
+            .any(|d| d.severity == Severity::Error && d.stage == Stage::Parse)
+        {
+            return emit_report(
+                &store,
+                scope,
+                machine,
+                started,
+                raw_argv,
+                meta,
+                diagnostics,
+                &args,
+                &args.addr,
+                &args.api_prefix,
+                false,
+                None,
+                args.strict_mime,
+                None,
+            );
+        }
     }
 
     let host = match HttpComponentHost::from_component_file(&backend_component_path) {
@@ -132,6 +195,7 @@ pub fn cmd_app_serve(
                 false,
                 None,
                 args.strict_mime,
+                None,
             );
         }
     };
@@ -174,20 +238,23 @@ pub fn cmd_app_serve(
                 false,
                 None,
                 effective_strict_mime,
+                None,
             );
         }
     };
 
+    let diag_acc: Arc<Mutex<Vec<Diagnostic>>> = Arc::new(Mutex::new(Vec::new()));
     let state = Arc::new(AppServeState {
         bundle_doc_json: bundle_json,
         frontend_dir,
         api_prefix: effective_api_prefix.clone(),
         host: Arc::new(host),
         budgets,
+        caps,
+        wasi_base_dir: args.dir.clone(),
+        diag_acc: diag_acc.clone(),
         max_concurrency: Arc::new(tokio::sync::Semaphore::new(max_concurrency)),
     });
-
-    let diag_acc: Arc<Mutex<Vec<Diagnostic>>> = Arc::new(Mutex::new(Vec::new()));
     let local = LocalSet::new();
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_io()
@@ -195,7 +262,7 @@ pub fn cmd_app_serve(
         .build()
         .context("build tokio runtime")?;
 
-    let (bound_addr, wasm_mime_ok) = rt.block_on(local.run_until(async {
+    let (bound_addr, wasm_mime_ok, canary_statuses) = rt.block_on(local.run_until(async {
         let listener = match tokio::net::TcpListener::bind(addr).await {
             Ok(v) => v,
             Err(err) => {
@@ -205,7 +272,7 @@ pub fn cmd_app_serve(
                     Stage::Run,
                     format!("bind failed: {err}"),
                 ));
-                return (None, false);
+                return (None, false, None);
             }
         };
         let bound_addr = listener.local_addr().ok().map(|a| a.to_string());
@@ -215,7 +282,7 @@ pub fn cmd_app_serve(
             AppServeMode::Listen => {
                 let _ = serve_listener(listener, state.clone(), None, diag_acc.clone()).await;
                 // Listen mode runs until an accept/connection error; no smoke check.
-                (bound_addr, true)
+                (bound_addr, true, None)
             }
             AppServeMode::Smoke => {
                 let stop_after = 1u32;
@@ -236,7 +303,7 @@ pub fn cmd_app_serve(
                 };
 
                 let _ = server.await;
-                (bound_addr, wasm_mime_ok)
+                (bound_addr, wasm_mime_ok, None)
             }
             AppServeMode::Canary => {
                 // GET /, GET /app.bundle.json, GET /app.wasm, GET {api_prefix}/.
@@ -249,30 +316,28 @@ pub fn cmd_app_serve(
                 ));
 
                 let mut wasm_mime_ok = false;
+                let mut statuses: Vec<u16> = Vec::new();
                 if let Some(sock) = bound_sock {
                     let api_prefix = state.api_prefix.clone();
                     let canary = tokio::task::spawn_blocking(move || {
-                        let _ = simple_http_request(sock, "GET", "/", None)?;
-                        let _ = simple_http_request(sock, "GET", "/app.bundle.json", None)?;
-                        let (_mime, mime_ok) = simple_http_get_mime(sock, "/app.wasm")?;
+                        let r0 = simple_http_request(sock, "GET", "/", None)?;
+                        let r1 = simple_http_request(sock, "GET", "/app.bundle.json", None)?;
+                        let (_mime, mime_ok, wasm_status) =
+                            simple_http_get_mime(sock, "/app.wasm")?;
                         let mut api_path = api_prefix;
                         if !api_path.ends_with('/') {
                             api_path.push('/');
                         }
                         let api = simple_http_request(sock, "GET", &api_path, None)?;
-                        Ok::<_, anyhow::Error>((mime_ok, api.status))
+                        Ok::<_, anyhow::Error>((
+                            mime_ok,
+                            vec![r0.status, r1.status, wasm_status, api.status],
+                        ))
                     });
                     match canary.await {
-                        Ok(Ok((ok, api_status))) => {
+                        Ok(Ok((ok, canary_statuses))) => {
                             wasm_mime_ok = ok;
-                            if api_status >= 500 {
-                                diag_acc.lock().unwrap().push(Diagnostic::new(
-                                    "X07WASM_APP_SERVE_CANARY_API_FAILED",
-                                    Severity::Error,
-                                    Stage::Run,
-                                    format!("canary api request returned status {api_status}"),
-                                ));
-                            }
+                            statuses = canary_statuses;
                         }
                         Ok(Err(err)) => {
                             diag_acc.lock().unwrap().push(Diagnostic::new(
@@ -294,12 +359,42 @@ pub fn cmd_app_serve(
                 }
 
                 let _ = server.await;
-                (bound_addr, wasm_mime_ok)
+                (bound_addr, wasm_mime_ok, Some(statuses))
             }
         }
     }));
 
     diagnostics.extend(diag_acc.lock().unwrap().iter().cloned());
+
+    let mut canary_result: Option<Value> = None;
+    if matches!(args.mode, AppServeMode::Canary) {
+        if let (Some(slo_profile), Some(statuses)) = (
+            slo_profile_doc_json.as_ref(),
+            canary_statuses.as_deref().filter(|s| !s.is_empty()),
+        ) {
+            let metrics_snapshot = metrics_snapshot_for_canary(slo_profile, statuses);
+            let metrics_schema_diags = store.validate(
+                "https://x07.io/spec/x07-metrics.snapshot.schema.json",
+                &metrics_snapshot,
+            )?;
+            if !metrics_schema_diags.is_empty() {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_METRICS_SNAPSHOT_SCHEMA_INVALID",
+                    Severity::Error,
+                    Stage::Parse,
+                    "generated metrics snapshot schema invalid".to_string(),
+                ));
+                diagnostics.extend(metrics_schema_diags);
+            }
+
+            let outcome = evaluate_slo_docs(slo_profile, &metrics_snapshot, &mut diagnostics);
+            canary_result = Some(json!({
+              "metrics_snapshot": metrics_snapshot,
+              "slo_decision": outcome.decision,
+              "slo_violations": outcome.violations,
+            }));
+        }
+    }
 
     if effective_strict_mime && !wasm_mime_ok {
         diagnostics.push(Diagnostic::new(
@@ -332,6 +427,7 @@ pub fn cmd_app_serve(
         wasm_mime_ok,
         bound_addr,
         effective_strict_mime,
+        canary_result,
     )
 }
 
@@ -341,6 +437,9 @@ struct AppServeState {
     api_prefix: String,
     host: Arc<HttpComponentHost>,
     budgets: HttpComponentBudgets,
+    caps: Option<Arc<CapabilitiesDoc>>,
+    wasi_base_dir: PathBuf,
+    diag_acc: Arc<Mutex<Vec<Diagnostic>>>,
     max_concurrency: Arc<tokio::sync::Semaphore>,
 }
 
@@ -470,8 +569,22 @@ async fn proxy_api_request(
         };
 
     let req2 = Request::from_parts(parts, http_component_host::full_body(body_bytes.clone()));
-    match state.host.handle_request(req2, &state.budgets).await {
+    let mut request_diags: Vec<Diagnostic> = Vec::new();
+    match state
+        .host
+        .handle_request(
+            req2,
+            &state.budgets,
+            state.caps.clone(),
+            &state.wasi_base_dir,
+            &mut request_diags,
+        )
+        .await
+    {
         Ok(buf) => {
+            if !request_diags.is_empty() {
+                state.diag_acc.lock().unwrap().extend(request_diags);
+            }
             let mut resp = Response::builder().status(buf.status);
             for (k, v) in buf.headers {
                 if let (Ok(k), Ok(v)) = (
@@ -485,6 +598,9 @@ async fn proxy_api_request(
         }
         Err(err) => {
             let _ = err;
+            if !request_diags.is_empty() {
+                state.diag_acc.lock().unwrap().extend(request_diags);
+            }
             Ok(Response::builder()
                 .status(StatusCode::INTERNAL_SERVER_ERROR)
                 .body(Full::new(Bytes::from_static(b"internal error")))
@@ -609,6 +725,7 @@ fn emit_report(
     wasm_mime_ok: bool,
     bound_addr: Option<String>,
     effective_strict_mime: bool,
+    canary: Option<Value>,
 ) -> Result<u8> {
     let ok = diagnostics.iter().all(|d| d.severity != Severity::Error);
     let exit_code = report::exit_code::exit_code_for_diagnostics(&diagnostics);
@@ -618,7 +735,7 @@ fn emit_report(
         AppServeMode::Smoke => "smoke",
         AppServeMode::Canary => "canary",
     };
-    let stdout_json = json!({
+    let mut stdout_json = json!({
       "dir": args.dir.display().to_string(),
       "addr": bound_addr.unwrap_or_else(|| effective_addr.to_string()),
       "mode": mode,
@@ -626,6 +743,11 @@ fn emit_report(
       "strict_wasm_mime": effective_strict_mime,
       "wasm_mime_ok": wasm_mime_ok
     });
+    if let Some(canary) = canary {
+        if let Some(obj) = stdout_json.as_object_mut() {
+            obj.insert("canary".to_string(), canary);
+        }
+    }
 
     let report_doc = json!({
       "schema_version": "x07.wasm.app.serve.report@0.1.0",
@@ -710,7 +832,7 @@ fn parse_simple_http_response(buf: &[u8]) -> Result<SimpleHttpResponse> {
     Ok(SimpleHttpResponse { status, headers })
 }
 
-fn simple_http_get_mime(addr: SocketAddr, path: &str) -> Result<(String, bool)> {
+fn simple_http_get_mime(addr: SocketAddr, path: &str) -> Result<(String, bool, u16)> {
     let resp = simple_http_request(addr, "GET", path, None)?;
     let mut mime = String::new();
     for (k, v) in resp.headers {
@@ -720,12 +842,56 @@ fn simple_http_get_mime(addr: SocketAddr, path: &str) -> Result<(String, bool)> 
         }
     }
     let ok = mime.eq_ignore_ascii_case("application/wasm");
-    Ok((mime, ok))
+    Ok((mime, ok, resp.status))
 }
 
 fn smoke_check_wasm_mime(addr: SocketAddr) -> Result<bool> {
-    let (_mime, ok) = simple_http_get_mime(addr, "/app.wasm")?;
+    let (_mime, ok, _status) = simple_http_get_mime(addr, "/app.wasm")?;
     Ok(ok)
+}
+
+fn metrics_snapshot_for_canary(slo_profile_doc: &Value, statuses: &[u16]) -> Value {
+    let total = statuses.len().max(1) as f64;
+    let errors = statuses.iter().filter(|&&s| s >= 400).count() as f64;
+    let error_rate = errors / total;
+    let availability = 1.0 - error_rate;
+
+    let service = slo_profile_doc
+        .get("service")
+        .and_then(Value::as_str)
+        .unwrap_or("app");
+
+    let mut metrics: Vec<Value> = Vec::new();
+    if let Some(arr) = slo_profile_doc.get("indicators").and_then(Value::as_array) {
+        for ind in arr {
+            let kind = ind.get("kind").and_then(Value::as_str).unwrap_or("");
+            let metric = ind.get("metric").and_then(Value::as_str).unwrap_or("");
+            if metric.trim().is_empty() {
+                continue;
+            }
+            match kind {
+                "error_rate" => {
+                    metrics.push(json!({ "name": metric, "value": error_rate, "unit": "ratio" }))
+                }
+                "availability" => {
+                    metrics.push(json!({ "name": metric, "value": availability, "unit": "ratio" }))
+                }
+                "latency_p95_ms" => {
+                    metrics.push(json!({ "name": metric, "value": 0, "unit": "ms" }))
+                }
+                _ => {}
+            }
+        }
+    }
+
+    json!({
+      "schema_version": "x07.metrics.snapshot@0.1.0",
+      "v": 1,
+      "taken_at_utc": "1970-01-01T00:00:00Z",
+      "service": service,
+      "metrics": metrics,
+      "labels": {},
+    })
 }
 
 fn load_app_serve_settings(

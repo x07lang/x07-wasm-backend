@@ -377,6 +377,60 @@ function joinUrlPath(prefix, path) {
   return pfx + p;
 }
 
+function capsAllowsExternalHttpUrl(capabilities, urlObj) {
+  if (!capabilities || typeof capabilities !== "object") return false;
+  const net = capabilities.network;
+  if (!net || typeof net !== "object") return false;
+
+  const mode = String(net.mode ?? "");
+  if (mode !== "allowlist") return false;
+
+  const allowlist = Array.isArray(net.allowlist) ? net.allowlist : [];
+
+  const proto = urlObj.protocol === "https:" ? "https" : urlObj.protocol === "http:" ? "http" : "";
+  const host = String(urlObj.hostname ?? "").toLowerCase();
+  const port = urlObj.port
+    ? Number(urlObj.port)
+    : urlObj.protocol === "https:"
+      ? 443
+      : urlObj.protocol === "http:"
+        ? 80
+        : 0;
+
+  if (!proto || !host || !Number.isFinite(port) || port < 0 || port > 65535) return false;
+
+  for (const e of allowlist) {
+    if (!e || typeof e !== "object") continue;
+    const eProto = String(e.proto ?? "");
+    const eHost = String(e.host ?? "").toLowerCase();
+    const ePort = Number(e.port ?? -1);
+    if (eProto !== proto) continue;
+    if (eHost !== host) continue;
+    if (!Number.isFinite(ePort) || ePort !== port) continue;
+    return true;
+  }
+
+  return false;
+}
+
+function enforceFetchAllowed(capabilities, rawUrl) {
+  const hrefBase = String(globalThis.location?.href ?? "http://localhost/");
+  const originBase = String(globalThis.location?.origin ?? "");
+
+  const urlObj = new URL(String(rawUrl ?? ""), hrefBase);
+
+  // Always allow same-origin (supports relative /api/... fetch by default).
+  if (originBase && urlObj.origin === originBase) return;
+
+  // Only allow cross-origin HTTP(S) when explicitly allowlisted.
+  if (urlObj.protocol !== "http:" && urlObj.protocol !== "https:") {
+    throw new Error(`fetch denied (unsupported scheme): ${urlObj.protocol}`);
+  }
+  if (!capsAllowsExternalHttpUrl(capabilities, urlObj)) {
+    throw new Error(`fetch denied by capabilities: ${urlObj.href}`);
+  }
+}
+
 function sortedHeaderPairsFromHeaders(headers) {
   const out = [];
   if (Array.isArray(headers)) {
@@ -495,6 +549,8 @@ export async function mountWebUiApp({
   maxOutputBytes = 1 << 20,
   apiPrefix = null,
   appMeta = null,
+  capabilities = null,
+  policySnapshotSha256 = null,
 } = {}) {
   if (!wasmUrl && !componentEsmUrl) throw new Error("missing wasmUrl/componentEsmUrl");
   if (!root) throw new Error("missing root");
@@ -507,6 +563,8 @@ export async function mountWebUiApp({
       wasmUrl: wasmUrl || null,
       componentEsmUrl: componentEsmUrl || null,
       startedAtUnixMs: Date.now(),
+      policySnapshotSha256:
+        typeof policySnapshotSha256 === "string" && policySnapshotSha256 ? policySnapshotSha256 : null,
     },
   };
 
@@ -685,6 +743,7 @@ export async function mountWebUiApp({
             reqHeaders.set(k, v);
           }
 
+          enforceFetchAllowed(capabilities, url);
           const startedHttp = performance.now();
           const resp = await fetch(url, {
             method: reqEnv.method,
@@ -849,6 +908,8 @@ export async function mountWebUiApp({
       v: 1,
       kind: "x07.web_ui.incident",
       error: String(err?.stack || err),
+      policySnapshotSha256:
+        typeof policySnapshotSha256 === "string" && policySnapshotSha256 ? policySnapshotSha256 : null,
       trace,
       effectExchanges,
       appTrace,

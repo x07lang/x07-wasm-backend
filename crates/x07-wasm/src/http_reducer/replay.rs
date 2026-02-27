@@ -8,6 +8,7 @@ use hyper::{Method, Request, Uri};
 use hyper_util::client::legacy::{connect::HttpConnector, Client};
 use serde_json::{json, Value};
 
+use crate::caps::doc::{CapabilitiesDoc, CapabilityMode};
 use crate::diag::{Diagnostic, Severity, Stage};
 use crate::schema::SchemaStore;
 use crate::stream_payload::{bytes_to_stream_payload, stream_payload_to_bytes};
@@ -31,10 +32,11 @@ pub struct HttpEffectState {
     pub nondeterminism: HttpEffectLoopNondeterminism,
     client: Client<HttpConnector, Full<Bytes>>,
     fetch_allow_hosts: Vec<String>,
+    caps: Option<CapabilitiesDoc>,
 }
 
 impl HttpEffectState {
-    pub fn new(fetch_allow_hosts: Vec<String>) -> Self {
+    pub fn new(fetch_allow_hosts: Vec<String>, caps: Option<CapabilitiesDoc>) -> Self {
         let client =
             Client::builder(hyper_util::rt::TokioExecutor::new()).build(HttpConnector::new());
         Self {
@@ -42,10 +44,19 @@ impl HttpEffectState {
             nondeterminism: HttpEffectLoopNondeterminism::default(),
             client,
             fetch_allow_hosts,
+            caps,
         }
     }
 
     fn is_fetch_allowed(&self, uri: &Uri) -> bool {
+        if let Some(caps) = self.caps.as_ref() {
+            let Some(host) = uri.host() else {
+                return false;
+            };
+            let scheme = uri.scheme_str().unwrap_or("");
+            let port = uri.port_u16().unwrap_or(80);
+            return caps.network_allows(scheme, host, port);
+        }
         let Some(host) = uri.host() else {
             return false;
         };
@@ -338,6 +349,22 @@ async fn execute_effect(
             })
         }
         "time.now" => {
+            if let Some(caps) = effect_state.caps.as_ref() {
+                if caps.clocks.mode == CapabilityMode::Deny {
+                    diagnostics.push(Diagnostic::new(
+                        "X07WASM_CAPS_CLOCK_DENIED",
+                        Severity::Error,
+                        Stage::Run,
+                        "time.now denied by capabilities".to_string(),
+                    ));
+                    return json!({
+                      "id": id,
+                      "type": "time.now",
+                      "ok": false,
+                      "error": "time.now denied by capabilities",
+                    });
+                }
+            }
             effect_state.nondeterminism.uses_os_time = true;
             let unix_ms = match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
                 Ok(d) => d.as_millis() as u64,
@@ -351,8 +378,6 @@ async fn execute_effect(
             })
         }
         "http.fetch" => {
-            effect_state.nondeterminism.uses_network = true;
-
             let method_s = eff.get("method").and_then(Value::as_str).unwrap_or("GET");
             let url_s = eff.get("url").and_then(Value::as_str).unwrap_or("");
             let uri: Uri = match url_s.parse() {
@@ -387,19 +412,32 @@ async fn execute_effect(
                 });
             }
             if !effect_state.is_fetch_allowed(&uri) {
+                let (code, msg) = if effect_state.caps.is_some() {
+                    (
+                        "X07WASM_CAPS_NET_DENIED",
+                        "http.fetch denied by capabilities",
+                    )
+                } else {
+                    (
+                        "X07WASM_HTTP_EFFECT_HTTP_FETCH_FAILED",
+                        "http.fetch host not allowlisted (set X07_WASM_HTTP_FETCH_ALLOW_HOSTS)",
+                    )
+                };
                 diagnostics.push(Diagnostic::new(
-                    "X07WASM_HTTP_EFFECT_HTTP_FETCH_FAILED",
+                    code,
                     Severity::Error,
                     Stage::Run,
-                    format!("http.fetch host not allowlisted: {:?}", uri.host()),
+                    format!("{msg}: {:?}", uri.host()),
                 ));
                 return json!({
                   "id": id,
                   "type": "http.fetch",
                   "ok": false,
-                  "error": "http.fetch host not allowlisted (set X07_WASM_HTTP_FETCH_ALLOW_HOSTS)",
+                  "error": msg,
                 });
             }
+
+            effect_state.nondeterminism.uses_network = true;
 
             let method: Method = match method_s.parse() {
                 Ok(v) => v,

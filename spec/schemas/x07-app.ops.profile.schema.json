@@ -1,0 +1,257 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-app.ops.profile.schema.json",
+  "title": "x07.app.ops.profile@0.1.0",
+  "description": "Operational profile for running and deploying an app pack (capabilities + policy cards + SLO + provenance + deploy strategy).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "v",
+    "capabilities",
+    "policy_cards",
+    "slo",
+    "provenance",
+    "deploy"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "x07.app.ops.profile@0.1.0"
+    },
+    "id": {
+      "$ref": "#/$defs/id"
+    },
+    "v": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "capabilities": {
+      "$ref": "#/$defs/file_ref",
+      "description": "Path to an x07.app.capabilities@0.1.0 file."
+    },
+    "policy_cards": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/file_ref"
+      },
+      "default": []
+    },
+    "slo": {
+      "description": "SLO profile reference. null disables SLO gating.",
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/file_ref"
+        }
+      ],
+      "default": null
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    },
+    "deploy": {
+      "$ref": "#/$defs/deploy"
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 16384
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "rel_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^(?![\\\\/])(?![A-Za-z]:)(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)).+"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "file_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path"],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/rel_path"
+        },
+        "sha256": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/sha256"
+            }
+          ],
+          "default": null,
+          "description": "Optional pinned digest of the referenced file."
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["require_attestation", "predicate_type", "verify_on_serve", "verify_on_deploy"],
+      "properties": {
+        "require_attestation": {
+          "type": "boolean",
+          "default": true
+        },
+        "predicate_type": {
+          "type": "string",
+          "const": "https://slsa.dev/provenance/v1",
+          "description": "SLSA provenance predicate type (v1)."
+        },
+        "verify_on_serve": {
+          "type": "boolean",
+          "default": true
+        },
+        "verify_on_deploy": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "deploy_step_set_weight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["set_weight"],
+      "properties": {
+        "set_weight": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "deploy_step_pause": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pause_s"],
+      "properties": {
+        "pause_s": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 86400
+        }
+      }
+    },
+    "deploy_step_analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["analysis"],
+      "properties": {
+        "analysis": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "require_decision"],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "slo.eval"
+            },
+            "require_decision": {
+              "type": "string",
+              "enum": ["promote", "rollback"]
+            }
+          }
+        }
+      }
+    },
+    "deploy_step": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/deploy_step_set_weight"
+        },
+        {
+          "$ref": "#/$defs/deploy_step_pause"
+        },
+        {
+          "$ref": "#/$defs/deploy_step_analysis"
+        }
+      ]
+    },
+    "deploy_canary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["steps"],
+      "properties": {
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "$ref": "#/$defs/deploy_step"
+          }
+        }
+      }
+    },
+    "deploy_blue_green": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["auto_promote"],
+      "properties": {
+        "auto_promote": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "deploy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["strategy"],
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": ["canary", "blue_green"]
+        },
+        "canary": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/deploy_canary" }
+          ],
+          "default": null
+        },
+        "blue_green": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/deploy_blue_green" }
+          ],
+          "default": null
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "strategy": { "const": "canary" } },
+            "required": ["strategy"]
+          },
+          "then": {
+            "required": ["canary"]
+          }
+        },
+        {
+          "if": {
+            "properties": { "strategy": { "const": "blue_green" } },
+            "required": ["strategy"]
+          },
+          "then": {
+            "required": ["blue_green"]
+          }
+        }
+      ]
+    }
+  }
+}

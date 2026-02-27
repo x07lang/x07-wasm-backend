@@ -1,0 +1,20 @@
+{
+  "schema_version": "x07.policy.card@0.1.0",
+  "id": "policy_deploy_patch_id",
+  "v": 1,
+  "rules": [
+    {
+      "id": "patch_plan_id",
+      "target": "deploy_plan",
+      "effect": "deny",
+      "assertions": [
+        { "op": "eq", "path": "/id", "value": "patched" }
+      ],
+      "patches": [
+        { "op": "replace", "path": "/id", "value": "patched" }
+      ],
+      "reason": "deploy plan id must be normalized"
+    }
+  ]
+}
+

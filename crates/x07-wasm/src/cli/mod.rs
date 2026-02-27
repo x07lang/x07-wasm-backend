@@ -79,6 +79,48 @@ pub enum Command {
     #[command(name = "toolchain-validate")]
     ToolchainValidate(ToolchainValidateArgs),
 
+    /// Ops contracts (Phase 6).
+    Ops(OpsArgs),
+    /// Alias for `x07-wasm ops validate`.
+    #[command(name = "ops-validate")]
+    OpsValidate(OpsValidateArgs),
+
+    /// Capabilities contracts (Phase 6).
+    Caps(CapsArgs),
+    /// Alias for `x07-wasm caps validate`.
+    #[command(name = "caps-validate")]
+    CapsValidate(CapsValidateArgs),
+
+    /// Policy cards (Phase 6).
+    Policy(PolicyArgs),
+    /// Alias for `x07-wasm policy validate`.
+    #[command(name = "policy-validate")]
+    PolicyValidate(PolicyValidateArgs),
+
+    /// SLO-as-code tooling (Phase 6).
+    Slo(SloArgs),
+    /// Alias for `x07-wasm slo validate`.
+    #[command(name = "slo-validate")]
+    SloValidate(SloValidateArgs),
+    /// Alias for `x07-wasm slo eval`.
+    #[command(name = "slo-eval")]
+    SloEval(SloEvalArgs),
+
+    /// Deploy plan generation (Phase 6).
+    Deploy(DeployArgs),
+    /// Alias for `x07-wasm deploy plan`.
+    #[command(name = "deploy-plan")]
+    DeployPlan(DeployPlanArgs),
+
+    /// Provenance tooling (Phase 6).
+    Provenance(ProvenanceArgs),
+    /// Alias for `x07-wasm provenance attest`.
+    #[command(name = "provenance-attest")]
+    ProvenanceAttest(ProvenanceAttestArgs),
+    /// Alias for `x07-wasm provenance verify`.
+    #[command(name = "provenance-verify")]
+    ProvenanceVerify(ProvenanceVerifyArgs),
+
     /// WIT tooling (Phase 1).
     Wit(WitArgs),
     /// Alias for `x07-wasm wit validate`.
@@ -191,6 +233,62 @@ impl Command {
             },
             Command::ToolchainValidate(v) => {
                 crate::toolchain::validate::cmd_toolchain_validate(raw_argv, scope, machine, v)
+            }
+            Command::Ops(args) => match args.cmd {
+                OpsCommand::Validate(v) => {
+                    crate::ops::validate::cmd_ops_validate(raw_argv, scope, machine, v)
+                }
+            },
+            Command::OpsValidate(v) => {
+                crate::ops::validate::cmd_ops_validate(raw_argv, scope, machine, v)
+            }
+            Command::Caps(args) => match args.cmd {
+                CapsCommand::Validate(v) => {
+                    crate::caps::validate::cmd_caps_validate(raw_argv, scope, machine, v)
+                }
+            },
+            Command::CapsValidate(v) => {
+                crate::caps::validate::cmd_caps_validate(raw_argv, scope, machine, v)
+            }
+            Command::Policy(args) => match args.cmd {
+                PolicyCommand::Validate(v) => {
+                    crate::policy::validate::cmd_policy_validate(raw_argv, scope, machine, v)
+                }
+            },
+            Command::PolicyValidate(v) => {
+                crate::policy::validate::cmd_policy_validate(raw_argv, scope, machine, v)
+            }
+            Command::Slo(args) => match args.cmd {
+                SloCommand::Validate(v) => {
+                    crate::slo::validate::cmd_slo_validate(raw_argv, scope, machine, v)
+                }
+                SloCommand::Eval(v) => crate::slo::eval::cmd_slo_eval(raw_argv, scope, machine, v),
+            },
+            Command::SloValidate(v) => {
+                crate::slo::validate::cmd_slo_validate(raw_argv, scope, machine, v)
+            }
+            Command::SloEval(v) => crate::slo::eval::cmd_slo_eval(raw_argv, scope, machine, v),
+            Command::Deploy(args) => match args.cmd {
+                DeployCommand::Plan(v) => {
+                    crate::deploy::plan::cmd_deploy_plan(raw_argv, scope, machine, v)
+                }
+            },
+            Command::DeployPlan(v) => {
+                crate::deploy::plan::cmd_deploy_plan(raw_argv, scope, machine, v)
+            }
+            Command::Provenance(args) => match args.cmd {
+                ProvenanceCommand::Attest(v) => {
+                    crate::provenance::attest::cmd_provenance_attest(raw_argv, scope, machine, v)
+                }
+                ProvenanceCommand::Verify(v) => {
+                    crate::provenance::verify::cmd_provenance_verify(raw_argv, scope, machine, v)
+                }
+            },
+            Command::ProvenanceAttest(v) => {
+                crate::provenance::attest::cmd_provenance_attest(raw_argv, scope, machine, v)
+            }
+            Command::ProvenanceVerify(v) => {
+                crate::provenance::verify::cmd_provenance_verify(raw_argv, scope, machine, v)
             }
             Command::Wit(args) => match args.cmd {
                 WitCommand::Validate(v) => {
@@ -537,6 +635,10 @@ pub struct ServeArgs {
     #[arg(long, value_name = "PATH")]
     pub component: PathBuf,
 
+    /// Ops profile file (x07.app.ops.profile@0.1.0) for capability enforcement.
+    #[arg(long, value_name = "PATH")]
+    pub ops: Option<PathBuf>,
+
     /// Listen address for mode=listen (e.g., 127.0.0.1:8080).
     #[arg(long, value_name = "STR", default_value = "127.0.0.1:0")]
     pub addr: String,
@@ -626,6 +728,180 @@ pub struct ToolchainValidateArgs {
         default_value = "arch/wasm/toolchain/index.x07wasm.toolchain.json"
     )]
     pub index: PathBuf,
+}
+
+#[derive(Debug, Clone, Args)]
+#[command(subcommand_required = true)]
+pub struct OpsArgs {
+    #[command(subcommand)]
+    pub cmd: OpsCommand,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum OpsCommand {
+    Validate(OpsValidateArgs),
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct OpsValidateArgs {
+    /// Ops profile file (x07.app.ops.profile@0.1.0).
+    #[arg(long, value_name = "PATH", conflicts_with = "profile_id")]
+    pub profile: Option<PathBuf>,
+
+    /// Ops profile id resolved via arch/app/ops/index.x07ops.json.
+    #[arg(long, value_name = "STR", conflicts_with = "profile")]
+    pub profile_id: Option<String>,
+
+    /// Ops index file (x07.arch.app.ops.index@0.1.0).
+    #[arg(
+        long,
+        value_name = "PATH",
+        default_value = "arch/app/ops/index.x07ops.json"
+    )]
+    pub index: PathBuf,
+}
+
+#[derive(Debug, Clone, Args)]
+#[command(subcommand_required = true)]
+pub struct CapsArgs {
+    #[command(subcommand)]
+    pub cmd: CapsCommand,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum CapsCommand {
+    Validate(CapsValidateArgs),
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct CapsValidateArgs {
+    /// Capabilities profile file (x07.app.capabilities@0.1.0).
+    #[arg(long, value_name = "PATH")]
+    pub profile: PathBuf,
+}
+
+#[derive(Debug, Clone, Args)]
+#[command(subcommand_required = true)]
+pub struct PolicyArgs {
+    #[command(subcommand)]
+    pub cmd: PolicyCommand,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum PolicyCommand {
+    Validate(PolicyValidateArgs),
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct PolicyValidateArgs {
+    /// Policy card file (x07.policy.card@0.1.0). May be repeated.
+    #[arg(long, value_name = "PATH")]
+    pub card: Vec<PathBuf>,
+
+    /// Directory of policy cards to validate.
+    #[arg(long, value_name = "PATH")]
+    pub cards_dir: Option<PathBuf>,
+
+    /// Fail if any policy card fails validation.
+    #[arg(long)]
+    pub strict: bool,
+}
+
+#[derive(Debug, Clone, Args)]
+#[command(subcommand_required = true)]
+pub struct SloArgs {
+    #[command(subcommand)]
+    pub cmd: SloCommand,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum SloCommand {
+    Validate(SloValidateArgs),
+    Eval(SloEvalArgs),
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct SloValidateArgs {
+    /// SLO profile file (x07.slo.profile@0.1.0).
+    #[arg(long, value_name = "PATH")]
+    pub profile: PathBuf,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct SloEvalArgs {
+    /// SLO profile file (x07.slo.profile@0.1.0).
+    #[arg(long, value_name = "PATH")]
+    pub profile: PathBuf,
+
+    /// Metrics snapshot file (x07.metrics.snapshot@0.1.0).
+    #[arg(long, value_name = "PATH")]
+    pub metrics: PathBuf,
+}
+
+#[derive(Debug, Clone, Args)]
+#[command(subcommand_required = true)]
+pub struct DeployArgs {
+    #[command(subcommand)]
+    pub cmd: DeployCommand,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum DeployCommand {
+    Plan(DeployPlanArgs),
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct DeployPlanArgs {
+    /// App pack manifest file (x07.app.pack@0.1.0).
+    #[arg(long, value_name = "PATH")]
+    pub pack_manifest: PathBuf,
+
+    /// Ops profile file (x07.app.ops.profile@0.1.0).
+    #[arg(long, value_name = "PATH")]
+    pub ops: PathBuf,
+
+    /// Output directory for deploy plan + emitted manifests.
+    #[arg(long, value_name = "PATH")]
+    pub out_dir: PathBuf,
+}
+
+#[derive(Debug, Clone, Args)]
+#[command(subcommand_required = true)]
+pub struct ProvenanceArgs {
+    #[command(subcommand)]
+    pub cmd: ProvenanceCommand,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum ProvenanceCommand {
+    Attest(ProvenanceAttestArgs),
+    Verify(ProvenanceVerifyArgs),
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct ProvenanceAttestArgs {
+    /// App pack manifest file (x07.app.pack@0.1.0).
+    #[arg(long, value_name = "PATH")]
+    pub pack_manifest: PathBuf,
+
+    /// Ops profile file (x07.app.ops.profile@0.1.0).
+    #[arg(long, value_name = "PATH")]
+    pub ops: PathBuf,
+
+    /// Output attestation file.
+    #[arg(long, value_name = "PATH")]
+    pub out: PathBuf,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct ProvenanceVerifyArgs {
+    /// Attestation file (x07.provenance.slsa.attestation@0.1.0).
+    #[arg(long, value_name = "PATH")]
+    pub attestation: PathBuf,
+
+    /// Directory containing the packed assets referenced by the attestation.
+    #[arg(long, value_name = "PATH")]
+    pub pack_dir: PathBuf,
 }
 
 #[derive(Debug, Clone, Args)]
@@ -1277,6 +1553,10 @@ pub struct AppServeArgs {
     #[arg(long, value_name = "DIR", default_value = "dist/app")]
     pub dir: PathBuf,
 
+    /// Ops profile file (x07.app.ops.profile@0.1.0) for capability enforcement.
+    #[arg(long, value_name = "PATH")]
+    pub ops: Option<PathBuf>,
+
     /// Bind address in host:port form. Port 0 selects an ephemeral port.
     #[arg(long, value_name = "STR", default_value = "127.0.0.1:0")]
     pub addr: String,
@@ -1402,6 +1682,10 @@ pub struct HttpServeArgs {
     /// Reducer component wasm.
     #[arg(long, value_name = "PATH")]
     pub component: PathBuf,
+
+    /// Ops profile file (x07.app.ops.profile@0.1.0) for capability enforcement.
+    #[arg(long, value_name = "PATH")]
+    pub ops: Option<PathBuf>,
 
     /// canary|listen.
     #[arg(long, value_enum, default_value = "listen")]
@@ -1535,6 +1819,14 @@ pub enum Scope {
     Serve,
     Doctor,
     ToolchainValidate,
+    OpsValidate,
+    CapsValidate,
+    PolicyValidate,
+    SloValidate,
+    SloEval,
+    DeployPlan,
+    ProvenanceAttest,
+    ProvenanceVerify,
     WitValidate,
     ComponentProfileValidate,
     ComponentBuild,
@@ -1571,6 +1863,34 @@ pub fn scope_for_command(cmd: Option<&Command>) -> Scope {
         Some(Command::Doctor(_)) => Scope::Doctor,
         Some(Command::Toolchain(_)) => Scope::ToolchainValidate,
         Some(Command::ToolchainValidate(_)) => Scope::ToolchainValidate,
+        Some(Command::Ops(args)) => match args.cmd {
+            OpsCommand::Validate(_) => Scope::OpsValidate,
+        },
+        Some(Command::OpsValidate(_)) => Scope::OpsValidate,
+        Some(Command::Caps(args)) => match args.cmd {
+            CapsCommand::Validate(_) => Scope::CapsValidate,
+        },
+        Some(Command::CapsValidate(_)) => Scope::CapsValidate,
+        Some(Command::Policy(args)) => match args.cmd {
+            PolicyCommand::Validate(_) => Scope::PolicyValidate,
+        },
+        Some(Command::PolicyValidate(_)) => Scope::PolicyValidate,
+        Some(Command::Slo(args)) => match args.cmd {
+            SloCommand::Validate(_) => Scope::SloValidate,
+            SloCommand::Eval(_) => Scope::SloEval,
+        },
+        Some(Command::SloValidate(_)) => Scope::SloValidate,
+        Some(Command::SloEval(_)) => Scope::SloEval,
+        Some(Command::Deploy(args)) => match args.cmd {
+            DeployCommand::Plan(_) => Scope::DeployPlan,
+        },
+        Some(Command::DeployPlan(_)) => Scope::DeployPlan,
+        Some(Command::Provenance(args)) => match args.cmd {
+            ProvenanceCommand::Attest(_) => Scope::ProvenanceAttest,
+            ProvenanceCommand::Verify(_) => Scope::ProvenanceVerify,
+        },
+        Some(Command::ProvenanceAttest(_)) => Scope::ProvenanceAttest,
+        Some(Command::ProvenanceVerify(_)) => Scope::ProvenanceVerify,
         Some(Command::Wit(_)) => Scope::WitValidate,
         Some(Command::WitValidate(_)) => Scope::WitValidate,
         Some(Command::Component(args)) => match args.cmd {

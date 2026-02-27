@@ -11,6 +11,7 @@ use crate::http_reducer::replay::{
     parse_http_fetch_allow_hosts_from_env, run_http_reducer_loop, HttpEffectLoopBudgets,
     HttpEffectState,
 };
+use crate::ops::load_ops_profile_with_refs;
 use crate::report;
 use crate::schema::SchemaStore;
 use crate::stream_payload::stream_payload_to_bytes;
@@ -173,8 +174,86 @@ pub fn cmd_http_serve(
         max_effect_results_bytes: args.max_effect_results_bytes,
     };
 
-    let fetch_allow_hosts = parse_http_fetch_allow_hosts_from_env();
-    let mut effect_state = HttpEffectState::new(fetch_allow_hosts);
+    let mut caps: Option<crate::caps::doc::CapabilitiesDoc> = None;
+    if let Some(ops_path) = args.ops.as_ref() {
+        let loaded_ops = load_ops_profile_with_refs(&store, ops_path, &mut meta, &mut diagnostics)?;
+        let Some(loaded_ops) = loaded_ops else {
+            return emit_report(
+                &store,
+                scope,
+                machine,
+                started,
+                raw_argv,
+                meta,
+                diagnostics,
+                &args,
+                component_digest,
+                runtime_limits,
+                0,
+                Vec::new(),
+                None,
+                None,
+            );
+        };
+        match serde_json::from_value::<crate::caps::doc::CapabilitiesDoc>(
+            loaded_ops.capabilities.doc_json.clone(),
+        ) {
+            Ok(v) => caps = Some(v),
+            Err(err) => {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_CAPS_SCHEMA_INVALID",
+                    Severity::Error,
+                    Stage::Parse,
+                    format!("failed to parse capabilities doc: {err}"),
+                ));
+                return emit_report(
+                    &store,
+                    scope,
+                    machine,
+                    started,
+                    raw_argv,
+                    meta,
+                    diagnostics,
+                    &args,
+                    component_digest,
+                    runtime_limits,
+                    0,
+                    Vec::new(),
+                    None,
+                    None,
+                );
+            }
+        }
+
+        if diagnostics
+            .iter()
+            .any(|d| d.severity == Severity::Error && d.stage == Stage::Parse)
+        {
+            return emit_report(
+                &store,
+                scope,
+                machine,
+                started,
+                raw_argv,
+                meta,
+                diagnostics,
+                &args,
+                component_digest,
+                runtime_limits,
+                0,
+                Vec::new(),
+                None,
+                None,
+            );
+        }
+    }
+
+    let fetch_allow_hosts = if caps.is_some() {
+        Vec::new()
+    } else {
+        parse_http_fetch_allow_hosts_from_env()
+    };
+    let mut effect_state = HttpEffectState::new(fetch_allow_hosts, caps);
 
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_io()
