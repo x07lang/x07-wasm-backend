@@ -3,6 +3,7 @@ use std::path::Path;
 
 use anyhow::{Context, Result};
 use serde_json::{json, Value};
+use serde_yaml::Value as YamlValue;
 
 use crate::cli::{DeployPlanArgs, MachineArgs, Scope};
 use crate::diag::{Diagnostic, Severity, Stage};
@@ -207,6 +208,30 @@ pub fn cmd_deploy_plan(
     let analysis_yaml = analysis_template_yaml(&analysis_name);
     let service_yaml = service_yaml(&k8s_name);
     let ingress_yaml = ingress_yaml(&k8s_name);
+
+    let yaml_ok = yaml_sanity_check("rollout.yaml", "Rollout", &rollout_yaml, &mut diagnostics)
+        && yaml_sanity_check(
+            "analysis-template.yaml",
+            "AnalysisTemplate",
+            &analysis_yaml,
+            &mut diagnostics,
+        )
+        && yaml_sanity_check("service.yaml", "Service", &service_yaml, &mut diagnostics)
+        && yaml_sanity_check("ingress.yaml", "Ingress", &ingress_yaml, &mut diagnostics);
+    if !yaml_ok {
+        return emit_report(
+            &store,
+            scope,
+            machine,
+            started,
+            raw_argv,
+            meta,
+            diagnostics,
+            &args.out_dir,
+            None,
+            Vec::new(),
+        );
+    }
 
     let mut outputs: Vec<report::meta::FileDigest> = Vec::new();
     for (path, content) in [
@@ -450,6 +475,71 @@ fn ingress_yaml(name: &str) -> String {
     format!(
         "apiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: {name}\nspec:\n  rules:\n    - http:\n        paths:\n          - path: /\n            pathType: Prefix\n            backend:\n              service:\n                name: {name}\n                port:\n                  number: 80"
     )
+}
+
+fn yaml_sanity_check(
+    filename: &str,
+    expected_kind: &str,
+    content: &str,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> bool {
+    let doc: YamlValue = match serde_yaml::from_str(content) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_DEPLOY_PLAN_EMIT_FAILED",
+                Severity::Error,
+                Stage::Run,
+                format!("{filename} YAML parse failed: {err}"),
+            ));
+            return false;
+        }
+    };
+
+    let Some(map) = doc.as_mapping() else {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_DEPLOY_PLAN_EMIT_FAILED",
+            Severity::Error,
+            Stage::Run,
+            format!("{filename} YAML is not a mapping"),
+        ));
+        return false;
+    };
+
+    for key in ["apiVersion", "kind", "metadata", "spec"] {
+        if !map.contains_key(&YamlValue::String(key.to_string())) {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_DEPLOY_PLAN_EMIT_FAILED",
+                Severity::Error,
+                Stage::Run,
+                format!("{filename} YAML missing key: {key}"),
+            ));
+            return false;
+        }
+    }
+
+    let kind = map.get(&YamlValue::String("kind".to_string()));
+    match kind {
+        Some(YamlValue::String(k)) if k == expected_kind => true,
+        Some(YamlValue::String(k)) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_DEPLOY_PLAN_EMIT_FAILED",
+                Severity::Error,
+                Stage::Run,
+                format!("{filename} YAML kind mismatch (got={k:?}, expected={expected_kind:?})"),
+            ));
+            false
+        }
+        _ => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_DEPLOY_PLAN_EMIT_FAILED",
+                Severity::Error,
+                Stage::Run,
+                format!("{filename} YAML kind is not a string"),
+            ));
+            false
+        }
+    }
 }
 
 #[allow(clippy::too_many_arguments)]

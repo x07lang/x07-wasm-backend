@@ -33,6 +33,8 @@ const X07_POLICY_CARD_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-policy.card.schema.json");
 const X07_SLO_PROFILE_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-slo.profile.schema.json");
+const X07_WASM_CAPS_EVIDENCE_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.caps.evidence.schema.json");
 const X07_METRICS_SNAPSHOT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-metrics.snapshot.schema.json");
 const X07_DEPLOY_PLAN_SCHEMA_BYTES: &[u8] =
@@ -166,6 +168,8 @@ const X07_WASM_HTTP_TEST_REPORT_SCHEMA_BYTES: &[u8] =
 const X07_WASM_HTTP_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES: &[u8] = include_bytes!(
     "../../../../spec/schemas/x07-wasm.http.regress.from.incident.report.schema.json"
 );
+const X07_WASM_CLI_PARSE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.cli.parse.report.schema.json");
 const X07_WASM_CLI_SPECROWS_CHECK_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.cli.specrows.check.report.schema.json");
 const X07_WASM_DOCTOR_REPORT_SCHEMA_BYTES: &[u8] =
@@ -221,6 +225,7 @@ impl SchemaStore {
             X07_APP_CAPABILITIES_SCHEMA_BYTES,
             X07_POLICY_CARD_SCHEMA_BYTES,
             X07_SLO_PROFILE_SCHEMA_BYTES,
+            X07_WASM_CAPS_EVIDENCE_SCHEMA_BYTES,
             X07_METRICS_SNAPSHOT_SCHEMA_BYTES,
             X07_DEPLOY_PLAN_SCHEMA_BYTES,
             X07_PROVENANCE_SLSA_ATTESTATION_SCHEMA_BYTES,
@@ -259,6 +264,7 @@ impl SchemaStore {
             X07_WASM_HTTP_SERVE_REPORT_SCHEMA_BYTES,
             X07_WASM_HTTP_TEST_REPORT_SCHEMA_BYTES,
             X07_WASM_HTTP_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES,
+            X07_WASM_CLI_PARSE_REPORT_SCHEMA_BYTES,
             X07_WASM_CLI_SPECROWS_CHECK_REPORT_SCHEMA_BYTES,
             X07_WASM_DOCTOR_REPORT_SCHEMA_BYTES,
             X07_WASM_WIT_VALIDATE_REPORT_SCHEMA_BYTES,
@@ -462,6 +468,7 @@ mod tests {
             "https://x07.io/spec/x07-app.capabilities.schema.json",
             "https://x07.io/spec/x07-policy.card.schema.json",
             "https://x07.io/spec/x07-slo.profile.schema.json",
+            "https://x07.io/spec/x07-wasm.caps.evidence.schema.json",
             "https://x07.io/spec/x07-metrics.snapshot.schema.json",
             "https://x07.io/spec/x07-deploy.plan.schema.json",
             "https://x07.io/spec/x07-provenance.slsa.attestation.schema.json",
@@ -507,6 +514,7 @@ mod tests {
             "https://x07.io/spec/x07-wasm.http.serve.report.schema.json",
             "https://x07.io/spec/x07-wasm.http.test.report.schema.json",
             "https://x07.io/spec/x07-wasm.http.regress.from.incident.report.schema.json",
+            "https://x07.io/spec/x07-wasm.cli.parse.report.schema.json",
             "https://x07.io/spec/x07-wasm.cli.specrows.check.report.schema.json",
             "https://x07.io/spec/x07-wasm.doctor.report.schema.json",
             "https://x07.io/spec/x07-wasm.wit.validate.report.schema.json",

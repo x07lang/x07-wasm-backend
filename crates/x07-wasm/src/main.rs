@@ -45,8 +45,24 @@ fn main() -> ExitCode {
 }
 
 fn run() -> Result<u8> {
+    let started = std::time::Instant::now();
     let argv: Vec<std::ffi::OsString> = std::env::args_os().collect();
-    let root = cli::RootCli::parse();
+    let hint = report::cli_parse::MachineHint::from_argv(&argv);
+
+    let root = match cli::RootCli::try_parse_from(&argv) {
+        Ok(v) => v,
+        Err(err) => {
+            let _ = err.print();
+            return report::cli_parse::emit_cli_parse_report(
+                &argv,
+                &hint,
+                started,
+                "clap",
+                err.to_string(),
+                3,
+            );
+        }
+    };
 
     if root.cli_specrows {
         let doc = cli::specrows::build_specrows_doc();
@@ -64,14 +80,29 @@ fn run() -> Result<u8> {
 
     if let Some(msg) = report::machine::validate_machine_args(&root.machine) {
         eprintln!("{msg}");
-        return Ok(3);
+        return report::cli_parse::emit_cli_parse_report(
+            &argv,
+            &hint,
+            started,
+            "machine_args",
+            msg,
+            3,
+        );
     }
 
     match root.cmd {
         Some(cmd) => cmd.run(&argv, scope, &root.machine),
         None => {
-            eprintln!("missing command (try --help)");
-            Ok(3)
+            let msg = "missing command (try --help)".to_string();
+            eprintln!("{msg}");
+            report::cli_parse::emit_cli_parse_report(
+                &argv,
+                &hint,
+                started,
+                "missing_command",
+                msg,
+                3,
+            )
         }
     }
 }

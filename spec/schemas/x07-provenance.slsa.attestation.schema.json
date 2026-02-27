@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-provenance.slsa.attestation.schema.json",
   "title": "x07.provenance.slsa.attestation@0.1.0",
-  "description": "SLSA provenance attestation (in-toto Statement v1, predicateType https://slsa.dev/provenance/v1) with minimal required fields for x07 packs.",
+  "description": "SLSA provenance attestation (in-toto Statement v1; x07-wasm expects predicateType https://slsa.dev/provenance/v1) with minimal required fields for x07 packs.",
   "type": "object",
   "additionalProperties": false,
   "required": ["_type", "subject", "predicateType", "predicate"],
@@ -19,7 +19,8 @@
     },
     "predicateType": {
       "type": "string",
-      "const": "https://slsa.dev/provenance/v1"
+      "minLength": 1,
+      "maxLength": 512
     },
     "predicate": {
       "$ref": "#/$defs/predicate"
@@ -113,7 +114,8 @@
             "pack_manifest_sha256": { "$ref": "#/$defs/sha256" },
             "ops_profile_sha256": { "$ref": "#/$defs/sha256" },
             "capabilities_sha256": { "$ref": "#/$defs/sha256" },
-            "slo_profile_sha256": { "$ref": "#/$defs/sha256" }
+            "slo_profile_sha256": { "$ref": "#/$defs/sha256" },
+            "compatibility_hash": { "$ref": "#/$defs/sha256" }
           },
           "default": {}
         }

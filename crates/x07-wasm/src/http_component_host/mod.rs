@@ -76,7 +76,7 @@ impl HttpComponentHost {
             .max(1);
 
         let wasi = if let Some(caps) = caps.as_deref() {
-            match build_wasi_ctx_from_caps(caps, wasi_base_dir, request_diagnostics)? {
+            match build_wasi_ctx_from_caps(caps, wasi_base_dir, None, request_diagnostics)? {
                 Some(v) => v,
                 None => anyhow::bail!("capabilities denied building WASI ctx"),
             }

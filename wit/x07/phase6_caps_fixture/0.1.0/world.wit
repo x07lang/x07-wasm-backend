@@ -1,0 +1,10 @@
+package x07:phase6-caps-fixture@0.1.0;
+
+world proxy {
+  // Standard WASI imports required by Rust std on wasm32-wasip2.
+  include wasi:cli/imports@0.2.8;
+
+  // Minimal HTTP proxy surface (compatible with the backend component host).
+  import wasi:http/outgoing-handler@0.2.8;
+  export wasi:http/incoming-handler@0.2.8;
+}

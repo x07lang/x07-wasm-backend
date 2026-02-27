@@ -13,6 +13,7 @@ All Phase 6 commands support:
 
 - `--json` / `--report-out` (machine report emission)
 - `--json-schema` / `--json-schema-id` (report contract discovery)
+- `--report-out` is honored even on Clap argument parsing errors (`x07.wasm.cli.parse.report@0.1.0`).
 
 ## Operational contracts
 
@@ -53,12 +54,35 @@ Runtime enforcement:
 - `x07-wasm http serve --ops <ops.json>` applies capabilities to the core-wasm HTTP reducer effects (for example `http.fetch` and `time.now`).
 - `x07-wasm app serve --ops <ops.json>` applies capabilities to backend requests served via the in-proc component host.
 
+Clocks/random record+replay:
+
+- If `clocks.mode=record` or `random.mode=record`, `x07-wasm serve` requires either:
+  - `--evidence-out <path>` (record), or
+  - `--evidence-in <path>` (replay).
+- Evidence schema: `x07.wasm.caps.evidence@0.1.0` (`https://x07.io/spec/x07-wasm.caps.evidence.schema.json`).
+
+Secrets provider (v1):
+
+- Allow secret IDs via `caps.secrets.allow[]`.
+- Values are injected as environment variables `X07_SECRET_<ID>` (uppercase, non-alnum becomes `_`).
+- Sources:
+  - file: `.x07/secrets/<id>` (default; base dir overridable via `X07_SECRETS_DIR`), or
+  - env: `X07_SECRET_<ID>`.
+- Evidence records `{id, source}` only (never secret bytes).
+
 ## Policy cards
 
 Policy cards (`x07.policy.card@0.1.0`) support:
 
 - allow/deny/warn/require via assertions
 - optional RFC 6902 JSON Patch mutation when assertions fail
+
+Evaluation semantics (Phase 6):
+
+- Rules are evaluated in file order (cards list order, then rules list order).
+- For a matching `target`, assertions are evaluated against the current JSON doc.
+- If assertions fail and `patches[]` is non-empty, the patches are applied (in order) and assertions are re-evaluated.
+- If assertions still fail, the rule emits a diagnostic according to `effect` (`deny|warn|require`).
 
 Validate one or more cards:
 
@@ -100,6 +124,20 @@ Create and verify a hash-first provenance attestation for a pack:
 x07-wasm provenance attest --pack-manifest dist/app.pack.json --ops arch/app/ops/ops_release.json --out dist/provenance.slsa.json --json
 x07-wasm provenance verify --attestation dist/provenance.slsa.json --pack-dir dist --json
 ```
+
+Notes:
+
+- `x07-wasm provenance attest` includes `predicate.x07.compatibility_hash` (matches `x07-wasm ops validate`).
+- `predicateType` is schema-validated as a non-empty string; `x07-wasm provenance verify` enforces the supported SLSA v1 predicate type.
+
+## Platform handoff (Phase 6)
+
+Phase 6 outputs are intended to be consumed by an autonomous deployer (for example `x07-platform`) as a closed-loop contract:
+
+- **Deploy intent**: `x07-wasm deploy plan` emits `deploy.plan.json` plus Kubernetes YAML outputs under `--out-dir`.
+- **Authorization**: `x07-wasm provenance verify` recomputes digests against the pack directory; platforms can gate deployment on a verified attestation and record `predicate.x07.compatibility_hash`.
+- **Promotion**: `x07-wasm app serve --mode canary --ops <ops.json>` evaluates SLOs (if referenced by ops) and emits a pinned `promote|rollback|inconclusive` decision.
+- **Incidents → regressions**: incident bundles under `.x07-wasm/incidents/...` can be converted into replayable cases via `* regress-from-incident` commands.
 
 ## CI gate
 

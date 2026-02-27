@@ -250,14 +250,7 @@ fn emit_report(
                 .as_ref()
                 .map(|s| file_status(&s.path, s.ok, s.schema_valid, Some(s.digest.sha256.clone())));
 
-            let compat_doc = json!({
-              "ops_profile_sha256": l.ops.digest.sha256,
-              "capabilities_sha256": l.capabilities.digest.sha256,
-              "policy_cards_sha256": l.policy_cards.iter().map(|c| c.digest.sha256.clone()).collect::<Vec<_>>(),
-              "slo_profile_sha256": l.slo_profile.as_ref().map(|s| s.digest.sha256.clone()),
-            });
-            let bytes = report::canon::canonical_json_bytes(&compat_doc)?;
-            let compatibility_hash = util::sha256_hex(&bytes);
+            let compatibility_hash = crate::ops::compute_ops_compatibility_hash(l)?;
 
             (
                 ops_status,

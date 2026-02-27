@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-wasm.caps.evidence.schema.json",
+  "title": "x07.wasm.caps.evidence@0.1.0",
+  "description": "Evidence emitted by hosts when replayable capability modes are used (clocks/random record+replay and secret delivery metadata).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "v", "clocks", "random", "secrets"],
+  "properties": {
+    "schema_version": { "const": "x07.wasm.caps.evidence@0.1.0" },
+    "v": { "type": "integer", "minimum": 1 },
+    "clocks": { "$ref": "#/$defs/clocks" },
+    "random": { "$ref": "#/$defs/random" },
+    "secrets": { "$ref": "#/$defs/secrets" }
+  },
+  "$defs": {
+    "u64": { "type": "integer", "minimum": 0, "maximum": 18446744073709551615 },
+    "secret_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"
+    },
+    "clocks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["wall_clock_now_ns", "monotonic_clock_now_ns"],
+      "properties": {
+        "wall_clock_now_ns": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/u64" },
+          "default": []
+        },
+        "monotonic_clock_now_ns": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/u64" },
+          "default": []
+        }
+      }
+    },
+    "random": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "secure_random_bytes_b64",
+        "insecure_random_bytes_b64",
+        "insecure_seed_u128"
+      ],
+      "properties": {
+        "secure_random_bytes_b64": { "type": "string", "default": "" },
+        "insecure_random_bytes_b64": { "type": "string", "default": "" },
+        "insecure_seed_u128": { "type": "string", "default": "" }
+      }
+    },
+    "secret_provided": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "source"],
+      "properties": {
+        "id": { "$ref": "#/$defs/secret_id" },
+        "source": { "type": "string", "enum": ["env", "file"] }
+      }
+    },
+    "secrets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provided"],
+      "properties": {
+        "provided": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/secret_provided" },
+          "default": []
+        }
+      }
+    }
+  }
+}
+

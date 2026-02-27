@@ -1,0 +1,11 @@
+[package]
+name = "x07-wasm-phase6-caps-fixture"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen = "0.53.1"

@@ -27,6 +27,17 @@ pub struct LoadedOpsProfile {
     pub slo_profile: Option<LoadedJsonRef>,
 }
 
+pub fn compute_ops_compatibility_hash(loaded: &LoadedOpsProfile) -> Result<String> {
+    let compat_doc = json!({
+      "ops_profile_sha256": loaded.ops.digest.sha256,
+      "capabilities_sha256": loaded.capabilities.digest.sha256,
+      "policy_cards_sha256": loaded.policy_cards.iter().map(|c| c.digest.sha256.clone()).collect::<Vec<_>>(),
+      "slo_profile_sha256": loaded.slo_profile.as_ref().map(|s| s.digest.sha256.clone()),
+    });
+    let bytes = report::canon::canonical_json_bytes(&compat_doc)?;
+    Ok(util::sha256_hex(&bytes))
+}
+
 pub fn load_ops_profile_with_refs(
     store: &SchemaStore,
     ops_profile_path: &Path,

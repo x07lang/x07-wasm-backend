@@ -639,6 +639,14 @@ pub struct ServeArgs {
     #[arg(long, value_name = "PATH")]
     pub ops: Option<PathBuf>,
 
+    /// Write capability evidence JSON (clocks/random record mode).
+    #[arg(long, value_name = "PATH", conflicts_with = "evidence_in")]
+    pub evidence_out: Option<PathBuf>,
+
+    /// Read capability evidence JSON (clocks/random replay mode).
+    #[arg(long, value_name = "PATH")]
+    pub evidence_in: Option<PathBuf>,
+
     /// Listen address for mode=listen (e.g., 127.0.0.1:8080).
     #[arg(long, value_name = "STR", default_value = "127.0.0.1:0")]
     pub addr: String,
@@ -1583,6 +1591,10 @@ pub struct AppTestArgs {
     /// Directory containing the app bundle.
     #[arg(long, value_name = "DIR", default_value = "dist/app")]
     pub dir: PathBuf,
+
+    /// Ops profile file (x07.app.ops.profile@0.1.0) for capability enforcement.
+    #[arg(long, value_name = "PATH")]
+    pub ops: Option<PathBuf>,
 
     /// Path to x07.app.trace@... JSON to replay.
     #[arg(long, value_name = "PATH")]

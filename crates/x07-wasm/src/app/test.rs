@@ -8,9 +8,11 @@ use serde_json::{json, Value};
 use tokio::task::LocalSet;
 
 use crate::app::bundle::LoadedAppBundle;
+use crate::caps::doc::CapabilitiesDoc;
 use crate::cli::{AppTestArgs, MachineArgs, Scope};
 use crate::diag::{Diagnostic, Severity, Stage};
 use crate::http_component_host::{self, HttpComponentBudgets, HttpComponentHost};
+use crate::ops::load_ops_profile_with_refs;
 use crate::report;
 use crate::schema::SchemaStore;
 use crate::stream_payload::{bytes_to_stream_payload, stream_payload_to_bytes};
@@ -99,6 +101,56 @@ pub fn cmd_app_test(
             None,
             false,
         );
+    }
+
+    let mut caps: Option<std::sync::Arc<CapabilitiesDoc>> = None;
+    let wasi_base_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    if let Some(ops_path) = args.ops.as_ref() {
+        let loaded_ops = load_ops_profile_with_refs(&store, ops_path, &mut meta, &mut diagnostics)?;
+        let Some(loaded_ops) = loaded_ops else {
+            return emit_report(
+                &store,
+                scope,
+                machine,
+                started,
+                raw_argv,
+                meta,
+                diagnostics,
+                &args,
+                vec![case_result(&args.trace, false, 0, 1)],
+                None,
+                false,
+            );
+        };
+
+        match serde_json::from_value::<CapabilitiesDoc>(loaded_ops.capabilities.doc_json.clone()) {
+            Ok(v) => caps = Some(std::sync::Arc::new(v)),
+            Err(err) => diagnostics.push(Diagnostic::new(
+                "X07WASM_CAPS_SCHEMA_INVALID",
+                Severity::Error,
+                Stage::Parse,
+                format!("failed to parse capabilities doc: {err}"),
+            )),
+        }
+
+        if diagnostics
+            .iter()
+            .any(|d| d.severity == Severity::Error && d.stage == Stage::Parse)
+        {
+            return emit_report(
+                &store,
+                scope,
+                machine,
+                started,
+                raw_argv,
+                meta,
+                diagnostics,
+                &args,
+                vec![case_result(&args.trace, false, 0, 1)],
+                None,
+                false,
+            );
+        }
     }
 
     let (app_budgets, http_budgets) =
@@ -256,6 +308,8 @@ pub fn cmd_app_test(
 
     let max_steps = args.max_steps as usize;
     let mut host = host;
+    let caps = caps.clone();
+    let wasi_base_dir = wasi_base_dir.clone();
     let (final_ok, final_mismatches) = rt.block_on(local.run_until(async {
         for (idx, step) in steps.into_iter().enumerate().take(max_steps) {
             steps_run = steps_run.saturating_add(1);
@@ -348,6 +402,8 @@ pub fn cmd_app_test(
                 &mut current_state,
                 &event,
                 frame,
+                caps.clone(),
+                wasi_base_dir.as_path(),
             )
             .await
             {
@@ -675,6 +731,8 @@ async fn run_http_effects_loop(
     current_state: &mut Value,
     event: &Value,
     first_frame: Value,
+    caps: Option<std::sync::Arc<CapabilitiesDoc>>,
+    wasi_base_dir: &Path,
 ) -> Result<(Value, Vec<Value>)> {
     let mut frame = first_frame;
     let mut exchanges: Vec<Value> = Vec::new();
@@ -695,7 +753,8 @@ async fn run_http_effects_loop(
         let req0 = reqs.into_iter().next().unwrap();
         let req_env = build_exec_request_envelope(app_budgets.api_prefix.as_str(), &req0)?;
 
-        let resp_env = execute_http_request(host, http_budgets, &req_env).await?;
+        let resp_env =
+            execute_http_request(host, http_budgets, &req_env, caps.clone(), wasi_base_dir).await?;
         exchanges.push(json!({ "request": req_env.clone(), "response": resp_env.clone() }));
 
         let injected_state = inject_http_response_state(current_state.clone(), resp_env);
@@ -827,6 +886,8 @@ async fn execute_http_request(
     host: &mut HttpComponentHost,
     budgets: &HttpComponentBudgets,
     req_env: &Value,
+    caps: Option<std::sync::Arc<CapabilitiesDoc>>,
+    wasi_base_dir: &Path,
 ) -> Result<Value> {
     let method = req_env
         .get("method")
@@ -870,9 +931,11 @@ async fn execute_http_request(
         .body(http_component_host::full_body(body_bytes))
         .context("build request")?;
 
+    let mut request_diags: Vec<Diagnostic> = Vec::new();
     let resp = host
-        .handle_request(req, budgets, None, Path::new("."), &mut Vec::new())
+        .handle_request(req, budgets, caps, wasi_base_dir, &mut request_diags)
         .await?;
+    let _ = request_diags;
 
     let mut headers = Vec::new();
     for (k, v) in resp.headers {

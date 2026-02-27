@@ -27,6 +27,7 @@ use wasmtime_wasi_http::{WasiHttpCtx, WasiHttpView};
 use crate::blob;
 use crate::caps::doc::CapabilitiesDoc;
 use crate::caps::enforce::build_wasi_ctx_from_caps;
+use crate::caps::evidence::{CapsEvidenceCtx, CapsEvidenceDoc, CapsEvidenceMode};
 use crate::cli::{MachineArgs, Scope, ServeArgs, ServeMode};
 use crate::diag::{Diagnostic, Severity, Stage};
 use crate::guest_diag;
@@ -136,6 +137,206 @@ pub fn cmd_serve(
             store.validate_report_and_emit(scope, machine, started, raw_argv, report_doc)?;
             return Ok(exit_code);
         }
+    }
+
+    if (args.evidence_in.is_some() || args.evidence_out.is_some()) && args.ops.is_none() {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_POLICY_OBLIGATION_UNSATISFIED",
+            Severity::Error,
+            Stage::Parse,
+            "--evidence-in/--evidence-out require --ops".to_string(),
+        ));
+        let report_doc = serve_report_doc(
+            meta,
+            diagnostics,
+            &args,
+            budgets,
+            component_digest,
+            None,
+            Vec::new(),
+            Vec::new(),
+        );
+        let exit_code = report_doc
+            .get("exit_code")
+            .and_then(Value::as_u64)
+            .unwrap_or(1) as u8;
+        store.validate_report_and_emit(scope, machine, started, raw_argv, report_doc)?;
+        return Ok(exit_code);
+    }
+
+    if (args.evidence_in.is_some() || args.evidence_out.is_some())
+        && !matches!(args.mode, ServeMode::Canary)
+    {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_POLICY_OBLIGATION_UNSATISFIED",
+            Severity::Error,
+            Stage::Parse,
+            "--evidence-in/--evidence-out require --mode canary".to_string(),
+        ));
+        let report_doc = serve_report_doc(
+            meta,
+            diagnostics,
+            &args,
+            budgets,
+            component_digest,
+            None,
+            Vec::new(),
+            Vec::new(),
+        );
+        let exit_code = report_doc
+            .get("exit_code")
+            .and_then(Value::as_u64)
+            .unwrap_or(1) as u8;
+        store.validate_report_and_emit(scope, machine, started, raw_argv, report_doc)?;
+        return Ok(exit_code);
+    }
+
+    if (args.evidence_in.is_some() || args.evidence_out.is_some()) && args.stop_after != 1 {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_POLICY_OBLIGATION_UNSATISFIED",
+            Severity::Error,
+            Stage::Parse,
+            "--evidence-in/--evidence-out require --stop-after 1".to_string(),
+        ));
+        let report_doc = serve_report_doc(
+            meta,
+            diagnostics,
+            &args,
+            budgets,
+            component_digest,
+            None,
+            Vec::new(),
+            Vec::new(),
+        );
+        let exit_code = report_doc
+            .get("exit_code")
+            .and_then(Value::as_u64)
+            .unwrap_or(1) as u8;
+        store.validate_report_and_emit(scope, machine, started, raw_argv, report_doc)?;
+        return Ok(exit_code);
+    }
+
+    let mut evidence_in_doc: Option<CapsEvidenceDoc> = None;
+    if let Some(p) = args.evidence_in.as_ref() {
+        let bytes = match std::fs::read(p) {
+            Ok(v) => v,
+            Err(err) => {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_POLICY_OBLIGATION_UNSATISFIED",
+                    Severity::Error,
+                    Stage::Parse,
+                    format!("failed to read evidence-in {}: {err}", p.display()),
+                ));
+                let report_doc = serve_report_doc(
+                    meta,
+                    diagnostics,
+                    &args,
+                    budgets,
+                    component_digest,
+                    None,
+                    Vec::new(),
+                    Vec::new(),
+                );
+                let exit_code = report_doc
+                    .get("exit_code")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(1) as u8;
+                store.validate_report_and_emit(scope, machine, started, raw_argv, report_doc)?;
+                return Ok(exit_code);
+            }
+        };
+        meta.inputs.push(report::meta::FileDigest {
+            path: p.display().to_string(),
+            sha256: util::sha256_hex(&bytes),
+            bytes_len: bytes.len() as u64,
+        });
+
+        let doc_value: Value = match serde_json::from_slice(&bytes) {
+            Ok(v) => v,
+            Err(err) => {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_POLICY_OBLIGATION_UNSATISFIED",
+                    Severity::Error,
+                    Stage::Parse,
+                    format!("evidence-in is not JSON: {err}"),
+                ));
+                let report_doc = serve_report_doc(
+                    meta,
+                    diagnostics,
+                    &args,
+                    budgets,
+                    component_digest,
+                    None,
+                    Vec::new(),
+                    Vec::new(),
+                );
+                let exit_code = report_doc
+                    .get("exit_code")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(1) as u8;
+                store.validate_report_and_emit(scope, machine, started, raw_argv, report_doc)?;
+                return Ok(exit_code);
+            }
+        };
+
+        let schema_diags = store.validate(
+            "https://x07.io/spec/x07-wasm.caps.evidence.schema.json",
+            &doc_value,
+        )?;
+        if !schema_diags.is_empty() {
+            for dd in schema_diags {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_POLICY_OBLIGATION_UNSATISFIED",
+                    Severity::Error,
+                    Stage::Parse,
+                    dd.message,
+                ));
+            }
+            let report_doc = serve_report_doc(
+                meta,
+                diagnostics,
+                &args,
+                budgets,
+                component_digest,
+                None,
+                Vec::new(),
+                Vec::new(),
+            );
+            let exit_code = report_doc
+                .get("exit_code")
+                .and_then(Value::as_u64)
+                .unwrap_or(1) as u8;
+            store.validate_report_and_emit(scope, machine, started, raw_argv, report_doc)?;
+            return Ok(exit_code);
+        }
+
+        evidence_in_doc = match serde_json::from_value::<CapsEvidenceDoc>(doc_value) {
+            Ok(v) => Some(v),
+            Err(err) => {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_POLICY_OBLIGATION_UNSATISFIED",
+                    Severity::Error,
+                    Stage::Parse,
+                    format!("evidence-in parse failed: {err}"),
+                ));
+                let report_doc = serve_report_doc(
+                    meta,
+                    diagnostics,
+                    &args,
+                    budgets,
+                    component_digest,
+                    None,
+                    Vec::new(),
+                    Vec::new(),
+                );
+                let exit_code = report_doc
+                    .get("exit_code")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(1) as u8;
+                store.validate_report_and_emit(scope, machine, started, raw_argv, report_doc)?;
+                return Ok(exit_code);
+            }
+        };
     }
 
     let mut config = Config::new();
@@ -343,6 +544,7 @@ pub fn cmd_serve(
             match args.mode {
                 ServeMode::Canary => {
                     serve_canary(
+                        &store,
                         &engine,
                         &proxy_pre,
                         &runtime_limits,
@@ -353,6 +555,7 @@ pub fn cmd_serve(
                         &mut meta,
                         &mut diagnostics,
                         &budgets,
+                        evidence_in_doc.as_ref(),
                     )
                     .await
                 }
@@ -508,6 +711,7 @@ impl WasiHttpView for ServeState {
 
 #[allow(clippy::too_many_arguments)]
 async fn serve_canary(
+    store: &SchemaStore,
     engine: &Engine,
     proxy: &ProxyPre<ServeState>,
     runtime_limits: &crate::arch::WasmRuntimeLimits,
@@ -518,6 +722,7 @@ async fn serve_canary(
     meta: &mut report::meta::ReportMeta,
     diagnostics: &mut Vec<Diagnostic>,
     budgets: &ServeBudgets,
+    evidence_in_doc: Option<&CapsEvidenceDoc>,
 ) -> (
     report::meta::ReportMeta,
     Vec<Diagnostic>,
@@ -606,6 +811,46 @@ async fn serve_canary(
             .expect("request build");
         let headers = req.headers().clone();
 
+        let evidence = if args.evidence_out.is_some() {
+            Some(CapsEvidenceCtx::new_record())
+        } else if args.evidence_in.is_some() {
+            let Some(doc) = evidence_in_doc else {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_POLICY_OBLIGATION_UNSATISFIED",
+                    Severity::Error,
+                    Stage::Parse,
+                    "missing evidence-in doc (internal)".to_string(),
+                ));
+                return (
+                    meta.clone(),
+                    diagnostics.clone(),
+                    None,
+                    responses,
+                    incident_dirs,
+                );
+            };
+            match CapsEvidenceCtx::new_replay(doc) {
+                Ok(v) => Some(v),
+                Err(err) => {
+                    diagnostics.push(Diagnostic::new(
+                        "X07WASM_POLICY_OBLIGATION_UNSATISFIED",
+                        Severity::Error,
+                        Stage::Parse,
+                        format!("evidence replay init failed: {err:#}"),
+                    ));
+                    return (
+                        meta.clone(),
+                        diagnostics.clone(),
+                        None,
+                        responses,
+                        incident_dirs,
+                    );
+                }
+            }
+        } else {
+            None
+        };
+
         let started = std::time::Instant::now();
         let mut request_diags: Vec<Diagnostic> = Vec::new();
         match handle_one_request(
@@ -616,11 +861,28 @@ async fn serve_canary(
             budgets,
             caps.clone(),
             wasi_base_dir,
+            evidence.as_ref(),
             &mut request_diags,
         )
         .await
         {
             Ok((buf, nondeterminism)) => {
+                if let Some(ev) = evidence.as_ref() {
+                    if ev.mode() == CapsEvidenceMode::Replay {
+                        let errs = ev.replay_errors();
+                        if !errs.is_empty() {
+                            let mut d = Diagnostic::new(
+                                "X07WASM_POLICY_OBLIGATION_UNSATISFIED",
+                                Severity::Error,
+                                Stage::Run,
+                                "evidence replay underflow".to_string(),
+                            );
+                            d.data.insert("replay_errors".to_string(), json!(errs));
+                            request_diags.push(d);
+                        }
+                    }
+                }
+
                 meta.nondeterminism.uses_network |= nondeterminism.uses_network;
                 meta.nondeterminism.uses_os_time |= nondeterminism.uses_os_time;
                 diagnostics.extend(request_diags);
@@ -709,6 +971,23 @@ async fn serve_canary(
                 });
             }
             Err(err) => {
+                if let Some(ev) = evidence.as_ref() {
+                    if ev.mode() == CapsEvidenceMode::Replay {
+                        let errs = ev.replay_errors();
+                        if !errs.is_empty() {
+                            let mut d = Diagnostic::new(
+                                "X07WASM_POLICY_OBLIGATION_UNSATISFIED",
+                                Severity::Error,
+                                Stage::Run,
+                                "evidence replay underflow".to_string(),
+                            );
+                            d.data.insert("replay_errors".to_string(), json!(errs));
+                            request_diags.push(d);
+                        }
+                    }
+                }
+
+                let request_has_error = request_diags.iter().any(|d| d.severity == Severity::Error);
                 diagnostics.extend(request_diags);
                 let wall_ms = started.elapsed().as_millis() as u64;
                 if let Some(kind) = wasmtime_limits::classify_budget_exceeded(&err) {
@@ -737,12 +1016,14 @@ async fn serve_canary(
                         msg.to_string(),
                     ));
                 } else {
-                    diagnostics.push(Diagnostic::new(
-                        "X07WASM_SERVE_REQUEST_FAILED",
-                        Severity::Error,
-                        Stage::Run,
-                        format!("{err:#}"),
-                    ));
+                    if !request_has_error {
+                        diagnostics.push(Diagnostic::new(
+                            "X07WASM_SERVE_REQUEST_FAILED",
+                            Severity::Error,
+                            Stage::Run,
+                            format!("{err:#}"),
+                        ));
+                    }
                 }
                 let (req_env_bytes, req_env_doc, req_sha) =
                     request_envelope_bytes(&method, &uri, &headers, &body_loaded.bytes);
@@ -780,6 +1061,77 @@ async fn serve_canary(
                     wall_ms,
                 });
                 let _ = (req_sha, wall_ms);
+            }
+        }
+
+        if let (Some(out_path), Some(ev)) = (args.evidence_out.as_ref(), evidence.as_ref()) {
+            if ev.mode() == CapsEvidenceMode::Record {
+                let doc = ev.build_doc();
+                let value = match serde_json::to_value(&doc) {
+                    Ok(v) => v,
+                    Err(err) => {
+                        diagnostics.push(Diagnostic::new(
+                            "X07WASM_POLICY_OBLIGATION_UNSATISFIED",
+                            Severity::Error,
+                            Stage::Run,
+                            format!("failed to encode evidence-out JSON: {err}"),
+                        ));
+                        continue;
+                    }
+                };
+
+                let schema_diags = match store.validate(
+                    "https://x07.io/spec/x07-wasm.caps.evidence.schema.json",
+                    &value,
+                ) {
+                    Ok(v) => v,
+                    Err(err) => {
+                        diagnostics.push(Diagnostic::new(
+                            "X07WASM_POLICY_OBLIGATION_UNSATISFIED",
+                            Severity::Error,
+                            Stage::Run,
+                            format!("failed to validate evidence-out: {err:#}"),
+                        ));
+                        continue;
+                    }
+                };
+                if !schema_diags.is_empty() {
+                    diagnostics.push(Diagnostic::new(
+                        "X07WASM_POLICY_OBLIGATION_UNSATISFIED",
+                        Severity::Error,
+                        Stage::Run,
+                        "evidence-out failed schema validation".to_string(),
+                    ));
+                    continue;
+                }
+
+                if let Some(parent) = out_path.parent() {
+                    std::fs::create_dir_all(parent).ok();
+                }
+                let bytes = match report::canon::canonical_pretty_json_bytes(&value) {
+                    Ok(v) => v,
+                    Err(err) => {
+                        diagnostics.push(Diagnostic::new(
+                            "X07WASM_POLICY_OBLIGATION_UNSATISFIED",
+                            Severity::Error,
+                            Stage::Run,
+                            format!("failed to canonicalize evidence-out: {err:#}"),
+                        ));
+                        continue;
+                    }
+                };
+                if let Err(err) = std::fs::write(out_path, &bytes) {
+                    diagnostics.push(Diagnostic::new(
+                        "X07WASM_POLICY_OBLIGATION_UNSATISFIED",
+                        Severity::Error,
+                        Stage::Run,
+                        format!("failed to write evidence-out {}: {err}", out_path.display()),
+                    ));
+                    continue;
+                }
+                if let Ok(d) = util::file_digest(out_path) {
+                    meta.outputs.push(d);
+                }
             }
         }
     }
@@ -940,6 +1292,7 @@ async fn serve_listen(
                     &budgets,
                     caps.clone(),
                     &wasi_base_dir,
+                    None,
                     &mut request_diags,
                 )
                 .await
@@ -1044,6 +1397,8 @@ async fn serve_listen(
                         Ok::<_, hyper::Error>(resp)
                     }
                     Err(err) => {
+                        let request_has_error =
+                            request_diags.iter().any(|d| d.severity == Severity::Error);
                         if !request_diags.is_empty() {
                             diagnostics_acc.lock().unwrap().extend(request_diags);
                         }
@@ -1074,12 +1429,14 @@ async fn serve_listen(
                                 msg.to_string(),
                             ));
                         } else {
-                            diagnostics_acc.lock().unwrap().push(Diagnostic::new(
-                                "X07WASM_SERVE_REQUEST_FAILED",
-                                Severity::Error,
-                                Stage::Run,
-                                format!("{err:#}"),
-                            ));
+                            if !request_has_error {
+                                diagnostics_acc.lock().unwrap().push(Diagnostic::new(
+                                    "X07WASM_SERVE_REQUEST_FAILED",
+                                    Severity::Error,
+                                    Stage::Run,
+                                    format!("{err:#}"),
+                                ));
+                            }
                         }
                         let (_req_env_bytes, req_env_doc, _req_sha) =
                             request_envelope_bytes(&method, &uri, &headers, &body_bytes);
@@ -1162,6 +1519,7 @@ async fn handle_one_request<B>(
     budgets: &ServeBudgets,
     caps: Option<std::sync::Arc<CapabilitiesDoc>>,
     wasi_base_dir: &Path,
+    evidence: Option<&CapsEvidenceCtx>,
     request_diagnostics: &mut Vec<Diagnostic>,
 ) -> Result<(BufferedResponse, ServeRequestNondeterminism)>
 where
@@ -1174,7 +1532,7 @@ where
         .max(1);
 
     let wasi = if let Some(caps) = caps.as_deref() {
-        match build_wasi_ctx_from_caps(caps, wasi_base_dir, request_diagnostics)? {
+        match build_wasi_ctx_from_caps(caps, wasi_base_dir, evidence, request_diagnostics)? {
             Some(v) => v,
             None => anyhow::bail!("capabilities denied building WASI ctx"),
         }

@@ -197,10 +197,12 @@ pub fn cmd_provenance_attest(
     let started_on = rfc3339_utc_now();
     let finished_on = rfc3339_utc_now();
 
+    let compatibility_hash = crate::ops::compute_ops_compatibility_hash(&loaded_ops)?;
     let mut x07_pred = json!({
       "pack_manifest_sha256": pack_digest.sha256,
       "ops_profile_sha256": loaded_ops.ops.digest.sha256,
       "capabilities_sha256": loaded_ops.capabilities.digest.sha256,
+      "compatibility_hash": compatibility_hash,
     });
     if let Some(s) = loaded_ops.slo_profile.as_ref() {
         x07_pred.as_object_mut().unwrap().insert(

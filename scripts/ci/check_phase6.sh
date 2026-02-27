@@ -8,14 +8,30 @@ set -euo pipefail
 
 mkdir -p build/phase6 dist/phase6 .x07-wasm/incidents
 
+phase6_on_exit() {
+  local code=$?
+  set +e
+
+  echo "==> phase6: diagnostic allowlists"
+  bash scripts/ci/check_phase6_diagcodes.sh build
+  local diagcodes=$?
+
+  if [ "$code" -eq 0 ] && [ "$diagcodes" -eq 0 ]; then
+    echo "phase6: PASS"
+    exit 0
+  fi
+
+  if [ "$code" -eq 0 ] && [ "$diagcodes" -ne 0 ]; then
+    exit "$diagcodes"
+  fi
+
+  exit "$code"
+}
+
+trap phase6_on_exit EXIT
+
 echo "==> phase6: Phase-5 hardening loop"
 bash scripts/ci/check_phase5.sh
 
 echo "==> phase6: Phase-6 examples gate"
 bash scripts/ci/check_phase6_examples.sh
-
-echo "==> phase6: diagnostic allowlists"
-bash scripts/ci/check_phase6_diagcodes.sh build
-
-echo "phase6: PASS"
-

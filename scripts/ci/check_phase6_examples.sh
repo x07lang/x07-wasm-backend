@@ -152,6 +152,67 @@ print("ok: deploy plan outputs exist")
 PY
 }
 
+get_first_response_body_sha256() {
+  local report_path="$1"
+  "$PYTHON" - "$report_path" <<'PY'
+import json, pathlib, sys
+p = pathlib.Path(sys.argv[1])
+doc = json.loads(p.read_text(encoding="utf-8"))
+responses = doc.get("result", {}).get("responses", [])
+if not isinstance(responses, list) or len(responses) < 1:
+    print("missing result.responses[0]", file=sys.stderr)
+    sys.exit(1)
+body = responses[0].get("body", {})
+sha = body.get("sha256") if isinstance(body, dict) else None
+if not isinstance(sha, str) or len(sha) != 64:
+    print("missing result.responses[0].body.sha256", file=sys.stderr)
+    sys.exit(1)
+print(sha)
+PY
+}
+
+get_report_result_compatibility_hash() {
+  local report_path="$1"
+  "$PYTHON" - "$report_path" <<'PY'
+import json, pathlib, sys
+p = pathlib.Path(sys.argv[1])
+doc = json.loads(p.read_text(encoding="utf-8"))
+v = doc.get("result", {}).get("compatibility_hash")
+if not isinstance(v, str) or len(v) != 64:
+    print("missing result.compatibility_hash", file=sys.stderr)
+    sys.exit(1)
+print(v)
+PY
+}
+
+get_attestation_x07_compatibility_hash() {
+  local attestation_path="$1"
+  "$PYTHON" - "$attestation_path" <<'PY'
+import json, pathlib, sys
+p = pathlib.Path(sys.argv[1])
+doc = json.loads(p.read_text(encoding="utf-8"))
+v = doc.get("predicate", {}).get("x07", {}).get("compatibility_hash")
+if not isinstance(v, str) or len(v) != 64:
+    print("missing predicate.x07.compatibility_hash", file=sys.stderr)
+    sys.exit(1)
+print(v)
+PY
+}
+
+set_attestation_predicate_type_in_place() {
+  local attestation_path="$1"
+  local predicate_type="$2"
+  "$PYTHON" - "$attestation_path" "$predicate_type" <<'PY'
+import json, pathlib, sys
+p = pathlib.Path(sys.argv[1])
+pt = sys.argv[2]
+doc = json.loads(p.read_text(encoding="utf-8"))
+doc["predicateType"] = pt
+p.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
+print("ok: set predicateType:", pt)
+PY
+}
+
 corrupt_first_pack_asset_file() {
   local pack_manifest_path="$1"
   "$PYTHON" - "$pack_manifest_path" <<'PY'
@@ -228,6 +289,21 @@ fi
 require_report_exit_and_has_code build/phase6_examples/slo.eval.bad.json 2 X07WASM_SLO_VIOLATION
 require_report_result_field build/phase6_examples/slo.eval.bad.json result.decision rollback
 
+echo "==> phase6_examples: slo eval (inconclusive - missing metric)"
+set +e
+x07-wasm slo eval --profile arch/slo/slo_min.json \
+  --metrics examples/app_min/tests/metrics_canary_missing.json \
+  --json --report-out build/phase6_examples/slo.eval.missing.json --quiet-json
+code=$?
+set -e
+if [ "$code" -ne 3 ]; then
+  echo "expected exit code 3 for SLO inconclusive, got $code" >&2
+  exit 1
+fi
+require_report_exit_and_has_code build/phase6_examples/slo.eval.missing.json 3 X07WASM_SLO_METRIC_MISSING
+require_report_exit_and_has_code build/phase6_examples/slo.eval.missing.json 3 X07WASM_SLO_EVAL_INCONCLUSIVE
+require_report_result_field build/phase6_examples/slo.eval.missing.json result.decision inconclusive
+
 echo "==> phase6_examples: ops validate (index resolution dev + release)"
 x07-wasm ops validate --index arch/app/ops/index.x07ops.json --profile-id ops_dev \
   --json --report-out build/phase6_examples/ops.validate.dev.json --quiet-json
@@ -244,6 +320,112 @@ x07-wasm policy validate \
   --strict \
   --json --report-out build/phase6_examples/policy.validate.json --quiet-json
 require_report_ok build/phase6_examples/policy.validate.json
+
+echo "==> phase6_examples: caps fs denied/allowed (wasi:http component)"
+cargo build --release --locked --target wasm32-wasip2 \
+  --manifest-path guest/phase6-caps-fixture/Cargo.toml
+test -f guest/phase6-caps-fixture/target/wasm32-wasip2/release/x07_wasm_phase6_caps_fixture.wasm
+
+set +e
+x07-wasm serve \
+  --component guest/phase6-caps-fixture/target/wasm32-wasip2/release/x07_wasm_phase6_caps_fixture.wasm \
+  --mode canary \
+  --path /fs \
+  --ops arch/app/ops/ops_release.json \
+  --json --report-out build/phase6_examples/serve.caps_fs_denied.json --quiet-json
+code=$?
+set -e
+if [ "$code" -ne 1 ]; then
+  echo "expected exit code 1 for caps fs denied, got $code" >&2
+  exit 1
+fi
+require_report_exit_and_has_code build/phase6_examples/serve.caps_fs_denied.json 1 X07WASM_CAPS_FS_DENIED
+
+x07-wasm serve \
+  --component guest/phase6-caps-fixture/target/wasm32-wasip2/release/x07_wasm_phase6_caps_fixture.wasm \
+  --mode canary \
+  --path /fs \
+  --ops arch/app/ops/ops_fs_ro.json \
+  --json --report-out build/phase6_examples/serve.caps_fs_allowed.json --quiet-json
+require_report_ok build/phase6_examples/serve.caps_fs_allowed.json
+
+echo "==> phase6_examples: caps clocks/random record+replay (evidence)"
+rm -f dist/phase6_examples/caps.evidence.json
+x07-wasm serve \
+  --component guest/phase6-caps-fixture/target/wasm32-wasip2/release/x07_wasm_phase6_caps_fixture.wasm \
+  --mode canary \
+  --path /time_rand \
+  --ops arch/app/ops/ops_time_random_record.json \
+  --evidence-out dist/phase6_examples/caps.evidence.json \
+  --json --report-out build/phase6_examples/serve.time_rand.record.json --quiet-json
+require_report_ok build/phase6_examples/serve.time_rand.record.json
+test -f dist/phase6_examples/caps.evidence.json
+
+x07-wasm serve \
+  --component guest/phase6-caps-fixture/target/wasm32-wasip2/release/x07_wasm_phase6_caps_fixture.wasm \
+  --mode canary \
+  --path /time_rand \
+  --ops arch/app/ops/ops_time_random_record.json \
+  --evidence-in dist/phase6_examples/caps.evidence.json \
+  --json --report-out build/phase6_examples/serve.time_rand.replay.json --quiet-json
+require_report_ok build/phase6_examples/serve.time_rand.replay.json
+
+sha1="$(get_first_response_body_sha256 build/phase6_examples/serve.time_rand.record.json)"
+sha2="$(get_first_response_body_sha256 build/phase6_examples/serve.time_rand.replay.json)"
+if [ "$sha1" != "$sha2" ]; then
+  echo "time_rand record/replay mismatch: $sha1 != $sha2" >&2
+  exit 1
+fi
+
+echo "==> phase6_examples: caps evidence missing (negative)"
+set +e
+x07-wasm serve \
+  --component guest/phase6-caps-fixture/target/wasm32-wasip2/release/x07_wasm_phase6_caps_fixture.wasm \
+  --mode canary \
+  --path /time_rand \
+  --ops arch/app/ops/ops_time_random_record.json \
+  --evidence-in dist/phase6_examples/__missing__.json \
+  --json --report-out build/phase6_examples/serve.time_rand.evidence_missing.json --quiet-json
+code=$?
+set -e
+if [ "$code" -ne 3 ]; then
+  echo "expected exit code 3 for missing evidence, got $code" >&2
+  exit 1
+fi
+require_report_exit_and_has_code build/phase6_examples/serve.time_rand.evidence_missing.json 3 X07WASM_POLICY_OBLIGATION_UNSATISFIED
+
+echo "==> phase6_examples: caps secrets denied/missing"
+set +e
+x07-wasm serve \
+  --component guest/phase6-caps-fixture/target/wasm32-wasip2/release/x07_wasm_phase6_caps_fixture.wasm \
+  --mode canary \
+  --path /secret \
+  --ops arch/app/ops/ops_release.json \
+  --json --report-out build/phase6_examples/serve.caps_secret_denied.json --quiet-json
+code=$?
+set -e
+if [ "$code" -ne 1 ]; then
+  echo "expected exit code 1 for caps secret denied, got $code" >&2
+  exit 1
+fi
+require_report_exit_and_has_code build/phase6_examples/serve.caps_secret_denied.json 1 X07WASM_CAPS_SECRET_DENIED
+
+mkdir -p dist/phase6_examples/secrets_empty
+unset X07_SECRET_API_KEY || true
+set +e
+X07_SECRETS_DIR="dist/phase6_examples/secrets_empty" x07-wasm serve \
+  --component guest/phase6-caps-fixture/target/wasm32-wasip2/release/x07_wasm_phase6_caps_fixture.wasm \
+  --mode canary \
+  --path /secret \
+  --ops arch/app/ops/ops_secret_allow.json \
+  --json --report-out build/phase6_examples/serve.caps_secret_missing.json --quiet-json
+code=$?
+set -e
+if [ "$code" -ne 3 ]; then
+  echo "expected exit code 3 for caps secret missing, got $code" >&2
+  exit 1
+fi
+require_report_exit_and_has_code build/phase6_examples/serve.caps_secret_missing.json 3 X07WASM_CAPS_PROFILE_READ_FAILED
 
 echo "==> phase6_examples: caps net denied (http serve canary)"
 x07-wasm build --project examples/http_reducer_effect_http/x07.json --profile wasm_release \
@@ -292,6 +474,13 @@ x07-wasm provenance attest \
 require_report_ok build/phase6_examples/provenance.attest.json
 test -f dist/phase6_examples/app_min.pack/provenance.slsa.json
 
+ops_hash="$(get_report_result_compatibility_hash build/phase6_examples/ops.validate.release.json)"
+att_hash="$(get_attestation_x07_compatibility_hash dist/phase6_examples/app_min.pack/provenance.slsa.json)"
+if [ "$ops_hash" != "$att_hash" ]; then
+  echo "provenance compatibility_hash mismatch: ops=$ops_hash att=$att_hash" >&2
+  exit 1
+fi
+
 x07-wasm provenance verify \
   --attestation dist/phase6_examples/app_min.pack/provenance.slsa.json \
   --pack-dir dist/phase6_examples/app_min.pack \
@@ -315,6 +504,23 @@ if [ "$code" -ne 1 ]; then
   exit 1
 fi
 require_report_exit_and_has_code build/phase6_examples/provenance.verify.bad.json 1 X07WASM_PROVENANCE_DIGEST_MISMATCH
+
+echo "==> phase6_examples: provenance verify (negative - unsupported predicateType)"
+cp dist/phase6_examples/app_min.pack/provenance.slsa.json dist/phase6_examples/app_min.pack/provenance.slsa.unsupported.json
+set_attestation_predicate_type_in_place dist/phase6_examples/app_min.pack/provenance.slsa.unsupported.json "https://example.com/unsupported"
+
+set +e
+x07-wasm provenance verify \
+  --attestation dist/phase6_examples/app_min.pack/provenance.slsa.unsupported.json \
+  --pack-dir dist/phase6_examples/app_min.pack \
+  --json --report-out build/phase6_examples/provenance.verify.unsupported_predicate.json --quiet-json
+code=$?
+set -e
+if [ "$code" -ne 1 ]; then
+  echo "expected exit code 1 for provenance predicateType unsupported, got $code" >&2
+  exit 1
+fi
+require_report_exit_and_has_code build/phase6_examples/provenance.verify.unsupported_predicate.json 1 X07WASM_PROVENANCE_PREDICATE_TYPE_UNSUPPORTED
 
 echo "==> phase6_examples: deploy plan"
 x07-wasm deploy plan \
@@ -340,5 +546,17 @@ if [ "$code" -ne 1 ]; then
 fi
 require_report_exit_and_has_code build/phase6_examples/deploy.plan.policy_denied.json 1 X07WASM_POLICY_DECISION_DENY
 require_report_exit_and_has_code build/phase6_examples/deploy.plan.policy_denied.json 1 X07WASM_DEPLOY_PLAN_POLICY_DENIED
+
+echo "==> phase6_examples: always-report (clap parse error)"
+set +e
+x07-wasm serve --bad-flag \
+  --json --report-out build/phase6_examples/cli.parse.bad_flag.json --quiet-json
+code=$?
+set -e
+if [ "$code" -ne 3 ]; then
+  echo "expected exit code 3 for clap parse error, got $code" >&2
+  exit 1
+fi
+require_report_exit_and_has_code build/phase6_examples/cli.parse.bad_flag.json 3 X07WASM_CLI_ARGS_INVALID
 
 echo "phase6_examples: PASS"
