@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-http.trace.schema.json",
+  "title": "x07.http.trace@0.1.0",
+  "description": "HTTP trace (dispatch/frame steps) captured by a host.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "v",
+    "kind",
+    "steps"
+  ],
+  "properties": {
+    "v": {
+      "type": "integer",
+      "const": 1
+    },
+    "kind": {
+      "type": "string",
+      "const": "x07.http.trace"
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": true,
+      "default": {}
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/step"
+      },
+      "default": []
+    }
+  },
+  "$defs": {
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "env",
+        "frame"
+      ],
+      "properties": {
+        "env": {
+          "$ref": "https://x07.io/spec/x07-http.dispatch.schema.json"
+        },
+        "frame": {
+          "$ref": "https://x07.io/spec/x07-http.frame.schema.json"
+        },
+        "wallMs": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

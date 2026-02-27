@@ -1,0 +1,7 @@
+{
+  "v": 1,
+  "kind": "x07.web_ui.dispatch",
+  "state": { "__x07_nav": { "v": 1, "kind": "fixture", "path": "/home" } },
+  "event": { "type": "init" }
+}
+

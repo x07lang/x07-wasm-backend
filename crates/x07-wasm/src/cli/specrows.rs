@@ -46,6 +46,11 @@ pub fn build_specrows_doc() -> Value {
         ["app-contracts-validate","flag","","--strict","strict","Treat warnings as errors."],
         ["app-contracts-validate","opt","","--fixture","fixture","PATH","Validate only specific fixture files (repeatable).",{"multiple":true}],
 
+        ["app-pack","about","Alias for `x07-wasm app pack`. Create a content-addressed app pack from an app bundle and emit x07.wasm.app.pack.report@0.1.0."],
+        ["app-pack","opt","","--bundle-manifest","bundle_manifest","PATH","Bundle manifest file produced by x07-wasm app build."],
+        ["app-pack","opt","","--out-dir","out_dir","PATH","Output directory for pack."],
+        ["app-pack","opt","","--profile-id","profile_id","STR","Pack profile id (used for routing defaults)."],
+
         ["app-profile-validate","about","Alias for `x07-wasm app profile validate`. Validate arch/app registry + app profiles + cross-references. Emits x07.wasm.app.profile.validate.report@0.1.0."],
         ["app-profile-validate","flag","","--strict","strict","Treat warnings as errors (nonzero exit on any warning)."],
         ["app-profile-validate","opt","","--component-index","component.index","PATH","Path to the wasm component profile registry for cross-checking component_profile_id.",{ "default": "arch/wasm/component/index.x07wasm.component.json" }],
@@ -75,6 +80,9 @@ pub fn build_specrows_doc() -> Value {
         ["app-test","opt","","--dir","dir","PATH","Directory containing the app bundle (default: dist/app).",{ "default": "dist/app" }],
         ["app-test","opt","","--max-steps","max.steps","U32","Maximum number of trace steps to replay.",{ "default": 10000 }],
         ["app-test","opt","","--trace","trace","PATH","Path to x07.app.trace@... JSON to replay.",{ "required": true }],
+
+        ["app-verify","about","Alias for `x07-wasm app verify`. Verify an app pack (digests + required headers) and emit x07.wasm.app.verify.report@0.1.0."],
+        ["app-verify","opt","","--pack-manifest","pack_manifest","PATH","Pack manifest file (x07.app.pack@0.1.0)."],
 
         ["build","about","Build an x07 project to a wasm32 reactor module (exports x07_solve_v2)."],
         ["build","flag","","--no-manifest","manifest.none","Do not write the artifact manifest file."],
@@ -137,6 +145,24 @@ pub fn build_specrows_doc() -> Value {
 
         ["doctor","about","Check wasm toolchain prerequisites and emit a machine report."],
 
+        ["http-contracts-validate","about","Alias for `x07-wasm http contracts validate`. Validate http reducer schema set + fixtures and emit x07.wasm.http.contracts.validate.report@0.1.0."],
+        ["http-contracts-validate","flag","","--strict","strict","Fail if any fixture/schema check fails."],
+
+        ["http-regress-from-incident","about","Alias for `x07-wasm http regress from-incident`. Generate a regression test + trace fixture from an incident bundle and emit x07.wasm.http.regress.from.incident.report@0.1.0."],
+        ["http-regress-from-incident","opt","","--incident-dir","incident_dir","PATH","Incident bundle directory."],
+        ["http-regress-from-incident","opt","","--out-dir","out_dir","PATH","Where to write generated test/fixture.",{ "default": "tests/regress" }],
+
+        ["http-serve","about","Alias for `x07-wasm http serve`. Run an http reducer effect loop and emit x07.wasm.http.serve.report@0.1.0."],
+        ["http-serve","opt","","--component","component","PATH","Reducer component wasm."],
+        ["http-serve","opt","","--max-effect-results-bytes","max_effect_results_bytes","U32","Max total effect result bytes.",{ "default": 1048576 }],
+        ["http-serve","opt","","--max-effect-steps","max_effect_steps","U32","Max dispatch/frame iterations.",{ "default": 64 }],
+        ["http-serve","opt","","--max-fuel","max_fuel","U32","Max Wasmtime fuel (overrides profile)."],
+        ["http-serve","opt","","--mode","mode","STR","canary|listen.",{ "default": "listen" }],
+
+        ["http-test","about","Alias for `x07-wasm http test`. Run http reducer trace replays and emit x07.wasm.http.test.report@0.1.0."],
+        ["http-test","opt","","--component","component","PATH","Reducer component wasm."],
+        ["http-test","opt","","--trace","trace","PATH","Trace case file(s) to replay.",{"multiple":true}],
+
         ["profile-validate","about","Validate arch/wasm/index.x07wasm.json and referenced profile files. Alias: `x07-wasm profile validate`."],
         ["profile-validate","opt","","--index","index","PATH","Path to wasm profile registry (default: arch/wasm/index.x07wasm.json).",{"required":false}],
         ["profile-validate","opt","","--profile","profile.id","STR","Validate only this profile id (looked up in the registry).",{"required":false}],
@@ -167,6 +193,11 @@ pub fn build_specrows_doc() -> Value {
             ["serve","opt","","--path","path","STR","Request path for canary mode.",{"required":false}],
             ["serve","opt","","--request-body","request.body","BYTES","Request body bytes for canary mode (hex:, b64:, @path).",{"required":false}],
             ["serve","opt","","--stop-after","stop.after","U32","Stop after N requests (canary mode; or listen mode if nonzero).",{"required":false}],
+
+        ["toolchain-validate","about","Alias for `x07-wasm toolchain validate`. Validate pinned toolchain requirements (versions + probes) and emit x07.wasm.toolchain.validate.report@0.1.0."],
+        ["toolchain-validate","opt","","--index","index","PATH","Toolchain index file (x07.arch.wasm.toolchain.index@0.1.0).",{ "default": "arch/wasm/toolchain/index.x07wasm.toolchain.json" }],
+        ["toolchain-validate","opt","","--profile","profile","PATH","Toolchain profile file (x07.wasm.toolchain.profile@0.1.0)."],
+        ["toolchain-validate","opt","","--profile-id","profile_id","STR","Toolchain profile id resolved via arch/wasm/toolchain/index.x07wasm.toolchain.json."],
 
         ["web-ui-build","about","Build a browser-runnable web-ui bundle (core wasm or component+ESM). Alias: `x07-wasm web-ui build`."],
         ["web-ui-build","flag","","--clean","clean","Delete out-dir before writing artifacts."],

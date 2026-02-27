@@ -3457,6 +3457,8 @@ dependencies = [
  "hyper",
  "hyper-util",
  "jsonschema",
+ "regex",
+ "semver",
  "serde",
  "serde_json",
  "sha2",

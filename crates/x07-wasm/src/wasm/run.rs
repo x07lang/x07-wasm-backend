@@ -4,7 +4,7 @@ use std::path::Path;
 use anyhow::{Context, Result};
 use base64::Engine as _;
 use serde_json::{json, Value};
-use wasmtime::{Config, Engine, Instance, Module, Store, StoreLimits, StoreLimitsBuilder, Val};
+use wasmtime::{Config, Engine, Instance, Module, Store, Val};
 
 use crate::cli::{MachineArgs, RunArgs, Scope};
 use crate::diag::{Diagnostic, Severity, Stage};
@@ -13,10 +13,11 @@ use crate::report::machine::{self, JsonMode};
 use crate::schema::SchemaStore;
 use crate::util;
 use crate::wasm::{abi_solve_v2, incident, inspect, memory_plan};
+use crate::wasmtime_limits::{self, BudgetExceededKind, WasmResourceLimiter};
 
 #[derive(Debug)]
 struct HostState {
-    limits: StoreLimits,
+    limiter: WasmResourceLimiter,
 }
 
 pub fn cmd_run(
@@ -76,6 +77,20 @@ pub fn cmd_run(
     let max_output_bytes = args
         .max_output_bytes
         .unwrap_or(profile.defaults.max_output_bytes);
+
+    let mut runtime_limits = profile.runtime.clone();
+    if let Some(v) = args.max_fuel {
+        runtime_limits.max_fuel = Some(v);
+    }
+    if let Some(v) = args.max_memory_bytes {
+        runtime_limits.max_memory_bytes = Some(v);
+    }
+    if let Some(v) = args.max_table_elements {
+        runtime_limits.max_table_elements = Some(v);
+    }
+    if let Some(v) = args.max_wasm_stack_bytes {
+        runtime_limits.max_wasm_stack_bytes = Some(v);
+    }
 
     let wasm_bytes = match std::fs::read(&args.wasm) {
         Ok(b) => b,
@@ -220,14 +235,16 @@ pub fn cmd_run(
         );
     }
 
-    let stack_limit = if mem_plan.stack_size_bytes != 0 {
-        mem_plan.stack_size_bytes
-    } else {
-        1024 * 1024
-    };
-
     let mut config = Config::new();
-    config.max_wasm_stack(stack_limit as usize);
+    if runtime_limits.max_wasm_stack_bytes.is_none() {
+        let fallback = if mem_plan.stack_size_bytes != 0 {
+            mem_plan.stack_size_bytes
+        } else {
+            1024 * 1024
+        };
+        runtime_limits.max_wasm_stack_bytes = Some(u32::try_from(fallback).unwrap_or(u32::MAX));
+    }
+    wasmtime_limits::apply_config(&mut config, &runtime_limits);
     let engine = match Engine::new(&config) {
         Ok(v) => v,
         Err(err) => {
@@ -349,12 +366,49 @@ pub fn cmd_run(
         );
     }
 
-    let max_store_memory = max_bytes.min(u64::from(u32::MAX));
-    let limits = StoreLimitsBuilder::new()
-        .memory_size(max_store_memory as usize)
-        .build();
-    let mut store_rt = Store::new(&engine, HostState { limits });
-    store_rt.limiter(|s| &mut s.limits);
+    let module_max_memory_bytes = max_bytes.min(u64::from(u32::MAX));
+    let effective_max_memory_bytes = runtime_limits
+        .max_memory_bytes
+        .map(|v| v.min(module_max_memory_bytes))
+        .unwrap_or(module_max_memory_bytes);
+    let mut store_rt = Store::new(
+        &engine,
+        HostState {
+            limiter: WasmResourceLimiter::new(
+                Some(effective_max_memory_bytes),
+                runtime_limits.max_table_elements,
+            ),
+        },
+    );
+    store_rt.limiter(|s| &mut s.limiter);
+    if let Err(err) = wasmtime_limits::store_add_fuel(&mut store_rt, &runtime_limits) {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_WASMTIME_ENGINE_FAILED",
+            Severity::Error,
+            Stage::Run,
+            format!("{err:#}"),
+        ));
+        let result = run_result_doc(
+            &profile_ref,
+            &wasm_digest,
+            &input,
+            arena_cap_bytes,
+            None,
+            None,
+            None,
+            None,
+            Some(mem_plan.clone()),
+        );
+        let report_doc = run_report_doc(meta, diagnostics, result);
+        return emit_run_report(
+            &store,
+            scope,
+            machine,
+            json_mode,
+            report_doc,
+            Some(input.bytes),
+        );
+    }
 
     let instance = match Instance::new(&mut store_rt, &module, &[]) {
         Ok(v) => v,
@@ -588,6 +642,32 @@ pub fn cmd_run(
                 d.data
                     .insert("have_bytes".to_string(), json!(mem.have_bytes));
                 diagnostics.push(d);
+            } else if let Some(kind) = wasmtime_limits::classify_budget_exceeded(&err) {
+                let (code, msg) = match kind {
+                    BudgetExceededKind::CpuFuel => (
+                        "X07WASM_BUDGET_EXCEEDED_CPU_FUEL",
+                        "execution exceeded Wasmtime fuel budget",
+                    ),
+                    BudgetExceededKind::WasmStack => (
+                        "X07WASM_BUDGET_EXCEEDED_WASM_STACK",
+                        "execution exceeded Wasmtime wasm stack budget",
+                    ),
+                    BudgetExceededKind::Memory => (
+                        "X07WASM_BUDGET_EXCEEDED_MEMORY",
+                        "execution exceeded Wasmtime memory budget",
+                    ),
+                    BudgetExceededKind::Table => (
+                        "X07WASM_BUDGET_EXCEEDED_TABLE",
+                        "execution exceeded Wasmtime table budget",
+                    ),
+                };
+                trap = Some(format!("{err:#}"));
+                diagnostics.push(Diagnostic::new(
+                    code,
+                    Severity::Error,
+                    Stage::Run,
+                    msg.to_string(),
+                ));
             } else {
                 let msg = format!("{err:#}");
                 diagnostics.push(Diagnostic::new(

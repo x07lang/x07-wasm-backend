@@ -17,6 +17,7 @@ use crate::guest_diag;
 use crate::report;
 use crate::schema::SchemaStore;
 use crate::util;
+use crate::wasmtime_limits::{self, BudgetExceededKind, WasmResourceLimiter};
 
 pub fn cmd_component_run(
     raw_argv: &[OsString],
@@ -88,6 +89,36 @@ pub fn cmd_component_run(
 
     let mut config = Config::new();
     config.async_support(true);
+    let mut runtime_limits = crate::arch::load_profile(
+        &store,
+        &PathBuf::from("arch/wasm/index.x07wasm.json"),
+        Some("wasm_release"),
+        None,
+    )
+    .map(|p| {
+        meta.inputs.push(p.digest);
+        if let Some(d) = p.index_digest {
+            meta.inputs.push(d);
+        }
+        p.doc.runtime
+    })
+    .unwrap_or(crate::arch::WasmRuntimeLimits {
+        max_fuel: None,
+        max_memory_bytes: None,
+        max_table_elements: None,
+        max_wasm_stack_bytes: Some(2 * 1024 * 1024),
+        notes: None,
+    });
+    if let Some(v) = args.max_fuel {
+        runtime_limits.max_fuel = Some(v);
+    }
+    if let Some(v) = args.max_memory_bytes {
+        runtime_limits.max_memory_bytes = Some(v);
+    }
+    if let Some(v) = args.max_table_elements {
+        runtime_limits.max_table_elements = Some(v);
+    }
+    wasmtime_limits::apply_config(&mut config, &runtime_limits);
     let engine = match Engine::new(&config) {
         Ok(v) => v,
         Err(err) => {
@@ -170,6 +201,8 @@ pub fn cmd_component_run(
         );
     }
 
+    let runtime_limits_for_run = runtime_limits.clone();
+
     let local = LocalSet::new();
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_time()
@@ -182,9 +215,20 @@ pub fn cmd_component_run(
             RunState {
                 table: ResourceTable::new(),
                 wasi,
+                limiter: WasmResourceLimiter::new(
+                    runtime_limits_for_run.max_memory_bytes,
+                    runtime_limits_for_run.max_table_elements,
+                ),
             },
         );
         store.data_mut().table.set_max_capacity(1024);
+        store.limiter(|s| &mut s.limiter);
+        if let Err(err) = wasmtime_limits::store_add_fuel(&mut store, &runtime_limits_for_run) {
+            return RunOutcome::Trap {
+                trap: format!("{err:#}"),
+                budget: None,
+            };
+        }
 
         let command = match wasmtime_wasi::p2::bindings::Command::instantiate_async(
             &mut store, &component, &linker,
@@ -195,6 +239,7 @@ pub fn cmd_component_run(
             Err(err) => {
                 return RunOutcome::Trap {
                     trap: format!("{err:#}"),
+                    budget: wasmtime_limits::classify_budget_exceeded(&err),
                 };
             }
         };
@@ -214,6 +259,7 @@ pub fn cmd_component_run(
             Ok(Err(())) => RunOutcome::Err,
             Err(err) => RunOutcome::Trap {
                 trap: format!("{err:#}"),
+                budget: wasmtime_limits::classify_budget_exceeded(&err),
             },
         }
     }));
@@ -224,7 +270,7 @@ pub fn cmd_component_run(
         RunOutcome::TimedOut { max_wall_ms } => {
             json!({ "outcome": "timeout", "max_wall_ms": max_wall_ms })
         }
-        RunOutcome::Trap { trap } => json!({ "outcome": "trap", "trap": trap }),
+        RunOutcome::Trap { trap, .. } => json!({ "outcome": "trap", "trap": trap }),
     };
 
     let stdout_bytes = stdout_pipe.contents().to_vec();
@@ -247,7 +293,7 @@ pub fn cmd_component_run(
             Stage::Run,
             "component run exceeded wall-time budget".to_string(),
         )),
-        RunOutcome::Trap { trap } => {
+        RunOutcome::Trap { trap, budget } => {
             if trap.contains("write beyond capacity of MemoryOutputPipe") || output_at_cap {
                 diagnostics.push(Diagnostic::new(
                     "X07WASM_BUDGET_EXCEEDED_OUTPUT",
@@ -256,12 +302,39 @@ pub fn cmd_component_run(
                     "stdout/stderr exceeded max_output_bytes budget".to_string(),
                 ));
             }
-            diagnostics.push(Diagnostic::new(
-                "X07WASM_COMPONENT_RUN_TRAP",
-                Severity::Error,
-                Stage::Run,
-                "component trapped during run".to_string(),
-            ));
+            if let Some(kind) = budget {
+                let (code, msg) = match kind {
+                    BudgetExceededKind::CpuFuel => (
+                        "X07WASM_BUDGET_EXCEEDED_CPU_FUEL",
+                        "component exceeded Wasmtime fuel budget",
+                    ),
+                    BudgetExceededKind::WasmStack => (
+                        "X07WASM_BUDGET_EXCEEDED_WASM_STACK",
+                        "component exceeded Wasmtime wasm stack budget",
+                    ),
+                    BudgetExceededKind::Memory => (
+                        "X07WASM_BUDGET_EXCEEDED_MEMORY",
+                        "component exceeded Wasmtime memory budget",
+                    ),
+                    BudgetExceededKind::Table => (
+                        "X07WASM_BUDGET_EXCEEDED_TABLE",
+                        "component exceeded Wasmtime table budget",
+                    ),
+                };
+                diagnostics.push(Diagnostic::new(
+                    code,
+                    Severity::Error,
+                    Stage::Run,
+                    msg.to_string(),
+                ));
+            } else {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_COMPONENT_RUN_TRAP",
+                    Severity::Error,
+                    Stage::Run,
+                    "component trapped during run".to_string(),
+                ));
+            }
         }
     }
 
@@ -354,6 +427,7 @@ pub fn cmd_component_run(
 struct RunState {
     table: ResourceTable,
     wasi: WasiCtx,
+    limiter: WasmResourceLimiter,
 }
 
 impl WasiView for RunState {
@@ -369,8 +443,13 @@ impl WasiView for RunState {
 enum RunOutcome {
     Ok,
     Err,
-    TimedOut { max_wall_ms: u64 },
-    Trap { trap: String },
+    TimedOut {
+        max_wall_ms: u64,
+    },
+    Trap {
+        trap: String,
+        budget: Option<BudgetExceededKind>,
+    },
 }
 
 fn parse_args_json(args_json: &str) -> Result<Vec<String>> {

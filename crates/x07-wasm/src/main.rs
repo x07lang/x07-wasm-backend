@@ -9,6 +9,7 @@ mod component;
 mod diag;
 mod guest_diag;
 mod http_component_host;
+mod http_reducer;
 mod report;
 mod schema;
 mod serve;
@@ -16,6 +17,7 @@ mod stream_payload;
 mod toolchain;
 mod util;
 mod wasm;
+mod wasmtime_limits;
 mod web_ui;
 mod wit;
 

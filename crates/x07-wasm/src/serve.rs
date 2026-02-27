@@ -27,6 +27,7 @@ use crate::guest_diag;
 use crate::report;
 use crate::schema::SchemaStore;
 use crate::util;
+use crate::wasmtime_limits::{self, BudgetExceededKind, WasmResourceLimiter};
 
 pub fn cmd_serve(
     raw_argv: &[OsString],
@@ -76,6 +77,36 @@ pub fn cmd_serve(
 
     let mut config = Config::new();
     config.async_support(true);
+    let mut runtime_limits = crate::arch::load_profile(
+        &store,
+        &PathBuf::from("arch/wasm/index.x07wasm.json"),
+        Some("wasm_release"),
+        None,
+    )
+    .map(|p| {
+        meta.inputs.push(p.digest);
+        if let Some(d) = p.index_digest {
+            meta.inputs.push(d);
+        }
+        p.doc.runtime
+    })
+    .unwrap_or(crate::arch::WasmRuntimeLimits {
+        max_fuel: None,
+        max_memory_bytes: None,
+        max_table_elements: None,
+        max_wasm_stack_bytes: Some(2 * 1024 * 1024),
+        notes: None,
+    });
+    if let Some(v) = args.max_fuel {
+        runtime_limits.max_fuel = Some(v);
+    }
+    if let Some(v) = args.max_memory_bytes {
+        runtime_limits.max_memory_bytes = Some(v);
+    }
+    if let Some(v) = args.max_table_elements {
+        runtime_limits.max_table_elements = Some(v);
+    }
+    wasmtime_limits::apply_config(&mut config, &runtime_limits);
     let engine = match Engine::new(&config) {
         Ok(v) => v,
         Err(err) => {
@@ -251,6 +282,7 @@ pub fn cmd_serve(
                     serve_canary(
                         &engine,
                         &proxy_pre,
+                        &runtime_limits,
                         &args,
                         &component_digest,
                         &mut meta,
@@ -263,6 +295,7 @@ pub fn cmd_serve(
                     serve_listen(
                         &engine,
                         &proxy_pre,
+                        &runtime_limits,
                         &args,
                         &component_digest,
                         &mut meta,
@@ -323,6 +356,7 @@ struct ServeState {
     table: ResourceTable,
     wasi: WasiCtx,
     http: WasiHttpCtx,
+    limiter: WasmResourceLimiter,
     outgoing_body_chunk_size: usize,
     outgoing_body_buffer_chunks: usize,
 }
@@ -354,9 +388,11 @@ impl WasiHttpView for ServeState {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn serve_canary(
     engine: &Engine,
     proxy: &ProxyPre<ServeState>,
+    runtime_limits: &crate::arch::WasmRuntimeLimits,
     args: &ServeArgs,
     component: &report::meta::FileDigest,
     meta: &mut report::meta::ReportMeta,
@@ -451,7 +487,7 @@ async fn serve_canary(
         let headers = req.headers().clone();
 
         let started = std::time::Instant::now();
-        match handle_one_request(engine, proxy, req, budgets).await {
+        match handle_one_request(engine, proxy, runtime_limits, req, budgets).await {
             Ok(buf) => {
                 let wall_ms = started.elapsed().as_millis() as u64;
                 let (req_env_bytes, req_env_doc, _req_sha) =
@@ -538,12 +574,39 @@ async fn serve_canary(
             }
             Err(err) => {
                 let wall_ms = started.elapsed().as_millis() as u64;
-                diagnostics.push(Diagnostic::new(
-                    "X07WASM_SERVE_REQUEST_FAILED",
-                    Severity::Error,
-                    Stage::Run,
-                    format!("{err:#}"),
-                ));
+                if let Some(kind) = wasmtime_limits::classify_budget_exceeded(&err) {
+                    let (code, msg) = match kind {
+                        BudgetExceededKind::CpuFuel => (
+                            "X07WASM_BUDGET_EXCEEDED_CPU_FUEL",
+                            "serve request exceeded Wasmtime fuel budget",
+                        ),
+                        BudgetExceededKind::WasmStack => (
+                            "X07WASM_BUDGET_EXCEEDED_WASM_STACK",
+                            "serve request exceeded Wasmtime wasm stack budget",
+                        ),
+                        BudgetExceededKind::Memory => (
+                            "X07WASM_BUDGET_EXCEEDED_MEMORY",
+                            "serve request exceeded Wasmtime memory budget",
+                        ),
+                        BudgetExceededKind::Table => (
+                            "X07WASM_BUDGET_EXCEEDED_TABLE",
+                            "serve request exceeded Wasmtime table budget",
+                        ),
+                    };
+                    diagnostics.push(Diagnostic::new(
+                        code,
+                        Severity::Error,
+                        Stage::Run,
+                        msg.to_string(),
+                    ));
+                } else {
+                    diagnostics.push(Diagnostic::new(
+                        "X07WASM_SERVE_REQUEST_FAILED",
+                        Severity::Error,
+                        Stage::Run,
+                        format!("{err:#}"),
+                    ));
+                }
                 let (req_env_bytes, req_env_doc, req_sha) =
                     request_envelope_bytes(&method, &uri, &headers, &body_loaded.bytes);
                 let incident = match write_http_incident(
@@ -593,9 +656,11 @@ async fn serve_canary(
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn serve_listen(
     engine: &Engine,
     proxy: &ProxyPre<ServeState>,
+    runtime_limits: &crate::arch::WasmRuntimeLimits,
     args: &ServeArgs,
     component: &report::meta::FileDigest,
     meta: &mut report::meta::ReportMeta,
@@ -659,6 +724,7 @@ async fn serve_listen(
 
     let stop_after = args.stop_after;
     let mut handled: u32 = 0;
+    let runtime_limits = runtime_limits.to_owned();
 
     while stop_after == 0 || handled < stop_after {
         let (stream, _peer) = match listener.accept().await {
@@ -681,6 +747,7 @@ async fn serve_listen(
         let component = component.clone();
         let budgets = *budgets;
         let incidents_dir = args.incidents_dir.clone();
+        let runtime_limits = runtime_limits.clone();
         let responses_acc = responses_acc.clone();
         let incident_dirs_acc = incident_dirs_acc.clone();
         let diagnostics_acc = diagnostics_acc.clone();
@@ -690,6 +757,7 @@ async fn serve_listen(
             let component = component.clone();
             let budgets = budgets;
             let incidents_dir = incidents_dir.clone();
+            let runtime_limits = runtime_limits.clone();
             let responses_acc = responses_acc.clone();
             let incident_dirs_acc = incident_dirs_acc.clone();
             let diagnostics_acc = diagnostics_acc.clone();
@@ -720,7 +788,7 @@ async fn serve_listen(
                 let uri = req2.uri().clone();
                 let headers = req2.headers().clone();
                 let started = std::time::Instant::now();
-                match handle_one_request(engine, &proxy, req2, &budgets).await {
+                match handle_one_request(engine, &proxy, &runtime_limits, req2, &budgets).await {
                     Ok(buf) => {
                         let wall_ms = started.elapsed().as_millis() as u64;
                         let mut response_ok = true;
@@ -819,12 +887,39 @@ async fn serve_listen(
                     }
                     Err(err) => {
                         let wall_ms = started.elapsed().as_millis() as u64;
-                        diagnostics_acc.lock().unwrap().push(Diagnostic::new(
-                            "X07WASM_SERVE_REQUEST_FAILED",
-                            Severity::Error,
-                            Stage::Run,
-                            format!("{err:#}"),
-                        ));
+                        if let Some(kind) = wasmtime_limits::classify_budget_exceeded(&err) {
+                            let (code, msg) = match kind {
+                                BudgetExceededKind::CpuFuel => (
+                                    "X07WASM_BUDGET_EXCEEDED_CPU_FUEL",
+                                    "serve request exceeded Wasmtime fuel budget",
+                                ),
+                                BudgetExceededKind::WasmStack => (
+                                    "X07WASM_BUDGET_EXCEEDED_WASM_STACK",
+                                    "serve request exceeded Wasmtime wasm stack budget",
+                                ),
+                                BudgetExceededKind::Memory => (
+                                    "X07WASM_BUDGET_EXCEEDED_MEMORY",
+                                    "serve request exceeded Wasmtime memory budget",
+                                ),
+                                BudgetExceededKind::Table => (
+                                    "X07WASM_BUDGET_EXCEEDED_TABLE",
+                                    "serve request exceeded Wasmtime table budget",
+                                ),
+                            };
+                            diagnostics_acc.lock().unwrap().push(Diagnostic::new(
+                                code,
+                                Severity::Error,
+                                Stage::Run,
+                                msg.to_string(),
+                            ));
+                        } else {
+                            diagnostics_acc.lock().unwrap().push(Diagnostic::new(
+                                "X07WASM_SERVE_REQUEST_FAILED",
+                                Severity::Error,
+                                Stage::Run,
+                                format!("{err:#}"),
+                            ));
+                        }
                         let (_req_env_bytes, req_env_doc, _req_sha) =
                             request_envelope_bytes(&method, &uri, &headers, &body_bytes);
                         let incident = write_http_incident(
@@ -900,6 +995,7 @@ struct BufferedResponse {
 async fn handle_one_request<B>(
     engine: &Engine,
     proxy: &ProxyPre<ServeState>,
+    runtime_limits: &crate::arch::WasmRuntimeLimits,
     req: Request<B>,
     budgets: &ServeBudgets,
 ) -> Result<BufferedResponse>
@@ -917,11 +1013,17 @@ where
         table: ResourceTable::new(),
         wasi,
         http: WasiHttpCtx::new(),
+        limiter: WasmResourceLimiter::new(
+            runtime_limits.max_memory_bytes,
+            runtime_limits.max_table_elements,
+        ),
         outgoing_body_chunk_size,
         outgoing_body_buffer_chunks,
     };
     let mut store = Store::new(engine, state);
     store.data_mut().table.set_max_capacity(1024);
+    store.limiter(|s| &mut s.limiter);
+    wasmtime_limits::store_add_fuel(&mut store, runtime_limits)?;
 
     let proxy = proxy.instantiate_async(&mut store).await?;
 
@@ -1001,7 +1103,7 @@ fn request_envelope_bytes(
     (bytes, env, sha)
 }
 
-fn request_envelope_value(
+pub(crate) fn request_envelope_value(
     method: &Method,
     uri: &Uri,
     headers: &hyper::HeaderMap,
@@ -1033,7 +1135,7 @@ fn request_envelope_value(
     })
 }
 
-fn response_envelope_value(
+pub(crate) fn response_envelope_value(
     request_id: &str,
     status: u16,
     headers: &[(String, String)],

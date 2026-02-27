@@ -31,6 +31,7 @@ pub fn cmd_web_ui_contracts_validate(
         "https://x07.io/spec/x07-web_ui.tree.schema.json",
         "https://x07.io/spec/x07-web_ui.patchset.schema.json",
         "https://x07.io/spec/x07-web_ui.frame.schema.json",
+        "https://x07.io/spec/x07-web_ui.effect.schema.json",
         "https://x07.io/spec/x07-web_ui.trace.schema.json",
         "https://x07.io/spec/x07-wasm.web_ui.contracts.validate.report.schema.json",
         "https://x07.io/spec/x07-wasm.web_ui.profile.validate.report.schema.json",
@@ -177,6 +178,27 @@ fn validate_fixture(
         return Ok(false);
     };
     let diags = store.validate(schema_id, &doc)?;
+    if !diags.is_empty()
+        && (schema_id == "https://x07.io/spec/x07-web_ui.frame.schema.json"
+            || schema_id == "https://x07.io/spec/x07-web_ui.trace.schema.json")
+        && diags.iter().any(|d| {
+            d.data
+                .get("instance_path")
+                .and_then(Value::as_str)
+                .map(|p| p.contains("/effects"))
+                .unwrap_or(false)
+        })
+    {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_WEB_UI_EFFECT_SCHEMA_INVALID",
+            Severity::Error,
+            Stage::Parse,
+            format!(
+                "web-ui effects schema invalid in fixture: {}",
+                path.display()
+            ),
+        ));
+    }
     let ok = diags.is_empty();
     diagnostics.extend(diags);
     Ok(ok)

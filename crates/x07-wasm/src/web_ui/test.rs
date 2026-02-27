@@ -75,9 +75,26 @@ pub fn cmd_web_ui_test(
 
     let (arena_cap_bytes, max_output_bytes) =
         replay::load_web_ui_budgets(&store, &args.dist_dir, &mut meta, &mut diagnostics);
+    let Some(runtime_limits) =
+        replay::load_wasm_runtime_limits(&store, &args.dist_dir, &mut meta, &mut diagnostics)
+    else {
+        return emit_test_report(
+            &store,
+            scope,
+            machine,
+            started,
+            raw_argv,
+            meta,
+            diagnostics,
+            case_results,
+            Some(incident_dir.clone()),
+            args.strict,
+        );
+    };
 
     let mut core = match replay::CoreWasmRunner::new(
         &wasm_path,
+        &runtime_limits,
         arena_cap_bytes,
         max_output_bytes,
         &mut meta,
@@ -200,13 +217,41 @@ pub fn cmd_web_ui_test(
             let actual_bytes = match core.call(&input_bytes) {
                 Ok(v) => v,
                 Err(err) => {
-                    diagnostics.push(Diagnostic::new(
-                        "X07WASM_WEB_UI_TEST_CALL_FAILED",
-                        Severity::Error,
-                        Stage::Run,
-                        format!("step {i}: {err:#}"),
-                    ));
-                    case_error = Some(format!("step {i}: call failed: {err:#}"));
+                    if let Some(kind) = crate::wasmtime_limits::classify_budget_exceeded(&err) {
+                        let (code, msg) = match kind {
+                            crate::wasmtime_limits::BudgetExceededKind::CpuFuel => (
+                                "X07WASM_BUDGET_EXCEEDED_CPU_FUEL",
+                                "execution exceeded Wasmtime fuel budget",
+                            ),
+                            crate::wasmtime_limits::BudgetExceededKind::WasmStack => (
+                                "X07WASM_BUDGET_EXCEEDED_WASM_STACK",
+                                "execution exceeded Wasmtime wasm stack budget",
+                            ),
+                            crate::wasmtime_limits::BudgetExceededKind::Memory => (
+                                "X07WASM_BUDGET_EXCEEDED_MEMORY",
+                                "execution exceeded Wasmtime memory budget",
+                            ),
+                            crate::wasmtime_limits::BudgetExceededKind::Table => (
+                                "X07WASM_BUDGET_EXCEEDED_TABLE",
+                                "execution exceeded Wasmtime table budget",
+                            ),
+                        };
+                        diagnostics.push(Diagnostic::new(
+                            code,
+                            Severity::Error,
+                            Stage::Run,
+                            msg.to_string(),
+                        ));
+                        case_error = Some(format!("step {i}: {msg}"));
+                    } else {
+                        diagnostics.push(Diagnostic::new(
+                            "X07WASM_WEB_UI_TEST_CALL_FAILED",
+                            Severity::Error,
+                            Stage::Run,
+                            format!("step {i}: {err:#}"),
+                        ));
+                        case_error = Some(format!("step {i}: call failed: {err:#}"));
+                    }
                     failed_step = Some(i);
                     failed_env = Some(env);
                     failed_expected_frame = Some(expected_frame);

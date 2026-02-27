@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "app": {
+      "name": "app_min",
+      "version": "0.0.0"
+    },
+    "created_utc": "2026-02-26T00:00:00Z",
+    "tool": {
+      "name": "x07-web-ui",
+      "version": "0.0.0"
+    }
+  },
+  "schema_version": "x07.app.trace@0.1.0",
+  "steps": [
+    {
+      "http": [
+        {
+          "request": {
+            "body": {
+              "bytes_len": 0
+            },
+            "headers": [],
+            "id": "req0",
+            "method": "GET",
+            "path": "/api/ping",
+            "schema_version": "x07.http.request.envelope@0.1.0"
+          },
+          "response": {
+            "body": {
+              "bytes_len": 4,
+              "text": "pong"
+            },
+            "headers": [],
+            "request_id": "req0",
+            "schema_version": "x07.http.response.envelope@0.1.0",
+            "status": 200
+          }
+        }
+      ],
+      "i": 0,
+      "timing": {
+        "http_ms": 0,
+        "total_ms": 0,
+        "ui_ms": 0
+      },
+      "ui_dispatch": {
+        "event": {
+          "type": "init"
+        },
+        "kind": "x07.web_ui.dispatch",
+        "state": null,
+        "v": 1
+      },
+      "ui_frame": {
+        "effects": [],
+        "kind": "x07.web_ui.frame",
+        "patches": [
+          {
+            "op": "replace",
+            "path": "/root/children/1/text",
+            "value": "pong"
+          }
+        ],
+        "state": null,
+        "telemetry": {},
+        "ui": {
+          "kind": "x07.web_ui.tree",
+          "root": {
+            "children": [
+              {
+                "k": "text",
+                "key": "t_title",
+                "text": "App Min"
+              },
+              {
+                "k": "text",
+                "key": "t_resp",
+                "text": "pong"
+              }
+            ],
+            "k": "el",
+            "key": "root",
+            "on": [],
+            "props": {
+              "attrs": {},
+              "class": [
+                "app"
+              ],
+              "style": {}
+            },
+            "tag": "div"
+          },
+          "v": 1
+        },
+        "v": 1
+      }
+    }
+  ]
+}

@@ -2,7 +2,7 @@ use std::ffi::OsString;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use crate::cli::{MachineArgs, ProfileValidateArgs, Scope};
@@ -31,7 +31,7 @@ struct WasmIndexProfileRef {
     path: String,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct WasmProfileDoc {
     pub id: String,
     pub v: u64,
@@ -40,40 +40,52 @@ pub struct WasmProfileDoc {
     pub clang: WasmProfileClang,
     pub wasm_ld: WasmProfileWasmLd,
     pub defaults: WasmProfileDefaults,
+    pub runtime: WasmRuntimeLimits,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct WasmProfileTarget {
     pub triple: String,
     pub wasm_c_abi: String,
     pub entry_export: String,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct WasmProfileX07Build {
     pub freestanding: bool,
     #[serde(default)]
     pub emit_c_header: bool,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct WasmProfileClang {
     #[serde(default)]
     pub cc: Option<String>,
     pub cflags: Vec<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct WasmProfileWasmLd {
     #[serde(default)]
     pub linker: Option<String>,
     pub ldflags: Vec<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct WasmProfileDefaults {
     pub arena_cap_bytes: u64,
     pub max_output_bytes: u64,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct WasmRuntimeLimits {
+    pub max_fuel: Option<u64>,
+    pub max_memory_bytes: Option<u64>,
+    pub max_table_elements: Option<u32>,
+    pub max_wasm_stack_bytes: Option<u32>,
+
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notes: Option<String>,
 }
 
 pub struct LoadedProfile {

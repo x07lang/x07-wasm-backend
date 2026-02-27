@@ -1,0 +1,9 @@
+{
+  "v": 1,
+  "kind": "x07.web_ui.dispatch",
+  "state": {
+    "__x07_storage": { "v": 1, "kind": "fixture", "key": "k0", "value": "v0" }
+  },
+  "event": { "type": "init" }
+}
+

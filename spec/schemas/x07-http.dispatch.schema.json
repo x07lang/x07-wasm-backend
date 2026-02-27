@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-http.dispatch.schema.json",
+  "title": "x07.http.dispatch@0.1.0",
+  "description": "HTTP dispatch envelope passed into a solve-pure http reducer app.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "v",
+    "kind",
+    "state",
+    "request",
+    "effect_results"
+  ],
+  "properties": {
+    "v": {
+      "type": "integer",
+      "const": 1
+    },
+    "kind": {
+      "type": "string",
+      "const": "x07.http.dispatch"
+    },
+    "state": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object"
+        }
+      ]
+    },
+    "request": {
+      "$ref": "https://x07.io/spec/x07-http.request.envelope.schema.json"
+    },
+    "effect_results": {
+      "type": "array",
+      "maxItems": 1024,
+      "items": {
+        "$ref": "https://x07.io/spec/x07-http.effect.schema.json#/$defs/effect_result"
+      },
+      "default": []
+    }
+  }
+}

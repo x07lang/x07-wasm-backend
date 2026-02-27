@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-wasm.profile.schema.json",
-  "title": "x07.wasm.profile@0.1.0",
-  "description": "WASM build profile for x07-wasm Phase 0 (x07 -> freestanding C -> wasm32).",
+  "title": "x07.wasm.profile@0.2.0",
+  "description": "WASM build profile for x07-wasm (Phase 0) plus host runtime limits (Phase 5 hardening).",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -13,11 +13,12 @@
     "x07_build",
     "clang",
     "wasm_ld",
-    "defaults"
+    "defaults",
+    "runtime"
   ],
   "properties": {
     "schema_version": {
-      "const": "x07.wasm.profile@0.1.0"
+      "const": "x07.wasm.profile@0.2.0"
     },
     "id": {
       "$ref": "#/$defs/id"
@@ -40,6 +41,10 @@
     },
     "defaults": {
       "$ref": "#/$defs/defaults"
+    },
+    "runtime": {
+      "$ref": "https://x07.io/spec/x07-wasm.runtime.limits.schema.json",
+      "description": "Default runtime limits applied by x07-wasm run/serve unless overridden by CLI flags."
     },
     "notes": {
       "type": "string",

@@ -243,6 +243,25 @@ pub fn cmd_web_ui_build(
         }
     }
 
+    // Always emit the resolved wasm profile into dist so replay/test can enforce the exact runtime
+    // limits that were used to build/run the reducer wasm.
+    if diagnostics.iter().all(|d| d.severity != Severity::Error) {
+        let out_profile = args.out_dir.join("wasm.profile.json");
+        let doc_json = serde_json::to_value(&loaded_wasm_profile.doc)?;
+        let bytes = report::canon::canonical_pretty_json_bytes(&doc_json)?;
+        if let Err(err) = std::fs::write(&out_profile, &bytes) {
+            diagnostics.push(cmdutil::diag_io_failed(
+                "X07WASM_WEB_UI_BUILD_WASM_PROFILE_WRITE_FAILED",
+                Stage::Run,
+                format!("failed to write wasm profile: {}", out_profile.display()),
+                &anyhow::Error::new(err),
+            ));
+        } else if let Ok(d) = util::file_digest(&out_profile) {
+            meta.outputs.push(d.clone());
+            artifacts.push(d);
+        }
+    }
+
     let mut host_snapshot: Option<Value> = None;
     let mut format_str = match format {
         WebUiBuildFormat::Core => "core".to_string(),

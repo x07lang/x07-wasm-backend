@@ -1,0 +1,36 @@
+{
+  "schema_version": "x07.app.profile@0.1.0",
+  "id": "app_min_release",
+  "v": 1,
+
+  "frontend": {
+    "format": "core_wasm_v1",
+    "project": "examples/app_min/frontend/x07.json",
+    "web_ui_profile_id": "web_ui_release",
+    "out_dir_rel": "frontend"
+  },
+
+  "backend": {
+    "adapter": "wasi_http_proxy_v1",
+    "project": "examples/app_min/backend/x07.json",
+    "component_profile_id": "component_release",
+    "out_rel": "backend/app.http.component.wasm"
+  },
+
+  "routing": {
+    "api_prefix": "/api"
+  },
+
+  "budgets": {
+    "max_dispatch_bytes": 65536,
+    "max_frame_bytes": 16777216,
+    "max_http_body_bytes": 1048576,
+    "max_concurrency": 64,
+    "max_request_wall_ms": 500
+  },
+
+  "devserver": {
+    "addr": "127.0.0.1:0",
+    "strict_wasm_mime": true
+  }
+}

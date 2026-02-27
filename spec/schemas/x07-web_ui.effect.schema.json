@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-web_ui.effect.schema.json",
+  "title": "x07.web_ui.effect@0.1.0",
+  "description": "Typed effect surface for x07 web-ui reducers (Phase 5 hardening).",
+  "oneOf": [
+    { "$ref": "#/$defs/http_request" },
+    { "$ref": "#/$defs/storage_get" },
+    { "$ref": "#/$defs/storage_set" },
+    { "$ref": "#/$defs/nav_push" },
+    { "$ref": "#/$defs/nav_replace" },
+    { "$ref": "#/$defs/timer_set" },
+    { "$ref": "#/$defs/timer_clear" }
+  ],
+  "$defs": {
+    "v1": { "type": "integer", "const": 1 },
+    "json_string": { "type": "string" },
+    "delay_ms": { "type": "integer", "minimum": 0 },
+    "http_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["v", "kind", "request"],
+      "properties": {
+        "v": { "$ref": "#/$defs/v1" },
+        "kind": { "type": "string", "const": "x07.web_ui.effect.http.request" },
+        "request": { "$ref": "https://x07.io/spec/x07-http.request.envelope.schema.json" }
+      }
+    },
+    "storage_get": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["v", "kind", "key"],
+      "properties": {
+        "v": { "$ref": "#/$defs/v1" },
+        "kind": { "type": "string", "const": "x07.web_ui.effect.storage.get" },
+        "key": { "$ref": "#/$defs/json_string" }
+      }
+    },
+    "storage_set": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["v", "kind", "key", "value"],
+      "properties": {
+        "v": { "$ref": "#/$defs/v1" },
+        "kind": { "type": "string", "const": "x07.web_ui.effect.storage.set" },
+        "key": { "$ref": "#/$defs/json_string" },
+        "value": { "$ref": "#/$defs/json_string" }
+      }
+    },
+    "nav_push": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["v", "kind", "path"],
+      "properties": {
+        "v": { "$ref": "#/$defs/v1" },
+        "kind": { "type": "string", "const": "x07.web_ui.effect.nav.push" },
+        "path": { "$ref": "#/$defs/json_string" }
+      }
+    },
+    "nav_replace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["v", "kind", "path"],
+      "properties": {
+        "v": { "$ref": "#/$defs/v1" },
+        "kind": { "type": "string", "const": "x07.web_ui.effect.nav.replace" },
+        "path": { "$ref": "#/$defs/json_string" }
+      }
+    },
+    "timer_set": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["v", "kind", "id", "delay_ms"],
+      "properties": {
+        "v": { "$ref": "#/$defs/v1" },
+        "kind": { "type": "string", "const": "x07.web_ui.effect.timer.set" },
+        "id": { "$ref": "#/$defs/json_string" },
+        "delay_ms": { "$ref": "#/$defs/delay_ms" }
+      }
+    },
+    "timer_clear": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["v", "kind", "id"],
+      "properties": {
+        "v": { "$ref": "#/$defs/v1" },
+        "kind": { "type": "string", "const": "x07.web_ui.effect.timer.clear" },
+        "id": { "$ref": "#/$defs/json_string" }
+      }
+    }
+  }
+}

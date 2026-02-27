@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-http.frame.schema.json",
+  "title": "x07.http.frame@0.1.0",
+  "description": "HTTP frame emitted by a solve-pure http reducer step.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "v",
+    "kind",
+    "state",
+    "response",
+    "effects",
+    "telemetry"
+  ],
+  "properties": {
+    "v": {
+      "type": "integer",
+      "const": 1
+    },
+    "kind": {
+      "type": "string",
+      "const": "x07.http.frame"
+    },
+    "state": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object"
+        }
+      ]
+    },
+    "response": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "https://x07.io/spec/x07-http.response.envelope.schema.json"
+        }
+      ]
+    },
+    "effects": {
+      "type": "array",
+      "maxItems": 1024,
+      "items": {
+        "$ref": "https://x07.io/spec/x07-http.effect.schema.json#/$defs/effect_request"
+      },
+      "default": []
+    },
+    "telemetry": {
+      "type": "object",
+      "additionalProperties": true,
+      "default": {}
+    }
+  }
+}

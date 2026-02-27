@@ -30,6 +30,14 @@ Phase 0–4 WASM tooling for X07:
 - Phase 4 (native backend targets):
   - `x07-wasm component build --emit http`
   - `x07-wasm component build --emit cli`
+- Phase 5 (hardening):
+  - `x07-wasm toolchain validate`
+  - `x07-wasm app pack`
+  - `x07-wasm app verify`
+  - `x07-wasm http contracts validate`
+  - `x07-wasm http serve`
+  - `x07-wasm http test`
+  - `x07-wasm http regress from-incident`
 
 ## Install (local)
 
@@ -77,6 +85,10 @@ x07-wasm run \
 
 - `docs/phase4.md`
 
+## Phase 5 docs
+
+- `docs/phase5.md`
+
 ## Contracts-as-data
 
 - WASM profile registry: `arch/wasm/index.x07wasm.json`
@@ -94,6 +106,7 @@ x07-wasm run \
 - Phase 2 gate: `scripts/ci/check_phase2.sh`
 - Phase 3 gate: `scripts/ci/check_phase3.sh`
 - Phase 4 gate: `scripts/ci/check_phase4.sh`
+- Phase 5 gate: `scripts/ci/check_phase5.sh`
 - Example freestanding smoke: `examples/solve_pure_echo/ci/freestanding_smoke.sh`
 
 ## Incidents

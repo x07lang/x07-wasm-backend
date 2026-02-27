@@ -1,5 +1,5 @@
 {
-  "schema_version": "x07.wasm.profile@0.1.0",
+  "schema_version": "x07.wasm.profile@0.2.0",
   "id": "wasm_web_ui_release",
   "v": 1,
 
@@ -49,6 +49,12 @@
   "defaults": {
     "arena_cap_bytes": 33554432,
     "max_output_bytes": 2097152
+  },
+
+  "runtime": {
+    "max_fuel": null,
+    "max_memory_bytes": null,
+    "max_table_elements": null,
+    "max_wasm_stack_bytes": 1048576
   }
 }
-

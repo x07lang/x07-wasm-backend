@@ -12,6 +12,8 @@ const RUN_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.run.report.schema.json");
 const SERVE_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.serve.report.schema.json");
+const TOOLCHAIN_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.toolchain.validate.report.schema.json");
 const PROFILE_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.profile.validate.report.schema.json");
 const WEB_UI_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] = include_bytes!(
@@ -34,12 +36,25 @@ const APP_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.app.contracts.validate.report.schema.json");
 const APP_BUILD_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.app.build.report.schema.json");
+const APP_PACK_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.app.pack.report.schema.json");
+const APP_VERIFY_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.app.verify.report.schema.json");
 const APP_SERVE_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.app.serve.report.schema.json");
 const APP_TEST_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.app.test.report.schema.json");
 const APP_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES: &[u8] = include_bytes!(
     "../../../../spec/schemas/x07-wasm.app.regress.from_incident.report.schema.json"
+);
+const HTTP_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.http.contracts.validate.report.schema.json");
+const HTTP_SERVE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.http.serve.report.schema.json");
+const HTTP_TEST_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.http.test.report.schema.json");
+const HTTP_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES: &[u8] = include_bytes!(
+    "../../../../spec/schemas/x07-wasm.http.regress.from.incident.report.schema.json"
 );
 const CLI_SPECROWS_CHECK_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.cli.specrows.check.report.schema.json");
@@ -88,6 +103,7 @@ fn schema_bytes_for_scope(scope: Scope) -> Result<&'static [u8]> {
         Scope::Run => Ok(RUN_REPORT_SCHEMA_BYTES),
         Scope::Serve => Ok(SERVE_REPORT_SCHEMA_BYTES),
         Scope::Doctor => Ok(DOCTOR_REPORT_SCHEMA_BYTES),
+        Scope::ToolchainValidate => Ok(TOOLCHAIN_VALIDATE_REPORT_SCHEMA_BYTES),
         Scope::WitValidate => Ok(WIT_VALIDATE_REPORT_SCHEMA_BYTES),
         Scope::ComponentProfileValidate => Ok(COMPONENT_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES),
         Scope::ComponentBuild => Ok(COMPONENT_BUILD_REPORT_SCHEMA_BYTES),
@@ -104,9 +120,15 @@ fn schema_bytes_for_scope(scope: Scope) -> Result<&'static [u8]> {
         Scope::AppContractsValidate => Ok(APP_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES),
         Scope::AppProfileValidate => Ok(APP_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES),
         Scope::AppBuild => Ok(APP_BUILD_REPORT_SCHEMA_BYTES),
+        Scope::AppPack => Ok(APP_PACK_REPORT_SCHEMA_BYTES),
+        Scope::AppVerify => Ok(APP_VERIFY_REPORT_SCHEMA_BYTES),
         Scope::AppServe => Ok(APP_SERVE_REPORT_SCHEMA_BYTES),
         Scope::AppTest => Ok(APP_TEST_REPORT_SCHEMA_BYTES),
         Scope::AppRegressFromIncident => Ok(APP_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES),
+        Scope::HttpContractsValidate => Ok(HTTP_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES),
+        Scope::HttpServe => Ok(HTTP_SERVE_REPORT_SCHEMA_BYTES),
+        Scope::HttpTest => Ok(HTTP_TEST_REPORT_SCHEMA_BYTES),
+        Scope::HttpRegressFromIncident => Ok(HTTP_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES),
         Scope::CliSpecrowsCheck => Ok(CLI_SPECROWS_CHECK_REPORT_SCHEMA_BYTES),
     }
 }
@@ -117,6 +139,7 @@ fn schema_version_for_scope(scope: Scope) -> &'static str {
         Scope::Run => "x07.wasm.run.report@0.1.0",
         Scope::Serve => "x07.wasm.serve.report@0.1.0",
         Scope::Doctor => "x07.wasm.doctor.report@0.1.0",
+        Scope::ToolchainValidate => "x07.wasm.toolchain.validate.report@0.1.0",
         Scope::WitValidate => "x07.wasm.wit.validate.report@0.1.0",
         Scope::ComponentProfileValidate => "x07.wasm.component.profile.validate.report@0.1.0",
         Scope::ComponentBuild => "x07.wasm.component.build.report@0.1.0",
@@ -133,9 +156,15 @@ fn schema_version_for_scope(scope: Scope) -> &'static str {
         Scope::AppContractsValidate => "x07.wasm.app.contracts.validate.report@0.1.0",
         Scope::AppProfileValidate => "x07.wasm.app.profile.validate.report@0.1.0",
         Scope::AppBuild => "x07.wasm.app.build.report@0.1.0",
+        Scope::AppPack => "x07.wasm.app.pack.report@0.1.0",
+        Scope::AppVerify => "x07.wasm.app.verify.report@0.1.0",
         Scope::AppServe => "x07.wasm.app.serve.report@0.1.0",
         Scope::AppTest => "x07.wasm.app.test.report@0.1.0",
         Scope::AppRegressFromIncident => "x07.wasm.app.regress.from_incident.report@0.1.0",
+        Scope::HttpContractsValidate => "x07.wasm.http.contracts.validate.report@0.1.0",
+        Scope::HttpServe => "x07.wasm.http.serve.report@0.1.0",
+        Scope::HttpTest => "x07.wasm.http.test.report@0.1.0",
+        Scope::HttpRegressFromIncident => "x07.wasm.http.regress.from.incident.report@0.1.0",
         Scope::CliSpecrowsCheck => "x07.wasm.cli.specrows.check.report@0.1.0",
     }
 }

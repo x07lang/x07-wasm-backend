@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-wasm.toolchain.profile.schema.json",
+  "title": "x07.wasm.toolchain.profile@0.1.0",
+  "description": "Pinned toolchain requirements (commands + version probes + constraints) for x07-wasm. Used by `x07-wasm toolchain validate` to enforce reproducible CI environments.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "v",
+    "tools"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "x07.wasm.toolchain.profile@0.1.0"
+    },
+    "id": {
+      "$ref": "#/$defs/id"
+    },
+    "v": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "tools": {
+      "$ref": "#/$defs/tools"
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 16384
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "tools": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x07",
+        "clang",
+        "wasm_ld",
+        "wasmtime",
+        "wasm_tools",
+        "wit_bindgen",
+        "wac",
+        "jco"
+      ],
+      "properties": {
+        "x07": {
+          "$ref": "#/$defs/tool_req"
+        },
+        "clang": {
+          "$ref": "#/$defs/tool_req"
+        },
+        "wasm_ld": {
+          "$ref": "#/$defs/tool_req"
+        },
+        "wasmtime": {
+          "$ref": "#/$defs/tool_req"
+        },
+        "wasm_tools": {
+          "$ref": "#/$defs/tool_req"
+        },
+        "wit_bindgen": {
+          "$ref": "#/$defs/tool_req"
+        },
+        "wac": {
+          "$ref": "#/$defs/tool_req"
+        },
+        "jco": {
+          "$ref": "#/$defs/tool_req"
+        }
+      }
+    },
+    "version_probe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "argv",
+        "regex",
+        "group",
+        "source"
+      ],
+      "properties": {
+        "argv": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "regex": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "description": "Regex used to extract the SemVer string from tool output."
+        },
+        "group": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16,
+          "description": "1-based capture group index containing the version."
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "stdout",
+            "stderr",
+            "either"
+          ],
+          "description": "Which stream to apply the regex to."
+        }
+      }
+    },
+    "tool_req": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cmd",
+        "version",
+        "constraint"
+      ],
+      "properties": {
+        "cmd": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null,
+          "description": "Optional override path or command name. null means use the tool's default command for this tool id."
+        },
+        "version": {
+          "$ref": "#/$defs/version_probe"
+        },
+        "constraint": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "SemVer constraint string interpreted by x07-wasm (implementation-defined but stable per tool)."
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 4096
+        }
+      }
+    }
+  }
+}

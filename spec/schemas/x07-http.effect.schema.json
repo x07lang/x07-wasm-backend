@@ -1,0 +1,411 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-http.effect.schema.json",
+  "title": "x07.http.effect@0.1.0",
+  "description": "Deterministic effect request/result envelopes for x07 http reducer hosts (kv, http.fetch, log, time).",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/effect_request"
+    },
+    {
+      "$ref": "#/$defs/effect_result"
+    }
+  ],
+  "$defs": {
+    "effect_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+    },
+    "effect_type": {
+      "type": "string",
+      "enum": [
+        "kv.get",
+        "kv.put",
+        "http.fetch",
+        "log.emit",
+        "time.now"
+      ]
+    },
+    "header": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "k",
+        "v"
+      ],
+      "properties": {
+        "k": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[A-Za-z0-9-]{1,64}$"
+        },
+        "v": {
+          "type": "string",
+          "maxLength": 4096
+        }
+      }
+    },
+    "headers": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "$ref": "#/$defs/header"
+      },
+      "default": []
+    },
+    "stream_payload": {
+      "$ref": "https://x07.io/spec/x07-http.request.envelope.schema.json#/$defs/stream_payload"
+    },
+    "kv_get": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "key"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/effect_id"
+        },
+        "type": {
+          "const": "kv.get"
+        },
+        "key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    },
+    "kv_put": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "key",
+        "value"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/effect_id"
+        },
+        "type": {
+          "const": "kv.put"
+        },
+        "key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "value": {
+          "$ref": "#/$defs/stream_payload"
+        },
+        "ttl_ms": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "default": null
+        }
+      }
+    },
+    "http_fetch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "method",
+        "url",
+        "headers",
+        "body"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/effect_id"
+        },
+        "type": {
+          "const": "http.fetch"
+        },
+        "method": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16,
+          "pattern": "^[A-Z]{1,16}$"
+        },
+        "url": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "headers": {
+          "$ref": "#/$defs/headers"
+        },
+        "body": {
+          "$ref": "#/$defs/stream_payload"
+        }
+      }
+    },
+    "log_emit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "level",
+        "message",
+        "fields"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/effect_id"
+        },
+        "type": {
+          "const": "log.emit"
+        },
+        "level": {
+          "type": "string",
+          "enum": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "fields": {
+          "type": "object",
+          "additionalProperties": true,
+          "default": {}
+        }
+      }
+    },
+    "time_now": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/effect_id"
+        },
+        "type": {
+          "const": "time.now"
+        }
+      }
+    },
+    "effect_request": {
+      "description": "Effect request object emitted by an x07 http reducer frame.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/kv_get"
+        },
+        {
+          "$ref": "#/$defs/kv_put"
+        },
+        {
+          "$ref": "#/$defs/http_fetch"
+        },
+        {
+          "$ref": "#/$defs/log_emit"
+        },
+        {
+          "$ref": "#/$defs/time_now"
+        }
+      ]
+    },
+    "err_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "ok",
+        "error"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/effect_id"
+        },
+        "type": {
+          "$ref": "#/$defs/effect_type"
+        },
+        "ok": {
+          "const": false
+        },
+        "error": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        }
+      }
+    },
+    "kv_get_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "ok",
+        "found",
+        "value"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/effect_id"
+        },
+        "type": {
+          "const": "kv.get"
+        },
+        "ok": {
+          "const": true
+        },
+        "found": {
+          "type": "boolean"
+        },
+        "value": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/stream_payload"
+            }
+          ]
+        }
+      }
+    },
+    "kv_put_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "ok",
+        "written"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/effect_id"
+        },
+        "type": {
+          "const": "kv.put"
+        },
+        "ok": {
+          "const": true
+        },
+        "written": {
+          "type": "boolean"
+        }
+      }
+    },
+    "http_fetch_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "ok",
+        "response"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/effect_id"
+        },
+        "type": {
+          "const": "http.fetch"
+        },
+        "ok": {
+          "const": true
+        },
+        "response": {
+          "$ref": "https://x07.io/spec/x07-http.response.envelope.schema.json"
+        }
+      }
+    },
+    "log_emit_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "ok",
+        "emitted"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/effect_id"
+        },
+        "type": {
+          "const": "log.emit"
+        },
+        "ok": {
+          "const": true
+        },
+        "emitted": {
+          "type": "boolean"
+        }
+      }
+    },
+    "time_now_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "ok",
+        "unix_ms"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/effect_id"
+        },
+        "type": {
+          "const": "time.now"
+        },
+        "ok": {
+          "const": true
+        },
+        "unix_ms": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "effect_result": {
+      "description": "Effect result object injected by the host into a subsequent dispatch.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/err_result"
+        },
+        {
+          "$ref": "#/$defs/kv_get_result"
+        },
+        {
+          "$ref": "#/$defs/kv_put_result"
+        },
+        {
+          "$ref": "#/$defs/http_fetch_result"
+        },
+        {
+          "$ref": "#/$defs/log_emit_result"
+        },
+        {
+          "$ref": "#/$defs/time_now_result"
+        }
+      ]
+    }
+  }
+}

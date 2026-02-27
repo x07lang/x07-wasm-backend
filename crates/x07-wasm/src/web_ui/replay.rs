@@ -10,6 +10,7 @@ use crate::report;
 use crate::schema::SchemaStore;
 use crate::util;
 use crate::wasm::abi_solve_v2;
+use crate::wasmtime_limits::{self, WasmResourceLimiter};
 
 #[derive(Debug, Clone, Deserialize)]
 struct WebUiProfileDoc {
@@ -79,9 +80,105 @@ pub fn load_web_ui_budgets(
     (arena, max_out)
 }
 
+pub fn load_wasm_runtime_limits(
+    store: &SchemaStore,
+    dist_dir: &Path,
+    meta: &mut report::meta::ReportMeta,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> Option<crate::arch::WasmRuntimeLimits> {
+    let profile_path = dist_dir.join("wasm.profile.json");
+    if !profile_path.is_file() {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_WEB_UI_DIST_PROFILE_MISSING",
+            Severity::Error,
+            Stage::Parse,
+            format!("missing wasm profile: {}", profile_path.display()),
+        ));
+        return None;
+    }
+
+    if let Ok(d) = util::file_digest(&profile_path) {
+        meta.inputs.push(d);
+    }
+    let bytes = match std::fs::read(&profile_path) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_WEB_UI_DIST_PROFILE_MISSING",
+                Severity::Error,
+                Stage::Parse,
+                format!(
+                    "failed to read wasm profile {}: {err}",
+                    profile_path.display()
+                ),
+            ));
+            return None;
+        }
+    };
+
+    let doc_json: Value = match serde_json::from_slice(&bytes) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_WEB_UI_DIST_PROFILE_MISSING",
+                Severity::Error,
+                Stage::Parse,
+                format!("wasm profile is not JSON: {err}"),
+            ));
+            return None;
+        }
+    };
+
+    let diags = match store.validate(
+        "https://x07.io/spec/x07-wasm.profile.schema.json",
+        &doc_json,
+    ) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_WEB_UI_DIST_PROFILE_MISSING",
+                Severity::Error,
+                Stage::Run,
+                format!("{err:#}"),
+            ));
+            return None;
+        }
+    };
+    if !diags.is_empty() {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_WEB_UI_DIST_PROFILE_MISSING",
+            Severity::Error,
+            Stage::Parse,
+            "wasm profile schema invalid".to_string(),
+        ));
+        diagnostics.extend(diags);
+        return None;
+    }
+
+    let parsed: crate::arch::WasmProfileDoc = match serde_json::from_value(doc_json) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_WEB_UI_DIST_PROFILE_MISSING",
+                Severity::Error,
+                Stage::Parse,
+                format!("failed to parse wasm profile: {err}"),
+            ));
+            return None;
+        }
+    };
+
+    Some(parsed.runtime)
+}
+
+#[derive(Debug)]
+struct CoreHostState {
+    limiter: WasmResourceLimiter,
+}
+
 pub struct CoreWasmRunner {
     pub wasm: report::meta::FileDigest,
-    store: Store<()>,
+    store: Store<CoreHostState>,
     memory: wasmtime::Memory,
     func: wasmtime::TypedFunc<(i32, i32, i32, i32, i32), ()>,
     heap_base: u32,
@@ -93,6 +190,7 @@ pub struct CoreWasmRunner {
 impl CoreWasmRunner {
     pub fn new(
         wasm_path: &Path,
+        runtime_limits: &crate::arch::WasmRuntimeLimits,
         arena_cap_bytes: u32,
         max_output_bytes: u32,
         meta: &mut report::meta::ReportMeta,
@@ -107,12 +205,27 @@ impl CoreWasmRunner {
         };
         meta.inputs.push(wasm_digest.clone());
 
+        let mut runtime_limits = runtime_limits.clone();
+        if runtime_limits.max_wasm_stack_bytes.is_none() {
+            runtime_limits.max_wasm_stack_bytes = Some(2 * 1024 * 1024);
+        }
+
         let mut config = Config::new();
-        config.max_wasm_stack(2 * 1024 * 1024);
+        wasmtime_limits::apply_config(&mut config, &runtime_limits);
         let engine = Engine::new(&config)?;
         let module = Module::new(&engine, &wasm_bytes)?;
 
-        let mut store = Store::new(&engine, ());
+        let mut store = Store::new(
+            &engine,
+            CoreHostState {
+                limiter: WasmResourceLimiter::new(
+                    runtime_limits.max_memory_bytes,
+                    runtime_limits.max_table_elements,
+                ),
+            },
+        );
+        store.limiter(|s| &mut s.limiter);
+        wasmtime_limits::store_add_fuel(&mut store, &runtime_limits)?;
         let instance = Instance::new(&mut store, &module, &[])?;
 
         let Some(memory) = instance.get_memory(&mut store, "memory") else {

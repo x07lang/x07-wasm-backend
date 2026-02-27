@@ -1,0 +1,16 @@
+{
+  "schema_version": "x07.arch.wasm.toolchain.index@0.1.0",
+  "profiles": [
+    {
+      "id": "toolchain_ci",
+      "path": "arch/wasm/toolchain/profiles/toolchain_ci.json"
+    },
+    {
+      "id": "toolchain_local",
+      "path": "arch/wasm/toolchain/profiles/toolchain_local.json"
+    }
+  ],
+  "defaults": {
+    "default_profile_id": "toolchain_ci"
+  }
+}

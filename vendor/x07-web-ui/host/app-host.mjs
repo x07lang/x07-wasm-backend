@@ -2,6 +2,11 @@ const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder("utf-8", { fatal: false });
 const textDecoderStrict = new TextDecoder("utf-8", { fatal: true });
 
+const MAX_EFFECT_LOOPS = 16;
+const MAX_EFFECTS_PER_STEP = 32;
+const MAX_EFFECT_INJECT_BYTES = 1 << 20;
+const MAX_HTTP_BODY_BYTES = 1 << 20;
+
 function alignUp(x, align) {
   if (align <= 1) return x;
   return (x + (align - 1)) & ~(align - 1);
@@ -430,6 +435,58 @@ function parseHttpRequestEffect(effect) {
   return req;
 }
 
+function parseStorageGetEffect(effect) {
+  if (!effect || typeof effect !== "object") return null;
+  if (effect.v !== 1 || effect.kind !== "x07.web_ui.effect.storage.get") return null;
+  const key = effect.key;
+  if (typeof key !== "string") throw new Error("invalid storage.get effect.key");
+  return { key };
+}
+
+function parseStorageSetEffect(effect) {
+  if (!effect || typeof effect !== "object") return null;
+  if (effect.v !== 1 || effect.kind !== "x07.web_ui.effect.storage.set") return null;
+  const key = effect.key;
+  const value = effect.value;
+  if (typeof key !== "string") throw new Error("invalid storage.set effect.key");
+  if (typeof value !== "string") throw new Error("invalid storage.set effect.value (must be string)");
+  return { key, value };
+}
+
+function parseNavPushEffect(effect) {
+  if (!effect || typeof effect !== "object") return null;
+  if (effect.v !== 1 || effect.kind !== "x07.web_ui.effect.nav.push") return null;
+  const path = effect.path;
+  if (typeof path !== "string") throw new Error("invalid nav.push effect.path");
+  return { path };
+}
+
+function parseNavReplaceEffect(effect) {
+  if (!effect || typeof effect !== "object") return null;
+  if (effect.v !== 1 || effect.kind !== "x07.web_ui.effect.nav.replace") return null;
+  const path = effect.path;
+  if (typeof path !== "string") throw new Error("invalid nav.replace effect.path");
+  return { path };
+}
+
+function parseTimerSetEffect(effect) {
+  if (!effect || typeof effect !== "object") return null;
+  if (effect.v !== 1 || effect.kind !== "x07.web_ui.effect.timer.set") return null;
+  const id = effect.id;
+  const delayMs = Number(effect.delay_ms ?? 0);
+  if (typeof id !== "string") throw new Error("invalid timer.set effect.id");
+  if (!Number.isFinite(delayMs) || delayMs < 0) throw new Error("invalid timer.set effect.delay_ms");
+  return { id, delayMs: Math.floor(delayMs) };
+}
+
+function parseTimerClearEffect(effect) {
+  if (!effect || typeof effect !== "object") return null;
+  if (effect.v !== 1 || effect.kind !== "x07.web_ui.effect.timer.clear") return null;
+  const id = effect.id;
+  if (typeof id !== "string") throw new Error("invalid timer.clear effect.id");
+  return { id };
+}
+
 export async function mountWebUiApp({
   wasmUrl,
   componentEsmUrl,
@@ -465,6 +522,9 @@ export async function mountWebUiApp({
           steps: [],
         }
       : null;
+
+  const effectExchanges = [];
+  const timers = new Map();
 
   let app = null;
   if (componentEsmUrl) {
@@ -538,79 +598,214 @@ export async function mountWebUiApp({
     return { frame, wallMs };
   }
 
-  async function runHttpEffectsLoop(event, env0, firstFrame, uiWallMs0) {
+  function recordEffectExchange(effect, injection) {
+    effectExchanges.push({ i: effectExchanges.length, effect, injection });
+  }
+
+  function addInjectionDelta(delta, key, value) {
+    if (!(key in delta)) {
+      delta[key] = value;
+      return;
+    }
+    const prev = delta[key];
+    if (
+      prev &&
+      typeof prev === "object" &&
+      !Array.isArray(prev) &&
+      value &&
+      typeof value === "object" &&
+      !Array.isArray(value)
+    ) {
+      delta[key] = { ...prev, ...value };
+      return;
+    }
+    throw new Error(`duplicate effect injection key: ${key}`);
+  }
+
+  function checkInjectionBudget(delta) {
+    const n = textEncoder.encode(stableJson(delta)).length;
+    if (n > MAX_EFFECT_INJECT_BYTES) {
+      throw new Error(`effect injection too large: bytes=${n} max=${MAX_EFFECT_INJECT_BYTES}`);
+    }
+  }
+
+  async function runEffectsLoop(event, env0, firstFrame, uiWallMs0) {
     let frame = firstFrame;
     let uiMs = uiWallMs0;
     let httpMs = 0;
     const exchanges = [];
 
-    const maxLoops = 16;
-    for (let i = 0; i < maxLoops; i++) {
+    for (let i = 0; i < MAX_EFFECT_LOOPS; i++) {
       const effects = Array.isArray(frame?.effects) ? frame.effects : [];
-      const reqs = [];
-      for (const eff of effects) {
-        const req = parseHttpRequestEffect(eff);
-        if (req) reqs.push(req);
-      }
-      if (reqs.length === 0) break;
-      if (reqs.length !== 1) throw new Error("expected exactly one http request effect");
-
-      const req0 = reqs[0];
-      if (typeof req0.id !== "string" || !req0.id) throw new Error("http request effect missing id");
-      if (typeof req0.path !== "string" || !req0.path) throw new Error("http request effect missing path");
-      const execPath = joinUrlPath(apiPrefix, req0.path);
-      const url =
-        execPath +
-        (typeof req0.query === "string" && req0.query ? `?${String(req0.query)}` : "");
-
-      const reqEnv = {
-        schema_version: "x07.http.request.envelope@0.1.0",
-        id: String(req0.id ?? ""),
-        method: String(req0.method ?? "GET"),
-        path: execPath,
-        query: typeof req0.query === "string" ? req0.query : "",
-        headers: Array.isArray(req0.headers)
-          ? req0.headers
-              .map((h) =>
-                h && typeof h === "object" ? { k: String(h.k ?? ""), v: String(h.v ?? "") } : null,
-              )
-              .filter((x) => x && x.k)
-          : [],
-        body: req0.body && typeof req0.body === "object" ? req0.body : { bytes_len: 0 },
-      };
-
-      const reqBodyBytes = streamPayloadToBytes(reqEnv.body);
-      const reqHeaders = new Headers();
-      for (const [k, v] of sortedHeaderPairsFromHeaders(reqEnv.headers)) {
-        if (!k) continue;
-        reqHeaders.set(k, v);
+      if (effects.length === 0) break;
+      if (effects.length > MAX_EFFECTS_PER_STEP) {
+        throw new Error(`too many effects: n=${effects.length} max=${MAX_EFFECTS_PER_STEP}`);
       }
 
-      const startedHttp = performance.now();
-      const resp = await fetch(url, {
-        method: reqEnv.method,
-        headers: reqHeaders,
-        body: reqBodyBytes.length ? reqBodyBytes : undefined,
-      });
-      const respBuf = new Uint8Array(await resp.arrayBuffer());
-      httpMs += performance.now() - startedHttp;
-
-      const respHeadersPairs = sortedHeaderPairsFromHeaders(resp.headers).map(([k, v]) => ({
-        k,
-        v,
-      }));
-      const respEnv = {
-        schema_version: "x07.http.response.envelope@0.1.0",
-        request_id: reqEnv.id,
-        status: resp.status,
-        headers: respHeadersPairs,
-        body: bytesToStreamPayload(respBuf),
-      };
-
-      exchanges.push({ request: reqEnv, response: respEnv });
-
+      const delta = {};
       const injectedState = state && typeof state === "object" ? { ...state } : {};
-      injectedState.__x07_http = { response: respEnv };
+
+      for (const eff of effects) {
+        const req0 = parseHttpRequestEffect(eff);
+        if (req0) {
+          if (apiPrefix == null) throw new Error("http effects require apiPrefix");
+          if (typeof req0.id !== "string" || !req0.id) {
+            throw new Error("http request effect missing id");
+          }
+          if (typeof req0.path !== "string" || !req0.path) {
+            throw new Error("http request effect missing path");
+          }
+          const execPath = joinUrlPath(apiPrefix, req0.path);
+          const url =
+            execPath +
+            (typeof req0.query === "string" && req0.query ? `?${String(req0.query)}` : "");
+
+          const reqEnv = {
+            schema_version: "x07.http.request.envelope@0.1.0",
+            id: String(req0.id ?? ""),
+            method: String(req0.method ?? "GET"),
+            path: execPath,
+            query: typeof req0.query === "string" ? req0.query : "",
+            headers: Array.isArray(req0.headers)
+              ? req0.headers
+                  .map((h) =>
+                    h && typeof h === "object"
+                      ? { k: String(h.k ?? ""), v: String(h.v ?? "") }
+                      : null,
+                  )
+                  .filter((x) => x && x.k)
+              : [],
+            body: req0.body && typeof req0.body === "object" ? req0.body : { bytes_len: 0 },
+          };
+
+          const reqBodyBytes = streamPayloadToBytes(reqEnv.body);
+          const reqHeaders = new Headers();
+          for (const [k, v] of sortedHeaderPairsFromHeaders(reqEnv.headers)) {
+            if (!k) continue;
+            reqHeaders.set(k, v);
+          }
+
+          const startedHttp = performance.now();
+          const resp = await fetch(url, {
+            method: reqEnv.method,
+            headers: reqHeaders,
+            body: reqBodyBytes.length ? reqBodyBytes : undefined,
+          });
+          const respBuf = new Uint8Array(await resp.arrayBuffer());
+          httpMs += performance.now() - startedHttp;
+
+          if (respBuf.length > MAX_HTTP_BODY_BYTES) {
+            throw new Error(
+              `http response body too large: bytes=${respBuf.length} max=${MAX_HTTP_BODY_BYTES}`,
+            );
+          }
+
+          const respHeadersPairs = sortedHeaderPairsFromHeaders(resp.headers).map(([k, v]) => ({
+            k,
+            v,
+          }));
+          const respEnv = {
+            schema_version: "x07.http.response.envelope@0.1.0",
+            request_id: reqEnv.id,
+            status: resp.status,
+            headers: respHeadersPairs,
+            body: bytesToStreamPayload(respBuf),
+          };
+
+          exchanges.push({ request: reqEnv, response: respEnv });
+
+          injectedState.__x07_http = { response: respEnv };
+          addInjectionDelta(delta, "__x07_http", { response: respEnv });
+          recordEffectExchange(eff, { __x07_http: { response: respEnv } });
+          continue;
+        }
+
+        const storageGet = parseStorageGetEffect(eff);
+        if (storageGet) {
+          const raw = globalThis.localStorage?.getItem?.(storageGet.key) ?? null;
+          const value = raw == null ? null : String(raw);
+          const inj = { get: { key: storageGet.key, value } };
+          const prev = injectedState.__x07_storage;
+          injectedState.__x07_storage =
+            prev && typeof prev === "object" && !Array.isArray(prev) ? { ...prev, ...inj } : inj;
+          addInjectionDelta(delta, "__x07_storage", inj);
+          recordEffectExchange(eff, { __x07_storage: inj });
+          continue;
+        }
+
+        const storageSet = parseStorageSetEffect(eff);
+        if (storageSet) {
+          globalThis.localStorage?.setItem?.(storageSet.key, storageSet.value);
+          const inj = { set: { key: storageSet.key, value: storageSet.value, ok: true } };
+          const prev = injectedState.__x07_storage;
+          injectedState.__x07_storage =
+            prev && typeof prev === "object" && !Array.isArray(prev) ? { ...prev, ...inj } : inj;
+          addInjectionDelta(delta, "__x07_storage", inj);
+          recordEffectExchange(eff, { __x07_storage: inj });
+          continue;
+        }
+
+        const navPush = parseNavPushEffect(eff);
+        if (navPush) {
+          globalThis.history?.pushState?.({}, "", navPush.path);
+          const href = String(globalThis.location?.href ?? "");
+          const inj = { op: "push", path: navPush.path, href };
+          injectedState.__x07_nav = inj;
+          addInjectionDelta(delta, "__x07_nav", inj);
+          recordEffectExchange(eff, { __x07_nav: inj });
+          continue;
+        }
+
+        const navReplace = parseNavReplaceEffect(eff);
+        if (navReplace) {
+          globalThis.history?.replaceState?.({}, "", navReplace.path);
+          const href = String(globalThis.location?.href ?? "");
+          const inj = { op: "replace", path: navReplace.path, href };
+          injectedState.__x07_nav = inj;
+          addInjectionDelta(delta, "__x07_nav", inj);
+          recordEffectExchange(eff, { __x07_nav: inj });
+          continue;
+        }
+
+        const timerSet = parseTimerSetEffect(eff);
+        if (timerSet) {
+          if (timers.has(timerSet.id)) {
+            clearTimeout(timers.get(timerSet.id));
+            timers.delete(timerSet.id);
+          }
+          const handle = setTimeout(() => {
+            void dispatch({ type: "timer", id: timerSet.id }).catch((err) => console.error(err));
+          }, timerSet.delayMs);
+          timers.set(timerSet.id, handle);
+          const inj = { set: { id: timerSet.id, delay_ms: timerSet.delayMs, ok: true } };
+          const prev = injectedState.__x07_timer;
+          injectedState.__x07_timer =
+            prev && typeof prev === "object" && !Array.isArray(prev) ? { ...prev, ...inj } : inj;
+          addInjectionDelta(delta, "__x07_timer", inj);
+          recordEffectExchange(eff, { __x07_timer: inj });
+          continue;
+        }
+
+        const timerClear = parseTimerClearEffect(eff);
+        if (timerClear) {
+          if (timers.has(timerClear.id)) {
+            clearTimeout(timers.get(timerClear.id));
+            timers.delete(timerClear.id);
+          }
+          const inj = { clear: { id: timerClear.id, ok: true } };
+          const prev = injectedState.__x07_timer;
+          injectedState.__x07_timer =
+            prev && typeof prev === "object" && !Array.isArray(prev) ? { ...prev, ...inj } : inj;
+          addInjectionDelta(delta, "__x07_timer", inj);
+          recordEffectExchange(eff, { __x07_timer: inj });
+          continue;
+        }
+
+        throw new Error(`unsupported effect: ${stableJson(eff)}`);
+      }
+
+      checkInjectionBudget(delta);
+
       const env = { v: 1, kind: "x07.web_ui.dispatch", state: injectedState, event };
       const out = await callReducer(env, false);
       uiMs += out.wallMs;
@@ -640,8 +835,7 @@ export async function mountWebUiApp({
     const env0 = { v: 1, kind: "x07.web_ui.dispatch", state, event };
     const out = await callReducer(env0, false);
     commitFrame(out.frame);
-    if (appTrace) return runHttpEffectsLoop(event, env0, out.frame, out.wallMs);
-    return out.frame;
+    return runEffectsLoop(event, env0, out.frame, out.wallMs);
   }
 
   try {
@@ -649,13 +843,14 @@ export async function mountWebUiApp({
     const env0 = { v: 1, kind: "x07.web_ui.dispatch", state: null, event };
     const out = await callReducer(env0, true);
     commitFrame(out.frame);
-    if (appTrace) await runHttpEffectsLoop(event, env0, out.frame, out.wallMs);
+    await runEffectsLoop(event, env0, out.frame, out.wallMs);
   } catch (err) {
     const incident = {
       v: 1,
       kind: "x07.web_ui.incident",
       error: String(err?.stack || err),
       trace,
+      effectExchanges,
       appTrace,
     };
     console.error(err);

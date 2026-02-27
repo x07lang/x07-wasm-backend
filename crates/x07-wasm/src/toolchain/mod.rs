@@ -8,6 +8,8 @@ use crate::diag::{Diagnostic, Severity, Stage};
 use crate::report;
 use crate::schema::SchemaStore;
 
+pub mod validate;
+
 pub fn cmd_doctor(
     raw_argv: &[OsString],
     scope: Scope,

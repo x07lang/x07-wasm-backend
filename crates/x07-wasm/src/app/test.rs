@@ -103,9 +103,27 @@ pub fn cmd_app_test(
 
     let (app_budgets, http_budgets) =
         load_app_test_budgets(&store, &bundle, &frontend_dir, &mut meta, &mut diagnostics);
+    let Some(runtime_limits) =
+        replay::load_wasm_runtime_limits(&store, &frontend_dir, &mut meta, &mut diagnostics)
+    else {
+        return emit_report(
+            &store,
+            scope,
+            machine,
+            started,
+            raw_argv,
+            meta,
+            diagnostics,
+            &args,
+            vec![case_result(&args.trace, false, 0, 1)],
+            None,
+            false,
+        );
+    };
 
     let core = match replay::CoreWasmRunner::new(
         &wasm_path,
+        &runtime_limits,
         app_budgets.arena_cap_bytes,
         app_budgets.max_output_bytes,
         &mut meta,

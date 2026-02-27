@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-wasm.runtime.limits.schema.json",
+  "title": "x07.wasm.runtime.limits@0.1.0",
+  "description": "Host-enforced runtime limits for executing x07-produced WebAssembly (fuel, memory, table, stack).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "max_fuel",
+    "max_memory_bytes",
+    "max_table_elements",
+    "max_wasm_stack_bytes"
+  ],
+  "properties": {
+    "max_fuel": {
+      "description": "Maximum Wasmtime fuel for a single run. null disables fuel metering.",
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "integer",
+          "minimum": 0
+        }
+      ]
+    },
+    "max_memory_bytes": {
+      "description": "Maximum linear memory bytes for a single instance. null means host default.",
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "integer",
+          "minimum": 0
+        }
+      ]
+    },
+    "max_table_elements": {
+      "description": "Maximum table elements for a single instance. null means host default.",
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        }
+      ]
+    },
+    "max_wasm_stack_bytes": {
+      "description": "Maximum wasm stack bytes. null means host default.",
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        }
+      ]
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 16384
+    }
+  }
+}

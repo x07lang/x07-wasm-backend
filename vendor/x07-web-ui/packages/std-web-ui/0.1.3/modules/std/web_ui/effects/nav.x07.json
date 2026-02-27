@@ -1,0 +1,77 @@
+{
+  "schema_version": "x07.x07ast@0.3.0",
+  "kind": "module",
+  "module_id": "std.web_ui.effects.nav",
+  "imports": ["std.web_ui.runtime"],
+  "decls": [
+    {
+      "kind": "export",
+      "names": [
+        "std.web_ui.effects.nav.push_v1",
+        "std.web_ui.effects.nav.replace_v1",
+        "std.web_ui.effects.nav.dispatch_href_canon_or_err_v1",
+        "std.web_ui.effects.nav.dispatch_op_canon_or_err_v1"
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.effects.nav.push_v1",
+      "params": [{ "name": "path_json", "ty": "bytes_view" }],
+      "result": "bytes",
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          ["bytes.lit", "{\"v\":1,\"kind\":\"x07.web_ui.effect.nav.push\",\"path\":"],
+          ["view.to_bytes", "path_json"]
+        ],
+        ["bytes.lit", "}"]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.effects.nav.replace_v1",
+      "params": [{ "name": "path_json", "ty": "bytes_view" }],
+      "result": "bytes",
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          ["bytes.lit", "{\"v\":1,\"kind\":\"x07.web_ui.effect.nav.replace\",\"path\":"],
+          ["view.to_bytes", "path_json"]
+        ],
+        ["bytes.lit", "}"]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.effects.nav.dispatch_href_canon_or_err_v1",
+      "params": [{ "name": "dispatch_json", "ty": "bytes_view" }],
+      "result": "bytes",
+      "body": [
+        "begin",
+        ["let", "path", ["bytes.lit", "state.__x07_nav.href"]],
+        [
+          "std.web_ui.runtime.dispatch_extract_canon_or_err_v1",
+          "dispatch_json",
+          ["bytes.view", "path"]
+        ]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.effects.nav.dispatch_op_canon_or_err_v1",
+      "params": [{ "name": "dispatch_json", "ty": "bytes_view" }],
+      "result": "bytes",
+      "body": [
+        "begin",
+        ["let", "path", ["bytes.lit", "state.__x07_nav.op"]],
+        [
+          "std.web_ui.runtime.dispatch_extract_canon_or_err_v1",
+          "dispatch_json",
+          ["bytes.view", "path"]
+        ]
+      ]
+    }
+  ]
+}

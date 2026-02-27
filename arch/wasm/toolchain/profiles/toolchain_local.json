@@ -1,0 +1,87 @@
+{
+  "schema_version": "x07.wasm.toolchain.profile@0.1.0",
+  "id": "toolchain_local",
+  "v": 1,
+  "tools": {
+    "x07": {
+      "cmd": null,
+      "version": {
+        "argv": ["--version"],
+        "regex": "^x07\\s+([0-9]+\\.[0-9]+\\.[0-9]+)",
+        "group": 1,
+        "source": "stdout"
+      },
+      "constraint": ">=0.1.38,<0.2.0"
+    },
+    "clang": {
+      "cmd": null,
+      "version": {
+        "argv": ["--version"],
+        "regex": "clang version ([0-9]+\\.[0-9]+\\.[0-9]+)",
+        "group": 1,
+        "source": "stdout"
+      },
+      "constraint": ">=0.0.0"
+    },
+    "wasm_ld": {
+      "cmd": null,
+      "version": {
+        "argv": ["--version"],
+        "regex": "LLD ([0-9]+\\.[0-9]+\\.[0-9]+)",
+        "group": 1,
+        "source": "stdout"
+      },
+      "constraint": ">=0.0.0"
+    },
+    "wasmtime": {
+      "cmd": null,
+      "version": {
+        "argv": ["--version"],
+        "regex": "^wasmtime\\s+([0-9]+\\.[0-9]+\\.[0-9]+)",
+        "group": 1,
+        "source": "stdout"
+      },
+      "constraint": ">=42.0.0,<43.0.0"
+    },
+    "wasm_tools": {
+      "cmd": null,
+      "version": {
+        "argv": ["--version"],
+        "regex": "^wasm-tools\\s+([0-9]+\\.[0-9]+\\.[0-9]+)",
+        "group": 1,
+        "source": "stdout"
+      },
+      "constraint": ">=1.245.1,<2.0.0"
+    },
+    "wit_bindgen": {
+      "cmd": null,
+      "version": {
+        "argv": ["--version"],
+        "regex": "^wit-bindgen-cli\\s+([0-9]+\\.[0-9]+\\.[0-9]+)",
+        "group": 1,
+        "source": "stdout"
+      },
+      "constraint": ">=0.53.1,<1.0.0"
+    },
+    "wac": {
+      "cmd": null,
+      "version": {
+        "argv": ["--version"],
+        "regex": "wac(?:-cli)?\\s+([0-9]+\\.[0-9]+\\.[0-9]+)",
+        "group": 1,
+        "source": "stdout"
+      },
+      "constraint": ">=0.9.0,<1.0.0"
+    },
+    "jco": {
+      "cmd": null,
+      "version": {
+        "argv": ["--version"],
+        "regex": "^(?:jco\\s+)?([0-9]+\\.[0-9]+\\.[0-9]+)",
+        "group": 1,
+        "source": "stdout"
+      },
+      "constraint": ">=1.16.1,<2.0.0"
+    }
+  }
+}

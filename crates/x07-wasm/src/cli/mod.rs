@@ -73,6 +73,12 @@ pub enum Command {
     /// Check wasm toolchain prerequisites and emit a machine report.
     Doctor(DoctorArgs),
 
+    /// Toolchain pin validation (Phase 5).
+    Toolchain(ToolchainArgs),
+    /// Alias for `x07-wasm toolchain validate`.
+    #[command(name = "toolchain-validate")]
+    ToolchainValidate(ToolchainValidateArgs),
+
     /// WIT tooling (Phase 1).
     Wit(WitArgs),
     /// Alias for `x07-wasm wit validate`.
@@ -127,6 +133,12 @@ pub enum Command {
     /// Alias for `x07-wasm app build`.
     #[command(name = "app-build")]
     AppBuild(AppBuildArgs),
+    /// Alias for `x07-wasm app pack`.
+    #[command(name = "app-pack")]
+    AppPack(AppPackArgs),
+    /// Alias for `x07-wasm app verify`.
+    #[command(name = "app-verify")]
+    AppVerify(AppVerifyArgs),
     /// Alias for `x07-wasm app serve`.
     #[command(name = "app-serve")]
     AppServe(AppServeArgs),
@@ -136,6 +148,21 @@ pub enum Command {
     /// Alias for `x07-wasm app regress from-incident`.
     #[command(name = "app-regress-from-incident")]
     AppRegressFromIncident(AppRegressFromIncidentArgs),
+
+    /// HTTP reducer tooling (Phase 5 recommended).
+    Http(HttpArgs),
+    /// Alias for `x07-wasm http contracts validate`.
+    #[command(name = "http-contracts-validate")]
+    HttpContractsValidate(HttpContractsValidateArgs),
+    /// Alias for `x07-wasm http serve`.
+    #[command(name = "http-serve")]
+    HttpServe(HttpServeArgs),
+    /// Alias for `x07-wasm http test`.
+    #[command(name = "http-test")]
+    HttpTest(HttpTestArgs),
+    /// Alias for `x07-wasm http regress from-incident`.
+    #[command(name = "http-regress-from-incident")]
+    HttpRegressFromIncident(HttpRegressFromIncidentArgs),
 
     /// Validate arch/wasm/index.x07wasm.json and referenced profile files.
     Profile(ProfileArgs),
@@ -157,6 +184,14 @@ impl Command {
             Command::Run(args) => crate::wasm::run::cmd_run(raw_argv, scope, machine, args),
             Command::Serve(args) => crate::serve::cmd_serve(raw_argv, scope, machine, args),
             Command::Doctor(args) => crate::toolchain::cmd_doctor(raw_argv, scope, machine, args),
+            Command::Toolchain(args) => match args.cmd {
+                ToolchainCommand::Validate(v) => {
+                    crate::toolchain::validate::cmd_toolchain_validate(raw_argv, scope, machine, v)
+                }
+            },
+            Command::ToolchainValidate(v) => {
+                crate::toolchain::validate::cmd_toolchain_validate(raw_argv, scope, machine, v)
+            }
             Command::Wit(args) => match args.cmd {
                 WitCommand::Validate(v) => {
                     crate::wit::validate::cmd_wit_validate(raw_argv, scope, machine, v)
@@ -279,6 +314,10 @@ impl Command {
                 AppCommand::Build(v) => {
                     crate::app::build::cmd_app_build(raw_argv, scope, machine, v)
                 }
+                AppCommand::Pack(v) => crate::app::pack::cmd_app_pack(raw_argv, scope, machine, v),
+                AppCommand::Verify(v) => {
+                    crate::app::verify::cmd_app_verify(raw_argv, scope, machine, v)
+                }
                 AppCommand::Serve(v) => {
                     crate::app::serve::cmd_app_serve(raw_argv, scope, machine, v)
                 }
@@ -305,10 +344,53 @@ impl Command {
                 crate::app::profile_validate::cmd_app_profile_validate(raw_argv, scope, machine, v)
             }
             Command::AppBuild(v) => crate::app::build::cmd_app_build(raw_argv, scope, machine, v),
+            Command::AppPack(v) => crate::app::pack::cmd_app_pack(raw_argv, scope, machine, v),
+            Command::AppVerify(v) => {
+                crate::app::verify::cmd_app_verify(raw_argv, scope, machine, v)
+            }
             Command::AppServe(v) => crate::app::serve::cmd_app_serve(raw_argv, scope, machine, v),
             Command::AppTest(v) => crate::app::test::cmd_app_test(raw_argv, scope, machine, v),
             Command::AppRegressFromIncident(v) => {
                 crate::app::regress_from_incident::cmd_app_regress_from_incident(
+                    raw_argv, scope, machine, v,
+                )
+            }
+
+            Command::Http(args) => match args.cmd {
+                HttpCommand::Contracts(c) => match c.cmd {
+                    HttpContractsCommand::Validate(v) => {
+                        crate::http_reducer::contracts_validate::cmd_http_contracts_validate(
+                            raw_argv, scope, machine, v,
+                        )
+                    }
+                },
+                HttpCommand::Serve(v) => {
+                    crate::http_reducer::serve::cmd_http_serve(raw_argv, scope, machine, v)
+                }
+                HttpCommand::Test(v) => {
+                    crate::http_reducer::test::cmd_http_test(raw_argv, scope, machine, v)
+                }
+                HttpCommand::Regress(args) => match args.cmd {
+                    HttpRegressCommand::FromIncident(v) => {
+                        crate::http_reducer::regress_from_incident::cmd_http_regress_from_incident(
+                            raw_argv, scope, machine, v,
+                        )
+                    }
+                },
+            },
+            Command::HttpContractsValidate(v) => {
+                crate::http_reducer::contracts_validate::cmd_http_contracts_validate(
+                    raw_argv, scope, machine, v,
+                )
+            }
+            Command::HttpServe(v) => {
+                crate::http_reducer::serve::cmd_http_serve(raw_argv, scope, machine, v)
+            }
+            Command::HttpTest(v) => {
+                crate::http_reducer::test::cmd_http_test(raw_argv, scope, machine, v)
+            }
+            Command::HttpRegressFromIncident(v) => {
+                crate::http_reducer::regress_from_incident::cmd_http_regress_from_incident(
                     raw_argv, scope, machine, v,
                 )
             }
@@ -422,6 +504,22 @@ pub struct RunArgs {
     #[arg(long, value_name = "N")]
     pub max_output_bytes: Option<u64>,
 
+    /// Max Wasmtime fuel (overrides profile). None uses profile default.
+    #[arg(long, value_name = "N")]
+    pub max_fuel: Option<u64>,
+
+    /// Max linear memory bytes (overrides profile). None uses profile default.
+    #[arg(long, value_name = "N")]
+    pub max_memory_bytes: Option<u64>,
+
+    /// Max table elements (overrides profile). None uses profile default.
+    #[arg(long, value_name = "N")]
+    pub max_table_elements: Option<u32>,
+
+    /// Max wasm stack bytes (overrides profile). None uses profile default.
+    #[arg(long, value_name = "N")]
+    pub max_wasm_stack_bytes: Option<u32>,
+
     /// Write output bytes to a file.
     #[arg(long, value_name = "PATH")]
     pub output_out: Option<PathBuf>,
@@ -479,6 +577,18 @@ pub struct ServeArgs {
     #[arg(long, value_name = "N", default_value_t = 16)]
     pub max_concurrent: u32,
 
+    /// Max Wasmtime fuel per request (overrides profile).
+    #[arg(long, value_name = "N")]
+    pub max_fuel: Option<u64>,
+
+    /// Max linear memory bytes per request (overrides profile).
+    #[arg(long, value_name = "N")]
+    pub max_memory_bytes: Option<u64>,
+
+    /// Max table elements per request (overrides profile).
+    #[arg(long, value_name = "N")]
+    pub max_table_elements: Option<u32>,
+
     /// Root directory for incident bundles.
     #[arg(long, value_name = "DIR", default_value = ".x07-wasm/incidents")]
     pub incidents_dir: PathBuf,
@@ -486,6 +596,37 @@ pub struct ServeArgs {
 
 #[derive(Debug, Clone, Args)]
 pub struct DoctorArgs {}
+
+#[derive(Debug, Clone, Args)]
+#[command(subcommand_required = true)]
+pub struct ToolchainArgs {
+    #[command(subcommand)]
+    pub cmd: ToolchainCommand,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum ToolchainCommand {
+    Validate(ToolchainValidateArgs),
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct ToolchainValidateArgs {
+    /// Toolchain profile file (x07.wasm.toolchain.profile@0.1.0).
+    #[arg(long, value_name = "PATH", conflicts_with = "profile_id")]
+    pub profile: Option<PathBuf>,
+
+    /// Toolchain profile id resolved via arch/wasm/toolchain/index.x07wasm.toolchain.json.
+    #[arg(long, value_name = "STR", conflicts_with = "profile")]
+    pub profile_id: Option<String>,
+
+    /// Toolchain index file (x07.arch.wasm.toolchain.index@0.1.0).
+    #[arg(
+        long,
+        value_name = "PATH",
+        default_value = "arch/wasm/toolchain/index.x07wasm.toolchain.json"
+    )]
+    pub index: PathBuf,
+}
 
 #[derive(Debug, Clone, Args)]
 #[command(subcommand_required = true)]
@@ -717,6 +858,18 @@ pub struct ComponentRunArgs {
     /// Hard cap on wall time spent running the component (ms).
     #[arg(long, value_name = "N")]
     pub max_wall_ms: Option<u64>,
+
+    /// Max Wasmtime fuel (overrides profile).
+    #[arg(long, value_name = "N")]
+    pub max_fuel: Option<u64>,
+
+    /// Max linear memory bytes (overrides profile).
+    #[arg(long, value_name = "N")]
+    pub max_memory_bytes: Option<u64>,
+
+    /// Max table elements (overrides profile).
+    #[arg(long, value_name = "N")]
+    pub max_table_elements: Option<u32>,
 
     /// Root directory for incident bundles.
     #[arg(long, value_name = "DIR", default_value = ".x07-wasm/incidents")]
@@ -958,6 +1111,8 @@ pub enum AppCommand {
     Contracts(AppContractsArgs),
     Profile(AppProfileArgs),
     Build(AppBuildArgs),
+    Pack(AppPackArgs),
+    Verify(AppVerifyArgs),
     Serve(AppServeArgs),
     Test(AppTestArgs),
     /// Alias for `x07-wasm app regress from-incident`.
@@ -1087,6 +1242,28 @@ pub struct AppBuildArgs {
     pub strict: bool,
 }
 
+#[derive(Debug, Clone, Args)]
+pub struct AppPackArgs {
+    /// Bundle manifest file produced by x07-wasm app build.
+    #[arg(long, value_name = "PATH")]
+    pub bundle_manifest: PathBuf,
+
+    /// Output directory for pack.
+    #[arg(long, value_name = "PATH")]
+    pub out_dir: PathBuf,
+
+    /// Pack profile id (used for routing defaults).
+    #[arg(long, value_name = "STR")]
+    pub profile_id: String,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct AppVerifyArgs {
+    /// Pack manifest file (x07.app.pack@0.1.0).
+    #[arg(long, value_name = "PATH")]
+    pub pack_manifest: PathBuf,
+}
+
 #[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum AppServeMode {
     Listen,
@@ -1182,6 +1359,104 @@ pub struct AppRegressFromIncidentArgs {
 
 #[derive(Debug, Clone, Args)]
 #[command(subcommand_required = true)]
+pub struct HttpArgs {
+    #[command(subcommand)]
+    pub cmd: HttpCommand,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum HttpCommand {
+    Contracts(HttpContractsArgs),
+    Serve(HttpServeArgs),
+    Test(HttpTestArgs),
+    Regress(HttpRegressArgs),
+}
+
+#[derive(Debug, Clone, Args)]
+#[command(subcommand_required = true)]
+pub struct HttpContractsArgs {
+    #[command(subcommand)]
+    pub cmd: HttpContractsCommand,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum HttpContractsCommand {
+    Validate(HttpContractsValidateArgs),
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct HttpContractsValidateArgs {
+    /// Fail if any fixture/schema check fails.
+    #[arg(long)]
+    pub strict: bool,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum HttpServeMode {
+    Canary,
+    Listen,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct HttpServeArgs {
+    /// Reducer component wasm.
+    #[arg(long, value_name = "PATH")]
+    pub component: PathBuf,
+
+    /// canary|listen.
+    #[arg(long, value_enum, default_value = "listen")]
+    pub mode: HttpServeMode,
+
+    /// Max dispatch/frame iterations.
+    #[arg(long, value_name = "N", default_value_t = 64)]
+    pub max_effect_steps: u32,
+
+    /// Max total effect result bytes.
+    #[arg(long, value_name = "N", default_value_t = 1024 * 1024)]
+    pub max_effect_results_bytes: u64,
+
+    /// Max Wasmtime fuel (overrides profile).
+    #[arg(long, value_name = "N")]
+    pub max_fuel: Option<u64>,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct HttpTestArgs {
+    /// Reducer component wasm.
+    #[arg(long, value_name = "PATH")]
+    pub component: PathBuf,
+
+    /// Trace case file(s) to replay.
+    #[arg(long, value_name = "PATH")]
+    pub trace: Vec<PathBuf>,
+}
+
+#[derive(Debug, Clone, Args)]
+#[command(subcommand_required = true)]
+pub struct HttpRegressArgs {
+    #[command(subcommand)]
+    pub cmd: HttpRegressCommand,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum HttpRegressCommand {
+    #[command(name = "from-incident")]
+    FromIncident(HttpRegressFromIncidentArgs),
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct HttpRegressFromIncidentArgs {
+    /// Incident bundle directory.
+    #[arg(long, value_name = "PATH")]
+    pub incident_dir: PathBuf,
+
+    /// Where to write generated test/fixture.
+    #[arg(long, value_name = "PATH", default_value = "tests/regress")]
+    pub out_dir: PathBuf,
+}
+
+#[derive(Debug, Clone, Args)]
+#[command(subcommand_required = true)]
 pub struct ProfileArgs {
     #[command(subcommand)]
     pub cmd: ProfileCommand,
@@ -1259,6 +1534,7 @@ pub enum Scope {
     Run,
     Serve,
     Doctor,
+    ToolchainValidate,
     WitValidate,
     ComponentProfileValidate,
     ComponentBuild,
@@ -1274,9 +1550,15 @@ pub enum Scope {
     AppContractsValidate,
     AppProfileValidate,
     AppBuild,
+    AppPack,
+    AppVerify,
     AppServe,
     AppTest,
     AppRegressFromIncident,
+    HttpContractsValidate,
+    HttpServe,
+    HttpTest,
+    HttpRegressFromIncident,
     ProfileValidate,
     CliSpecrowsCheck,
 }
@@ -1287,6 +1569,8 @@ pub fn scope_for_command(cmd: Option<&Command>) -> Scope {
         Some(Command::Run(_)) => Scope::Run,
         Some(Command::Serve(_)) => Scope::Serve,
         Some(Command::Doctor(_)) => Scope::Doctor,
+        Some(Command::Toolchain(_)) => Scope::ToolchainValidate,
+        Some(Command::ToolchainValidate(_)) => Scope::ToolchainValidate,
         Some(Command::Wit(_)) => Scope::WitValidate,
         Some(Command::WitValidate(_)) => Scope::WitValidate,
         Some(Command::Component(args)) => match args.cmd {
@@ -1319,6 +1603,8 @@ pub fn scope_for_command(cmd: Option<&Command>) -> Scope {
             AppCommand::Contracts(_) => Scope::AppContractsValidate,
             AppCommand::Profile(_) => Scope::AppProfileValidate,
             AppCommand::Build(_) => Scope::AppBuild,
+            AppCommand::Pack(_) => Scope::AppPack,
+            AppCommand::Verify(_) => Scope::AppVerify,
             AppCommand::Serve(_) => Scope::AppServe,
             AppCommand::Test(_) => Scope::AppTest,
             AppCommand::RegressFromIncident(_) => Scope::AppRegressFromIncident,
@@ -1327,9 +1613,21 @@ pub fn scope_for_command(cmd: Option<&Command>) -> Scope {
         Some(Command::AppContractsValidate(_)) => Scope::AppContractsValidate,
         Some(Command::AppProfileValidate(_)) => Scope::AppProfileValidate,
         Some(Command::AppBuild(_)) => Scope::AppBuild,
+        Some(Command::AppPack(_)) => Scope::AppPack,
+        Some(Command::AppVerify(_)) => Scope::AppVerify,
         Some(Command::AppServe(_)) => Scope::AppServe,
         Some(Command::AppTest(_)) => Scope::AppTest,
         Some(Command::AppRegressFromIncident(_)) => Scope::AppRegressFromIncident,
+        Some(Command::Http(args)) => match args.cmd {
+            HttpCommand::Contracts(_) => Scope::HttpContractsValidate,
+            HttpCommand::Serve(_) => Scope::HttpServe,
+            HttpCommand::Test(_) => Scope::HttpTest,
+            HttpCommand::Regress(_) => Scope::HttpRegressFromIncident,
+        },
+        Some(Command::HttpContractsValidate(_)) => Scope::HttpContractsValidate,
+        Some(Command::HttpServe(_)) => Scope::HttpServe,
+        Some(Command::HttpTest(_)) => Scope::HttpTest,
+        Some(Command::HttpRegressFromIncident(_)) => Scope::HttpRegressFromIncident,
         Some(Command::Profile(_)) => Scope::ProfileValidate,
         Some(Command::ProfileValidate(_)) => Scope::ProfileValidate,
         Some(Command::Cli(_)) => Scope::CliSpecrowsCheck,
