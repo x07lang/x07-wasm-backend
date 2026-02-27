@@ -33,6 +33,7 @@ struct WasmIndexProfileRef {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct WasmProfileDoc {
+    pub schema_version: String,
     pub id: String,
     pub v: u64,
     pub target: WasmProfileTarget,
