@@ -52,6 +52,10 @@ fn run() -> Result<u8> {
     let root = match cli::RootCli::try_parse_from(&argv) {
         Ok(v) => v,
         Err(err) => {
+            if err.exit_code() == 0 {
+                let _ = err.print();
+                return Ok(0);
+            }
             let _ = err.print();
             return report::cli_parse::emit_cli_parse_report(
                 &argv,

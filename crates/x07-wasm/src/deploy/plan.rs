@@ -507,7 +507,7 @@ fn yaml_sanity_check(
     };
 
     for key in ["apiVersion", "kind", "metadata", "spec"] {
-        if !map.contains_key(&YamlValue::String(key.to_string())) {
+        if !map.contains_key(key) {
             diagnostics.push(Diagnostic::new(
                 "X07WASM_DEPLOY_PLAN_EMIT_FAILED",
                 Severity::Error,
@@ -518,7 +518,7 @@ fn yaml_sanity_check(
         }
     }
 
-    let kind = map.get(&YamlValue::String("kind".to_string()));
+    let kind = map.get("kind");
     match kind {
         Some(YamlValue::String(k)) if k == expected_kind => true,
         Some(YamlValue::String(k)) => {

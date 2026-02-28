@@ -1015,15 +1015,13 @@ async fn serve_canary(
                         Stage::Run,
                         msg.to_string(),
                     ));
-                } else {
-                    if !request_has_error {
-                        diagnostics.push(Diagnostic::new(
-                            "X07WASM_SERVE_REQUEST_FAILED",
-                            Severity::Error,
-                            Stage::Run,
-                            format!("{err:#}"),
-                        ));
-                    }
+                } else if !request_has_error {
+                    diagnostics.push(Diagnostic::new(
+                        "X07WASM_SERVE_REQUEST_FAILED",
+                        Severity::Error,
+                        Stage::Run,
+                        format!("{err:#}"),
+                    ));
                 }
                 let (req_env_bytes, req_env_doc, req_sha) =
                     request_envelope_bytes(&method, &uri, &headers, &body_loaded.bytes);
@@ -1428,15 +1426,13 @@ async fn serve_listen(
                                 Stage::Run,
                                 msg.to_string(),
                             ));
-                        } else {
-                            if !request_has_error {
-                                diagnostics_acc.lock().unwrap().push(Diagnostic::new(
-                                    "X07WASM_SERVE_REQUEST_FAILED",
-                                    Severity::Error,
-                                    Stage::Run,
-                                    format!("{err:#}"),
-                                ));
-                            }
+                        } else if !request_has_error {
+                            diagnostics_acc.lock().unwrap().push(Diagnostic::new(
+                                "X07WASM_SERVE_REQUEST_FAILED",
+                                Severity::Error,
+                                Stage::Run,
+                                format!("{err:#}"),
+                            ));
                         }
                         let (_req_env_bytes, req_env_doc, _req_sha) =
                             request_envelope_bytes(&method, &uri, &headers, &body_bytes);

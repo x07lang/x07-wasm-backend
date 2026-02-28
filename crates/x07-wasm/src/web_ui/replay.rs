@@ -374,10 +374,9 @@ fn apply_set(doc: &mut Value, tokens: &[String], value: Value, is_add: bool) -> 
                 anyhow::bail!("add index out of bounds: {idx}");
             }
             arr.insert(idx, value);
+        } else if idx >= arr.len() {
+            anyhow::bail!("replace index out of bounds: {idx}");
         } else {
-            if idx >= arr.len() {
-                anyhow::bail!("replace index out of bounds: {idx}");
-            }
             arr[idx] = value;
         }
         return Ok(());
