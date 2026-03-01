@@ -51,6 +51,28 @@ impl exports::wasi::http::incoming_handler::Guest for Phase6CapsFixture {
                 );
                 respond_ok(response_out, body.as_bytes());
             }
+            "/net_ip_literal" => {
+                let headers = wasi::http::types::Fields::new();
+                let outgoing = wasi::http::types::OutgoingRequest::new(headers);
+                outgoing
+                    .set_scheme(Some(&wasi::http::types::Scheme::Http))
+                    .expect("set_scheme failed");
+                outgoing
+                    .set_authority(Some("127.0.0.1:80"))
+                    .expect("set_authority failed");
+                outgoing
+                    .set_path_with_query(Some("/"))
+                    .expect("set_path_with_query failed");
+
+                match wasi::http::outgoing_handler::handle(outgoing, None) {
+                    Ok(_future) => respond_ok(response_out, b"unexpected ok"),
+                    Err(_) => respond_error(
+                        response_out,
+                        "X07WASM_CAPS_NET_DENIED",
+                        b"network denied",
+                    ),
+                }
+            }
             _ => respond_ok(response_out, b"ok"),
         }
     }

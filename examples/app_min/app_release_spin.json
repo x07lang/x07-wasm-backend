@@ -1,6 +1,6 @@
 {
   "schema_version": "x07.app.profile@0.2.0",
-  "id": "app_min_release",
+  "id": "app_min_release_spin",
   "v": 1,
 
   "frontend": {
@@ -12,7 +12,7 @@
 
   "backend": {
     "adapter": "wasi_http_proxy_v1",
-    "project": "examples/app_min/backend/x07.json",
+    "project": "examples/app_min/backend_spin/x07.json",
     "component_profile_id": "component_release",
     "out_rel": "backend/app.http.component.wasm"
   },
@@ -28,7 +28,7 @@
     "max_concurrency": 64,
     "max_request_wall_ms": 500,
     "backend_runtime": {
-      "max_fuel": 200000000,
+      "max_fuel": 10000,
       "max_memory_bytes": 268435456,
       "max_table_elements": 131072,
       "max_wasm_stack_bytes": 2097152

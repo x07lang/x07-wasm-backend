@@ -153,7 +153,7 @@ pub fn cmd_app_test(
         }
     }
 
-    let (app_budgets, http_budgets) =
+    let (app_budgets, http_budgets, backend_runtime) =
         load_app_test_budgets(&store, &bundle, &frontend_dir, &mut meta, &mut diagnostics);
     let Some(runtime_limits) =
         replay::load_wasm_runtime_limits(&store, &frontend_dir, &mut meta, &mut diagnostics)
@@ -193,18 +193,19 @@ pub fn cmd_app_test(
         }
     };
 
-    let host = match HttpComponentHost::from_component_file(&backend_component_path) {
-        Ok(v) => Some(v),
-        Err(err) => {
-            diagnostics.push(Diagnostic::new(
-                "X07WASM_APP_TEST_BACKEND_HOST_INIT_FAILED",
-                Severity::Error,
-                Stage::Run,
-                format!("{err:#}"),
-            ));
-            None
-        }
-    };
+    let host =
+        match HttpComponentHost::from_component_file(&backend_component_path, backend_runtime, 1) {
+            Ok(v) => Some(v),
+            Err(err) => {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_APP_TEST_BACKEND_HOST_INIT_FAILED",
+                    Severity::Error,
+                    Stage::Run,
+                    format!("{err:#}"),
+                ));
+                None
+            }
+        };
 
     if core.is_none() || host.is_none() {
         return emit_report(
@@ -542,7 +543,11 @@ fn load_app_test_budgets(
     frontend_dir: &Path,
     meta: &mut report::meta::ReportMeta,
     diagnostics: &mut Vec<Diagnostic>,
-) -> (AppTestBudgets, HttpComponentBudgets) {
+) -> (
+    AppTestBudgets,
+    HttpComponentBudgets,
+    crate::arch::WasmRuntimeLimits,
+) {
     let index_path = PathBuf::from("arch/app/index.x07app.json");
     let loaded = crate::app::load::load_app_profile(
         store,
@@ -575,6 +580,13 @@ fn load_app_test_budgets(
                     max_response_bytes: 1024 * 1024,
                     max_wall_ms: 2_000,
                 },
+                crate::arch::WasmRuntimeLimits {
+                    max_fuel: Some(200_000_000),
+                    max_memory_bytes: Some(268_435_456),
+                    max_table_elements: Some(131_072),
+                    max_wasm_stack_bytes: Some(2 * 1024 * 1024),
+                    notes: None,
+                },
             );
         }
     };
@@ -590,6 +602,7 @@ fn load_app_test_budgets(
     let max_http = usize::try_from(loaded.doc.budgets.max_http_body_bytes).unwrap_or(1024 * 1024);
     let max_wall_ms = loaded.doc.budgets.max_request_wall_ms.max(1);
     let api_prefix = loaded.doc.routing.api_prefix.clone();
+    let backend_runtime = loaded.doc.budgets.backend_runtime.clone();
 
     (
         AppTestBudgets {
@@ -604,6 +617,7 @@ fn load_app_test_budgets(
             max_response_bytes: max_http,
             max_wall_ms,
         },
+        backend_runtime,
     )
 }
 

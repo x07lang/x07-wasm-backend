@@ -222,8 +222,146 @@ function buildAllowedEventsMap(node, out) {
   for (const c of children) buildAllowedEventsMap(c, out);
 }
 
-function setAttrs(el, attrs) {
+const TAG_ALLOWLIST = new Set([
+  "a",
+  "b",
+  "br",
+  "button",
+  "code",
+  "div",
+  "em",
+  "form",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "hr",
+  "i",
+  "img",
+  "input",
+  "label",
+  "li",
+  "ol",
+  "option",
+  "p",
+  "pre",
+  "select",
+  "small",
+  "span",
+  "strong",
+  "table",
+  "tbody",
+  "td",
+  "textarea",
+  "tfoot",
+  "th",
+  "thead",
+  "tr",
+  "ul",
+]);
+
+const GLOBAL_ATTR_ALLOWLIST = new Set([
+  "alt",
+  "autocomplete",
+  "autofocus",
+  "checked",
+  "disabled",
+  "for",
+  "href",
+  "id",
+  "inputmode",
+  "max",
+  "maxlength",
+  "min",
+  "minlength",
+  "name",
+  "pattern",
+  "placeholder",
+  "readonly",
+  "required",
+  "role",
+  "rows",
+  "selected",
+  "size",
+  "src",
+  "step",
+  "tabindex",
+  "title",
+  "type",
+  "value",
+]);
+
+function sanitizeTag(rawTag) {
+  const tag = String(rawTag ?? "div").toLowerCase();
+  if (TAG_ALLOWLIST.has(tag)) return tag;
+  return "div";
+}
+
+function sanitizeSameOriginUrlPath(raw) {
+  const s0 = String(raw ?? "").trim();
+  if (!s0) return null;
+
+  let url;
+  try {
+    url = new URL(s0, document.baseURI);
+  } catch (_) {
+    return null;
+  }
+
+  const proto = String(url.protocol || "").toLowerCase();
+  if (proto !== "http:" && proto !== "https:") return null;
+
+  const origin = String(globalThis.location?.origin ?? "");
+  if (!origin || url.origin !== origin) return null;
+
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
+function sanitizeAttr(tag, rawName, rawValue) {
+  const name = String(rawName ?? "").toLowerCase();
+  if (!name) return null;
+
+  if (name === "data-x07-key") return null;
+  if (name === "style" || name === "class") return null;
+  if (name.startsWith("on")) return null;
+  if (name === "srcdoc") return null;
+
+  if (name.startsWith("data-") || name.startsWith("aria-")) {
+    return { name, value: String(rawValue ?? "") };
+  }
+
+  if (!GLOBAL_ATTR_ALLOWLIST.has(name)) return null;
+  if (name === "href") {
+    if (tag !== "a") return null;
+    const value = sanitizeSameOriginUrlPath(rawValue);
+    if (value == null) return null;
+    return { name, value };
+  }
+  if (name === "src") {
+    if (tag !== "img") return null;
+    const value = sanitizeSameOriginUrlPath(rawValue);
+    if (value == null) return null;
+    return { name, value };
+  }
+
+  return { name, value: String(rawValue ?? "") };
+}
+
+function sanitizeAttrs(tag, attrs) {
   const next = attrs && typeof attrs === "object" ? attrs : {};
+  const out = {};
+  for (const [k, v] of Object.entries(next)) {
+    const sv = sanitizeAttr(tag, k, v);
+    if (!sv) continue;
+    out[sv.name] = sv.value;
+  }
+  return out;
+}
+
+function setAttrs(el, tag, attrs) {
+  const next = sanitizeAttrs(tag, attrs);
   const prevNames = new Set();
   for (const name of el.getAttributeNames()) prevNames.add(name);
   for (const [k, v] of Object.entries(next)) {
@@ -286,17 +424,18 @@ function reconcileNode(prevNode, prevDom, nextNode) {
   }
 
   const tag = String(nextNode.tag || "div");
+  const safeTag = sanitizeTag(tag);
   const canReuse =
     prevDom &&
     prevDom.nodeType === 1 &&
     prevDom.__x07Key === key &&
-    String(prevDom.tagName || "").toLowerCase() === tag;
-  const el = canReuse ? prevDom : document.createElement(tag);
+    String(prevDom.tagName || "").toLowerCase() === safeTag;
+  const el = canReuse ? prevDom : document.createElement(safeTag);
   el.__x07Key = key;
   if (key) el.dataset.x07Key = key;
 
   const props = nextNode.props && typeof nextNode.props === "object" ? nextNode.props : {};
-  setAttrs(el, props.attrs);
+  setAttrs(el, safeTag, props.attrs);
   setClass(el, props.class);
   setStyle(el, props.style);
 

@@ -21,6 +21,7 @@ const VENDORED_HOST_DIR: &str = "vendor/x07-web-ui/host";
 
 const HOST_INDEX_HTML: &str = "index.html";
 const HOST_APP_HOST_MJS: &str = "app-host.mjs";
+const HOST_MAIN_MJS: &str = "main.mjs";
 
 const WIT_WEB_UI_APP_DIR: &str = "wit/x07/web_ui/0.2.0";
 const WIT_WEB_UI_APP_WORLD: &str = "web-ui-app";
@@ -848,6 +849,17 @@ fn emit_host_assets(dist_dir: &Path) -> Result<(Value, Vec<report::meta::FileDig
         )
     })?;
     artifacts.push(util::file_digest(&dst_host)?);
+
+    let src_main = host_dir.join(HOST_MAIN_MJS);
+    let dst_main = dist_dir.join(HOST_MAIN_MJS);
+    std::fs::copy(&src_main, &dst_main).with_context(|| {
+        format!(
+            "copy host asset {} -> {}",
+            src_main.display(),
+            dst_main.display()
+        )
+    })?;
+    artifacts.push(util::file_digest(&dst_main)?);
 
     let files = artifacts.clone();
     let host_snapshot = json!({

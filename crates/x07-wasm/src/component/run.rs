@@ -288,7 +288,7 @@ pub fn cmd_component_run(
             "component run returned Err(())".to_string(),
         )),
         RunOutcome::TimedOut { .. } => diagnostics.push(Diagnostic::new(
-            "X07WASM_BUDGET_EXCEEDED_WALL_TIME",
+            "X07WASM_BUDGET_EXCEEDED_WALLTIME",
             Severity::Error,
             Stage::Run,
             "component run exceeded wall-time budget".to_string(),

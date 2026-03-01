@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-app.profile.schema.json",
-  "title": "x07.app.profile@0.1.0",
-  "description": "Full-stack app profile tying together a web-ui frontend and a wasi:http/proxy backend component.",
+  "title": "x07.app.profile@0.2.0",
+  "description": "Full-stack app profile tying together a web-ui frontend and a wasi:http/proxy backend component, with explicit backend runtime budgets.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -16,7 +16,7 @@
     "devserver"
   ],
   "properties": {
-    "schema_version": { "const": "x07.app.profile@0.1.0" },
+    "schema_version": { "const": "x07.app.profile@0.2.0" },
     "id": { "$ref": "#/$defs/id" },
     "v": { "type": "integer", "minimum": 1 },
 
@@ -120,6 +120,49 @@
       }
     },
 
+    "runtime_limits_required": {
+      "description": "Required, non-null runtime limits for backend component execution.",
+      "allOf": [
+        {
+          "$ref": "https://x07.io/spec/x07-wasm.runtime.limits.schema.json"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "max_fuel",
+            "max_memory_bytes",
+            "max_table_elements",
+            "max_wasm_stack_bytes"
+          ],
+          "properties": {
+            "max_fuel": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "max_memory_bytes": {
+              "type": "integer",
+              "minimum": 65536
+            },
+            "max_table_elements": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4294967295
+            },
+            "max_wasm_stack_bytes": {
+              "type": "integer",
+              "minimum": 65536,
+              "maximum": 2147483647
+            },
+            "notes": {
+              "type": "string",
+              "maxLength": 16384
+            }
+          }
+        }
+      ]
+    },
+
     "budgets": {
       "type": "object",
       "additionalProperties": false,
@@ -128,7 +171,8 @@
         "max_frame_bytes",
         "max_http_body_bytes",
         "max_concurrency",
-        "max_request_wall_ms"
+        "max_request_wall_ms",
+        "backend_runtime"
       ],
       "properties": {
         "max_dispatch_bytes": { "$ref": "#/$defs/u64" },
@@ -139,7 +183,8 @@
           "minimum": 1,
           "maximum": 1048576
         },
-        "max_request_wall_ms": { "$ref": "#/$defs/u64" }
+        "max_request_wall_ms": { "$ref": "#/$defs/u64" },
+        "backend_runtime": { "$ref": "#/$defs/runtime_limits_required" }
       }
     },
 

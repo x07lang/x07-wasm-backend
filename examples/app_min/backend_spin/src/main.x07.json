@@ -1,0 +1,1 @@
+{"decls":[],"imports":[],"kind":"entry","module_id":"main","schema_version":"x07.x07ast@0.5.0","solve":["begin",["let","acc",0],["for","i",0,1000000000,["begin",["set","acc",["+","acc",1]],0]],["bytes.lit","{\"schema_version\":\"x07.http.response.envelope@0.1.0\",\"request_id\":\"req0\",\"status\":200,\"headers\":[],\"body\":{\"bytes_len\":4,\"base64\":\"cG9uZw==\"}}\n"]]}

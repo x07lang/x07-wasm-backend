@@ -67,7 +67,7 @@ pub fn build_wasi_ctx_from_caps(
             }
             Ok(None) => {
                 diagnostics.push(Diagnostic::new(
-                    "X07WASM_CAPS_PROFILE_READ_FAILED",
+                    "X07WASM_CAPS_SECRET_MISSING",
                     Severity::Error,
                     Stage::Parse,
                     format!("missing secret: {secret_id:?}"),
@@ -99,6 +99,9 @@ pub fn build_wasi_ctx_from_caps(
             let Ok(ip) = ep.host.parse::<IpAddr>() else {
                 continue;
             };
+            if !caps.network.hardening.allows_socket_ip(ip) {
+                continue;
+            }
             allowed.insert(SocketAddr::new(ip, ep.port));
         }
     }

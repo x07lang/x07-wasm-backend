@@ -120,7 +120,7 @@ fn fixture_schema_id(doc: &Value) -> Option<&'static str> {
             "x07.arch.app.index@0.1.0" => {
                 Some("https://x07.io/spec/x07-arch.app.index.schema.json")
             }
-            "x07.app.profile@0.1.0" => Some("https://x07.io/spec/x07-app.profile.schema.json"),
+            "x07.app.profile@0.2.0" => Some("https://x07.io/spec/x07-app.profile.schema.json"),
             "x07.app.bundle@0.1.0" => Some("https://x07.io/spec/x07-app.bundle.schema.json"),
             "x07.app.trace@0.1.0" => Some("https://x07.io/spec/x07-app.trace.schema.json"),
             "x07.http.request.envelope@0.1.0" => {

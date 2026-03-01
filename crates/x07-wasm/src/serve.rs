@@ -688,15 +688,12 @@ impl WasiHttpView for ServeState {
                 .uri()
                 .port_u16()
                 .unwrap_or(if config.use_tls { 443 } else { 80 });
-            if !caps.network_allows(scheme, host, port) {
+            if let Err(deny) = caps.network_check(scheme, host, port) {
                 self.diagnostics.push(Diagnostic::new(
-                    "X07WASM_CAPS_NET_DENIED",
+                    deny.code,
                     Severity::Error,
                     Stage::Run,
-                    format!(
-                        "wasi:http send_request denied by capabilities: {}://{}:{}",
-                        scheme, host, port
-                    ),
+                    deny.message,
                 ));
                 return Err(
                     wasmtime_wasi_http::bindings::http::types::ErrorCode::HttpRequestDenied.into(),

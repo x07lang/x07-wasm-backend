@@ -172,7 +172,31 @@ pub fn cmd_app_serve(
         }
     }
 
-    let host = match HttpComponentHost::from_component_file(&backend_component_path) {
+    let (
+        budgets,
+        backend_runtime,
+        max_concurrency,
+        profile_strict_mime,
+        profile_api_prefix,
+        profile_addr,
+    ) = load_app_serve_settings(&store, &bundle, &mut meta, &mut diagnostics);
+    let effective_strict_mime = args.strict_mime || profile_strict_mime;
+    let effective_api_prefix = if args.api_prefix == "/api" {
+        profile_api_prefix
+    } else {
+        args.api_prefix.clone()
+    };
+    let effective_addr_str = if args.addr == "127.0.0.1:0" {
+        profile_addr
+    } else {
+        args.addr.clone()
+    };
+
+    let host = match HttpComponentHost::from_component_file(
+        &backend_component_path,
+        backend_runtime,
+        max_concurrency,
+    ) {
         Ok(v) => v,
         Err(err) => {
             diagnostics.push(Diagnostic::new(
@@ -198,20 +222,6 @@ pub fn cmd_app_serve(
                 None,
             );
         }
-    };
-
-    let (budgets, max_concurrency, profile_strict_mime, profile_api_prefix, profile_addr) =
-        load_app_serve_settings(&store, &bundle, &mut meta, &mut diagnostics);
-    let effective_strict_mime = args.strict_mime || profile_strict_mime;
-    let effective_api_prefix = if args.api_prefix == "/api" {
-        profile_api_prefix
-    } else {
-        args.api_prefix.clone()
-    };
-    let effective_addr_str = if args.addr == "127.0.0.1:0" {
-        profile_addr
-    } else {
-        args.addr.clone()
     };
 
     // For `port=0`, report the actual bound addr string.
@@ -637,11 +647,17 @@ fn serve_static_request(
 
     let mime = mime_for_path(&full);
     if method == Method::HEAD {
-        return Ok(Response::builder()
+        let mut resp = Response::builder()
             .status(StatusCode::OK)
             .header(hyper::header::CONTENT_TYPE, mime)
-            .body(Full::new(Bytes::new()))
-            .unwrap());
+            .header("x-content-type-options", "nosniff");
+        if mime.starts_with("text/html") {
+            resp = resp.header(
+                "content-security-policy",
+                "default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; connect-src 'self' https: http:; img-src 'self' data:; style-src 'self' 'unsafe-inline'",
+            );
+        }
+        return Ok(resp.body(Full::new(Bytes::new())).unwrap());
     }
     let body = match std::fs::read(&full) {
         Ok(v) => v,
@@ -652,11 +668,17 @@ fn serve_static_request(
                 .unwrap());
         }
     };
-    Ok(Response::builder()
+    let mut resp = Response::builder()
         .status(StatusCode::OK)
         .header(hyper::header::CONTENT_TYPE, mime)
-        .body(Full::new(Bytes::from(body)))
-        .unwrap())
+        .header("x-content-type-options", "nosniff");
+    if mime.starts_with("text/html") {
+        resp = resp.header(
+            "content-security-policy",
+            "default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; connect-src 'self' https: http:; img-src 'self' data:; style-src 'self' 'unsafe-inline'",
+        );
+    }
+    Ok(resp.body(Full::new(Bytes::from(body))).unwrap())
 }
 
 fn mime_for_path(path: &Path) -> &'static str {
@@ -899,7 +921,14 @@ fn load_app_serve_settings(
     bundle: &LoadedAppBundle,
     meta: &mut report::meta::ReportMeta,
     diagnostics: &mut Vec<Diagnostic>,
-) -> (HttpComponentBudgets, usize, bool, String, String) {
+) -> (
+    HttpComponentBudgets,
+    crate::arch::WasmRuntimeLimits,
+    usize,
+    bool,
+    String,
+    String,
+) {
     let index_path = PathBuf::from("arch/app/index.x07app.json");
     let loaded = crate::app::load::load_app_profile(
         store,
@@ -925,6 +954,13 @@ fn load_app_serve_settings(
                     max_response_bytes: 1024 * 1024,
                     max_wall_ms: 2_000,
                 },
+                crate::arch::WasmRuntimeLimits {
+                    max_fuel: Some(200_000_000),
+                    max_memory_bytes: Some(268_435_456),
+                    max_table_elements: Some(131_072),
+                    max_wasm_stack_bytes: Some(2 * 1024 * 1024),
+                    notes: None,
+                },
                 16,
                 false,
                 "/api".to_string(),
@@ -941,6 +977,7 @@ fn load_app_serve_settings(
     let max_http = usize::try_from(loaded.doc.budgets.max_http_body_bytes).unwrap_or(1024 * 1024);
     let max_wall_ms = loaded.doc.budgets.max_request_wall_ms;
     let max_concurrency = usize::try_from(loaded.doc.budgets.max_concurrency).unwrap_or(16);
+    let backend_runtime = loaded.doc.budgets.backend_runtime.clone();
     let strict_wasm_mime = loaded.doc.devserver.strict_wasm_mime;
     let api_prefix = loaded.doc.routing.api_prefix.clone();
     let addr = loaded.doc.devserver.addr.clone();
@@ -951,6 +988,7 @@ fn load_app_serve_settings(
             max_response_bytes: max_http,
             max_wall_ms: max_wall_ms.max(1),
         },
+        backend_runtime,
         max_concurrency.max(1),
         strict_wasm_mime,
         api_prefix,

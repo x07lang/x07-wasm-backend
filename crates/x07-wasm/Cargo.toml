@@ -14,11 +14,13 @@ base64 = "0.22.1"
 bytes = "1.10.0"
 cap-rand = "3.4.5"
 clap = { version = "4.5.4", features = ["derive"] }
+ed25519-dalek = { version = "2.1.1", features = ["std"] }
 hex = "0.4.3"
 http-body = "1.0.1"
 http-body-util = "0.1.3"
 hyper = { version = "1.7.0", features = ["http1", "server"] }
 hyper-util = { version = "0.1.16", features = ["tokio", "client-legacy", "http1"] }
+ipnet = { version = "2.9.0", features = ["serde"] }
 jsonschema = "0.38.1"
 regex = "1.11.2"
 semver = "1.0.26"

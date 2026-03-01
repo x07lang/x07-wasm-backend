@@ -6,7 +6,7 @@ Phase 3 ties Phase 2 (web-ui reducers) and Phase 1 (`wasi:http/proxy` backend co
 
 ## Contracts
 
-- App profile: `x07.app.profile@0.1.0`
+- App profile: `x07.app.profile@0.2.0`
 - App bundle manifest: `x07.app.bundle@0.1.0`
 - App trace (E2E): `x07.app.trace@0.1.0`
 - HTTP envelopes:

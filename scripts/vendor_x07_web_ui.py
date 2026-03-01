@@ -21,6 +21,7 @@ VENDORED_HOST_DIR = REPO_ROOT / "vendor" / "x07-web-ui" / "host"
 HOST_FILES = [
     ("host/index.html", VENDORED_HOST_DIR / "index.html"),
     ("host/app-host.mjs", VENDORED_HOST_DIR / "app-host.mjs"),
+    ("host/main.mjs", VENDORED_HOST_DIR / "main.mjs"),
 ]
 
 WIT_FILES = [

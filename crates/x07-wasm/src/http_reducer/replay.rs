@@ -47,21 +47,6 @@ impl HttpEffectState {
             caps,
         }
     }
-
-    fn is_fetch_allowed(&self, uri: &Uri) -> bool {
-        if let Some(caps) = self.caps.as_ref() {
-            let Some(host) = uri.host() else {
-                return false;
-            };
-            let scheme = uri.scheme_str().unwrap_or("");
-            let port = uri.port_u16().unwrap_or(80);
-            return caps.network_allows(scheme, host, port);
-        }
-        let Some(host) = uri.host() else {
-            return false;
-        };
-        self.fetch_allow_hosts.iter().any(|h| h == host)
-    }
 }
 
 pub fn parse_http_fetch_allow_hosts_from_env() -> Vec<String> {
@@ -411,23 +396,44 @@ async fn execute_effect(
                   "error": "unsupported scheme (only http:// allowed)",
                 });
             }
-            if !effect_state.is_fetch_allowed(&uri) {
-                let (code, msg) = if effect_state.caps.is_some() {
-                    (
-                        "X07WASM_CAPS_NET_DENIED",
-                        "http.fetch denied by capabilities",
-                    )
-                } else {
-                    (
-                        "X07WASM_HTTP_EFFECT_HTTP_FETCH_FAILED",
-                        "http.fetch host not allowlisted (set X07_WASM_HTTP_FETCH_ALLOW_HOSTS)",
-                    )
-                };
+            let Some(host) = uri.host() else {
                 diagnostics.push(Diagnostic::new(
-                    code,
+                    "X07WASM_HTTP_EFFECT_HTTP_FETCH_FAILED",
                     Severity::Error,
                     Stage::Run,
-                    format!("{msg}: {:?}", uri.host()),
+                    "http.fetch url missing host".to_string(),
+                ));
+                return json!({
+                  "id": id,
+                  "type": "http.fetch",
+                  "ok": false,
+                  "error": "missing host",
+                });
+            };
+            let scheme = uri.scheme_str().unwrap_or("");
+            let port = uri.port_u16().unwrap_or(80);
+            if let Some(caps) = effect_state.caps.as_ref() {
+                if let Err(deny) = caps.network_check(scheme, host, port) {
+                    diagnostics.push(Diagnostic::new(
+                        deny.code,
+                        Severity::Error,
+                        Stage::Run,
+                        deny.message,
+                    ));
+                    return json!({
+                      "id": id,
+                      "type": "http.fetch",
+                      "ok": false,
+                      "error": "http.fetch denied by capabilities",
+                    });
+                }
+            } else if !effect_state.fetch_allow_hosts.iter().any(|h| h == host) {
+                let msg = "http.fetch host not allowlisted (set X07_WASM_HTTP_FETCH_ALLOW_HOSTS)";
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_HTTP_EFFECT_HTTP_FETCH_FAILED",
+                    Severity::Error,
+                    Stage::Run,
+                    format!("{msg}: {host:?}"),
                 ));
                 return json!({
                   "id": id,

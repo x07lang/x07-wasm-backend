@@ -98,7 +98,7 @@ pub fn build_specrows_doc() -> Value {
         ["build","opt","","--project","project","PATH","Path to x07 project manifest (default: x07.json)."],
 
         ["caps-validate","about","Alias for `x07-wasm caps validate`. Validate capabilities profile and emit x07.wasm.caps.validate.report@0.1.0."],
-        ["caps-validate","opt","","--profile","profile","PATH","Capabilities profile file (x07.app.capabilities@0.1.0)."],
+        ["caps-validate","opt","","--profile","profile","PATH","Capabilities profile file (x07.app.capabilities@0.2.0)."],
 
         ["cli-specrows-check","about","Validate x07-wasm --cli-specrows output against x07cli.specrows@0.1.0 + invariants. Alias: `x07-wasm cli specrows check` / `x07-wasm cli validate-specrows`."],
         ["cli-specrows-check","flag","","--stdin","stdin","Read specrows JSON from stdin (mutually exclusive with --in)."],
@@ -190,12 +190,15 @@ pub fn build_specrows_doc() -> Value {
 
         ["provenance-attest","about","Alias for `x07-wasm provenance attest`. Create SLSA provenance attestation for an app pack and emit x07.wasm.provenance.attest.report@0.1.0."],
         ["provenance-attest","opt","","--ops","ops","PATH","Ops profile file (x07.app.ops.profile@0.1.0)."],
+        ["provenance-attest","opt","","--predicate-type","predicate_type","STR","In-toto Statement predicateType."],
+        ["provenance-attest","opt","","--signing-key","signing_key","PATH","Ed25519 signing key seed file (base64, 32 bytes)."],
         ["provenance-attest","opt","","--out","out","PATH","Output attestation file."],
         ["provenance-attest","opt","","--pack-manifest","pack_manifest","PATH","App pack manifest file (x07.app.pack@0.1.0)."],
 
         ["provenance-verify","about","Alias for `x07-wasm provenance verify`. Verify SLSA provenance attestation against current artifacts and emit x07.wasm.provenance.verify.report@0.1.0."],
-        ["provenance-verify","opt","","--attestation","attestation","PATH","Attestation file (x07.provenance.slsa.attestation@0.1.0)."],
+        ["provenance-verify","opt","","--attestation","attestation","PATH","DSSE envelope file (x07.provenance.dsse.envelope@0.1.0)."],
         ["provenance-verify","opt","","--pack-dir","pack_dir","PATH","Directory containing the packed assets referenced by the attestation."],
+        ["provenance-verify","opt","","--trusted-public-key","trusted_public_key","PATH","Trusted Ed25519 public key file (base64, 32 bytes)."],
 
         ["run","about","Run a wasm module exporting x07_solve_v2 under Wasmtime; emit output bytes + JSON report."],
         ["run","opt","","--arena-cap-bytes","arena.cap.bytes","U32","Arena capacity passed to x07_solve_v2 (bytes)."],

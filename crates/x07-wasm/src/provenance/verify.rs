@@ -2,10 +2,14 @@ use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
+use base64::engine::general_purpose::STANDARD;
+use base64::Engine;
+use ed25519_dalek::VerifyingKey;
 use serde_json::{json, Value};
 
 use crate::cli::{MachineArgs, ProvenanceVerifyArgs, Scope};
 use crate::diag::{Diagnostic, Severity, Stage};
+use crate::provenance::dsse;
 use crate::report;
 use crate::schema::SchemaStore;
 use crate::util;
@@ -61,14 +65,262 @@ pub fn cmd_provenance_verify(
     };
     meta.inputs.push(attest_digest.clone());
 
-    let attest_doc: Value = match serde_json::from_slice(&attest_bytes) {
+    let envelope_doc: Value = match serde_json::from_slice(&attest_bytes) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_PROVENANCE_DSSE_SCHEMA_INVALID",
+                Severity::Error,
+                Stage::Parse,
+                format!("attestation JSON invalid: {err}"),
+            ));
+            return emit_report(
+                &store,
+                scope,
+                machine,
+                started,
+                raw_argv,
+                meta,
+                diagnostics,
+                &args.attestation,
+                0,
+                0,
+                1,
+            );
+        }
+    };
+
+    let schema_diags = store.validate(
+        "https://x07.io/spec/x07-provenance.dsse.envelope.schema.json",
+        &envelope_doc,
+    )?;
+    if !schema_diags.is_empty() {
+        for dd in schema_diags {
+            let mut d = Diagnostic::new(
+                "X07WASM_PROVENANCE_DSSE_SCHEMA_INVALID",
+                Severity::Error,
+                Stage::Parse,
+                dd.message,
+            );
+            d.data = dd.data;
+            diagnostics.push(d);
+        }
+        return emit_report(
+            &store,
+            scope,
+            machine,
+            started,
+            raw_argv,
+            meta,
+            diagnostics,
+            &args.attestation,
+            0,
+            0,
+            1,
+        );
+    }
+
+    let envelope: dsse::DsseEnvelope = match serde_json::from_value(envelope_doc) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_PROVENANCE_DSSE_SCHEMA_INVALID",
+                Severity::Error,
+                Stage::Parse,
+                format!("failed to parse DSSE envelope: {err}"),
+            ));
+            return emit_report(
+                &store,
+                scope,
+                machine,
+                started,
+                raw_argv,
+                meta,
+                diagnostics,
+                &args.attestation,
+                0,
+                0,
+                1,
+            );
+        }
+    };
+
+    let trusted_public_key_b64 = match std::fs::read_to_string(&args.trusted_public_key) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_PROVENANCE_PUBLIC_KEY_READ_FAILED",
+                Severity::Error,
+                Stage::Parse,
+                format!(
+                    "failed to read trusted public key {}: {err}",
+                    args.trusted_public_key.display()
+                ),
+            ));
+            return emit_report(
+                &store,
+                scope,
+                machine,
+                started,
+                raw_argv,
+                meta,
+                diagnostics,
+                &args.attestation,
+                0,
+                0,
+                1,
+            );
+        }
+    };
+    let trusted_public_key = match STANDARD.decode(trusted_public_key_b64.trim()) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_PROVENANCE_PUBLIC_KEY_INVALID",
+                Severity::Error,
+                Stage::Parse,
+                format!("trusted public key base64 decode failed: {err}"),
+            ));
+            return emit_report(
+                &store,
+                scope,
+                machine,
+                started,
+                raw_argv,
+                meta,
+                diagnostics,
+                &args.attestation,
+                0,
+                0,
+                1,
+            );
+        }
+    };
+    let trusted_public_key: [u8; 32] = match trusted_public_key.try_into() {
+        Ok(v) => v,
+        Err(_) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_PROVENANCE_PUBLIC_KEY_INVALID",
+                Severity::Error,
+                Stage::Parse,
+                "trusted public key must be exactly 32 bytes".to_string(),
+            ));
+            return emit_report(
+                &store,
+                scope,
+                machine,
+                started,
+                raw_argv,
+                meta,
+                diagnostics,
+                &args.attestation,
+                0,
+                0,
+                1,
+            );
+        }
+    };
+    let trusted_public_key = match VerifyingKey::from_bytes(&trusted_public_key) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_PROVENANCE_PUBLIC_KEY_INVALID",
+                Severity::Error,
+                Stage::Parse,
+                format!("trusted public key invalid: {err}"),
+            ));
+            return emit_report(
+                &store,
+                scope,
+                machine,
+                started,
+                raw_argv,
+                meta,
+                diagnostics,
+                &args.attestation,
+                0,
+                0,
+                1,
+            );
+        }
+    };
+
+    if let Err(()) = dsse::verify_ed25519_signature(&envelope, &trusted_public_key) {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_PROVENANCE_SIGNATURE_INVALID",
+            Severity::Error,
+            Stage::Run,
+            "DSSE signature verification failed".to_string(),
+        ));
+        return emit_report(
+            &store,
+            scope,
+            machine,
+            started,
+            raw_argv,
+            meta,
+            diagnostics,
+            &args.attestation,
+            0,
+            0,
+            1,
+        );
+    }
+
+    if envelope.payload_type != dsse::IN_TOTO_STATEMENT_PAYLOAD_TYPE {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_PROVENANCE_SCHEMA_INVALID",
+            Severity::Error,
+            Stage::Parse,
+            format!("unsupported DSSE payloadType: {:?}", envelope.payload_type),
+        ));
+        return emit_report(
+            &store,
+            scope,
+            machine,
+            started,
+            raw_argv,
+            meta,
+            diagnostics,
+            &args.attestation,
+            0,
+            0,
+            1,
+        );
+    }
+
+    let payload_bytes = match dsse::decode_payload(&envelope) {
+        Ok(v) => v,
+        Err(()) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_PROVENANCE_DSSE_SCHEMA_INVALID",
+                Severity::Error,
+                Stage::Parse,
+                "failed to decode DSSE payload base64".to_string(),
+            ));
+            return emit_report(
+                &store,
+                scope,
+                machine,
+                started,
+                raw_argv,
+                meta,
+                diagnostics,
+                &args.attestation,
+                0,
+                0,
+                1,
+            );
+        }
+    };
+    let attest_doc: Value = match serde_json::from_slice(&payload_bytes) {
         Ok(v) => v,
         Err(err) => {
             diagnostics.push(Diagnostic::new(
                 "X07WASM_PROVENANCE_SCHEMA_INVALID",
                 Severity::Error,
                 Stage::Parse,
-                format!("attestation JSON invalid: {err}"),
+                format!("attestation payload JSON invalid: {err}"),
             ));
             return emit_report(
                 &store,

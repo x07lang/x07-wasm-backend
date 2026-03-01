@@ -188,10 +188,16 @@ PY
 get_attestation_x07_compatibility_hash() {
   local attestation_path="$1"
   "$PYTHON" - "$attestation_path" <<'PY'
-import json, pathlib, sys
+import base64, json, pathlib, sys
 p = pathlib.Path(sys.argv[1])
 doc = json.loads(p.read_text(encoding="utf-8"))
-v = doc.get("predicate", {}).get("x07", {}).get("compatibility_hash")
+payload_b64 = doc.get("payload")
+if not isinstance(payload_b64, str) or not payload_b64:
+    print("missing payload (DSSE)", file=sys.stderr)
+    sys.exit(1)
+payload_bytes = base64.b64decode(payload_b64)
+payload_doc = json.loads(payload_bytes.decode("utf-8"))
+v = payload_doc.get("predicate", {}).get("x07", {}).get("compatibility_hash")
 if not isinstance(v, str) or len(v) != 64:
     print("missing predicate.x07.compatibility_hash", file=sys.stderr)
     sys.exit(1)
@@ -199,17 +205,23 @@ print(v)
 PY
 }
 
-set_attestation_predicate_type_in_place() {
-  local attestation_path="$1"
-  local predicate_type="$2"
-  "$PYTHON" - "$attestation_path" "$predicate_type" <<'PY'
+corrupt_dsse_signature_in_place() {
+  local envelope_path="$1"
+  "$PYTHON" - "$envelope_path" <<'PY'
 import json, pathlib, sys
 p = pathlib.Path(sys.argv[1])
-pt = sys.argv[2]
 doc = json.loads(p.read_text(encoding="utf-8"))
-doc["predicateType"] = pt
+sigs = doc.get("signatures")
+if not isinstance(sigs, list) or len(sigs) < 1 or not isinstance(sigs[0], dict):
+    print("missing signatures[0]", file=sys.stderr)
+    sys.exit(1)
+sig = sigs[0].get("sig")
+if not isinstance(sig, str) or len(sig) < 4:
+    print("missing signatures[0].sig", file=sys.stderr)
+    sys.exit(1)
+sigs[0]["sig"] = "AA" + sig[2:]
 p.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
-print("ok: set predicateType:", pt)
+print("ok: corrupted dsse signature")
 PY
 }
 
@@ -239,6 +251,35 @@ rel = asset0["file"]["path"]
 p = (manifest.parent / rel).resolve()
 if not p.is_file():
     print("asset file missing:", p, file=sys.stderr)
+    sys.exit(1)
+
+p.write_bytes(p.read_bytes() + b"\x00")
+print("tampered:", str(p))
+PY
+}
+
+corrupt_pack_backend_component_file() {
+  local pack_manifest_path="$1"
+  "$PYTHON" - "$pack_manifest_path" <<'PY'
+import json, pathlib, sys
+
+manifest = pathlib.Path(sys.argv[1])
+doc = json.loads(manifest.read_text(encoding="utf-8"))
+
+backend = doc.get("backend", {})
+if not isinstance(backend, dict):
+    print("pack manifest backend invalid:", manifest, file=sys.stderr)
+    sys.exit(1)
+
+component = backend.get("component", {})
+if not isinstance(component, dict) or not isinstance(component.get("path"), str):
+    print("pack manifest backend.component.path missing:", manifest, file=sys.stderr)
+    sys.exit(1)
+
+rel = component["path"]
+p = (manifest.parent / rel).resolve()
+if not p.is_file():
+    print("backend component file missing:", p, file=sys.stderr)
     sys.exit(1)
 
 p.write_bytes(p.read_bytes() + b"\x00")
@@ -425,7 +466,7 @@ if [ "$code" -ne 3 ]; then
   echo "expected exit code 3 for caps secret missing, got $code" >&2
   exit 1
 fi
-require_report_exit_and_has_code build/phase6_examples/serve.caps_secret_missing.json 3 X07WASM_CAPS_PROFILE_READ_FAILED
+require_report_exit_and_has_code build/phase6_examples/serve.caps_secret_missing.json 3 X07WASM_CAPS_SECRET_MISSING
 
 echo "==> phase6_examples: caps net denied (http serve canary)"
 x07-wasm build --project examples/http_reducer_effect_http/x07.json --profile wasm_release \
@@ -446,6 +487,22 @@ if [ "$code" -ne 1 ]; then
 fi
 require_report_exit_and_has_code build/phase6_examples/http.serve.caps_net_denied.json 1 X07WASM_CAPS_NET_DENIED
 
+echo "==> phase6_examples: caps net hardening denied (private ip literal)"
+set +e
+x07-wasm serve \
+  --component guest/phase6-caps-fixture/target/wasm32-wasip2/release/x07_wasm_phase6_caps_fixture.wasm \
+  --mode canary \
+  --path /net_ip_literal \
+  --ops arch/app/ops/ops_allow_loopback_denied.json \
+  --json --report-out build/phase6_examples/serve.caps_net_ip_literal_denied.json --quiet-json
+code=$?
+set -e
+if [ "$code" -ne 1 ]; then
+  echo "expected exit code 1 for caps net hardening denied, got $code" >&2
+  exit 1
+fi
+require_report_exit_and_has_code build/phase6_examples/serve.caps_net_ip_literal_denied.json 1 X07WASM_CAPS_NET_PRIVATE_IP_DENIED
+
 echo "==> phase6_examples: build app_min -> pack -> verify (fresh, phase6 dir)"
 rm -rf dist/phase6_examples/app_min dist/phase6_examples/app_min.pack dist/phase6_examples/deploy_plan
 x07-wasm app build --profile-file examples/app_min/app_release.json \
@@ -465,27 +522,93 @@ x07-wasm app verify --pack-manifest dist/phase6_examples/app_min.pack/app.pack.j
   --json --report-out build/phase6_examples/app.verify.app_min.json --quiet-json
 require_report_ok build/phase6_examples/app.verify.app_min.json
 
+echo "==> phase6_examples: app verify (negative - tamper backend component)"
+rm -rf dist/phase6_examples/app_min.pack.backend_tampered
+cp -a dist/phase6_examples/app_min.pack dist/phase6_examples/app_min.pack.backend_tampered
+corrupt_pack_backend_component_file dist/phase6_examples/app_min.pack.backend_tampered/app.pack.json >/dev/null
+
+set +e
+x07-wasm app verify --pack-manifest dist/phase6_examples/app_min.pack.backend_tampered/app.pack.json \
+  --json --report-out build/phase6_examples/app.verify.app_min.backend_tampered.json --quiet-json
+code=$?
+set -e
+if [ "$code" -ne 1 ]; then
+  echo "expected exit code 1 for app verify backend digest mismatch, got $code" >&2
+  exit 1
+fi
+require_report_exit_and_has_code build/phase6_examples/app.verify.app_min.backend_tampered.json 1 X07WASM_APP_VERIFY_BACKEND_COMPONENT_DIGEST_MISMATCH
+
+echo "==> phase6_examples: build app_min_spin -> pack -> verify -> canary (budget exceeded)"
+rm -rf dist/phase6_examples/app_min_spin dist/phase6_examples/app_min_spin.pack
+x07-wasm app build --profile-file examples/app_min/app_release_spin.json \
+  --out-dir dist/phase6_examples/app_min_spin --clean \
+  --json --report-out build/phase6_examples/app.build.app_min_spin.json --quiet-json
+require_report_ok build/phase6_examples/app.build.app_min_spin.json
+test -f dist/phase6_examples/app_min_spin/app.bundle.json
+
+x07-wasm app pack --bundle-manifest dist/phase6_examples/app_min_spin/app.bundle.json \
+  --out-dir dist/phase6_examples/app_min_spin.pack \
+  --profile-id app_min_release_spin \
+  --json --report-out build/phase6_examples/app.pack.app_min_spin.json --quiet-json
+require_report_ok build/phase6_examples/app.pack.app_min_spin.json
+test -f dist/phase6_examples/app_min_spin.pack/app.pack.json
+
+x07-wasm app verify --pack-manifest dist/phase6_examples/app_min_spin.pack/app.pack.json \
+  --json --report-out build/phase6_examples/app.verify.app_min_spin.json --quiet-json
+require_report_ok build/phase6_examples/app.verify.app_min_spin.json
+
+set +e
+x07-wasm app serve --dir dist/phase6_examples/app_min_spin --mode canary \
+  --json --report-out build/phase6_examples/app.serve.app_min_spin.canary.json --quiet-json
+code=$?
+set -e
+if [ "$code" -ne 4 ]; then
+  echo "expected exit code 4 for app_min_spin budget exceeded, got $code" >&2
+  exit 1
+fi
+require_report_exit_and_has_code build/phase6_examples/app.serve.app_min_spin.canary.json 4 X07WASM_BUDGET_EXCEEDED_CPU_FUEL
+
 echo "==> phase6_examples: provenance attest -> verify (ok)"
 x07-wasm provenance attest \
   --pack-manifest dist/phase6_examples/app_min.pack/app.pack.json \
   --ops arch/app/ops/ops_release.json \
-  --out dist/phase6_examples/app_min.pack/provenance.slsa.json \
+  --signing-key arch/provenance/dev.ed25519.signing_key.b64 \
+  --out dist/phase6_examples/app_min.pack/provenance.dsse.json \
   --json --report-out build/phase6_examples/provenance.attest.json --quiet-json
 require_report_ok build/phase6_examples/provenance.attest.json
-test -f dist/phase6_examples/app_min.pack/provenance.slsa.json
+test -f dist/phase6_examples/app_min.pack/provenance.dsse.json
 
 ops_hash="$(get_report_result_compatibility_hash build/phase6_examples/ops.validate.release.json)"
-att_hash="$(get_attestation_x07_compatibility_hash dist/phase6_examples/app_min.pack/provenance.slsa.json)"
+att_hash="$(get_attestation_x07_compatibility_hash dist/phase6_examples/app_min.pack/provenance.dsse.json)"
 if [ "$ops_hash" != "$att_hash" ]; then
   echo "provenance compatibility_hash mismatch: ops=$ops_hash att=$att_hash" >&2
   exit 1
 fi
 
 x07-wasm provenance verify \
-  --attestation dist/phase6_examples/app_min.pack/provenance.slsa.json \
+  --attestation dist/phase6_examples/app_min.pack/provenance.dsse.json \
   --pack-dir dist/phase6_examples/app_min.pack \
+  --trusted-public-key arch/provenance/dev.ed25519.public_key.b64 \
   --json --report-out build/phase6_examples/provenance.verify.ok.json --quiet-json
 require_report_ok build/phase6_examples/provenance.verify.ok.json
+
+echo "==> phase6_examples: provenance verify (negative - tamper signature)"
+cp dist/phase6_examples/app_min.pack/provenance.dsse.json dist/phase6_examples/app_min.pack/provenance.dsse.bad_sig.json
+corrupt_dsse_signature_in_place dist/phase6_examples/app_min.pack/provenance.dsse.bad_sig.json
+
+set +e
+x07-wasm provenance verify \
+  --attestation dist/phase6_examples/app_min.pack/provenance.dsse.bad_sig.json \
+  --pack-dir dist/phase6_examples/app_min.pack \
+  --trusted-public-key arch/provenance/dev.ed25519.public_key.b64 \
+  --json --report-out build/phase6_examples/provenance.verify.bad_sig.json --quiet-json
+code=$?
+set -e
+if [ "$code" -ne 1 ]; then
+  echo "expected exit code 1 for provenance signature invalid, got $code" >&2
+  exit 1
+fi
+require_report_exit_and_has_code build/phase6_examples/provenance.verify.bad_sig.json 1 X07WASM_PROVENANCE_SIGNATURE_INVALID
 
 echo "==> phase6_examples: provenance verify (negative - tamper asset)"
 rm -rf dist/phase6_examples/app_min.pack.tampered
@@ -494,8 +617,9 @@ corrupt_first_pack_asset_file dist/phase6_examples/app_min.pack.tampered/app.pac
 
 set +e
 x07-wasm provenance verify \
-  --attestation dist/phase6_examples/app_min.pack/provenance.slsa.json \
+  --attestation dist/phase6_examples/app_min.pack/provenance.dsse.json \
   --pack-dir dist/phase6_examples/app_min.pack.tampered \
+  --trusted-public-key arch/provenance/dev.ed25519.public_key.b64 \
   --json --report-out build/phase6_examples/provenance.verify.bad.json --quiet-json
 code=$?
 set -e
@@ -506,13 +630,20 @@ fi
 require_report_exit_and_has_code build/phase6_examples/provenance.verify.bad.json 1 X07WASM_PROVENANCE_DIGEST_MISMATCH
 
 echo "==> phase6_examples: provenance verify (negative - unsupported predicateType)"
-cp dist/phase6_examples/app_min.pack/provenance.slsa.json dist/phase6_examples/app_min.pack/provenance.slsa.unsupported.json
-set_attestation_predicate_type_in_place dist/phase6_examples/app_min.pack/provenance.slsa.unsupported.json "https://example.com/unsupported"
+x07-wasm provenance attest \
+  --pack-manifest dist/phase6_examples/app_min.pack/app.pack.json \
+  --ops arch/app/ops/ops_release.json \
+  --signing-key arch/provenance/dev.ed25519.signing_key.b64 \
+  --predicate-type "https://example.com/unsupported" \
+  --out dist/phase6_examples/app_min.pack/provenance.dsse.unsupported.json \
+  --json --report-out build/phase6_examples/provenance.attest.unsupported_predicate.json --quiet-json
+require_report_ok build/phase6_examples/provenance.attest.unsupported_predicate.json
 
 set +e
 x07-wasm provenance verify \
-  --attestation dist/phase6_examples/app_min.pack/provenance.slsa.unsupported.json \
+  --attestation dist/phase6_examples/app_min.pack/provenance.dsse.unsupported.json \
   --pack-dir dist/phase6_examples/app_min.pack \
+  --trusted-public-key arch/provenance/dev.ed25519.public_key.b64 \
   --json --report-out build/phase6_examples/provenance.verify.unsupported_predicate.json --quiet-json
 code=$?
 set -e
@@ -530,6 +661,15 @@ x07-wasm deploy plan \
   --json --report-out build/phase6_examples/deploy.plan.json --quiet-json
 require_report_ok build/phase6_examples/deploy.plan.json
 require_deploy_plan_outputs_exist build/phase6_examples/deploy.plan.json
+
+echo "==> phase6_examples: deploy plan (policy warn)"
+x07-wasm deploy plan \
+  --pack-manifest dist/phase6_examples/app_min.pack/app.pack.json \
+  --ops arch/app/ops/ops_release_policy_warn.json \
+  --out-dir dist/phase6_examples/deploy_plan.policy_warn \
+  --json --report-out build/phase6_examples/deploy.plan.policy_warn.json --quiet-json
+require_report_exit_and_has_code build/phase6_examples/deploy.plan.policy_warn.json 0 X07WASM_POLICY_DECISION_WARN
+require_deploy_plan_outputs_exist build/phase6_examples/deploy.plan.policy_warn.json
 
 echo "==> phase6_examples: deploy plan (policy denied)"
 set +e

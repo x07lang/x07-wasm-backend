@@ -39,6 +39,8 @@ const X07_METRICS_SNAPSHOT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-metrics.snapshot.schema.json");
 const X07_DEPLOY_PLAN_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-deploy.plan.schema.json");
+const X07_PROVENANCE_DSSE_ENVELOPE_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-provenance.dsse.envelope.schema.json");
 const X07_PROVENANCE_SLSA_ATTESTATION_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-provenance.slsa.attestation.schema.json");
 const X07_ARCH_WASM_TOOLCHAIN_INDEX_SCHEMA_BYTES: &[u8] =
@@ -228,6 +230,7 @@ impl SchemaStore {
             X07_WASM_CAPS_EVIDENCE_SCHEMA_BYTES,
             X07_METRICS_SNAPSHOT_SCHEMA_BYTES,
             X07_DEPLOY_PLAN_SCHEMA_BYTES,
+            X07_PROVENANCE_DSSE_ENVELOPE_SCHEMA_BYTES,
             X07_PROVENANCE_SLSA_ATTESTATION_SCHEMA_BYTES,
             X07_WASM_TOOLCHAIN_VALIDATE_REPORT_SCHEMA_BYTES,
             X07_WASM_OPS_VALIDATE_REPORT_SCHEMA_BYTES,

@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-app.capabilities.schema.json",
-  "title": "x07.app.capabilities@0.1.0",
+  "title": "x07.app.capabilities@0.2.0",
   "description": "Capability allowlists for app runtime execution (deny-by-default).",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "id", "v", "fs", "env", "secrets", "network", "clocks", "random"],
   "properties": {
-    "schema_version": { "const": "x07.app.capabilities@0.1.0" },
+    "schema_version": { "const": "x07.app.capabilities@0.2.0" },
     "id": { "$ref": "#/$defs/id" },
     "v": { "type": "integer", "minimum": 1 },
     "fs": { "$ref": "#/$defs/fs" },
@@ -48,6 +48,12 @@
       "minLength": 1,
       "maxLength": 253,
       "pattern": "^[A-Za-z0-9][A-Za-z0-9.:-]{0,252}$"
+    },
+    "cidr": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 64,
+      "pattern": "^[0-9A-Fa-f:.]+/[0-9]{1,3}$"
     },
     "fs_preopen": {
       "type": "object",
@@ -104,17 +110,41 @@
         "proto": { "type": "string", "enum": ["tcp", "udp", "http", "https"] }
       }
     },
+    "net_hardening": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["deny_ip_literals", "deny_private_ips", "allow_ip_cidrs"],
+      "properties": {
+        "deny_ip_literals": {
+          "type": "boolean",
+          "default": true,
+          "description": "When true, HTTP/HTTPS host IP literals are denied unless allowlisted by CIDR."
+        },
+        "deny_private_ips": {
+          "type": "boolean",
+          "default": true,
+          "description": "When true, private/loopback/link-local/multicast IP literals are denied unless allowlisted by CIDR."
+        },
+        "allow_ip_cidrs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/cidr" },
+          "default": [],
+          "description": "CIDR ranges that are allowed even when hardening would otherwise deny an IP literal."
+        }
+      }
+    },
     "network": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["mode", "allowlist"],
+      "required": ["mode", "allowlist", "hardening"],
       "properties": {
         "mode": { "type": "string", "enum": ["deny", "allowlist"] },
         "allowlist": {
           "type": "array",
           "items": { "$ref": "#/$defs/net_endpoint" },
           "default": []
-        }
+        },
+        "hardening": { "$ref": "#/$defs/net_hardening" }
       },
       "allOf": [
         {

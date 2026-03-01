@@ -7,7 +7,7 @@ use http_body_util::{BodyExt as _, Full, Limited};
 use hyper::Request;
 
 use wasmtime::component::{Component, Linker, ResourceTable};
-use wasmtime::{Config, Engine, Store};
+use wasmtime::{Config, Engine, PoolingAllocationConfig, Store};
 use wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiCtxView, WasiView};
 use wasmtime_wasi_http::bindings::ProxyPre;
 use wasmtime_wasi_http::body::HyperOutgoingBody;
@@ -16,9 +16,11 @@ use wasmtime_wasi_http::types::{
 };
 use wasmtime_wasi_http::{WasiHttpCtx, WasiHttpView};
 
+use crate::arch::WasmRuntimeLimits;
 use crate::caps::doc::CapabilitiesDoc;
 use crate::caps::enforce::build_wasi_ctx_from_caps;
 use crate::diag::{Diagnostic, Severity, Stage};
+use crate::wasmtime_limits::{self, BudgetExceededKind, WasmResourceLimiter};
 
 #[derive(Debug, Clone, Copy)]
 pub struct HttpComponentBudgets {
@@ -38,13 +40,16 @@ pub struct BufferedResponse {
 pub struct HttpComponentHost {
     engine: Engine,
     proxy_pre: ProxyPre<HostState>,
+    runtime_limits: WasmRuntimeLimits,
 }
 
 impl HttpComponentHost {
-    pub fn from_component_file(component: &Path) -> Result<Self> {
-        let mut config = Config::new();
-        config.async_support(true);
-        let engine = Engine::new(&config)?;
+    pub fn from_component_file(
+        component: &Path,
+        runtime_limits: WasmRuntimeLimits,
+        max_concurrency: usize,
+    ) -> Result<Self> {
+        let engine = build_engine(&runtime_limits, max_concurrency)?;
 
         let component = Component::from_file(&engine, component)?;
 
@@ -55,7 +60,11 @@ impl HttpComponentHost {
         let proxy_pre = linker.instantiate_pre(&component)?;
         let proxy_pre = ProxyPre::new(proxy_pre)?;
 
-        Ok(Self { engine, proxy_pre })
+        Ok(Self {
+            engine,
+            proxy_pre,
+            runtime_limits,
+        })
     }
 
     pub async fn handle_request<B>(
@@ -86,6 +95,10 @@ impl HttpComponentHost {
         let state = HostState {
             table: ResourceTable::new(),
             wasi,
+            limiter: WasmResourceLimiter::new(
+                self.runtime_limits.max_memory_bytes,
+                self.runtime_limits.max_table_elements,
+            ),
             http: WasiHttpCtx::new(),
             caps,
             diagnostics: Vec::new(),
@@ -95,10 +108,18 @@ impl HttpComponentHost {
 
         let mut store = Store::new(&self.engine, state);
         store.data_mut().table.set_max_capacity(1024);
+        store.limiter(|s| &mut s.limiter);
+        if let Err(err) = wasmtime_limits::store_add_fuel(&mut store, &self.runtime_limits) {
+            request_diagnostics.append(&mut store.data_mut().diagnostics);
+            return Err(err);
+        }
 
         let proxy = match self.proxy_pre.instantiate_async(&mut store).await {
             Ok(v) => v,
             Err(err) => {
+                if let Some(kind) = wasmtime_limits::classify_budget_exceeded(&err) {
+                    push_budget_exceeded_diagnostic(kind, request_diagnostics);
+                }
                 request_diagnostics.append(&mut store.data_mut().diagnostics);
                 return Err(err);
             }
@@ -130,10 +151,19 @@ impl HttpComponentHost {
         match res {
             Ok(Ok(())) => {}
             Ok(Err(err)) => {
+                if let Some(kind) = wasmtime_limits::classify_budget_exceeded(&err) {
+                    push_budget_exceeded_diagnostic(kind, request_diagnostics);
+                }
                 request_diagnostics.append(&mut store.data_mut().diagnostics);
-                return Err(anyhow::anyhow!("{err:#}"));
+                return Err(err);
             }
             Err(_) => {
+                request_diagnostics.push(Diagnostic::new(
+                    "X07WASM_BUDGET_EXCEEDED_WALLTIME",
+                    Severity::Error,
+                    Stage::Run,
+                    "component request exceeded wall-time budget".to_string(),
+                ));
                 request_diagnostics.append(&mut store.data_mut().diagnostics);
                 return Err(anyhow::anyhow!("timeout"));
             }
@@ -180,6 +210,95 @@ impl HttpComponentHost {
     }
 }
 
+fn build_engine(runtime_limits: &WasmRuntimeLimits, max_concurrency: usize) -> Result<Engine> {
+    let mut config = Config::new();
+    config.async_support(true);
+    wasmtime_limits::apply_config(&mut config, runtime_limits);
+    let pooling_enabled =
+        apply_pooling_allocator_config(&mut config, runtime_limits, max_concurrency);
+    match Engine::new(&config) {
+        Ok(v) => Ok(v),
+        Err(err) => {
+            if pooling_enabled {
+                let mut fallback = Config::new();
+                fallback.async_support(true);
+                wasmtime_limits::apply_config(&mut fallback, runtime_limits);
+                if let Ok(v) = Engine::new(&fallback) {
+                    return Ok(v);
+                }
+            }
+            Err(err.into())
+        }
+    }
+}
+
+fn apply_pooling_allocator_config(
+    config: &mut Config,
+    runtime_limits: &WasmRuntimeLimits,
+    max_concurrency: usize,
+) -> bool {
+    let Ok(total_component_instances) = u32::try_from(max_concurrency.max(1)) else {
+        return false;
+    };
+    let Some(max_memory_bytes) = runtime_limits.max_memory_bytes else {
+        return false;
+    };
+    let Some(max_table_elements) = runtime_limits.max_table_elements else {
+        return false;
+    };
+    let Ok(max_memory_size) = usize::try_from(max_memory_bytes) else {
+        return false;
+    };
+    let Ok(table_elements) = usize::try_from(max_table_elements) else {
+        return false;
+    };
+    if max_memory_size == 0 || table_elements == 0 {
+        return false;
+    }
+
+    let total_core_instances = total_component_instances.saturating_mul(16).max(1);
+
+    let mut pooling = PoolingAllocationConfig::new();
+    pooling
+        .total_component_instances(total_component_instances)
+        .total_core_instances(total_core_instances)
+        .total_memories(total_core_instances)
+        .total_tables(total_core_instances)
+        .max_memories_per_module(1)
+        .max_tables_per_module(1)
+        .max_memory_size(max_memory_size)
+        .table_elements(table_elements);
+    config.allocation_strategy(pooling);
+    true
+}
+
+fn push_budget_exceeded_diagnostic(kind: BudgetExceededKind, out: &mut Vec<Diagnostic>) {
+    let (code, msg) = match kind {
+        BudgetExceededKind::CpuFuel => (
+            "X07WASM_BUDGET_EXCEEDED_CPU_FUEL",
+            "component exceeded Wasmtime fuel budget",
+        ),
+        BudgetExceededKind::WasmStack => (
+            "X07WASM_BUDGET_EXCEEDED_WASM_STACK",
+            "component exceeded Wasmtime wasm stack budget",
+        ),
+        BudgetExceededKind::Memory => (
+            "X07WASM_BUDGET_EXCEEDED_MEMORY",
+            "component exceeded Wasmtime memory budget",
+        ),
+        BudgetExceededKind::Table => (
+            "X07WASM_BUDGET_EXCEEDED_TABLE",
+            "component exceeded Wasmtime table budget",
+        ),
+    };
+    out.push(Diagnostic::new(
+        code,
+        Severity::Error,
+        Stage::Run,
+        msg.to_string(),
+    ));
+}
+
 pub fn full_body(bytes: Vec<u8>) -> impl http_body::Body<Data = Bytes, Error = hyper::Error> {
     Full::new(Bytes::from(bytes)).map_err(|never: Infallible| match never {})
 }
@@ -199,6 +318,7 @@ where
 struct HostState {
     table: ResourceTable,
     wasi: WasiCtx,
+    limiter: WasmResourceLimiter,
     http: WasiHttpCtx,
     caps: Option<std::sync::Arc<CapabilitiesDoc>>,
     diagnostics: Vec<Diagnostic>,
@@ -254,15 +374,12 @@ impl WasiHttpView for HostState {
                 .uri()
                 .port_u16()
                 .unwrap_or(if config.use_tls { 443 } else { 80 });
-            if !caps.network_allows(scheme, host, port) {
+            if let Err(deny) = caps.network_check(scheme, host, port) {
                 self.diagnostics.push(Diagnostic::new(
-                    "X07WASM_CAPS_NET_DENIED",
+                    deny.code,
                     Severity::Error,
                     Stage::Run,
-                    format!(
-                        "wasi:http send_request denied by capabilities: {}://{}:{}",
-                        scheme, host, port
-                    ),
+                    deny.message,
                 ));
                 return Err(
                     wasmtime_wasi_http::bindings::http::types::ErrorCode::HttpRequestDenied.into(),

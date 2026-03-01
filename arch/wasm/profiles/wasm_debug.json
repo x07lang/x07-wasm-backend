@@ -49,9 +49,9 @@
   },
 
   "runtime": {
-    "max_fuel": null,
-    "max_memory_bytes": null,
-    "max_table_elements": null,
+    "max_fuel": 400000000,
+    "max_memory_bytes": 268435456,
+    "max_table_elements": 131072,
     "max_wasm_stack_bytes": 2097152
   }
 }

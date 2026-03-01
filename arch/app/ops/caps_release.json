@@ -1,5 +1,5 @@
 {
-  "schema_version": "x07.app.capabilities@0.1.0",
+  "schema_version": "x07.app.capabilities@0.2.0",
   "id": "caps_release",
   "v": 1,
 
@@ -9,7 +9,12 @@
 
   "network": {
     "mode": "deny",
-    "allowlist": []
+    "allowlist": [],
+    "hardening": {
+      "deny_ip_literals": true,
+      "deny_private_ips": true,
+      "allow_ip_cidrs": []
+    }
   },
 
   "clocks": { "mode": "deny" },

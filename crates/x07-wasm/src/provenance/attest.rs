@@ -2,11 +2,15 @@ use std::ffi::OsString;
 use std::path::Path;
 
 use anyhow::Result;
+use base64::engine::general_purpose::STANDARD;
+use base64::Engine;
+use ed25519_dalek::SigningKey;
 use serde_json::{json, Value};
 
 use crate::cli::{MachineArgs, ProvenanceAttestArgs, Scope};
 use crate::diag::{Diagnostic, Severity, Stage};
 use crate::ops::load_ops_profile_with_refs;
+use crate::provenance::dsse;
 use crate::report;
 use crate::schema::SchemaStore;
 use crate::util;
@@ -214,7 +218,7 @@ pub fn cmd_provenance_attest(
     let attestation_doc = json!({
       "_type": "https://in-toto.io/Statement/v1",
       "subject": subjects,
-      "predicateType": "https://slsa.dev/provenance/v1",
+      "predicateType": args.predicate_type.clone(),
       "predicate": {
         "buildDefinition": {
           "buildType": "x07-wasm.provenance.attest@0.1.0",
@@ -261,10 +265,119 @@ pub fn cmd_provenance_attest(
         );
     }
 
+    let signing_key_seed_b64 = match std::fs::read_to_string(&args.signing_key) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_PROVENANCE_SIGNING_KEY_READ_FAILED",
+                Severity::Error,
+                Stage::Parse,
+                format!(
+                    "failed to read signing key {}: {err}",
+                    args.signing_key.display()
+                ),
+            ));
+            return emit_report(
+                &store,
+                scope,
+                machine,
+                started,
+                raw_argv,
+                meta,
+                diagnostics,
+                &args.pack_manifest,
+                None,
+            );
+        }
+    };
+    let signing_key_seed = match STANDARD.decode(signing_key_seed_b64.trim()) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_PROVENANCE_SIGNING_KEY_INVALID",
+                Severity::Error,
+                Stage::Parse,
+                format!("signing key base64 decode failed: {err}"),
+            ));
+            return emit_report(
+                &store,
+                scope,
+                machine,
+                started,
+                raw_argv,
+                meta,
+                diagnostics,
+                &args.pack_manifest,
+                None,
+            );
+        }
+    };
+    let signing_key_seed: [u8; 32] = match signing_key_seed.try_into() {
+        Ok(v) => v,
+        Err(_) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_PROVENANCE_SIGNING_KEY_INVALID",
+                Severity::Error,
+                Stage::Parse,
+                "signing key seed must be exactly 32 bytes".to_string(),
+            ));
+            return emit_report(
+                &store,
+                scope,
+                machine,
+                started,
+                raw_argv,
+                meta,
+                diagnostics,
+                &args.pack_manifest,
+                None,
+            );
+        }
+    };
+    let signing_key = SigningKey::from_bytes(&signing_key_seed);
+    let public_key = signing_key.verifying_key().to_bytes();
+    let keyid = Some(util::sha256_hex(&public_key));
+
+    let payload_bytes = report::canon::canonical_json_bytes(&attestation_doc)?;
+    let envelope = dsse::sign_ed25519_envelope(
+        dsse::IN_TOTO_STATEMENT_PAYLOAD_TYPE,
+        &payload_bytes,
+        &signing_key,
+        keyid,
+    );
+    let envelope_doc = serde_json::to_value(&envelope)?;
+    let envelope_schema_diags = store.validate(
+        "https://x07.io/spec/x07-provenance.dsse.envelope.schema.json",
+        &envelope_doc,
+    )?;
+    if !envelope_schema_diags.is_empty() {
+        for dd in envelope_schema_diags {
+            let mut d = Diagnostic::new(
+                "X07WASM_PROVENANCE_DSSE_SCHEMA_INVALID",
+                Severity::Error,
+                Stage::Parse,
+                dd.message,
+            );
+            d.data = dd.data;
+            diagnostics.push(d);
+        }
+        return emit_report(
+            &store,
+            scope,
+            machine,
+            started,
+            raw_argv,
+            meta,
+            diagnostics,
+            &args.pack_manifest,
+            None,
+        );
+    }
+
     if let Some(parent) = args.out.parent() {
         std::fs::create_dir_all(parent).ok();
     }
-    let attestation_bytes = report::canon::canonical_pretty_json_bytes(&attestation_doc)?;
+    let attestation_bytes = report::canon::canonical_pretty_json_bytes(&envelope_doc)?;
     if let Err(err) = std::fs::write(&args.out, &attestation_bytes) {
         diagnostics.push(Diagnostic::new(
             "X07WASM_PROVENANCE_ATTEST_WRITE_FAILED",
@@ -346,7 +459,7 @@ fn emit_report(
         path: pack_manifest_path
             .parent()
             .unwrap_or(Path::new("."))
-            .join("provenance.slsa.json")
+            .join("provenance.dsse.json")
             .display()
             .to_string(),
         sha256: "0".repeat(64),

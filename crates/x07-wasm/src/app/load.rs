@@ -4,6 +4,7 @@ use anyhow::{Context, Result};
 use serde::Deserialize;
 use serde_json::Value;
 
+use crate::arch::WasmRuntimeLimits;
 use crate::diag::Severity;
 use crate::report;
 use crate::schema::SchemaStore;
@@ -57,6 +58,7 @@ pub struct AppProfileBudgets {
     pub max_http_body_bytes: u64,
     pub max_concurrency: u32,
     pub max_request_wall_ms: u64,
+    pub backend_runtime: WasmRuntimeLimits,
 }
 
 #[derive(Debug, Clone, Deserialize)]

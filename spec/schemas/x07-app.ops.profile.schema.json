@@ -28,7 +28,7 @@
     },
     "capabilities": {
       "$ref": "#/$defs/file_ref",
-      "description": "Path to an x07.app.capabilities@0.1.0 file."
+      "description": "Path to an x07.app.capabilities@0.2.0 file."
     },
     "policy_cards": {
       "type": "array",

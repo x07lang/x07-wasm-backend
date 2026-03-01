@@ -1,15 +1,15 @@
 {
   "schema_version": "x07.app.capabilities@0.2.0",
-  "id": "caps_fs_ro",
+  "id": "caps_allow_loopback_denied",
   "v": 1,
 
-  "fs": { "preopens": [{ "path": "spec/fixtures/phase6_caps_fs", "mode": "ro" }] },
+  "fs": { "preopens": [] },
   "env": { "allow": [] },
   "secrets": { "allow": [] },
 
   "network": {
-    "mode": "deny",
-    "allowlist": [],
+    "mode": "allowlist",
+    "allowlist": [{ "host": "127.0.0.1", "port": 80, "proto": "http" }],
     "hardening": {
       "deny_ip_literals": true,
       "deny_private_ips": true,

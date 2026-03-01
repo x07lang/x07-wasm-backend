@@ -112,7 +112,7 @@ pub fn apply_policy_cards(
                 .and_then(Value::as_str)
                 .unwrap_or("policy rule failed assertions");
             let (code, severity) = match effect {
-                "warn" => ("X07WASM_POLICY_DECISION_DENY", Severity::Warning),
+                "warn" => ("X07WASM_POLICY_DECISION_WARN", Severity::Warning),
                 "require" => ("X07WASM_POLICY_OBLIGATION_UNSATISFIED", Severity::Error),
                 _ => ("X07WASM_POLICY_DECISION_DENY", Severity::Error),
             };

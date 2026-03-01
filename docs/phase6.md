@@ -34,13 +34,14 @@ x07-wasm ops validate --profile arch/app/ops/ops_release.json --json
 
 ## Capabilities
 
-Capabilities are deny-by-default allowlists in `x07.app.capabilities@0.1.0`:
+Capabilities are deny-by-default allowlists in `x07.app.capabilities@0.2.0`:
 
 - filesystem preopens (ro/rw)
 - environment variable allowlist
 - secret IDs allowlist
 - network allowlist (or deny)
 - clocks/random modes
+- network hardening (deny IP literals/private IPs by default; allow overrides via CIDRs)
 
 Validate a capabilities profile:
 
@@ -118,17 +119,18 @@ x07-wasm deploy plan --pack-manifest dist/app.pack.json --ops arch/app/ops/ops_r
 
 ## Provenance
 
-Create and verify a hash-first provenance attestation for a pack:
+Create and verify a signed provenance attestation for a pack (DSSE + Ed25519):
 
 ```sh
-x07-wasm provenance attest --pack-manifest dist/app.pack.json --ops arch/app/ops/ops_release.json --out dist/provenance.slsa.json --json
-x07-wasm provenance verify --attestation dist/provenance.slsa.json --pack-dir dist --json
+x07-wasm provenance attest --pack-manifest dist/app.pack.json --ops arch/app/ops/ops_release.json --signing-key arch/provenance/dev.ed25519.signing_key.b64 --out dist/provenance.dsse.json --json
+x07-wasm provenance verify --attestation dist/provenance.dsse.json --pack-dir dist --trusted-public-key arch/provenance/dev.ed25519.public_key.b64 --json
 ```
 
 Notes:
 
 - `x07-wasm provenance attest` includes `predicate.x07.compatibility_hash` (matches `x07-wasm ops validate`).
-- `predicateType` is schema-validated as a non-empty string; `x07-wasm provenance verify` enforces the supported SLSA v1 predicate type.
+- Attestations are emitted as `x07.provenance.dsse.envelope@0.1.0` (`https://x07.io/spec/x07-provenance.dsse.envelope.schema.json`) where the payload is an in-toto Statement.
+- `predicateType` is schema-validated as a non-empty string; `x07-wasm provenance verify` enforces the supported SLSA v1 predicate type after signature verification.
 
 ## Platform handoff (Phase 6)
 

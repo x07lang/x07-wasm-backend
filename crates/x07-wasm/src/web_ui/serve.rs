@@ -304,10 +304,15 @@ fn write_response(
         405 => "Method Not Allowed",
         _ => "Error",
     };
-    let header = format!(
-        "HTTP/1.1 {status} {reason}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+    let mut header = format!("HTTP/1.1 {status} {reason}\r\nContent-Type: {content_type}\r\n");
+    header.push_str("X-Content-Type-Options: nosniff\r\n");
+    if content_type.starts_with("text/html") {
+        header.push_str("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; connect-src 'self' https: http:; img-src 'self' data:; style-src 'self' 'unsafe-inline'\r\n");
+    }
+    header.push_str(&format!(
+        "Content-Length: {}\r\nConnection: close\r\n\r\n",
         body.len()
-    );
+    ));
     stream
         .write_all(header.as_bytes())
         .context("write header")?;

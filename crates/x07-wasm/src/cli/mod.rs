@@ -783,7 +783,7 @@ pub enum CapsCommand {
 
 #[derive(Debug, Clone, Args)]
 pub struct CapsValidateArgs {
-    /// Capabilities profile file (x07.app.capabilities@0.1.0).
+    /// Capabilities profile file (x07.app.capabilities@0.2.0).
     #[arg(long, value_name = "PATH")]
     pub profile: PathBuf,
 }
@@ -896,20 +896,36 @@ pub struct ProvenanceAttestArgs {
     #[arg(long, value_name = "PATH")]
     pub ops: PathBuf,
 
-    /// Output attestation file.
+    /// Ed25519 signing key seed file (base64, 32 bytes).
+    #[arg(long, value_name = "PATH")]
+    pub signing_key: PathBuf,
+
+    /// In-toto Statement predicateType.
+    #[arg(
+        long,
+        value_name = "STR",
+        default_value = "https://slsa.dev/provenance/v1"
+    )]
+    pub predicate_type: String,
+
+    /// Output DSSE envelope file.
     #[arg(long, value_name = "PATH")]
     pub out: PathBuf,
 }
 
 #[derive(Debug, Clone, Args)]
 pub struct ProvenanceVerifyArgs {
-    /// Attestation file (x07.provenance.slsa.attestation@0.1.0).
+    /// DSSE envelope file (x07.provenance.dsse.envelope@0.1.0).
     #[arg(long, value_name = "PATH")]
     pub attestation: PathBuf,
 
     /// Directory containing the packed assets referenced by the attestation.
     #[arg(long, value_name = "PATH")]
     pub pack_dir: PathBuf,
+
+    /// Trusted Ed25519 public key file (base64, 32 bytes).
+    #[arg(long, value_name = "PATH")]
+    pub trusted_public_key: PathBuf,
 }
 
 #[derive(Debug, Clone, Args)]
