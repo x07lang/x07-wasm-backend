@@ -310,9 +310,6 @@ function sanitizeSameOriginUrlPath(raw) {
     return null;
   }
 
-  const proto = String(url.protocol || "").toLowerCase();
-  if (proto !== "http:" && proto !== "https:") return null;
-
   const origin = String(globalThis.location?.origin ?? "");
   if (!origin || url.origin !== origin) return null;
 
