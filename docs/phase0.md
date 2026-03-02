@@ -4,15 +4,22 @@ Phase 0 builds and runs **solve-pure** X07 programs as WASM modules without addi
 
 ## Build pipeline
 
-`x07-wasm build`:
+As of Phase 7, `x07-wasm build` supports both:
+
+- `codegen_backend=native_x07_wasm_v1` (default): native `x07 build --emit-wasm` backend (no `clang` / `wasm-ld`)
+- `codegen_backend=c_toolchain_v1` (legacy): Phase 0 C toolchain backend
+
+This document describes the legacy Phase 0 C toolchain backend (`c_toolchain_v1`).
+
+`x07-wasm build` (legacy):
 
 1. `x07 build --freestanding --emit-c-header …` (exports `x07_solve_v2`)
 2. Compile the generated C to `wasm32` with `clang`
 3. Link with `wasm-ld` (reactor-style: `--no-entry`)
 4. Inspect exports + memory plan and emit:
    - `dist/*.wasm`
-   - `dist/*.wasm.manifest.json` (`x07.wasm.artifact@0.1.0`)
-   - build report (`x07.wasm.build.report@0.1.0`)
+   - `dist/*.wasm.manifest.json` (`x07.wasm.artifact@0.2.0`)
+   - build report (`x07.wasm.build.report@0.2.0`)
 
 ## Run contract (ABI)
 

@@ -57,6 +57,7 @@ struct ToolReq {
     cmd: Option<String>,
     version: VersionProbe,
     constraint: String,
+    required: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -295,6 +296,12 @@ fn check_tool(tool_id: ToolId, req: &ToolReq, diagnostics: &mut Vec<Diagnostic>)
         .unwrap_or_else(|| tool_id.default_cmd().to_string());
     let argv = req.version.argv.clone();
 
+    let severity = if req.required {
+        Severity::Error
+    } else {
+        Severity::Warning
+    };
+
     let mut stdout = String::new();
     let mut stderr = String::new();
     let mut found_version: Option<String> = None;
@@ -311,7 +318,7 @@ fn check_tool(tool_id: ToolId, req: &ToolReq, diagnostics: &mut Vec<Diagnostic>)
                 Err(why) => {
                     let mut d = Diagnostic::new(
                         "X07WASM_TOOLCHAIN_VERSION_PARSE_FAILED",
-                        Severity::Error,
+                        severity,
                         Stage::Run,
                         format!("failed to parse tool version: {why}"),
                     );
@@ -336,7 +343,7 @@ fn check_tool(tool_id: ToolId, req: &ToolReq, diagnostics: &mut Vec<Diagnostic>)
                         } else {
                             let mut d = Diagnostic::new(
                                 "X07WASM_TOOLCHAIN_VERSION_CONSTRAINT_UNSATISFIED",
-                                Severity::Error,
+                                severity,
                                 Stage::Run,
                                 "tool version constraint unsatisfied".to_string(),
                             );
@@ -351,7 +358,7 @@ fn check_tool(tool_id: ToolId, req: &ToolReq, diagnostics: &mut Vec<Diagnostic>)
                     (Err(err), _) => {
                         let mut d = Diagnostic::new(
                             "X07WASM_TOOLCHAIN_VERSION_PARSE_FAILED",
-                            Severity::Error,
+                            severity,
                             Stage::Run,
                             format!("failed to parse SemVer: {err}"),
                         );
@@ -380,7 +387,7 @@ fn check_tool(tool_id: ToolId, req: &ToolReq, diagnostics: &mut Vec<Diagnostic>)
         Err(err) => {
             let mut d = Diagnostic::new(
                 "X07WASM_TOOLCHAIN_TOOL_SPAWN_FAILED",
-                Severity::Error,
+                severity,
                 Stage::Run,
                 format!("failed to spawn tool: {cmd}"),
             );

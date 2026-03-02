@@ -312,6 +312,8 @@ pub fn cmd_component_build(
                     &store,
                     &loaded_component_profile.doc,
                     &loaded_wasm_profile.doc,
+                    &args.wasm_index,
+                    args.wasm_profile_file.as_deref(),
                     &args.project,
                     &args.out_dir,
                     &component_profile_ref,
@@ -339,6 +341,56 @@ pub fn cmd_component_build(
                 }
             }
             ComponentBuildEmit::Http => {
+                if let Err(err) = build_composed_component(
+                    &store,
+                    &loaded_component_profile.doc,
+                    &loaded_wasm_profile.doc,
+                    &args.wasm_index,
+                    args.wasm_profile_file.as_deref(),
+                    &args.project,
+                    &args.out_dir,
+                    &component_profile_ref,
+                    &wasm_profile_ref,
+                    crate::cli::ComponentComposeAdapterKind::Http,
+                    &mut meta,
+                    &mut diagnostics,
+                    &mut solve_core_wasm_digest,
+                    &mut artifacts,
+                ) {
+                    diagnostics.push(Diagnostic::new(
+                        "X07WASM_INTERNAL_COMPONENT_BUILD_FAILED",
+                        Severity::Error,
+                        Stage::Run,
+                        format!("{err:#}"),
+                    ));
+                }
+            }
+            ComponentBuildEmit::Cli => {
+                if let Err(err) = build_composed_component(
+                    &store,
+                    &loaded_component_profile.doc,
+                    &loaded_wasm_profile.doc,
+                    &args.wasm_index,
+                    args.wasm_profile_file.as_deref(),
+                    &args.project,
+                    &args.out_dir,
+                    &component_profile_ref,
+                    &wasm_profile_ref,
+                    crate::cli::ComponentComposeAdapterKind::Cli,
+                    &mut meta,
+                    &mut diagnostics,
+                    &mut solve_core_wasm_digest,
+                    &mut artifacts,
+                ) {
+                    diagnostics.push(Diagnostic::new(
+                        "X07WASM_INTERNAL_COMPONENT_BUILD_FAILED",
+                        Severity::Error,
+                        Stage::Run,
+                        format!("{err:#}"),
+                    ));
+                }
+            }
+            ComponentBuildEmit::HttpNative => {
                 let built = match build_http_native_component(
                     &store,
                     &loaded_component_profile.doc,
@@ -365,7 +417,7 @@ pub fn cmd_component_build(
                     artifacts.push(a);
                 }
             }
-            ComponentBuildEmit::Cli => {
+            ComponentBuildEmit::CliNative => {
                 let built = match build_cli_native_component(
                     &store,
                     &loaded_component_profile.doc,
@@ -445,6 +497,8 @@ pub fn cmd_component_build(
                     &store,
                     &loaded_component_profile.doc,
                     &loaded_wasm_profile.doc,
+                    &args.wasm_index,
+                    args.wasm_profile_file.as_deref(),
                     &args.project,
                     &args.out_dir,
                     &component_profile_ref,
@@ -471,55 +525,52 @@ pub fn cmd_component_build(
                     artifacts.push(a);
                 }
 
-                let built_http = match build_http_native_component(
+                if let Err(err) = build_composed_component(
                     &store,
                     &loaded_component_profile.doc,
                     &loaded_wasm_profile.doc,
+                    &args.wasm_index,
+                    args.wasm_profile_file.as_deref(),
                     &args.project,
                     &args.out_dir,
                     &component_profile_ref,
                     &wasm_profile_ref,
+                    crate::cli::ComponentComposeAdapterKind::Http,
                     &mut meta,
                     &mut diagnostics,
+                    &mut solve_core_wasm_digest,
+                    &mut artifacts,
                 ) {
-                    Ok(v) => v,
-                    Err(err) => {
-                        diagnostics.push(Diagnostic::new(
-                            "X07WASM_INTERNAL_COMPONENT_BUILD_FAILED",
-                            Severity::Error,
-                            Stage::Run,
-                            format!("{err:#}"),
-                        ));
-                        None
-                    }
-                };
-                if let Some(a) = built_http {
-                    artifacts.push(a);
+                    diagnostics.push(Diagnostic::new(
+                        "X07WASM_INTERNAL_COMPONENT_BUILD_FAILED",
+                        Severity::Error,
+                        Stage::Run,
+                        format!("{err:#}"),
+                    ));
                 }
-                let built_cli = match build_cli_native_component(
+
+                if let Err(err) = build_composed_component(
                     &store,
                     &loaded_component_profile.doc,
                     &loaded_wasm_profile.doc,
+                    &args.wasm_index,
+                    args.wasm_profile_file.as_deref(),
                     &args.project,
                     &args.out_dir,
                     &component_profile_ref,
                     &wasm_profile_ref,
+                    crate::cli::ComponentComposeAdapterKind::Cli,
                     &mut meta,
                     &mut diagnostics,
+                    &mut solve_core_wasm_digest,
+                    &mut artifacts,
                 ) {
-                    Ok(v) => v,
-                    Err(err) => {
-                        diagnostics.push(Diagnostic::new(
-                            "X07WASM_INTERNAL_COMPONENT_BUILD_FAILED",
-                            Severity::Error,
-                            Stage::Run,
-                            format!("{err:#}"),
-                        ));
-                        None
-                    }
-                };
-                if let Some(a) = built_cli {
-                    artifacts.push(a);
+                    diagnostics.push(Diagnostic::new(
+                        "X07WASM_INTERNAL_COMPONENT_BUILD_FAILED",
+                        Severity::Error,
+                        Stage::Run,
+                        format!("{err:#}"),
+                    ));
                 }
             }
         }
@@ -551,10 +602,186 @@ struct SolveBuildOutput {
 }
 
 #[allow(clippy::too_many_arguments)]
+fn build_composed_component(
+    store: &SchemaStore,
+    component_profile: &ComponentProfileDoc,
+    wasm_profile: &arch::WasmProfileDoc,
+    wasm_index: &Path,
+    wasm_profile_file: Option<&Path>,
+    project_path: &Path,
+    out_dir: &Path,
+    component_profile_ref: &Value,
+    wasm_profile_ref: &Value,
+    adapter_kind: crate::cli::ComponentComposeAdapterKind,
+    meta: &mut report::meta::ReportMeta,
+    diagnostics: &mut Vec<Diagnostic>,
+    solve_core_wasm_digest_out: &mut Option<report::meta::FileDigest>,
+    artifacts_out: &mut Vec<Value>,
+) -> Result<()> {
+    // Build solve component exactly once per invocation; re-use for http+cli in --emit all.
+    if solve_core_wasm_digest_out.is_none() {
+        let built = build_solve_component(
+            store,
+            component_profile,
+            wasm_profile,
+            wasm_index,
+            wasm_profile_file,
+            project_path,
+            out_dir,
+            component_profile_ref,
+            wasm_profile_ref,
+            meta,
+            diagnostics,
+        )?;
+        *solve_core_wasm_digest_out = built.solve_core_wasm;
+        if let Some(a) = built.solve_artifact {
+            artifacts_out.push(a);
+        }
+    }
+
+    let adapter_artifact = match adapter_kind {
+        crate::cli::ComponentComposeAdapterKind::Http => build_http_adapter_component(
+            store,
+            component_profile,
+            out_dir,
+            component_profile_ref,
+            meta,
+            diagnostics,
+        )?,
+        crate::cli::ComponentComposeAdapterKind::Cli => build_cli_adapter_component(
+            store,
+            component_profile,
+            out_dir,
+            component_profile_ref,
+            meta,
+            diagnostics,
+        )?,
+    };
+    if let Some(a) = adapter_artifact {
+        artifacts_out.push(a);
+    }
+
+    let solve_component = out_dir.join("solve.component.wasm");
+    let adapter_component = match adapter_kind {
+        crate::cli::ComponentComposeAdapterKind::Http => {
+            out_dir.join("http-adapter.component.wasm")
+        }
+        crate::cli::ComponentComposeAdapterKind::Cli => out_dir.join("cli-adapter.component.wasm"),
+    };
+    let out_component = match adapter_kind {
+        crate::cli::ComponentComposeAdapterKind::Http => out_dir.join("http.component.wasm"),
+        crate::cli::ComponentComposeAdapterKind::Cli => out_dir.join("cli.component.wasm"),
+    };
+    let out_manifest = out_dir.join(
+        out_component
+            .file_name()
+            .unwrap_or_else(|| std::ffi::OsStr::new("component.wasm"))
+            .to_string_lossy()
+            .to_string()
+            + ".manifest.json",
+    );
+
+    if !solve_component.is_file() {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_INTERNAL_COMPONENT_BUILD_FAILED",
+            Severity::Error,
+            Stage::Run,
+            format!(
+                "missing solve component output for compose: {}",
+                solve_component.display()
+            ),
+        ));
+        return Ok(());
+    }
+    if !adapter_component.is_file() {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_INTERNAL_COMPONENT_BUILD_FAILED",
+            Severity::Error,
+            Stage::Run,
+            format!(
+                "missing adapter component output for compose: {}",
+                adapter_component.display()
+            ),
+        ));
+        return Ok(());
+    }
+
+    let compose_report_out = match adapter_kind {
+        crate::cli::ComponentComposeAdapterKind::Http => {
+            out_dir.join("http.component.compose.report.json")
+        }
+        crate::cli::ComponentComposeAdapterKind::Cli => {
+            out_dir.join("cli.component.compose.report.json")
+        }
+    };
+    if let Some(parent) = compose_report_out.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+
+    let nested_machine = MachineArgs {
+        json: Some("".to_string()),
+        report_json: None,
+        report_out: Some(compose_report_out.clone()),
+        quiet_json: true,
+        json_schema: false,
+        json_schema_id: false,
+    };
+    let compose_args = crate::cli::ComponentComposeArgs {
+        adapter: adapter_kind,
+        solve: solve_component.clone(),
+        adapter_component: Some(adapter_component.clone()),
+        out: out_component.clone(),
+        artifact_out: Some(out_manifest.clone()),
+        targets_check: false,
+    };
+
+    let code = crate::component::compose::cmd_component_compose(
+        &[],
+        Scope::ComponentCompose,
+        &nested_machine,
+        compose_args,
+    )?;
+    if code != 0 {
+        let mut d = Diagnostic::new(
+            "X07WASM_INTERNAL_COMPONENT_BUILD_FAILED",
+            Severity::Error,
+            Stage::Run,
+            format!("x07-wasm component compose failed (exit_code={code})"),
+        );
+        d.data.insert(
+            "report_out".to_string(),
+            json!(compose_report_out.display().to_string()),
+        );
+        diagnostics.push(d);
+        return Ok(());
+    }
+
+    if out_component.is_file() {
+        if let Ok(d) = util::file_digest(&out_component) {
+            meta.outputs.push(d);
+        }
+    }
+    if out_manifest.is_file() {
+        if let Ok(d) = util::file_digest(&out_manifest) {
+            meta.outputs.push(d);
+        }
+        if let Ok(bytes) = std::fs::read(&out_manifest) {
+            if let Ok(doc) = serde_json::from_slice::<Value>(&bytes) {
+                artifacts_out.push(doc);
+            }
+        }
+    }
+
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
 fn build_solve_component(
     store: &SchemaStore,
     component_profile: &ComponentProfileDoc,
     wasm_profile: &arch::WasmProfileDoc,
+    wasm_index: &Path,
+    wasm_profile_file: Option<&Path>,
     project_path: &Path,
     out_dir: &Path,
     component_profile_ref: &Value,
@@ -575,6 +802,22 @@ fn build_solve_component(
             solve_core_wasm: None,
             solve_artifact: None,
         });
+    }
+
+    if wasm_profile.codegen_backend == arch::CodegenBackend::NativeX07WasmV1 {
+        return build_solve_component_native_x07_wasm_v1(
+            store,
+            component_profile,
+            wasm_profile,
+            wasm_index,
+            wasm_profile_file,
+            project_path,
+            out_dir,
+            component_profile_ref,
+            wasm_profile_ref,
+            meta,
+            diagnostics,
+        );
     }
 
     let program_c = out_dir.join("program.c");
@@ -918,6 +1161,865 @@ fn build_solve_component(
         solve_core_wasm: Some(solve_core_digest),
         solve_artifact: Some(artifact_doc),
     })
+}
+
+#[allow(clippy::too_many_arguments)]
+fn build_solve_component_native_x07_wasm_v1(
+    store: &SchemaStore,
+    component_profile: &ComponentProfileDoc,
+    wasm_profile: &arch::WasmProfileDoc,
+    wasm_index: &Path,
+    wasm_profile_file: Option<&Path>,
+    project_path: &Path,
+    out_dir: &Path,
+    component_profile_ref: &Value,
+    wasm_profile_ref: &Value,
+    meta: &mut report::meta::ReportMeta,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> Result<SolveBuildOutput> {
+    let cfg = &component_profile.cfg;
+
+    let solve_core_raw_wasm = out_dir.join("solve.core.raw.wasm");
+    let solve_core_raw_manifest = out_dir.join("solve.core.raw.wasm.manifest.json");
+    let solve_core_wasm = out_dir.join("solve.core.wasm");
+    let solve_core_embedded_wasm = out_dir.join("solve.core.embedded.wasm");
+
+    let solve_component_wasm = out_dir.join("solve.component.wasm");
+    let solve_component_manifest = out_dir.join("solve.component.wasm.manifest.json");
+
+    // Step A: build solve-pure core wasm using the Phase 7 native backend.
+    let nested_report_out = out_dir.join("solve.core.raw.wasm.build.report.json");
+    if let Some(parent) = nested_report_out.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    let nested_machine = MachineArgs {
+        json: Some("".to_string()),
+        report_json: None,
+        report_out: Some(nested_report_out.clone()),
+        quiet_json: true,
+        json_schema: false,
+        json_schema_id: false,
+    };
+    let build_args = crate::cli::BuildArgs {
+        project: project_path.to_path_buf(),
+        profile: wasm_profile_file.is_none().then(|| wasm_profile.id.clone()),
+        profile_file: wasm_profile_file.map(Path::to_path_buf),
+        index: wasm_index.to_path_buf(),
+        codegen_backend: None,
+        emit_dir: Some(out_dir.join("solve.core.emit")),
+        out: Some(solve_core_raw_wasm.clone()),
+        artifact_out: Some(solve_core_raw_manifest.clone()),
+        no_manifest: false,
+        check_exports: true,
+    };
+
+    let code = crate::wasm::build::cmd_build(&[], Scope::Build, &nested_machine, build_args)?;
+    if code != 0 {
+        let mut d = Diagnostic::new(
+            "X07WASM_INTERNAL_COMPONENT_BUILD_FAILED",
+            Severity::Error,
+            Stage::Run,
+            format!("x07-wasm wasm build failed (exit_code={code})"),
+        );
+        d.data.insert(
+            "report_out".to_string(),
+            json!(nested_report_out.display().to_string()),
+        );
+        diagnostics.push(d);
+        return Ok(SolveBuildOutput {
+            solve_core_wasm: None,
+            solve_artifact: None,
+        });
+    }
+
+    if solve_core_raw_manifest.is_file() {
+        meta.outputs
+            .push(util::file_digest(&solve_core_raw_manifest)?);
+    }
+    if solve_core_raw_wasm.is_file() {
+        meta.outputs.push(util::file_digest(&solve_core_raw_wasm)?);
+    }
+
+    // Step B: inject legacy canonical ABI exports for x07:solve/handler.
+    let raw_bytes = std::fs::read(&solve_core_raw_wasm)
+        .with_context(|| format!("read: {}", solve_core_raw_wasm.display()))?;
+
+    let arena_cap_bytes: u32 = wasm_profile
+        .defaults
+        .arena_cap_bytes
+        .try_into()
+        .map_err(|_| anyhow::anyhow!("arena_cap_bytes out of range for wasm32"))?;
+    let max_output_bytes: u32 = wasm_profile
+        .defaults
+        .max_output_bytes
+        .try_into()
+        .map_err(|_| anyhow::anyhow!("max_output_bytes out of range for wasm32"))?;
+
+    let glued_bytes =
+        inject_solve_handler_legacy_abi(&raw_bytes, arena_cap_bytes, max_output_bytes)?;
+    std::fs::write(&solve_core_wasm, &glued_bytes)
+        .with_context(|| format!("write: {}", solve_core_wasm.display()))?;
+    let solve_core_digest = util::file_digest(&solve_core_wasm)?;
+    meta.outputs.push(solve_core_digest.clone());
+
+    // Step C: wasm-tools component embed + new (no clang/wasi-sdk path).
+    let solve_wit_dir = resolve_wit_package_dir(
+        store,
+        Path::new(&cfg.wit_index_path),
+        &cfg.componentize.solve_package,
+        meta,
+        diagnostics,
+    )?;
+
+    let mut wasm_tools_embed_args = cfg.toolchain.wasm_tools.args.clone();
+    wasm_tools_embed_args.extend([
+        "component".to_string(),
+        "embed".to_string(),
+        solve_wit_dir.display().to_string(),
+        "--world".to_string(),
+        cfg.componentize.solve_world.clone(),
+        solve_core_wasm.display().to_string(),
+        "-o".to_string(),
+        solve_core_embedded_wasm.display().to_string(),
+    ]);
+    let embed_out = match run_tool_cmd_capture(
+        &cfg.toolchain.wasm_tools.cmd,
+        &wasm_tools_embed_args,
+        &cfg.toolchain.wasm_tools.env,
+    ) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(cmdutil::diag_cmd_spawn_failed(
+                "X07WASM_WASM_TOOLS_SPAWN_FAILED",
+                Stage::Link,
+                "wasm-tools component embed",
+                &err,
+            ));
+            return Ok(SolveBuildOutput {
+                solve_core_wasm: Some(solve_core_digest),
+                solve_artifact: None,
+            });
+        }
+    };
+    if !embed_out.status.success() {
+        diagnostics.push(cmdutil::diag_cmd_failed(
+            "X07WASM_WASM_TOOLS_FAILED",
+            Stage::Link,
+            "wasm-tools component embed",
+            embed_out.code,
+            &embed_out.stderr,
+        ));
+        return Ok(SolveBuildOutput {
+            solve_core_wasm: Some(solve_core_digest),
+            solve_artifact: None,
+        });
+    }
+    if solve_core_embedded_wasm.is_file() {
+        meta.outputs
+            .push(util::file_digest(&solve_core_embedded_wasm)?);
+    }
+
+    let mut wasm_tools_new_args = cfg.toolchain.wasm_tools.args.clone();
+    wasm_tools_new_args.extend([
+        "component".to_string(),
+        "new".to_string(),
+        solve_core_embedded_wasm.display().to_string(),
+        "-o".to_string(),
+        solve_component_wasm.display().to_string(),
+    ]);
+    let comp_out = match run_tool_cmd_capture(
+        &cfg.toolchain.wasm_tools.cmd,
+        &wasm_tools_new_args,
+        &cfg.toolchain.wasm_tools.env,
+    ) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(cmdutil::diag_cmd_spawn_failed(
+                "X07WASM_WASM_TOOLS_SPAWN_FAILED",
+                Stage::Link,
+                "wasm-tools component new",
+                &err,
+            ));
+            return Ok(SolveBuildOutput {
+                solve_core_wasm: Some(solve_core_digest),
+                solve_artifact: None,
+            });
+        }
+    };
+    if !comp_out.status.success() {
+        diagnostics.push(cmdutil::diag_cmd_failed(
+            "X07WASM_WASM_TOOLS_FAILED",
+            Stage::Link,
+            "wasm-tools component new",
+            comp_out.code,
+            &comp_out.stderr,
+        ));
+        return Ok(SolveBuildOutput {
+            solve_core_wasm: Some(solve_core_digest),
+            solve_artifact: None,
+        });
+    }
+
+    let solve_component_digest = util::file_digest(&solve_component_wasm)?;
+    meta.outputs.push(solve_component_digest.clone());
+
+    // Step D: write component artifact manifest.
+    let x07_semver = toolchain::x07_semver().unwrap_or_else(|_| "0.0.0".to_string());
+    let wasm_tools_ver =
+        toolchain::tool_first_line(&cfg.toolchain.wasm_tools.cmd, &["--version"]).ok();
+
+    let mut toolchain_obj = serde_json::Map::new();
+    toolchain_obj.insert("x07_wasm".to_string(), json!(env!("CARGO_PKG_VERSION")));
+    toolchain_obj.insert("x07".to_string(), json!(x07_semver));
+    if let Some(v) = wasm_tools_ver.clone() {
+        toolchain_obj.insert("wasm_tools".to_string(), json!(v));
+    }
+
+    let artifact_doc = json!({
+      "schema_version": "x07.wasm.component.artifact@0.1.0",
+      "artifact_id": format!("solve-{}", &solve_component_digest.sha256[..16]),
+      "kind": "solve",
+      "component": solve_component_digest,
+      "wit": { "package": cfg.componentize.solve_package.clone(), "world": cfg.componentize.solve_world.clone() },
+      "profiles": {
+        "component": component_profile_ref,
+        "wasm": wasm_profile_ref,
+      },
+      "toolchain": Value::Object(toolchain_obj)
+    });
+
+    let artifact_diags = store.validate(
+        "https://x07.io/spec/x07-wasm.component.artifact.schema.json",
+        &artifact_doc,
+    )?;
+    if artifact_diags.iter().any(|d| d.severity == Severity::Error) {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_COMPONENT_ARTIFACT_SCHEMA_INVALID",
+            Severity::Error,
+            Stage::Run,
+            format!(
+                "internal error: component artifact failed schema validation: {artifact_diags:?}"
+            ),
+        ));
+        return Ok(SolveBuildOutput {
+            solve_core_wasm: Some(solve_core_digest),
+            solve_artifact: None,
+        });
+    }
+
+    let bytes = report::canon::canonical_json_bytes(&artifact_doc)?;
+    std::fs::write(&solve_component_manifest, &bytes)
+        .with_context(|| format!("write: {}", solve_component_manifest.display()))?;
+    meta.outputs
+        .push(util::file_digest(&solve_component_manifest)?);
+
+    Ok(SolveBuildOutput {
+        solve_core_wasm: Some(solve_core_digest),
+        solve_artifact: Some(artifact_doc),
+    })
+}
+
+fn inject_solve_handler_legacy_abi(
+    core_wasm: &[u8],
+    arena_cap_bytes: u32,
+    max_output_bytes: u32,
+) -> Result<Vec<u8>> {
+    use std::borrow::Cow;
+
+    use wasm_encoder::{
+        CodeSection, ConstExpr, CustomSection, ExportKind, ExportSection, FunctionSection,
+        GlobalSection, GlobalType, MemorySection, MemoryType, Module, TypeSection, ValType,
+    };
+    use wasmparser::{ExternalKind, Parser, Payload};
+
+    let mut func_types: Vec<wasmparser::FuncType> = Vec::new();
+    let mut func_type_indices: Vec<u32> = Vec::new();
+    let mut memories: Vec<wasmparser::MemoryType> = Vec::new();
+    let mut globals: Vec<wasmparser::Global<'_>> = Vec::new();
+    let mut exports: Vec<(String, wasmparser::ExternalKind, u32)> = Vec::new();
+    let mut custom_sections: Vec<(String, Vec<u8>)> = Vec::new();
+
+    let mut data_count: Option<u32> = None;
+    let mut data_segments_raw: Vec<Vec<u8>> = Vec::new();
+
+    let mut code_bodies_raw: Vec<Vec<u8>> = Vec::new();
+
+    for payload in Parser::new(0).parse_all(core_wasm) {
+        match payload.context("parse wasm payload")? {
+            Payload::TypeSection(reader) => {
+                for ty in reader.into_iter_err_on_gc_types() {
+                    func_types.push(ty.context("parse wasm type")?);
+                }
+            }
+            Payload::ImportSection(reader) => {
+                if reader.count() != 0 {
+                    anyhow::bail!("inject: imports are not supported");
+                }
+            }
+            Payload::FunctionSection(reader) => {
+                for f in reader {
+                    func_type_indices.push(f.context("parse wasm function")?);
+                }
+            }
+            Payload::MemorySection(reader) => {
+                for m in reader {
+                    memories.push(m.context("parse wasm memory")?);
+                }
+            }
+            Payload::TableSection(_) => anyhow::bail!("inject: table section not supported"),
+            Payload::TagSection(_) => anyhow::bail!("inject: tag section not supported"),
+            Payload::GlobalSection(reader) => {
+                for g in reader {
+                    globals.push(g.context("parse wasm global")?);
+                }
+            }
+            Payload::ExportSection(reader) => {
+                for e in reader {
+                    let e = e.context("parse wasm export")?;
+                    exports.push((e.name.to_string(), e.kind, e.index));
+                }
+            }
+            Payload::StartSection { .. } => anyhow::bail!("inject: start section not supported"),
+            Payload::ElementSection(_) => anyhow::bail!("inject: element section not supported"),
+            Payload::DataCountSection { count, .. } => data_count = Some(count),
+            Payload::DataSection(reader) => {
+                for s in reader {
+                    let s = s.context("parse wasm data segment")?;
+                    data_segments_raw.push(core_wasm[s.range.start..s.range.end].to_vec());
+                }
+            }
+            Payload::CodeSectionStart { .. } => {}
+            Payload::CodeSectionEntry(body) => {
+                let r = body.range();
+                code_bodies_raw.push(core_wasm[r.start..r.end].to_vec());
+            }
+            Payload::CustomSection(reader) => {
+                custom_sections.push((reader.name().to_string(), reader.data().to_vec()));
+            }
+            Payload::UnknownSection { id, .. } => {
+                anyhow::bail!("inject: unknown section id={id} not supported")
+            }
+            Payload::End(_) | Payload::Version { .. } => {}
+            _ => anyhow::bail!("inject: unsupported wasm payload"),
+        }
+    }
+
+    if code_bodies_raw.len() != func_type_indices.len() {
+        anyhow::bail!(
+            "inject: function section len != code section len ({} != {})",
+            func_type_indices.len(),
+            code_bodies_raw.len()
+        );
+    }
+
+    let mut x07_solve_v2_func_idx: Option<u32> = None;
+    let mut heap_base_global_idx: Option<u32> = None;
+
+    for (name, kind, index) in &exports {
+        match (name.as_str(), kind) {
+            ("x07_solve_v2", ExternalKind::Func) => x07_solve_v2_func_idx = Some(*index),
+            ("__heap_base", ExternalKind::Global) => heap_base_global_idx = Some(*index),
+            _ => {}
+        }
+    }
+
+    let x07_solve_v2_func_idx = x07_solve_v2_func_idx
+        .ok_or_else(|| anyhow::anyhow!("inject: missing export x07_solve_v2"))?;
+    let heap_base_global_idx = heap_base_global_idx
+        .ok_or_else(|| anyhow::anyhow!("inject: missing export __heap_base"))?;
+
+    // Types appended after the module's original types.
+    let type_idx_cabi_realloc =
+        u32::try_from(func_types.len()).map_err(|_| anyhow::anyhow!("inject: too many types"))?;
+    let type_idx_cabi_post = type_idx_cabi_realloc + 1;
+    let type_idx_solve = type_idx_cabi_realloc + 2;
+
+    // Functions appended after the module's original defined functions.
+    let existing_defined_funcs = u32::try_from(func_type_indices.len())
+        .map_err(|_| anyhow::anyhow!("inject: too many functions"))?;
+    let func_idx_cabi_realloc = existing_defined_funcs;
+    let func_idx_cabi_post = existing_defined_funcs + 1;
+    let func_idx_solve = existing_defined_funcs + 2;
+
+    // Globals appended after the module's original globals.
+    let existing_globals =
+        u32::try_from(globals.len()).map_err(|_| anyhow::anyhow!("inject: too many globals"))?;
+    let global_idx_heap_ptr = existing_globals;
+    let global_idx_arena_ptr = existing_globals + 1;
+    let global_idx_ret_area_ptr = existing_globals + 2;
+
+    // Re-encode the module with injected glue, copying existing bodies/segments.
+    let mut module = Module::new();
+
+    let mut types = TypeSection::new();
+    for ty in &func_types {
+        let params = ty
+            .params()
+            .iter()
+            .map(wasm_valtype)
+            .collect::<Result<Vec<_>>>()?;
+        let results = ty
+            .results()
+            .iter()
+            .map(wasm_valtype)
+            .collect::<Result<Vec<_>>>()?;
+        types.ty().function(params, results);
+    }
+    // cabi_realloc: (i32, i32, i32, i32) -> i32
+    types.ty().function(
+        [ValType::I32, ValType::I32, ValType::I32, ValType::I32],
+        [ValType::I32],
+    );
+    // cabi_post_*: (i32) -> ()
+    types.ty().function([ValType::I32], []);
+    // solve: (i32, i32) -> i32
+    types
+        .ty()
+        .function([ValType::I32, ValType::I32], [ValType::I32]);
+    module.section(&types);
+
+    let mut functions = FunctionSection::new();
+    for idx in &func_type_indices {
+        functions.function(*idx);
+    }
+    functions.function(type_idx_cabi_realloc);
+    functions.function(type_idx_cabi_post);
+    functions.function(type_idx_solve);
+    module.section(&functions);
+
+    let mut memories_sec = MemorySection::new();
+    for m in &memories {
+        if m.memory64 {
+            anyhow::bail!("inject: memory64 not supported");
+        }
+        memories_sec.memory(MemoryType {
+            minimum: m.initial,
+            maximum: m.maximum,
+            memory64: m.memory64,
+            shared: m.shared,
+            page_size_log2: m.page_size_log2,
+        });
+    }
+    if !memories_sec.is_empty() {
+        module.section(&memories_sec);
+    }
+
+    let mut globals_sec = GlobalSection::new();
+    for g in &globals {
+        let init = const_expr_from_wasmparser(&g.init_expr)?;
+        globals_sec.global(
+            GlobalType {
+                val_type: wasm_valtype(&g.ty.content_type)?,
+                mutable: g.ty.mutable,
+                shared: g.ty.shared,
+            },
+            &init,
+        );
+    }
+    let zero = ConstExpr::i32_const(0);
+    globals_sec.global(
+        GlobalType {
+            val_type: ValType::I32,
+            mutable: true,
+            shared: false,
+        },
+        &zero,
+    );
+    globals_sec.global(
+        GlobalType {
+            val_type: ValType::I32,
+            mutable: true,
+            shared: false,
+        },
+        &zero,
+    );
+    globals_sec.global(
+        GlobalType {
+            val_type: ValType::I32,
+            mutable: true,
+            shared: false,
+        },
+        &zero,
+    );
+    module.section(&globals_sec);
+
+    let mut exports_sec = ExportSection::new();
+    for (name, kind, index) in &exports {
+        exports_sec.export(name, export_kind(*kind)?, *index);
+    }
+    // New exports for legacy WIT canonical ABI glue.
+    for name in [
+        "cabi_realloc",
+        "cabi_post_x07:solve/handler@0.1.0#solve",
+        "x07:solve/handler@0.1.0#solve",
+    ] {
+        if exports.iter().any(|(n, _, _)| n == name) {
+            anyhow::bail!("inject: export already exists: {name:?}");
+        }
+    }
+    exports_sec.export("cabi_realloc", ExportKind::Func, func_idx_cabi_realloc);
+    exports_sec.export(
+        "cabi_post_x07:solve/handler@0.1.0#solve",
+        ExportKind::Func,
+        func_idx_cabi_post,
+    );
+    exports_sec.export(
+        "x07:solve/handler@0.1.0#solve",
+        ExportKind::Func,
+        func_idx_solve,
+    );
+    module.section(&exports_sec);
+
+    if let Some(count) = data_count {
+        module.section(&wasm_encoder::DataCountSection { count });
+    }
+
+    let mut code = CodeSection::new();
+    for body in &code_bodies_raw {
+        code.raw(body);
+    }
+    code.function(&emit_cabi_realloc_func(
+        heap_base_global_idx,
+        global_idx_heap_ptr,
+    ));
+    code.function(&emit_cabi_post_func());
+    code.function(&emit_solve_wrapper_func(
+        x07_solve_v2_func_idx,
+        func_idx_cabi_realloc,
+        arena_cap_bytes,
+        max_output_bytes,
+        global_idx_arena_ptr,
+        global_idx_ret_area_ptr,
+    ));
+    module.section(&code);
+
+    if !data_segments_raw.is_empty() {
+        let mut data = wasm_encoder::DataSection::new();
+        for seg in &data_segments_raw {
+            data.raw(seg);
+        }
+        module.section(&data);
+    }
+
+    for (name, data) in &custom_sections {
+        module.section(&CustomSection {
+            name: Cow::Owned(name.clone()),
+            data: Cow::Borrowed(data.as_slice()),
+        });
+    }
+
+    let bytes = module.finish();
+    wasmparser::Validator::new()
+        .validate_all(&bytes)
+        .context("validate injected wasm")?;
+    Ok(bytes)
+}
+
+fn wasm_valtype(v: &wasmparser::ValType) -> Result<wasm_encoder::ValType> {
+    Ok(match v {
+        wasmparser::ValType::I32 => wasm_encoder::ValType::I32,
+        wasmparser::ValType::I64 => wasm_encoder::ValType::I64,
+        wasmparser::ValType::F32 => wasm_encoder::ValType::F32,
+        wasmparser::ValType::F64 => wasm_encoder::ValType::F64,
+        wasmparser::ValType::V128 => wasm_encoder::ValType::V128,
+        wasmparser::ValType::Ref(_) => {
+            anyhow::bail!("inject: reference types not supported")
+        }
+    })
+}
+
+fn export_kind(k: wasmparser::ExternalKind) -> Result<wasm_encoder::ExportKind> {
+    Ok(match k {
+        wasmparser::ExternalKind::Func => wasm_encoder::ExportKind::Func,
+        wasmparser::ExternalKind::Table => wasm_encoder::ExportKind::Table,
+        wasmparser::ExternalKind::Memory => wasm_encoder::ExportKind::Memory,
+        wasmparser::ExternalKind::Global => wasm_encoder::ExportKind::Global,
+        wasmparser::ExternalKind::Tag => wasm_encoder::ExportKind::Tag,
+    })
+}
+
+fn const_expr_from_wasmparser(expr: &wasmparser::ConstExpr<'_>) -> Result<wasm_encoder::ConstExpr> {
+    let mut r = expr.get_binary_reader();
+    let mut b = r.read_bytes(r.bytes_remaining())?.to_vec();
+    if b.last().copied() != Some(0x0b) {
+        anyhow::bail!("inject: const expr missing end");
+    }
+    b.pop();
+    Ok(wasm_encoder::ConstExpr::raw(b))
+}
+
+fn emit_cabi_realloc_func(
+    heap_base_global_idx: u32,
+    heap_ptr_global_idx: u32,
+) -> wasm_encoder::Function {
+    // (func (param ptr old_size align new_size) (result i32) ...)
+    let mut f = wasm_encoder::Function::new([(5, wasm_encoder::ValType::I32)]);
+
+    let p_ptr = 0;
+    let p_old_size = 1;
+    let p_align = 2;
+    let p_new_size = 3;
+
+    let l_heap = 4;
+    let l_aligned = 5;
+    let l_next = 6;
+    let l_n = 7;
+    let l_i = 8;
+
+    let mut ins = f.instructions();
+
+    // if new_size == 0 { return align }
+    ins.local_get(p_new_size)
+        .i32_eqz()
+        .if_(wasm_encoder::BlockType::Empty)
+        .local_get(p_align)
+        .return_()
+        .end();
+
+    // if align == 0 { trap }
+    ins.local_get(p_align)
+        .i32_eqz()
+        .if_(wasm_encoder::BlockType::Empty)
+        .unreachable()
+        .end();
+
+    // heap = global.heap_ptr
+    ins.global_get(heap_ptr_global_idx).local_set(l_heap);
+
+    // if heap == 0 { heap = __heap_base; global.heap_ptr = heap }
+    ins.local_get(l_heap)
+        .i32_eqz()
+        .if_(wasm_encoder::BlockType::Empty)
+        .global_get(heap_base_global_idx)
+        .local_set(l_heap)
+        .local_get(l_heap)
+        .global_set(heap_ptr_global_idx)
+        .end();
+
+    // aligned = if align <= 1 { heap } else { (heap + (align-1)) & (-align) }
+    ins.local_get(p_align)
+        .i32_const(1)
+        .i32_le_u()
+        .if_(wasm_encoder::BlockType::Empty)
+        .local_get(l_heap)
+        .local_set(l_aligned)
+        .else_()
+        .local_get(l_heap)
+        .local_get(p_align)
+        .i32_const(1)
+        .i32_sub()
+        .i32_add()
+        .local_get(p_align)
+        .i32_const(0)
+        .i32_sub()
+        .i32_and()
+        .local_set(l_aligned)
+        .end();
+
+    // next = aligned + new_size; global.heap_ptr = next
+    ins.local_get(l_aligned)
+        .local_get(p_new_size)
+        .i32_add()
+        .local_set(l_next)
+        .local_get(l_next)
+        .global_set(heap_ptr_global_idx);
+
+    // if ptr != 0 && old_size != 0 { copy min(old,new) bytes }
+    ins.local_get(p_ptr)
+        .i32_eqz()
+        .if_(wasm_encoder::BlockType::Empty)
+        .else_()
+        .local_get(p_old_size)
+        .i32_eqz()
+        .if_(wasm_encoder::BlockType::Empty)
+        .else_();
+
+    // n = old_size
+    ins.local_get(p_old_size).local_set(l_n);
+    // if new_size < n { n = new_size }
+    ins.local_get(p_new_size)
+        .local_get(l_n)
+        .i32_lt_u()
+        .if_(wasm_encoder::BlockType::Empty)
+        .local_get(p_new_size)
+        .local_set(l_n)
+        .end();
+    // i = 0
+    ins.i32_const(0).local_set(l_i);
+
+    ins.block(wasm_encoder::BlockType::Empty);
+    ins.loop_(wasm_encoder::BlockType::Empty);
+    // if i >= n break
+    ins.local_get(l_i).local_get(l_n).i32_ge_u().br_if(1);
+
+    // *(aligned+i) = *(ptr+i)
+    ins.local_get(l_aligned)
+        .local_get(l_i)
+        .i32_add()
+        .local_get(p_ptr)
+        .local_get(l_i)
+        .i32_add()
+        .i32_load8_u(wasm_encoder::MemArg {
+            offset: 0,
+            align: 0,
+            memory_index: 0,
+        })
+        .i32_store8(wasm_encoder::MemArg {
+            offset: 0,
+            align: 0,
+            memory_index: 0,
+        });
+
+    // i++
+    ins.local_get(l_i)
+        .i32_const(1)
+        .i32_add()
+        .local_set(l_i)
+        .br(0);
+    ins.end();
+    ins.end();
+
+    ins.end(); // end old_size !=0 if
+    ins.end(); // end ptr !=0 if
+
+    ins.local_get(l_aligned).end();
+
+    f
+}
+
+fn emit_cabi_post_func() -> wasm_encoder::Function {
+    let mut f = wasm_encoder::Function::new([]);
+    f.instructions().end();
+    f
+}
+
+fn emit_solve_wrapper_func(
+    x07_solve_v2_func_idx: u32,
+    cabi_realloc_func_idx: u32,
+    arena_cap_bytes: u32,
+    max_output_bytes: u32,
+    arena_ptr_global_idx: u32,
+    ret_area_ptr_global_idx: u32,
+) -> wasm_encoder::Function {
+    // (func (param input_ptr input_len) (result i32) ...)
+    let mut f = wasm_encoder::Function::new([(6, wasm_encoder::ValType::I32)]);
+
+    let p_input_ptr = 0;
+    let p_input_len = 1;
+
+    let l_ret_area = 2;
+    let l_arena = 3;
+    let l_out_ptr = 4;
+    let l_out_len = 5;
+    let l_out_end = 6;
+    let l_arena_end = 7;
+
+    let mut ins = f.instructions();
+
+    // if input_len < 0 { trap }
+    ins.local_get(p_input_len)
+        .i32_const(0)
+        .i32_lt_s()
+        .if_(wasm_encoder::BlockType::Empty)
+        .unreachable()
+        .end();
+
+    // ret_area = global.ret_area_ptr; if 0 { ret_area = cabi_realloc(NULL,0,4,8); global=ret_area }
+    ins.global_get(ret_area_ptr_global_idx)
+        .local_set(l_ret_area)
+        .local_get(l_ret_area)
+        .i32_eqz()
+        .if_(wasm_encoder::BlockType::Empty)
+        .i32_const(0)
+        .i32_const(0)
+        .i32_const(4)
+        .i32_const(8)
+        .call(cabi_realloc_func_idx)
+        .local_set(l_ret_area)
+        .local_get(l_ret_area)
+        .global_set(ret_area_ptr_global_idx)
+        .end();
+
+    // arena = global.arena_ptr; if 0 { arena = cabi_realloc(NULL,0,8,arena_cap); global=arena }
+    ins.global_get(arena_ptr_global_idx)
+        .local_set(l_arena)
+        .local_get(l_arena)
+        .i32_eqz()
+        .if_(wasm_encoder::BlockType::Empty)
+        .i32_const(0)
+        .i32_const(0)
+        .i32_const(8)
+        .i32_const(arena_cap_bytes as i32)
+        .call(cabi_realloc_func_idx)
+        .local_set(l_arena)
+        .local_get(l_arena)
+        .global_set(arena_ptr_global_idx)
+        .end();
+
+    // call x07_solve_v2(ret_area, arena, arena_cap, input_ptr, input_len)
+    ins.local_get(l_ret_area)
+        .local_get(l_arena)
+        .i32_const(arena_cap_bytes as i32)
+        .local_get(p_input_ptr)
+        .local_get(p_input_len)
+        .call(x07_solve_v2_func_idx);
+
+    // out_ptr = *(ret_area+0); out_len = *(ret_area+4)
+    ins.local_get(l_ret_area)
+        .i32_load(wasm_encoder::MemArg {
+            offset: 0,
+            align: 2,
+            memory_index: 0,
+        })
+        .local_set(l_out_ptr);
+    ins.local_get(l_ret_area)
+        .i32_load(wasm_encoder::MemArg {
+            offset: 4,
+            align: 2,
+            memory_index: 0,
+        })
+        .local_set(l_out_len);
+
+    // if out_len > max_output { trap }
+    ins.local_get(l_out_len)
+        .i32_const(max_output_bytes as i32)
+        .i32_gt_u()
+        .if_(wasm_encoder::BlockType::Empty)
+        .unreachable()
+        .end();
+
+    // out_end = out_ptr + out_len
+    ins.local_get(l_out_ptr)
+        .local_get(l_out_len)
+        .i32_add()
+        .local_set(l_out_end);
+
+    // arena_end = arena + arena_cap
+    ins.local_get(l_arena)
+        .i32_const(arena_cap_bytes as i32)
+        .i32_add()
+        .local_set(l_arena_end);
+
+    // if out_ptr < arena { trap }
+    ins.local_get(l_out_ptr)
+        .local_get(l_arena)
+        .i32_lt_u()
+        .if_(wasm_encoder::BlockType::Empty)
+        .unreachable()
+        .end();
+
+    // if out_end > arena_end { trap }
+    ins.local_get(l_out_end)
+        .local_get(l_arena_end)
+        .i32_gt_u()
+        .if_(wasm_encoder::BlockType::Empty)
+        .unreachable()
+        .end();
+
+    // return ret_area
+    ins.local_get(l_ret_area).end();
+
+    f
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -2116,6 +3218,8 @@ fn component_build_report_doc(
           ComponentBuildEmit::Solve => "solve",
           ComponentBuildEmit::Http => "http",
           ComponentBuildEmit::Cli => "cli",
+          ComponentBuildEmit::HttpNative => "http-native",
+          ComponentBuildEmit::CliNative => "cli-native",
           ComponentBuildEmit::HttpAdapter => "http-adapter",
           ComponentBuildEmit::CliAdapter => "cli-adapter",
           ComponentBuildEmit::All => "all",

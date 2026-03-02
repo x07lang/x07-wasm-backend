@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-wasm.profile.schema.json",
-  "title": "x07.wasm.profile@0.2.0",
-  "description": "WASM build profile for x07-wasm (Phase 0) plus host runtime limits (Phase 5 hardening).",
+  "title": "x07.wasm.profile@0.3.0",
+  "description": "WASM build profile for x07-wasm (Phase 0) plus host runtime limits (Phase 5 hardening) and codegen backend selection (Phase 7).",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -11,6 +11,7 @@
     "v",
     "target",
     "x07_build",
+    "codegen_backend",
     "clang",
     "wasm_ld",
     "defaults",
@@ -18,7 +19,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "x07.wasm.profile@0.2.0"
+      "const": "x07.wasm.profile@0.3.0"
     },
     "id": {
       "$ref": "#/$defs/id"
@@ -32,6 +33,13 @@
     },
     "x07_build": {
       "$ref": "#/$defs/x07_build"
+    },
+    "codegen_backend": {
+      "type": "string",
+      "enum": [
+        "c_toolchain_v1",
+        "native_x07_wasm_v1"
+      ]
     },
     "clang": {
       "$ref": "#/$defs/clang"

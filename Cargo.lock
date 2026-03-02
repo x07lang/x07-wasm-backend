@@ -3607,6 +3607,7 @@ dependencies = [
  "sha2",
  "time",
  "tokio",
+ "wasm-encoder 0.245.1",
  "wasmparser 0.224.1",
  "wasmtime",
  "wasmtime-wasi",

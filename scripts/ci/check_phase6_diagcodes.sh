@@ -13,6 +13,10 @@ set -euo pipefail
 # Notes:
 # - We only enforce for reports where ok=false OR exit_code!=0.
 # - We only consider JSON docs whose schema_version contains ".report@".
+#
+# Phase-7 extension:
+# - If `X07WASM_DIAG_INCLUDE_PHASE7=1` is set, also scan `phase7` build trees and
+#   allow Phase-7 diagnostic codes.
 
 ROOT="${1:-build}"
 
@@ -33,6 +37,7 @@ import pathlib
 import sys
 
 root = pathlib.Path(sys.argv[1])
+include_phase7 = os.environ.get("X07WASM_DIAG_INCLUDE_PHASE7", "").strip() == "1"
 
 PHASE5_CODES = [
     "X07WASM_APP_VERIFY_DIGEST_MISMATCH",
@@ -119,7 +124,16 @@ PHASE6_CODES = [
     "X07WASM_SLO_VIOLATION",
 ]
 
-ALLOWED = set(PHASE5_CODES + PHASE6_CODES)
+PHASE7_CODES = [
+    "X07WASM_NATIVE_BACKEND_WASM_INVALID",
+    "X07WASM_NATIVE_BACKEND_WASM_MISSING",
+]
+
+ALLOWED = set(PHASE5_CODES + PHASE6_CODES + (PHASE7_CODES if include_phase7 else []))
+
+PHASE_DIRS = ["phase5", "phase6"]
+if include_phase7:
+    PHASE_DIRS.append("phase7")
 
 def is_report(doc: dict) -> bool:
     sv = doc.get("schema_version")
@@ -149,7 +163,7 @@ if not root.exists():
 for p in root.rglob("*.json"):
     # Optional locality filter: prefer phase5/phase6 report trees.
     sp = str(p)
-    if ("phase5" not in sp) and ("phase6" not in sp):
+    if not any(d in sp for d in PHASE_DIRS):
         continue
 
     try:
@@ -196,7 +210,10 @@ for p in root.rglob("*.json"):
             violations.append((str(p), f"unknown_code:{code}"))
 
 if checked_reports == 0:
-    print(f"diagcodes: no report JSON files found under {root} (phase5/phase6).", file=sys.stderr)
+    print(
+        f"diagcodes: no report JSON files found under {root} ({'/'.join(PHASE_DIRS)}).",
+        file=sys.stderr,
+    )
     sys.exit(1)
 
 if violations:
@@ -222,6 +239,12 @@ if violations:
     print("diagcodes: allowed Phase-6 codes:", file=sys.stderr)
     for c in PHASE6_CODES:
         print(f"  {c}", file=sys.stderr)
+
+    if include_phase7:
+        print("", file=sys.stderr)
+        print("diagcodes: allowed Phase-7 codes:", file=sys.stderr)
+        for c in PHASE7_CODES:
+            print(f"  {c}", file=sys.stderr)
 
     sys.exit(1)
 

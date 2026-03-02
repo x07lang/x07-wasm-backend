@@ -27,7 +27,7 @@ x07-wasm toolchain validate --profile arch/wasm/toolchain/profiles/toolchain_ci.
 
 ## Runtime limits
 
-WASM profiles now include a required `runtime` section (`x07.wasm.runtime.limits@0.1.0`) and `x07.wasm.profile` is bumped to `@0.2.0`.
+WASM profiles include a required `runtime` section (`x07.wasm.runtime.limits@0.1.0`) and `x07.wasm.profile` is bumped to `@0.3.0`.
 
 Most runners support explicit overrides:
 
@@ -63,7 +63,7 @@ The `x07-wasm http` command group validates contracts and provides a determinist
 Run the Phase 5 gate locally:
 
 ```sh
+# Only required for legacy C toolchain builds.
 export PATH="${WASI_SDK_DIR}/bin:${PATH}"
 bash scripts/ci/check_phase5.sh
 ```
-

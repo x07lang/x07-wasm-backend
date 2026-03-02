@@ -1,5 +1,5 @@
 {
-  "schema_version": "x07.wasm.profile@0.2.0",
+  "schema_version": "x07.wasm.profile@0.3.0",
   "id": "wasm_web_ui_debug",
   "v": 1,
 
@@ -13,6 +13,8 @@
     "freestanding": true,
     "emit_c_header": true
   },
+
+  "codegen_backend": "native_x07_wasm_v1",
 
   "clang": {
     "cflags": [

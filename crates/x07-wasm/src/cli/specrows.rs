@@ -90,6 +90,7 @@ pub fn build_specrows_doc() -> Value {
 
         ["build","opt","","--artifact-out","artifact.out","PATH","Artifact manifest output path."],
         ["build","opt","","--check-exports","exports.check","STR","Validate required exports exist (true/false; default true)."],
+        ["build","opt","","--codegen-backend","codegen.backend","STR","Override the profile’s codegen_backend."],
         ["build","opt","","--emit-dir","emit.dir","PATH","Directory for intermediate artifacts."],
         ["build","opt","","--index","index","PATH","Path to wasm profile registry (default: arch/wasm/index.x07wasm.json)."],
         ["build","opt","","--out","out","PATH","Output wasm path."],
@@ -107,7 +108,7 @@ pub fn build_specrows_doc() -> Value {
 
         ["component-build","about","Build an x07 project into an x07:solve component (and optional adapters). Alias: `x07-wasm component build`."],
         ["component-build","flag","","--clean","clean","Delete out-dir before building."],
-        ["component-build","opt","","--emit","emit","STR","Artifact set to emit: solve|http|cli|http-adapter|cli-adapter|all (default: all)."],
+        ["component-build","opt","","--emit","emit","STR","Artifact set to emit: solve|http|cli|http-native|cli-native|http-adapter|cli-adapter|all (default: all)."],
         ["component-build","opt","","--index","index","PATH","Path to the component profile registry (default: arch/wasm/component/index.x07wasm.component.json)."],
         ["component-build","opt","","--out-dir","out.dir","PATH","Output directory for component artifacts (default: target/x07-wasm/component)."],
         ["component-build","opt","","--profile","profile.id","STR","Component profile id (loaded from arch/wasm/component/index.x07wasm.component.json)."],
@@ -190,10 +191,10 @@ pub fn build_specrows_doc() -> Value {
 
         ["provenance-attest","about","Alias for `x07-wasm provenance attest`. Create SLSA provenance attestation for an app pack and emit x07.wasm.provenance.attest.report@0.1.0."],
         ["provenance-attest","opt","","--ops","ops","PATH","Ops profile file (x07.app.ops.profile@0.1.0)."],
-        ["provenance-attest","opt","","--predicate-type","predicate_type","STR","In-toto Statement predicateType."],
-        ["provenance-attest","opt","","--signing-key","signing_key","PATH","Ed25519 signing key seed file (base64, 32 bytes)."],
         ["provenance-attest","opt","","--out","out","PATH","Output attestation file."],
         ["provenance-attest","opt","","--pack-manifest","pack_manifest","PATH","App pack manifest file (x07.app.pack@0.1.0)."],
+        ["provenance-attest","opt","","--predicate-type","predicate_type","STR","In-toto Statement predicateType."],
+        ["provenance-attest","opt","","--signing-key","signing_key","PATH","Ed25519 signing key seed file (base64, 32 bytes)."],
 
         ["provenance-verify","about","Alias for `x07-wasm provenance verify`. Verify SLSA provenance attestation against current artifacts and emit x07.wasm.provenance.verify.report@0.1.0."],
         ["provenance-verify","opt","","--attestation","attestation","PATH","DSSE envelope file (x07.provenance.dsse.envelope@0.1.0)."],

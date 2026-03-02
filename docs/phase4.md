@@ -2,8 +2,8 @@
 
 Phase 4 adds **native** component emit targets to `x07-wasm component build`:
 
-- `--emit http`: build a runnable `wasi:http/proxy` component (`http.component.wasm`)
-- `--emit cli`: build a runnable `wasi:cli/command` component (`cli.component.wasm`)
+- `--emit http-native`: build a runnable `wasi:http/proxy` component (`http.component.wasm`)
+- `--emit cli-native`: build a runnable `wasi:cli/command` component (`cli.component.wasm`)
 
 “Native” means these components are produced **directly from the x07 project** (x07 -> freestanding C -> core wasm -> component) without building the Rust guest adapters and without composing via `wac plug`.
 
@@ -28,10 +28,12 @@ See:
 `x07-wasm component build --emit` supports:
 
 - `solve`: Phase 1 solve component (`solve.component.wasm`)
-- `http`: Phase 4 native HTTP component
-- `cli`: Phase 4 native CLI component
+- `http`: composed HTTP component (Phase 1 adapters + `wac plug`; does not require the C toolchain)
+- `cli`: composed CLI component (Phase 1 adapters + `wac plug`; does not require the C toolchain)
+- `http-native`: Phase 4 native HTTP component (legacy C toolchain path)
+- `cli-native`: Phase 4 native CLI component (legacy C toolchain path)
 - `http-adapter` / `cli-adapter`: legacy adapter components
-- `all` (default): build `solve + http + cli`
+- `all` (default): build `solve + http + cli` (composed)
 
 Adapters are no longer part of the default path; build them explicitly when needed.
 
@@ -65,7 +67,7 @@ Host mapping failures (duplicates, invalid encodings, orphaned data) are reporte
 Run the Phase 4 loop locally:
 
 ```sh
+# Required for the legacy C toolchain backend (`http-native` / `cli-native`).
 export PATH="${WASI_SDK_DIR}/bin:${PATH}"
 bash scripts/ci/check_phase4.sh
 ```
-

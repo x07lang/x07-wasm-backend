@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use serde_json::{json, Value};
 
+use crate::arch::CodegenBackend;
 use crate::cli::{BuildArgs, MachineArgs, Scope};
 use crate::cmdutil;
 use crate::diag::{Diagnostic, Severity, Stage};
@@ -60,6 +61,23 @@ pub fn cmd_build(
 
     let profile = loaded_profile.doc;
     let profile_ref = json!({ "id": profile.id, "v": profile.v });
+    let codegen_backend: CodegenBackend = match args.codegen_backend.as_deref() {
+        Some(raw) => match raw.parse::<CodegenBackend>() {
+            Ok(v) => v,
+            Err(err) => {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_CLI_ARGS_INVALID",
+                    Severity::Error,
+                    Stage::Parse,
+                    err,
+                ));
+                let result = build_result_placeholder();
+                let report_doc = build_report_doc(meta, diagnostics, result);
+                return emit_build_report(&store, scope, machine, json_mode, report_doc);
+            }
+        },
+        None => profile.codegen_backend,
+    };
 
     let project_path = &args.project;
 
@@ -75,7 +93,7 @@ pub fn cmd_build(
     let paths = build_paths(&args, &project_dir, project_name, profile_ref.get("id"));
 
     // Step B: x07 -> freestanding C
-    let x07_build_args = vec![
+    let mut x07_build_args = vec![
         "build".to_string(),
         "--project".to_string(),
         project_path.display().to_string(),
@@ -85,6 +103,22 @@ pub fn cmd_build(
         paths.h_path.display().to_string(),
         "--freestanding".to_string(),
     ];
+    if codegen_backend == CodegenBackend::NativeX07WasmV1 {
+        let exp = memory_plan::memory_expectations_from_ldflags(&profile.wasm_ld.ldflags);
+        x07_build_args.extend([
+            "--emit-wasm".to_string(),
+            paths.out_wasm.display().to_string(),
+        ]);
+        if let Some(v) = exp.initial_memory_bytes {
+            x07_build_args.extend(["--wasm-initial-memory-bytes".to_string(), v.to_string()]);
+        }
+        if let Some(v) = exp.max_memory_bytes {
+            x07_build_args.extend(["--wasm-max-memory-bytes".to_string(), v.to_string()]);
+        }
+        if exp.no_growable_memory {
+            x07_build_args.push("--wasm-no-growable-memory".to_string());
+        }
+    }
 
     match util::file_digest(project_path) {
         Ok(d) => meta.inputs.push(d),
@@ -110,6 +144,7 @@ pub fn cmd_build(
                 &x07_build_args,
                 &profile.clang.cflags,
                 &profile.wasm_ld.ldflags,
+                codegen_backend,
                 None,
                 None,
             )?;
@@ -134,6 +169,7 @@ pub fn cmd_build(
                     &x07_build_args,
                     &profile.clang.cflags,
                     &profile.wasm_ld.ldflags,
+                    codegen_backend,
                     None,
                     None,
                 )?;
@@ -164,6 +200,7 @@ pub fn cmd_build(
                         &x07_build_args,
                         &profile.clang.cflags,
                         &profile.wasm_ld.ldflags,
+                        codegen_backend,
                         None,
                         None,
                     )?;
@@ -187,6 +224,7 @@ pub fn cmd_build(
                 &x07_build_args,
                 &profile.clang.cflags,
                 &profile.wasm_ld.ldflags,
+                codegen_backend,
                 None,
                 None,
             )?;
@@ -211,6 +249,7 @@ pub fn cmd_build(
             &x07_build_args,
             &profile.clang.cflags,
             &profile.wasm_ld.ldflags,
+            codegen_backend,
             None,
             None,
         )?;
@@ -234,6 +273,7 @@ pub fn cmd_build(
                 &x07_build_args,
                 &profile.clang.cflags,
                 &profile.wasm_ld.ldflags,
+                codegen_backend,
                 None,
                 None,
             )?;
@@ -258,6 +298,7 @@ pub fn cmd_build(
                 &x07_build_args,
                 &profile.clang.cflags,
                 &profile.wasm_ld.ldflags,
+                codegen_backend,
                 None,
                 None,
             )?;
@@ -282,6 +323,7 @@ pub fn cmd_build(
                 &x07_build_args,
                 &[],
                 &[],
+                codegen_backend,
                 None,
                 None,
             )?;
@@ -304,6 +346,7 @@ pub fn cmd_build(
             &x07_build_args,
             &[],
             &[],
+            codegen_backend,
             None,
             None,
         )?;
@@ -327,6 +370,7 @@ pub fn cmd_build(
                 &x07_build_args,
                 &profile.clang.cflags,
                 &profile.wasm_ld.ldflags,
+                codegen_backend,
                 None,
                 None,
             )?;
@@ -352,6 +396,7 @@ pub fn cmd_build(
                 &x07_build_args,
                 &profile.clang.cflags,
                 &profile.wasm_ld.ldflags,
+                codegen_backend,
                 None,
                 None,
             )?;
@@ -361,177 +406,98 @@ pub fn cmd_build(
     };
     meta.outputs.push(h_digest);
 
-    // Step C0: write Phase 0 shims (no WASI imports)
-    let shim_c_path = paths.emit_dir.join("phase0_shim.c");
-    let shim_o_path = paths.emit_dir.join("phase0_shim.o");
-    match std::fs::write(&shim_c_path, PHASE0_SHIM_C)
-        .with_context(|| format!("write: {}", shim_c_path.display()))
-    {
-        Ok(()) => match util::file_digest(&shim_c_path) {
-            Ok(d) => meta.outputs.push(d),
-            Err(err) => diagnostics.push(cmdutil::diag_io_failed(
-                "X07WASM_SHIM_DIGEST_IO_FAILED",
-                Stage::Run,
-                format!("failed to digest output: {}", shim_c_path.display()),
-                &err,
-            )),
-        },
-        Err(err) => {
-            diagnostics.push(cmdutil::diag_io_failed(
-                "X07WASM_SHIM_WRITE_FAILED",
-                Stage::Run,
-                format!("failed to write shims: {}", shim_c_path.display()),
-                &err,
-            ));
-            let result = build_result_from_state(
-                &profile_ref,
-                &paths,
-                &profile,
-                &x07_build_args,
-                &profile.clang.cflags,
-                &profile.wasm_ld.ldflags,
-                None,
-                None,
-            )?;
-            let report_doc = build_report_doc(meta, diagnostics, result);
-            return emit_build_report(&store, scope, machine, json_mode, report_doc);
-        }
-    }
-
-    // Step C: clang compile
     let cc = profile
         .clang
         .cc
         .clone()
         .unwrap_or_else(|| "clang".to_string());
-    let mut clang_full_args = profile.clang.cflags.clone();
-    if !clang_full_args.iter().any(|f| f.starts_with("--target=")) {
-        clang_full_args.insert(0, format!("--target={}", profile.target.triple));
-    }
-    clang_full_args.extend([
-        "-c".to_string(),
-        paths.c_path.display().to_string(),
-        "-o".to_string(),
-        paths.o_path.display().to_string(),
-    ]);
-    let clang_out = match cmdutil::run_cmd_capture(&cc, &clang_full_args) {
-        Ok(v) => v,
-        Err(err) => {
-            diagnostics.push(cmdutil::diag_cmd_spawn_failed(
-                "X07WASM_CLANG_SPAWN_FAILED",
-                Stage::Codegen,
-                "clang",
-                &err,
-            ));
-            let result = build_result_from_state(
-                &profile_ref,
-                &paths,
-                &profile,
-                &x07_build_args,
-                &profile.clang.cflags,
-                &profile.wasm_ld.ldflags,
-                None,
-                None,
-            )?;
-            let report_doc = build_report_doc(meta, diagnostics, result);
-            return emit_build_report(&store, scope, machine, json_mode, report_doc);
-        }
-    };
-    if !clang_out.status.success() {
-        diagnostics.push(cmdutil::diag_cmd_failed(
-            "X07WASM_CLANG_FAILED",
-            Stage::Codegen,
-            "clang",
-            clang_out.code,
-            &clang_out.stderr,
-        ));
-        let result = build_result_from_state(
-            &profile_ref,
-            &paths,
-            &profile,
-            &x07_build_args,
-            &profile.clang.cflags,
-            &profile.wasm_ld.ldflags,
-            None,
-            None,
-        )?;
-        let report_doc = build_report_doc(meta, diagnostics, result);
-        return emit_build_report(&store, scope, machine, json_mode, report_doc);
-    }
-
-    let mut clang_shim_args = profile.clang.cflags.clone();
-    if !clang_shim_args.iter().any(|f| f.starts_with("--target=")) {
-        clang_shim_args.insert(0, format!("--target={}", profile.target.triple));
-    }
-    clang_shim_args.extend([
-        "-c".to_string(),
-        shim_c_path.display().to_string(),
-        "-o".to_string(),
-        shim_o_path.display().to_string(),
-    ]);
-    let clang_shim_out = match cmdutil::run_cmd_capture(&cc, &clang_shim_args) {
-        Ok(v) => v,
-        Err(err) => {
-            diagnostics.push(cmdutil::diag_cmd_spawn_failed(
-                "X07WASM_CLANG_SHIM_SPAWN_FAILED",
-                Stage::Codegen,
-                "clang",
-                &err,
-            ));
-            let result = build_result_from_state(
-                &profile_ref,
-                &paths,
-                &profile,
-                &x07_build_args,
-                &profile.clang.cflags,
-                &profile.wasm_ld.ldflags,
-                None,
-                None,
-            )?;
-            let report_doc = build_report_doc(meta, diagnostics, result);
-            return emit_build_report(&store, scope, machine, json_mode, report_doc);
-        }
-    };
-    if !clang_shim_out.status.success() {
-        diagnostics.push(cmdutil::diag_cmd_failed(
-            "X07WASM_CLANG_SHIM_FAILED",
-            Stage::Codegen,
-            "clang",
-            clang_shim_out.code,
-            &clang_shim_out.stderr,
-        ));
-        let result = build_result_from_state(
-            &profile_ref,
-            &paths,
-            &profile,
-            &x07_build_args,
-            &profile.clang.cflags,
-            &profile.wasm_ld.ldflags,
-            None,
-            None,
-        )?;
-        let report_doc = build_report_doc(meta, diagnostics, result);
-        return emit_build_report(&store, scope, machine, json_mode, report_doc);
-    }
-
-    // Step D: wasm-ld link
     let linker = profile
         .wasm_ld
         .linker
         .clone()
         .unwrap_or_else(|| "wasm-ld".to_string());
-    let mut wasm_ld_full_args = profile.wasm_ld.ldflags.clone();
-    wasm_ld_full_args.push(paths.o_path.display().to_string());
-    wasm_ld_full_args.push(shim_o_path.display().to_string());
-    wasm_ld_full_args.extend(["-o".to_string(), paths.out_wasm.display().to_string()]);
-    let ld_out = match cmdutil::run_cmd_capture(&linker, &wasm_ld_full_args) {
-        Ok(v) => v,
-        Err(err) => {
-            diagnostics.push(cmdutil::diag_cmd_spawn_failed(
-                "X07WASM_WASM_LD_SPAWN_FAILED",
-                Stage::Link,
-                "wasm-ld",
-                &err,
+
+    let wasm_bytes = if codegen_backend == CodegenBackend::CToolchainV1 {
+        // Step C0: write Phase 0 shims (no WASI imports)
+        let shim_c_path = paths.emit_dir.join("phase0_shim.c");
+        let shim_o_path = paths.emit_dir.join("phase0_shim.o");
+        match std::fs::write(&shim_c_path, PHASE0_SHIM_C)
+            .with_context(|| format!("write: {}", shim_c_path.display()))
+        {
+            Ok(()) => match util::file_digest(&shim_c_path) {
+                Ok(d) => meta.outputs.push(d),
+                Err(err) => diagnostics.push(cmdutil::diag_io_failed(
+                    "X07WASM_SHIM_DIGEST_IO_FAILED",
+                    Stage::Run,
+                    format!("failed to digest output: {}", shim_c_path.display()),
+                    &err,
+                )),
+            },
+            Err(err) => {
+                diagnostics.push(cmdutil::diag_io_failed(
+                    "X07WASM_SHIM_WRITE_FAILED",
+                    Stage::Run,
+                    format!("failed to write shims: {}", shim_c_path.display()),
+                    &err,
+                ));
+                let result = build_result_from_state(
+                    &profile_ref,
+                    &paths,
+                    &profile,
+                    &x07_build_args,
+                    &profile.clang.cflags,
+                    &profile.wasm_ld.ldflags,
+                    codegen_backend,
+                    None,
+                    None,
+                )?;
+                let report_doc = build_report_doc(meta, diagnostics, result);
+                return emit_build_report(&store, scope, machine, json_mode, report_doc);
+            }
+        }
+
+        // Step C: clang compile
+        let mut clang_full_args = profile.clang.cflags.clone();
+        if !clang_full_args.iter().any(|f| f.starts_with("--target=")) {
+            clang_full_args.insert(0, format!("--target={}", profile.target.triple));
+        }
+        clang_full_args.extend([
+            "-c".to_string(),
+            paths.c_path.display().to_string(),
+            "-o".to_string(),
+            paths.o_path.display().to_string(),
+        ]);
+        let clang_out = match cmdutil::run_cmd_capture(&cc, &clang_full_args) {
+            Ok(v) => v,
+            Err(err) => {
+                diagnostics.push(cmdutil::diag_cmd_spawn_failed(
+                    "X07WASM_CLANG_SPAWN_FAILED",
+                    Stage::Codegen,
+                    "clang",
+                    &err,
+                ));
+                let result = build_result_from_state(
+                    &profile_ref,
+                    &paths,
+                    &profile,
+                    &x07_build_args,
+                    &profile.clang.cflags,
+                    &profile.wasm_ld.ldflags,
+                    codegen_backend,
+                    None,
+                    None,
+                )?;
+                let report_doc = build_report_doc(meta, diagnostics, result);
+                return emit_build_report(&store, scope, machine, json_mode, report_doc);
+            }
+        };
+        if !clang_out.status.success() {
+            diagnostics.push(cmdutil::diag_cmd_failed(
+                "X07WASM_CLANG_FAILED",
+                Stage::Codegen,
+                "clang",
+                clang_out.code,
+                &clang_out.stderr,
             ));
             let result = build_result_from_state(
                 &profile_ref,
@@ -540,45 +506,55 @@ pub fn cmd_build(
                 &x07_build_args,
                 &profile.clang.cflags,
                 &profile.wasm_ld.ldflags,
+                codegen_backend,
                 None,
                 None,
             )?;
             let report_doc = build_report_doc(meta, diagnostics, result);
             return emit_build_report(&store, scope, machine, json_mode, report_doc);
         }
-    };
-    if !ld_out.status.success() {
-        diagnostics.push(cmdutil::diag_cmd_failed(
-            "X07WASM_WASM_LD_FAILED",
-            Stage::Link,
-            "wasm-ld",
-            ld_out.code,
-            &ld_out.stderr,
-        ));
-        let result = build_result_from_state(
-            &profile_ref,
-            &paths,
-            &profile,
-            &x07_build_args,
-            &profile.clang.cflags,
-            &profile.wasm_ld.ldflags,
-            None,
-            None,
-        )?;
-        let report_doc = build_report_doc(meta, diagnostics, result);
-        return emit_build_report(&store, scope, machine, json_mode, report_doc);
-    }
 
-    let wasm_bytes = match std::fs::read(&paths.out_wasm)
-        .with_context(|| format!("read: {}", paths.out_wasm.display()))
-    {
-        Ok(b) => b,
-        Err(err) => {
-            diagnostics.push(cmdutil::diag_io_failed(
-                "X07WASM_BUILD_OUTPUT_IO_FAILED",
-                Stage::Link,
-                format!("failed to read output: {}", paths.out_wasm.display()),
-                &err,
+        let mut clang_shim_args = profile.clang.cflags.clone();
+        if !clang_shim_args.iter().any(|f| f.starts_with("--target=")) {
+            clang_shim_args.insert(0, format!("--target={}", profile.target.triple));
+        }
+        clang_shim_args.extend([
+            "-c".to_string(),
+            shim_c_path.display().to_string(),
+            "-o".to_string(),
+            shim_o_path.display().to_string(),
+        ]);
+        let clang_shim_out = match cmdutil::run_cmd_capture(&cc, &clang_shim_args) {
+            Ok(v) => v,
+            Err(err) => {
+                diagnostics.push(cmdutil::diag_cmd_spawn_failed(
+                    "X07WASM_CLANG_SHIM_SPAWN_FAILED",
+                    Stage::Codegen,
+                    "clang",
+                    &err,
+                ));
+                let result = build_result_from_state(
+                    &profile_ref,
+                    &paths,
+                    &profile,
+                    &x07_build_args,
+                    &profile.clang.cflags,
+                    &profile.wasm_ld.ldflags,
+                    codegen_backend,
+                    None,
+                    None,
+                )?;
+                let report_doc = build_report_doc(meta, diagnostics, result);
+                return emit_build_report(&store, scope, machine, json_mode, report_doc);
+            }
+        };
+        if !clang_shim_out.status.success() {
+            diagnostics.push(cmdutil::diag_cmd_failed(
+                "X07WASM_CLANG_SHIM_FAILED",
+                Stage::Codegen,
+                "clang",
+                clang_shim_out.code,
+                &clang_shim_out.stderr,
             ));
             let result = build_result_from_state(
                 &profile_ref,
@@ -587,11 +563,143 @@ pub fn cmd_build(
                 &x07_build_args,
                 &profile.clang.cflags,
                 &profile.wasm_ld.ldflags,
+                codegen_backend,
                 None,
                 None,
             )?;
             let report_doc = build_report_doc(meta, diagnostics, result);
             return emit_build_report(&store, scope, machine, json_mode, report_doc);
+        }
+
+        // Step D: wasm-ld link
+        let mut wasm_ld_full_args = profile.wasm_ld.ldflags.clone();
+        wasm_ld_full_args.push(paths.o_path.display().to_string());
+        wasm_ld_full_args.push(shim_o_path.display().to_string());
+        wasm_ld_full_args.extend(["-o".to_string(), paths.out_wasm.display().to_string()]);
+        let ld_out = match cmdutil::run_cmd_capture(&linker, &wasm_ld_full_args) {
+            Ok(v) => v,
+            Err(err) => {
+                diagnostics.push(cmdutil::diag_cmd_spawn_failed(
+                    "X07WASM_WASM_LD_SPAWN_FAILED",
+                    Stage::Link,
+                    "wasm-ld",
+                    &err,
+                ));
+                let result = build_result_from_state(
+                    &profile_ref,
+                    &paths,
+                    &profile,
+                    &x07_build_args,
+                    &profile.clang.cflags,
+                    &profile.wasm_ld.ldflags,
+                    codegen_backend,
+                    None,
+                    None,
+                )?;
+                let report_doc = build_report_doc(meta, diagnostics, result);
+                return emit_build_report(&store, scope, machine, json_mode, report_doc);
+            }
+        };
+        if !ld_out.status.success() {
+            diagnostics.push(cmdutil::diag_cmd_failed(
+                "X07WASM_WASM_LD_FAILED",
+                Stage::Link,
+                "wasm-ld",
+                ld_out.code,
+                &ld_out.stderr,
+            ));
+            let result = build_result_from_state(
+                &profile_ref,
+                &paths,
+                &profile,
+                &x07_build_args,
+                &profile.clang.cflags,
+                &profile.wasm_ld.ldflags,
+                codegen_backend,
+                None,
+                None,
+            )?;
+            let report_doc = build_report_doc(meta, diagnostics, result);
+            return emit_build_report(&store, scope, machine, json_mode, report_doc);
+        }
+
+        match std::fs::read(&paths.out_wasm)
+            .with_context(|| format!("read: {}", paths.out_wasm.display()))
+        {
+            Ok(b) => b,
+            Err(err) => {
+                diagnostics.push(cmdutil::diag_io_failed(
+                    "X07WASM_BUILD_OUTPUT_IO_FAILED",
+                    Stage::Link,
+                    format!("failed to read output: {}", paths.out_wasm.display()),
+                    &err,
+                ));
+                let result = build_result_from_state(
+                    &profile_ref,
+                    &paths,
+                    &profile,
+                    &x07_build_args,
+                    &profile.clang.cflags,
+                    &profile.wasm_ld.ldflags,
+                    codegen_backend,
+                    None,
+                    None,
+                )?;
+                let report_doc = build_report_doc(meta, diagnostics, result);
+                return emit_build_report(&store, scope, machine, json_mode, report_doc);
+            }
+        }
+    } else {
+        if !paths.out_wasm.is_file() {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_NATIVE_BACKEND_WASM_MISSING",
+                Severity::Error,
+                Stage::Codegen,
+                format!(
+                    "native backend did not produce wasm output: {}",
+                    paths.out_wasm.display()
+                ),
+            ));
+            let result = build_result_from_state(
+                &profile_ref,
+                &paths,
+                &profile,
+                &x07_build_args,
+                &[],
+                &profile.wasm_ld.ldflags,
+                codegen_backend,
+                None,
+                None,
+            )?;
+            let report_doc = build_report_doc(meta, diagnostics, result);
+            return emit_build_report(&store, scope, machine, json_mode, report_doc);
+        }
+
+        match std::fs::read(&paths.out_wasm)
+            .with_context(|| format!("read: {}", paths.out_wasm.display()))
+        {
+            Ok(b) => b,
+            Err(err) => {
+                diagnostics.push(cmdutil::diag_io_failed(
+                    "X07WASM_BUILD_OUTPUT_IO_FAILED",
+                    Stage::Codegen,
+                    format!("failed to read output: {}", paths.out_wasm.display()),
+                    &err,
+                ));
+                let result = build_result_from_state(
+                    &profile_ref,
+                    &paths,
+                    &profile,
+                    &x07_build_args,
+                    &[],
+                    &profile.wasm_ld.ldflags,
+                    codegen_backend,
+                    None,
+                    None,
+                )?;
+                let report_doc = build_report_doc(meta, diagnostics, result);
+                return emit_build_report(&store, scope, machine, json_mode, report_doc);
+            }
         }
     };
 
@@ -606,10 +714,15 @@ pub fn cmd_build(
     let info = match inspect::inspect(&wasm_bytes) {
         Ok(v) => v,
         Err(err) => {
+            let (code, stage) = if codegen_backend == CodegenBackend::NativeX07WasmV1 {
+                ("X07WASM_NATIVE_BACKEND_WASM_INVALID", Stage::Codegen)
+            } else {
+                ("X07WASM_WASM_INSPECT_FAILED", Stage::Link)
+            };
             diagnostics.push(Diagnostic::new(
-                "X07WASM_WASM_INSPECT_FAILED",
+                code,
                 Severity::Error,
-                Stage::Link,
+                stage,
                 format!("failed to inspect wasm: {err:#}"),
             ));
             let result = build_result_from_state(
@@ -619,6 +732,7 @@ pub fn cmd_build(
                 &x07_build_args,
                 &profile.clang.cflags,
                 &profile.wasm_ld.ldflags,
+                codegen_backend,
                 None,
                 None,
             )?;
@@ -709,23 +823,33 @@ pub fn cmd_build(
 
     // Step F: build artifact manifest
     let x07_semver = toolchain::x07_semver().unwrap_or_else(|_| "0.0.0".to_string());
-    let clang_ver = toolchain::tool_first_line(&cc, &["--version"]).ok();
-    let wasm_ld_ver = toolchain::tool_first_line(&linker, &["--version"]).ok();
+    let (clang_ver, wasm_ld_ver) = if codegen_backend == CodegenBackend::CToolchainV1 {
+        let clang_ver = toolchain::tool_first_line(&cc, &["--version"]).ok();
+        let wasm_ld_ver = toolchain::tool_first_line(&linker, &["--version"]).ok();
 
-    meta.tool.clang = clang_ver.clone();
-    meta.tool.wasm_ld = wasm_ld_ver.clone();
+        meta.tool.clang = clang_ver.clone();
+        meta.tool.wasm_ld = wasm_ld_ver.clone();
+        (clang_ver, wasm_ld_ver)
+    } else {
+        (None, None)
+    };
 
     let artifact_doc = build_artifact_doc(
         project_name,
         &profile_ref,
         &wasm_digest,
         &memory_plan,
+        codegen_backend,
         &x07_semver,
         env!("CARGO_PKG_VERSION"),
-        clang_ver.as_deref().unwrap_or(&cc),
-        wasm_ld_ver.as_deref().unwrap_or(&linker),
+        clang_ver.as_deref(),
+        wasm_ld_ver.as_deref(),
         &x07_build_args,
-        &profile.clang.cflags,
+        if codegen_backend == CodegenBackend::CToolchainV1 {
+            &profile.clang.cflags
+        } else {
+            &[]
+        },
         &profile.wasm_ld.ldflags,
     );
 
@@ -764,8 +888,13 @@ pub fn cmd_build(
         &paths,
         &profile,
         &x07_build_args,
-        &profile.clang.cflags,
+        if codegen_backend == CodegenBackend::CToolchainV1 {
+            &profile.clang.cflags
+        } else {
+            &[]
+        },
         &profile.wasm_ld.ldflags,
+        codegen_backend,
         Some(info.exports),
         Some(memory_plan),
     )?;
@@ -863,18 +992,39 @@ fn build_artifact_doc(
     profile_ref: &Value,
     wasm: &report::meta::FileDigest,
     memory_plan: &Value,
+    codegen_backend: CodegenBackend,
     x07_semver: &str,
     x07_wasm_semver: &str,
-    clang_version: &str,
-    wasm_ld_version: &str,
+    clang_version: Option<&str>,
+    wasm_ld_version: Option<&str>,
     x07_build_args: &[String],
     clang_args: &[String],
     wasm_ld_args: &[String],
 ) -> Value {
     let artifact_id = format!("{project_name}-{}", &wasm.sha256[..16]);
+
+    let mut toolchain_obj = serde_json::Map::new();
+    toolchain_obj.insert("x07".to_string(), json!(x07_semver));
+    toolchain_obj.insert("x07_wasm".to_string(), json!(x07_wasm_semver));
+    if let Some(v) = clang_version {
+        toolchain_obj.insert("clang".to_string(), json!(v));
+    }
+    if let Some(v) = wasm_ld_version {
+        toolchain_obj.insert("wasm_ld".to_string(), json!(v));
+    }
+    if let Some(v) = crate::util::wasmtime_version() {
+        toolchain_obj.insert("wasmtime".to_string(), json!(v));
+    }
+
+    let mut repro_obj = serde_json::Map::new();
+    repro_obj.insert("x07_build_args".to_string(), json!(x07_build_args));
+    repro_obj.insert("clang_args".to_string(), json!(clang_args));
+    repro_obj.insert("wasm_ld_args".to_string(), json!(wasm_ld_args));
+
     json!({
-      "schema_version": "x07.wasm.artifact@0.1.0",
+      "schema_version": "x07.wasm.artifact@0.2.0",
       "artifact_id": artifact_id,
+      "codegen_backend": codegen_backend,
       "profile": profile_ref,
       "wasm": wasm,
       "abi": {
@@ -910,18 +1060,8 @@ fn build_artifact_doc(
         "optional": {}
       },
       "memory": memory_plan,
-      "toolchain": {
-        "x07": x07_semver,
-        "x07_wasm": x07_wasm_semver,
-        "clang": clang_version,
-        "wasm_ld": wasm_ld_version,
-        "wasmtime": crate::util::wasmtime_version(),
-      },
-      "repro": {
-        "x07_build_args": x07_build_args,
-        "clang_args": clang_args,
-        "wasm_ld_args": wasm_ld_args,
-      }
+      "toolchain": toolchain_obj,
+      "repro": repro_obj
     })
 }
 
@@ -940,17 +1080,18 @@ fn build_result_placeholder() -> Value {
           &json!({"id":"wasm_release","v":1}),
           &wasm,
           &json!({"stack_first": false, "stack_size_bytes": 0, "initial_memory_bytes": 0, "max_memory_bytes": 0, "growable_memory": false}),
+          CodegenBackend::NativeX07WasmV1,
           "0.0.0",
           env!("CARGO_PKG_VERSION"),
-          "unknown",
-          "unknown",
+          None,
+          None,
           &[],
           &[],
           &[],
       ),
       "exports": { "required": required_exports(), "found": [], "missing": required_exports() },
       "memory": { "stack_first": false, "stack_size_bytes": 0, "initial_memory_bytes": 0, "max_memory_bytes": 0, "growable_memory": false },
-      "flags": { "clang": [], "wasm_ld": [] }
+      "flags": { "codegen_backend": CodegenBackend::NativeX07WasmV1, "clang": [], "wasm_ld": [] }
     })
 }
 
@@ -962,6 +1103,7 @@ fn build_result_from_state(
     x07_build_args: &[String],
     clang_args: &[String],
     wasm_ld_args: &[String],
+    codegen_backend: CodegenBackend,
     exports_found: Option<Vec<String>>,
     memory_plan: Option<Value>,
 ) -> Result<Value> {
@@ -989,10 +1131,11 @@ fn build_result_from_state(
         profile_ref,
         &wasm,
         &memory,
+        codegen_backend,
         &toolchain::x07_semver().unwrap_or_else(|_| "0.0.0".to_string()),
         env!("CARGO_PKG_VERSION"),
-        "unknown",
-        "unknown",
+        None,
+        None,
         x07_build_args,
         clang_args,
         wasm_ld_args,
@@ -1009,7 +1152,7 @@ fn build_result_from_state(
       "artifact": artifact_placeholder,
       "exports": { "required": required, "found": found, "missing": missing },
       "memory": memory,
-      "flags": { "clang": clang_args, "wasm_ld": wasm_ld_args }
+      "flags": { "codegen_backend": codegen_backend, "clang": clang_args, "wasm_ld": wasm_ld_args }
     }))
 }
 
@@ -1029,7 +1172,7 @@ fn build_report_doc(
     let ok = diagnostics.iter().all(|d| d.severity != Severity::Error);
     let exit_code = report::exit_code::exit_code_for_diagnostics(&diagnostics);
     json!({
-      "schema_version": "x07.wasm.build.report@0.1.0",
+      "schema_version": "x07.wasm.build.report@0.2.0",
       "command": "x07-wasm.build",
       "ok": ok,
       "exit_code": exit_code,

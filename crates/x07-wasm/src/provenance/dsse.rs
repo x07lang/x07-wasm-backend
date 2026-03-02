@@ -21,7 +21,7 @@ pub struct DsseSignature {
 }
 
 pub fn pae(payload_type: &str, payload: &[u8]) -> Vec<u8> {
-    let payload_type_len = payload_type.as_bytes().len();
+    let payload_type_len = payload_type.len();
     let payload_len = payload.len();
     let mut out = Vec::with_capacity(6 + 1 + 20 + 1 + payload_type_len + 1 + 20 + 1 + payload_len);
     out.extend_from_slice(b"DSSEv1");

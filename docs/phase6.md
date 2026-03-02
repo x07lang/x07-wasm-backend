@@ -146,6 +146,7 @@ Phase 6 outputs are intended to be consumed by an autonomous deployer (for examp
 Run the Phase 6 gate locally:
 
 ```sh
+# Only required for legacy C toolchain builds.
 export PATH="${WASI_SDK_DIR}/bin:${PATH}"
 bash scripts/ci/check_phase6.sh
 ```

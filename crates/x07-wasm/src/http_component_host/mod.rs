@@ -227,7 +227,7 @@ fn build_engine(runtime_limits: &WasmRuntimeLimits, max_concurrency: usize) -> R
                     return Ok(v);
                 }
             }
-            Err(err.into())
+            Err(err)
         }
     }
 }

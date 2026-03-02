@@ -395,6 +395,7 @@ fn build_core_bundle(
         profile: Some(web_ui_profile.doc.wasm_profile_id.clone()),
         profile_file: None,
         index: args.wasm_index.clone(),
+        codegen_backend: None,
         emit_dir: Some(emit_dir.clone()),
         out: Some(args.out_dir.join("app.wasm")),
         artifact_out: Some(args.out_dir.join("app.wasm.manifest.json")),

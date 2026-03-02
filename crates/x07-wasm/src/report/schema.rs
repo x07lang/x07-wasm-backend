@@ -159,7 +159,7 @@ fn schema_bytes_for_scope(scope: Scope) -> Result<&'static [u8]> {
 
 fn schema_version_for_scope(scope: Scope) -> &'static str {
     match scope {
-        Scope::Build => "x07.wasm.build.report@0.1.0",
+        Scope::Build => "x07.wasm.build.report@0.2.0",
         Scope::Run => "x07.wasm.run.report@0.1.0",
         Scope::Serve => "x07.wasm.serve.report@0.1.0",
         Scope::Doctor => "x07.wasm.doctor.report@0.1.0",

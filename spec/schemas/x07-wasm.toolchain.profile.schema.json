@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-wasm.toolchain.profile.schema.json",
-  "title": "x07.wasm.toolchain.profile@0.1.0",
-  "description": "Pinned toolchain requirements (commands + version probes + constraints) for x07-wasm. Used by `x07-wasm toolchain validate` to enforce reproducible CI environments.",
+  "title": "x07.wasm.toolchain.profile@0.2.0",
+  "description": "Pinned toolchain requirements (commands + version probes + constraints) for x07-wasm. Used by `x07-wasm toolchain validate` to enforce reproducible CI environments. Phase 7 adds required-vs-optional tool semantics.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -13,7 +13,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "x07.wasm.toolchain.profile@0.1.0"
+      "const": "x07.wasm.toolchain.profile@0.2.0"
     },
     "id": {
       "$ref": "#/$defs/id"
@@ -126,7 +126,8 @@
       "required": [
         "cmd",
         "version",
-        "constraint"
+        "constraint",
+        "required"
       ],
       "properties": {
         "cmd": {
@@ -145,6 +146,9 @@
           "minLength": 1,
           "maxLength": 128,
           "description": "SemVer constraint string interpreted by x07-wasm (implementation-defined but stable per tool)."
+        },
+        "required": {
+          "type": "boolean"
         },
         "notes": {
           "type": "string",

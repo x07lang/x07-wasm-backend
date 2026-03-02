@@ -223,6 +223,8 @@
             "solve",
             "http",
             "cli",
+            "http-native",
+            "cli-native",
             "http-adapter",
             "cli-adapter",
             "all"

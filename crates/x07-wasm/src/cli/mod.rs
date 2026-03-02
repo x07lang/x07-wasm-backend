@@ -539,6 +539,10 @@ pub struct BuildArgs {
     )]
     pub index: PathBuf,
 
+    /// Override the profile’s codegen_backend.
+    #[arg(long = "codegen-backend", value_name = "BACKEND")]
+    pub codegen_backend: Option<String>,
+
     /// Directory for intermediate artifacts.
     #[arg(long, value_name = "DIR")]
     pub emit_dir: Option<PathBuf>,
@@ -1015,6 +1019,10 @@ pub enum ComponentBuildEmit {
     Solve,
     Http,
     Cli,
+    #[value(name = "http-native")]
+    HttpNative,
+    #[value(name = "cli-native")]
+    CliNative,
     #[value(name = "http-adapter")]
     HttpAdapter,
     #[value(name = "cli-adapter")]

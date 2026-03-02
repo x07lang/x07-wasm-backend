@@ -38,10 +38,34 @@ pub struct WasmProfileDoc {
     pub v: u64,
     pub target: WasmProfileTarget,
     pub x07_build: WasmProfileX07Build,
+    pub codegen_backend: CodegenBackend,
     pub clang: WasmProfileClang,
     pub wasm_ld: WasmProfileWasmLd,
     pub defaults: WasmProfileDefaults,
     pub runtime: WasmRuntimeLimits,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CodegenBackend {
+    #[serde(rename = "c_toolchain_v1")]
+    CToolchainV1,
+    #[serde(rename = "native_x07_wasm_v1")]
+    NativeX07WasmV1,
+}
+
+impl std::str::FromStr for CodegenBackend {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        match s {
+            "c_toolchain_v1" => Ok(Self::CToolchainV1),
+            "native_x07_wasm_v1" => Ok(Self::NativeX07WasmV1),
+            _ => Err(format!(
+                "invalid codegen backend {s:?} (expected: c_toolchain_v1 | native_x07_wasm_v1)"
+            )),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

@@ -1,13 +1,14 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-wasm.artifact.schema.json",
-  "title": "x07.wasm.artifact@0.1.0",
-  "description": "Build artifact manifest for an x07 wasm module (solve_v2 via freestanding C ABI).",
+  "title": "x07.wasm.artifact@0.2.0",
+  "description": "Build artifact manifest for an x07 wasm module (solve_v2 via freestanding ABI).",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "schema_version",
     "artifact_id",
+    "codegen_backend",
     "wasm",
     "abi",
     "exports",
@@ -18,12 +19,19 @@
   "properties": {
     "schema_version": {
       "type": "string",
-      "const": "x07.wasm.artifact@0.1.0"
+      "const": "x07.wasm.artifact@0.2.0"
     },
     "artifact_id": {
       "type": "string",
       "minLength": 1,
       "maxLength": 256
+    },
+    "codegen_backend": {
+      "type": "string",
+      "enum": [
+        "c_toolchain_v1",
+        "native_x07_wasm_v1"
+      ]
     },
     "profile": {
       "$ref": "#/$defs/profile_ref"
@@ -347,9 +355,7 @@
       "additionalProperties": false,
       "required": [
         "x07",
-        "x07_wasm",
-        "clang",
-        "wasm_ld"
+        "x07_wasm"
       ],
       "properties": {
         "x07": {

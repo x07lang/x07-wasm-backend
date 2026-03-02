@@ -1,14 +1,14 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-wasm.build.report.schema.json",
-  "title": "x07.wasm.build.report@0.1.0",
-  "description": "Machine-readable report emitted by `x07-wasm build` (x07 -> C -> wasm32).",
+  "title": "x07.wasm.build.report@0.2.0",
+  "description": "Machine-readable report emitted by `x07-wasm build` (x07 -> wasm32).",
   "type": "object",
   "additionalProperties": false,
   "properties": {
     "schema_version": {
       "type": "string",
-      "const": "x07.wasm.build.report@0.1.0"
+      "const": "x07.wasm.build.report@0.2.0"
     },
     "command": {
       "type": "string",
@@ -281,10 +281,16 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "clang",
-        "wasm_ld"
+        "codegen_backend"
       ],
       "properties": {
+        "codegen_backend": {
+          "type": "string",
+          "enum": [
+            "c_toolchain_v1",
+            "native_x07_wasm_v1"
+          ]
+        },
         "clang": {
           "type": "array",
           "items": {

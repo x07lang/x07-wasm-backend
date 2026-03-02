@@ -205,7 +205,7 @@ write_bytes_file dist/cli.stdin.over.bin "$CLI_STDIN_OVER"
 write_bytes_file dist/http.request_body.over.bin "$HTTP_REQ_BODY_OVER"
 
 echo "==> gate: native CLI component build + run (cli echo)"
-x07-wasm component build --project examples/solve_pure_echo/x07.json --emit cli --out-dir target/x07-wasm/component/cli_echo_native --clean \
+x07-wasm component build --project examples/solve_pure_echo/x07.json --emit cli-native --out-dir target/x07-wasm/component/cli_echo_native --clean \
   --json --report-out build/wasm/component.build.cli_echo_native.json --quiet-json
 
 x07-wasm component targets --component target/x07-wasm/component/cli_echo_native/cli.component.wasm \
@@ -233,7 +233,7 @@ check_report_exit_code_and_has_code build/wasm/component.run.cli_echo_native.bud
 check_component_run_has_incident_manifest build/wasm/component.run.cli_echo_native.budget_stdin.json
 
 echo "==> gate: native HTTP component build + serve canary (http echo)"
-x07-wasm component build --project examples/http_echo/x07.json --emit http --out-dir target/x07-wasm/component/http_echo_native --clean \
+x07-wasm component build --project examples/http_echo/x07.json --emit http-native --out-dir target/x07-wasm/component/http_echo_native --clean \
   --json --report-out build/wasm/component.build.http_echo_native.json --quiet-json
 
 x07-wasm component targets --component target/x07-wasm/component/http_echo_native/http.component.wasm \
@@ -263,7 +263,7 @@ check_report_exit_code_and_has_code build/wasm/serve.http_echo_native.budget_req
 check_serve_has_incident_manifest build/wasm/serve.http_echo_native.budget_req_body.json
 
 echo "==> gate: native HTTP glue parse errors + incidents (bad response envelope)"
-x07-wasm component build --project examples/http_bad_response/x07.json --emit http --out-dir target/x07-wasm/component/http_bad_response_native --clean \
+x07-wasm component build --project examples/http_bad_response/x07.json --emit http-native --out-dir target/x07-wasm/component/http_bad_response_native --clean \
   --json --report-out build/wasm/component.build.http_bad_response_native.json --quiet-json
 
 set +e
