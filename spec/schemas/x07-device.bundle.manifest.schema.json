@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-device.bundle.manifest.schema.json",
+  "title": "x07.device.bundle.manifest@0.1.0",
+  "description": "Machine-readable manifest describing a built device UI bundle (UI wasm + pinned host ABI).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "kind", "target", "profile", "ui_wasm", "host", "bundle_digest"],
+  "properties": {
+    "schema_version": { "const": "x07.device.bundle.manifest@0.1.0" },
+    "kind": { "const": "device_bundle" },
+    "target": { "type": "string", "enum": ["desktop", "ios", "android"] },
+    "profile": { "$ref": "#/$defs/profile_ref" },
+    "ui_wasm": { "$ref": "#/$defs/file_digest" },
+    "host": { "$ref": "#/$defs/host" },
+    "bundle_digest": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "rel_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^(?![\\\\/])(?![A-Za-z]:)(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)).+"
+    },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "file_digest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes_len"],
+      "properties": {
+        "path": { "$ref": "#/$defs/rel_path" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "bytes_len": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "profile_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "v", "file"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "v": { "type": "integer", "minimum": 1 },
+        "file": { "$ref": "#/$defs/file_digest" }
+      }
+    },
+    "host": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "abi_name", "abi_version", "host_abi_hash"],
+      "properties": {
+        "kind": { "const": "webview_v1" },
+        "abi_name": { "const": "webview_host_v1" },
+        "abi_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "host_abi_hash": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}
+

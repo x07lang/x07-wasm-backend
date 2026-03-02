@@ -21,6 +21,8 @@ const X07_ARCH_WASM_COMPONENT_INDEX_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-arch.wasm.component.index.schema.json");
 const X07_ARCH_WEB_UI_INDEX_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-arch.web_ui.index.schema.json");
+const X07_ARCH_DEVICE_INDEX_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-arch.device.index.schema.json");
 const X07_ARCH_APP_INDEX_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-arch.app.index.schema.json");
 const X07_ARCH_APP_OPS_INDEX_SCHEMA_BYTES: &[u8] =
@@ -73,6 +75,13 @@ const X07_WEB_UI_EFFECT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-web_ui.effect.schema.json");
 const X07_WEB_UI_TRACE_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-web_ui.trace.schema.json");
+
+const X07_DEVICE_PROFILE_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-device.profile.schema.json");
+const X07_DEVICE_BUNDLE_MANIFEST_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-device.bundle.manifest.schema.json");
+const X07_DEVICE_PACKAGE_MANIFEST_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-device.package.manifest.schema.json");
 
 const X07_APP_PROFILE_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-app.profile.schema.json");
@@ -129,6 +138,14 @@ const X07_WASM_COMPONENT_RUN_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.component.run.report.schema.json");
 const X07_WASM_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.profile.validate.report.schema.json");
+const X07_WASM_DEVICE_INDEX_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.device.index.validate.report.schema.json");
+const X07_WASM_DEVICE_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.device.profile.validate.report.schema.json");
+const X07_WASM_DEVICE_BUILD_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.device.build.report.schema.json");
+const X07_WASM_DEVICE_VERIFY_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.device.verify.report.schema.json");
 const X07_WASM_WEB_UI_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] = include_bytes!(
     "../../../../spec/schemas/x07-wasm.web_ui.contracts.validate.report.schema.json"
 );
@@ -197,6 +214,7 @@ impl SchemaStore {
             X07_ARCH_WIT_INDEX_SCHEMA_BYTES,
             X07_ARCH_WASM_COMPONENT_INDEX_SCHEMA_BYTES,
             X07_ARCH_WEB_UI_INDEX_SCHEMA_BYTES,
+            X07_ARCH_DEVICE_INDEX_SCHEMA_BYTES,
             X07_ARCH_APP_INDEX_SCHEMA_BYTES,
             X07_ARCH_APP_OPS_INDEX_SCHEMA_BYTES,
             X07_ARCH_WASM_TOOLCHAIN_INDEX_SCHEMA_BYTES,
@@ -213,6 +231,9 @@ impl SchemaStore {
             X07_WEB_UI_FRAME_SCHEMA_BYTES,
             X07_WEB_UI_EFFECT_SCHEMA_BYTES,
             X07_WEB_UI_TRACE_SCHEMA_BYTES,
+            X07_DEVICE_PROFILE_SCHEMA_BYTES,
+            X07_DEVICE_BUNDLE_MANIFEST_SCHEMA_BYTES,
+            X07_DEVICE_PACKAGE_MANIFEST_SCHEMA_BYTES,
             X07_APP_PROFILE_SCHEMA_BYTES,
             X07_APP_BUNDLE_SCHEMA_BYTES,
             X07_APP_PACK_SCHEMA_BYTES,
@@ -249,6 +270,10 @@ impl SchemaStore {
             X07_WASM_COMPONENT_TARGETS_REPORT_SCHEMA_BYTES,
             X07_WASM_COMPONENT_RUN_REPORT_SCHEMA_BYTES,
             X07_WASM_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES,
+            X07_WASM_DEVICE_INDEX_VALIDATE_REPORT_SCHEMA_BYTES,
+            X07_WASM_DEVICE_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES,
+            X07_WASM_DEVICE_BUILD_REPORT_SCHEMA_BYTES,
+            X07_WASM_DEVICE_VERIFY_REPORT_SCHEMA_BYTES,
             X07_WASM_WEB_UI_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES,
             X07_WASM_WEB_UI_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES,
             X07_WASM_WEB_UI_BUILD_REPORT_SCHEMA_BYTES,
@@ -416,6 +441,14 @@ fn report_schema_id_for_scope(scope: Scope) -> &'static str {
         Scope::HttpRegressFromIncident => {
             "https://x07.io/spec/x07-wasm.http.regress.from.incident.report.schema.json"
         }
+        Scope::DeviceIndexValidate => {
+            "https://x07.io/spec/x07-wasm.device.index.validate.report.schema.json"
+        }
+        Scope::DeviceProfileValidate => {
+            "https://x07.io/spec/x07-wasm.device.profile.validate.report.schema.json"
+        }
+        Scope::DeviceBuild => "https://x07.io/spec/x07-wasm.device.build.report.schema.json",
+        Scope::DeviceVerify => "https://x07.io/spec/x07-wasm.device.verify.report.schema.json",
         Scope::CliSpecrowsCheck => {
             "https://x07.io/spec/x07-wasm.cli.specrows.check.report.schema.json"
         }
@@ -448,6 +481,7 @@ mod tests {
             "https://x07.io/spec/x07-arch.wit.index.schema.json",
             "https://x07.io/spec/x07-arch.wasm.component.index.schema.json",
             "https://x07.io/spec/x07-arch.web_ui.index.schema.json",
+            "https://x07.io/spec/x07-arch.device.index.schema.json",
             "https://x07.io/spec/x07-arch.app.index.schema.json",
             "https://x07.io/spec/x07-arch.app.ops.index.schema.json",
             "https://x07.io/spec/x07-arch.wasm.toolchain.index.schema.json",
@@ -464,6 +498,9 @@ mod tests {
             "https://x07.io/spec/x07-web_ui.frame.schema.json",
             "https://x07.io/spec/x07-web_ui.effect.schema.json",
             "https://x07.io/spec/x07-web_ui.trace.schema.json",
+            "https://x07.io/spec/x07-device.profile.schema.json",
+            "https://x07.io/spec/x07-device.bundle.manifest.schema.json",
+            "https://x07.io/spec/x07-device.package.manifest.schema.json",
             "https://x07.io/spec/x07-app.profile.schema.json",
             "https://x07.io/spec/x07-app.bundle.schema.json",
             "https://x07.io/spec/x07-app.pack.schema.json",
@@ -499,6 +536,10 @@ mod tests {
             "https://x07.io/spec/x07-wasm.component.targets.report.schema.json",
             "https://x07.io/spec/x07-wasm.component.run.report.schema.json",
             "https://x07.io/spec/x07-wasm.profile.validate.report.schema.json",
+            "https://x07.io/spec/x07-wasm.device.index.validate.report.schema.json",
+            "https://x07.io/spec/x07-wasm.device.profile.validate.report.schema.json",
+            "https://x07.io/spec/x07-wasm.device.build.report.schema.json",
+            "https://x07.io/spec/x07-wasm.device.verify.report.schema.json",
             "https://x07.io/spec/x07-wasm.web_ui.contracts.validate.report.schema.json",
             "https://x07.io/spec/x07-wasm.web_ui.profile.validate.report.schema.json",
             "https://x07.io/spec/x07-wasm.web_ui.build.report.schema.json",

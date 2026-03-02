@@ -1,6 +1,6 @@
 # x07-wasm-backend
 
-Phase 0–7 WASM tooling for X07:
+Phase 0–8 WASM tooling for X07:
 
 - `x07-wasm build`: build solve-pure wasm modules (Phase 7 defaults to native `x07 build --emit-wasm`; legacy `clang`/`wasm-ld` path is still available)
 - `x07-wasm run`: deterministic runner for the Phase 0 ABI (`x07_solve_v2` via WASM Basic C ABI sret)
@@ -51,6 +51,11 @@ Phase 0–7 WASM tooling for X07:
   - wasm profiles add `codegen_backend` (default: `native_x07_wasm_v1`)
   - `x07-wasm build --codegen-backend native_x07_wasm_v1` to force native backend
   - `x07-wasm build --codegen-backend c_toolchain_v1` to force legacy C toolchain backend
+- Phase 8 (device bundles):
+  - `x07-wasm device index validate`
+  - `x07-wasm device profile validate`
+  - `x07-wasm device build`
+  - `x07-wasm device verify`
 
 ## Install (local)
 
@@ -110,6 +115,10 @@ x07-wasm run \
 
 - `docs/phase7.md`
 
+## Phase 8 docs
+
+- `docs/phase8.md`
+
 ## Contracts-as-data
 
 - WASM profile registry: `arch/wasm/index.x07wasm.json`
@@ -118,6 +127,7 @@ x07-wasm run \
 - Component profile registry: `arch/wasm/component/index.x07wasm.component.json`
 - Web UI profile registry: `arch/web_ui/index.x07webui.json`
 - App profile registry: `arch/app/index.x07app.json`
+- Device profile registry: `arch/device/index.x07device.json`
 - Schemas (published to `https://x07.io/spec/`): `spec/schemas/*.schema.json`
 
 ## CI / smoke
@@ -130,6 +140,7 @@ x07-wasm run \
 - Phase 5 gate: `scripts/ci/check_phase5.sh`
 - Phase 6 gate: `scripts/ci/check_phase6.sh`
 - Phase 7 gate: `scripts/ci/check_phase7.sh`
+- Phase 8 gate: `scripts/ci/check_phase8.sh`
 - Example freestanding smoke: `examples/solve_pure_echo/ci/freestanding_smoke.sh`
 
 ## Incidents

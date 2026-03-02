@@ -1,0 +1,248 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-device.profile.schema.json",
+  "title": "x07.device.profile@0.1.0",
+  "description": "Pinned device app profile contract consumed by x07-wasm device tooling and device hosts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "v",
+    "target",
+    "identity",
+    "version",
+    "security",
+    "ui",
+    "backend",
+    "capabilities"
+  ],
+  "properties": {
+    "schema_version": { "const": "x07.device.profile@0.1.0" },
+    "id": { "$ref": "#/$defs/id" },
+    "v": { "type": "integer", "minimum": 1 },
+    "target": { "type": "string", "enum": ["desktop", "ios", "android"] },
+    "identity": { "$ref": "#/$defs/identity" },
+    "version": { "$ref": "#/$defs/version" },
+    "security": { "$ref": "#/$defs/security" },
+    "ui": { "$ref": "#/$defs/ui" },
+    "backend": { "$ref": "#/$defs/backend" },
+    "capabilities": { "$ref": "#/$defs/capabilities" },
+    "desktop": { "$ref": "#/$defs/desktop" },
+    "ios": { "$ref": "#/$defs/ios" },
+    "android": { "$ref": "#/$defs/android" },
+    "notes": { "type": "string", "maxLength": 4096 }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "rel_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^(?![\\\\/])(?![A-Za-z]:)(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)).+"
+    },
+    "app_id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 120,
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]+[a-zA-Z0-9]$"
+    },
+    "semver": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32,
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?$"
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["display_name", "app_id"],
+      "properties": {
+        "display_name": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "app_id": { "$ref": "#/$defs/app_id" }
+      }
+    },
+    "version": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "build"],
+      "properties": {
+        "version": { "$ref": "#/$defs/semver" },
+        "build": { "type": "integer", "minimum": 1, "maximum": 2147483647 }
+      }
+    },
+    "security": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allow_dynamic_code_loading"],
+      "properties": { "allow_dynamic_code_loading": { "const": false } }
+    },
+    "ui": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project", "web_ui_profile_id"],
+      "properties": {
+        "project": { "$ref": "#/$defs/rel_path" },
+        "web_ui_profile_id": { "$ref": "#/$defs/id" }
+      }
+    },
+    "backend_remote_http": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "base_url", "allowed_hosts"],
+      "properties": {
+        "mode": { "const": "remote_http" },
+        "base_url": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300,
+          "pattern": "^https?://"
+        },
+        "allowed_hosts": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9.-]*[A-Za-z0-9]$|^localhost$|^127\\.0\\.0\\.1$"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "backend_none": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": { "mode": { "const": "none" } }
+    },
+    "backend": { "oneOf": [{ "$ref": "#/$defs/backend_remote_http" }, { "$ref": "#/$defs/backend_none" }] },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["network", "device"],
+      "properties": {
+        "network": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "allow_hosts"],
+          "properties": {
+            "mode": { "const": "deny_by_default" },
+            "allow_hosts": {
+              "type": "array",
+              "minItems": 0,
+              "maxItems": 64,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9.-]*[A-Za-z0-9]$|^localhost$|^127\\.0\\.0\\.1$"
+              },
+              "uniqueItems": true
+            }
+          }
+        },
+        "device": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["clipboard", "local_kv", "notifications"],
+          "properties": {
+            "clipboard": { "type": "boolean" },
+            "local_kv": { "type": "boolean" },
+            "notifications": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "desktop": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["window", "package"],
+      "properties": {
+        "window": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["width", "height", "resizable"],
+          "properties": {
+            "width": { "type": "integer", "minimum": 320, "maximum": 4096 },
+            "height": { "type": "integer", "minimum": 320, "maximum": 4096 },
+            "resizable": { "type": "boolean" }
+          }
+        },
+        "package": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {
+            "kind": { "type": "string", "enum": ["dir", "archive"] },
+            "format": { "type": "string", "enum": ["zip"] }
+          },
+          "allOf": [
+            {
+              "if": { "properties": { "kind": { "const": "archive" } } },
+              "then": { "required": ["format"] }
+            }
+          ]
+        }
+      }
+    },
+    "ios": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bundle_id", "signing_mode"],
+      "properties": {
+        "bundle_id": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 120,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9.-]+[A-Za-z0-9]$"
+        },
+        "signing_mode": { "type": "string", "enum": ["dev", "store"] }
+      }
+    },
+    "android": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["application_id", "min_sdk", "signing_mode"],
+      "properties": {
+        "application_id": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 120,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._]+[A-Za-z0-9]$"
+        },
+        "min_sdk": { "type": "integer", "minimum": 21, "maximum": 35 },
+        "signing_mode": { "type": "string", "enum": ["dev", "store"] }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["target", "desktop"],
+          "properties": { "target": { "const": "desktop" } }
+        },
+        {
+          "type": "object",
+          "required": ["target", "ios"],
+          "properties": { "target": { "const": "ios" } }
+        },
+        {
+          "type": "object",
+          "required": ["target", "android"],
+          "properties": { "target": { "const": "android" } }
+        }
+      ]
+    }
+  ]
+}
+

@@ -1,0 +1,49 @@
+{
+  "schema_version": "x07.device.profile@0.1.0",
+  "id": "device_release",
+  "v": 1,
+  "target": "desktop",
+  "identity": {
+    "display_name": "x07 Device",
+    "app_id": "org.x07.device"
+  },
+  "version": {
+    "version": "0.1.0",
+    "build": 1
+  },
+  "security": {
+    "allow_dynamic_code_loading": false
+  },
+  "ui": {
+    "project": "examples/app_min/frontend/x07.json",
+    "web_ui_profile_id": "web_ui_release"
+  },
+  "backend": {
+    "mode": "remote_http",
+    "base_url": "https://example.invalid",
+    "allowed_hosts": ["example.invalid"]
+  },
+  "capabilities": {
+    "network": {
+      "mode": "deny_by_default",
+      "allow_hosts": ["example.invalid"]
+    },
+    "device": {
+      "clipboard": true,
+      "local_kv": true,
+      "notifications": true
+    }
+  },
+  "desktop": {
+    "window": {
+      "width": 1080,
+      "height": 720,
+      "resizable": true
+    },
+    "package": {
+      "kind": "archive",
+      "format": "zip"
+    }
+  }
+}
+

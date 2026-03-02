@@ -1,4 +1,4 @@
-#![recursion_limit = "512"]
+#![recursion_limit = "1024"]
 
 mod app;
 mod arch;
@@ -8,6 +8,7 @@ mod cli;
 mod cmdutil;
 mod component;
 mod deploy;
+mod device;
 mod diag;
 mod guest_diag;
 mod http_component_host;

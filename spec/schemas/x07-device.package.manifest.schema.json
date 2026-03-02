@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-device.package.manifest.schema.json",
+  "title": "x07.device.package.manifest@0.1.0",
+  "description": "Machine-readable manifest describing a packaged device app payload (Phase 9+).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "kind", "target", "bundle_manifest_sha256", "package"],
+  "properties": {
+    "schema_version": { "const": "x07.device.package.manifest@0.1.0" },
+    "kind": { "const": "device_package" },
+    "target": { "type": "string", "enum": ["desktop", "ios", "android"] },
+    "bundle_manifest_sha256": { "$ref": "#/$defs/sha256" },
+    "package": { "$ref": "#/$defs/package" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "rel_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^(?![\\\\/])(?![A-Za-z]:)(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)).+"
+    },
+    "package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "path"],
+      "properties": {
+        "kind": { "type": "string", "enum": ["dir", "archive"] },
+        "path": { "$ref": "#/$defs/rel_path" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "archive" } } },
+          "then": { "required": ["sha256"] }
+        }
+      ]
+    }
+  }
+}
+

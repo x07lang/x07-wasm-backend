@@ -206,6 +206,21 @@ pub enum Command {
     #[command(name = "http-regress-from-incident")]
     HttpRegressFromIncident(HttpRegressFromIncidentArgs),
 
+    /// Device bundle tooling (Phase 8).
+    Device(DeviceArgs),
+    /// Alias for `x07-wasm device index validate`.
+    #[command(name = "device-index-validate")]
+    DeviceIndexValidate(DeviceIndexValidateArgs),
+    /// Alias for `x07-wasm device profile validate`.
+    #[command(name = "device-profile-validate")]
+    DeviceProfileValidate(DeviceProfileValidateArgs),
+    /// Alias for `x07-wasm device build`.
+    #[command(name = "device-build")]
+    DeviceBuild(DeviceBuildArgs),
+    /// Alias for `x07-wasm device verify`.
+    #[command(name = "device-verify")]
+    DeviceVerify(DeviceVerifyArgs),
+
     /// Validate arch/wasm/index.x07wasm.json and referenced profile files.
     Profile(ProfileArgs),
     /// Alias for `x07-wasm profile validate`.
@@ -491,6 +506,45 @@ impl Command {
                 crate::http_reducer::regress_from_incident::cmd_http_regress_from_incident(
                     raw_argv, scope, machine, v,
                 )
+            }
+
+            Command::Device(args) => match args.cmd {
+                DeviceCommand::Index(idx) => match idx.cmd {
+                    DeviceIndexCommand::Validate(v) => {
+                        crate::device::index_validate::cmd_device_index_validate(
+                            raw_argv, scope, machine, v,
+                        )
+                    }
+                },
+                DeviceCommand::Profile(p) => match p.cmd {
+                    DeviceProfileCommand::Validate(v) => {
+                        crate::device::profile_validate::cmd_device_profile_validate(
+                            raw_argv, scope, machine, v,
+                        )
+                    }
+                },
+                DeviceCommand::Build(v) => {
+                    crate::device::build::cmd_device_build(raw_argv, scope, machine, v)
+                }
+                DeviceCommand::Verify(v) => {
+                    crate::device::verify::cmd_device_verify(raw_argv, scope, machine, v)
+                }
+            },
+            Command::DeviceIndexValidate(v) => {
+                crate::device::index_validate::cmd_device_index_validate(
+                    raw_argv, scope, machine, v,
+                )
+            }
+            Command::DeviceProfileValidate(v) => {
+                crate::device::profile_validate::cmd_device_profile_validate(
+                    raw_argv, scope, machine, v,
+                )
+            }
+            Command::DeviceBuild(v) => {
+                crate::device::build::cmd_device_build(raw_argv, scope, machine, v)
+            }
+            Command::DeviceVerify(v) => {
+                crate::device::verify::cmd_device_verify(raw_argv, scope, machine, v)
             }
             Command::Profile(args) => match args.cmd {
                 ProfileCommand::Validate(v) => {
@@ -1777,6 +1831,117 @@ pub struct HttpRegressFromIncidentArgs {
 
 #[derive(Debug, Clone, Args)]
 #[command(subcommand_required = true)]
+pub struct DeviceArgs {
+    #[command(subcommand)]
+    pub cmd: DeviceCommand,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum DeviceCommand {
+    Index(DeviceIndexArgs),
+    Profile(DeviceProfileArgs),
+    Build(DeviceBuildArgs),
+    Verify(DeviceVerifyArgs),
+}
+
+#[derive(Debug, Clone, Args)]
+#[command(subcommand_required = true)]
+pub struct DeviceIndexArgs {
+    #[command(subcommand)]
+    pub cmd: DeviceIndexCommand,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum DeviceIndexCommand {
+    Validate(DeviceIndexValidateArgs),
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct DeviceIndexValidateArgs {
+    /// Path to the device profile registry.
+    #[arg(
+        long,
+        value_name = "PATH",
+        default_value = "arch/device/index.x07device.json"
+    )]
+    pub index: PathBuf,
+}
+
+#[derive(Debug, Clone, Args)]
+#[command(subcommand_required = true)]
+pub struct DeviceProfileArgs {
+    #[command(subcommand)]
+    pub cmd: DeviceProfileCommand,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum DeviceProfileCommand {
+    Validate(DeviceProfileValidateArgs),
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct DeviceProfileValidateArgs {
+    /// Path to the device profile registry.
+    #[arg(
+        long,
+        value_name = "PATH",
+        default_value = "arch/device/index.x07device.json"
+    )]
+    pub index: PathBuf,
+
+    /// Only validate specific profile id(s).
+    #[arg(long, value_name = "ID")]
+    pub profile: Vec<String>,
+
+    /// Validate and use this device profile JSON file directly (bypass registry).
+    #[arg(long, value_name = "PATH")]
+    pub profile_file: Option<PathBuf>,
+
+    /// Treat warnings as errors.
+    #[arg(long)]
+    pub strict: bool,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct DeviceBuildArgs {
+    /// Path to the device profile registry.
+    #[arg(
+        long,
+        value_name = "PATH",
+        default_value = "arch/device/index.x07device.json"
+    )]
+    pub index: PathBuf,
+
+    /// Device profile id (loaded from arch/device/index.x07device.json).
+    #[arg(long, value_name = "ID", conflicts_with = "profile_file")]
+    pub profile: Option<String>,
+
+    /// Build using this device profile file directly (bypass index).
+    #[arg(long, value_name = "PATH", conflicts_with = "profile")]
+    pub profile_file: Option<PathBuf>,
+
+    /// Output directory for the device bundle.
+    #[arg(long, value_name = "DIR", default_value = "dist/device")]
+    pub out_dir: PathBuf,
+
+    /// Delete out-dir before writing bundle artifacts.
+    #[arg(long)]
+    pub clean: bool,
+
+    /// Treat warnings as errors.
+    #[arg(long)]
+    pub strict: bool,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct DeviceVerifyArgs {
+    /// Directory containing the device bundle.
+    #[arg(long, value_name = "DIR", default_value = "dist/device")]
+    pub dir: PathBuf,
+}
+
+#[derive(Debug, Clone, Args)]
+#[command(subcommand_required = true)]
 pub struct ProfileArgs {
     #[command(subcommand)]
     pub cmd: ProfileCommand,
@@ -1887,6 +2052,10 @@ pub enum Scope {
     HttpServe,
     HttpTest,
     HttpRegressFromIncident,
+    DeviceIndexValidate,
+    DeviceProfileValidate,
+    DeviceBuild,
+    DeviceVerify,
     ProfileValidate,
     CliSpecrowsCheck,
 }
@@ -1984,6 +2153,16 @@ pub fn scope_for_command(cmd: Option<&Command>) -> Scope {
         Some(Command::HttpServe(_)) => Scope::HttpServe,
         Some(Command::HttpTest(_)) => Scope::HttpTest,
         Some(Command::HttpRegressFromIncident(_)) => Scope::HttpRegressFromIncident,
+        Some(Command::Device(args)) => match args.cmd {
+            DeviceCommand::Index(_) => Scope::DeviceIndexValidate,
+            DeviceCommand::Profile(_) => Scope::DeviceProfileValidate,
+            DeviceCommand::Build(_) => Scope::DeviceBuild,
+            DeviceCommand::Verify(_) => Scope::DeviceVerify,
+        },
+        Some(Command::DeviceIndexValidate(_)) => Scope::DeviceIndexValidate,
+        Some(Command::DeviceProfileValidate(_)) => Scope::DeviceProfileValidate,
+        Some(Command::DeviceBuild(_)) => Scope::DeviceBuild,
+        Some(Command::DeviceVerify(_)) => Scope::DeviceVerify,
         Some(Command::Profile(_)) => Scope::ProfileValidate,
         Some(Command::ProfileValidate(_)) => Scope::ProfileValidate,
         Some(Command::Cli(_)) => Scope::CliSpecrowsCheck,

@@ -153,6 +153,26 @@ pub fn build_specrows_doc() -> Value {
         ["deploy-plan","opt","","--out-dir","out_dir","PATH","Output directory for deploy plan + emitted manifests."],
         ["deploy-plan","opt","","--pack-manifest","pack_manifest","PATH","App pack manifest file (x07.app.pack@0.1.0)."],
 
+        ["device-build","about","Alias for `x07-wasm device build`. Build a device UI bundle (web-ui reducer wasm + pinned host ABI) and emit x07.wasm.device.build.report@0.1.0."],
+        ["device-build","flag","","--clean","clean","Delete out-dir before writing bundle artifacts."],
+        ["device-build","flag","","--strict","strict","Treat warnings as errors (nonzero exit on any warning)."],
+        ["device-build","opt","","--index","index","PATH","Path to arch/device/index.x07device.json.",{ "default": "arch/device/index.x07device.json" }],
+        ["device-build","opt","","--out-dir","out.dir","PATH","Output directory for the device bundle.",{ "default": "dist/device" }],
+        ["device-build","opt","","--profile","profile.id","STR","Device profile id to build (from the device index)."],
+        ["device-build","opt","","--profile-file","profile.file","PATH","Build using this device profile file directly (bypass index)."],
+
+        ["device-index-validate","about","Alias for `x07-wasm device index validate`. Validate device profile registry and emit x07.wasm.device.index.validate.report@0.1.0."],
+        ["device-index-validate","opt","","--index","index","PATH","Path to arch/device/index.x07device.json.",{ "default": "arch/device/index.x07device.json" }],
+
+        ["device-profile-validate","about","Alias for `x07-wasm device profile validate`. Validate device profiles and cross-references. Emits x07.wasm.device.profile.validate.report@0.1.0."],
+        ["device-profile-validate","flag","","--strict","strict","Treat warnings as errors (nonzero exit on any warning)."],
+        ["device-profile-validate","opt","","--index","index","PATH","Path to arch/device/index.x07device.json.",{ "default": "arch/device/index.x07device.json" }],
+        ["device-profile-validate","opt","","--profile","profile.id","STR","Only validate specific profile id(s).",{"multiple":true}],
+        ["device-profile-validate","opt","","--profile-file","profile.file","PATH","Validate this device profile file directly (bypass index)."],
+
+        ["device-verify","about","Alias for `x07-wasm device verify`. Verify a device bundle against its manifest + pinned host ABI and emit x07.wasm.device.verify.report@0.1.0."],
+        ["device-verify","opt","","--dir","dir","PATH","Directory containing the device bundle.",{ "default": "dist/device" }],
+
         ["doctor","about","Check wasm toolchain prerequisites and emit a machine report."],
 
         ["http-contracts-validate","about","Alias for `x07-wasm http contracts validate`. Validate http reducer schema set + fixtures and emit x07.wasm.http.contracts.validate.report@0.1.0."],
