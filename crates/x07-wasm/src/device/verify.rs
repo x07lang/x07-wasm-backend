@@ -1,48 +1,16 @@
 use std::ffi::OsString;
 
 use anyhow::Result;
-use serde::Deserialize;
 use serde_json::{json, Value};
 
 use crate::cli::{DeviceVerifyArgs, MachineArgs, Scope};
+use crate::device::contracts::DeviceBundleManifestDoc;
 use crate::diag::{Diagnostic, Severity, Stage};
 use crate::report;
 use crate::schema::SchemaStore;
 use crate::util;
 
 const DEVICE_BUNDLE_MANIFEST_FILE: &str = "bundle.manifest.json";
-
-#[derive(Debug, Clone, Deserialize)]
-struct DeviceBundleManifestDoc {
-    schema_version: String,
-    kind: String,
-    target: String,
-    profile: DeviceBundleProfileRef,
-    ui_wasm: DeviceBundleFileDigest,
-    host: DeviceBundleHost,
-    bundle_digest: String,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-struct DeviceBundleProfileRef {
-    id: String,
-    v: u64,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-struct DeviceBundleFileDigest {
-    path: String,
-    sha256: String,
-    bytes_len: u64,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-struct DeviceBundleHost {
-    kind: String,
-    abi_name: String,
-    abi_version: String,
-    host_abi_hash: String,
-}
 
 pub fn cmd_device_verify(
     raw_argv: &[OsString],

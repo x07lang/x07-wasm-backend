@@ -1,6 +1,6 @@
 # x07-wasm-backend
 
-Phase 0–8 WASM tooling for X07:
+Phase 0–9 WASM tooling for X07:
 
 - `x07-wasm build`: build solve-pure wasm modules (Phase 7 defaults to native `x07 build --emit-wasm`; legacy `clang`/`wasm-ld` path is still available)
 - `x07-wasm run`: deterministic runner for the Phase 0 ABI (`x07_solve_v2` via WASM Basic C ABI sret)
@@ -56,6 +56,9 @@ Phase 0–8 WASM tooling for X07:
   - `x07-wasm device profile validate`
   - `x07-wasm device build`
   - `x07-wasm device verify`
+- Phase 9 (device run/package):
+  - `x07-wasm device run`
+  - `x07-wasm device package`
 
 ## Install (local)
 
@@ -119,6 +122,10 @@ x07-wasm run \
 
 - `docs/phase8.md`
 
+## Phase 9 docs
+
+- `docs/phase9.md`
+
 ## Contracts-as-data
 
 - WASM profile registry: `arch/wasm/index.x07wasm.json`
@@ -141,6 +148,7 @@ x07-wasm run \
 - Phase 6 gate: `scripts/ci/check_phase6.sh`
 - Phase 7 gate: `scripts/ci/check_phase7.sh`
 - Phase 8 gate: `scripts/ci/check_phase8.sh`
+- Phase 9 gate: `scripts/ci/check_phase9.sh`
 - Example freestanding smoke: `examples/solve_pure_echo/ci/freestanding_smoke.sh`
 
 ## Incidents

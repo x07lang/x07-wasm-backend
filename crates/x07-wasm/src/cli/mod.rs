@@ -206,7 +206,7 @@ pub enum Command {
     #[command(name = "http-regress-from-incident")]
     HttpRegressFromIncident(HttpRegressFromIncidentArgs),
 
-    /// Device bundle tooling (Phase 8).
+    /// Device bundle tooling (Phase 8–9).
     Device(DeviceArgs),
     /// Alias for `x07-wasm device index validate`.
     #[command(name = "device-index-validate")]
@@ -220,6 +220,12 @@ pub enum Command {
     /// Alias for `x07-wasm device verify`.
     #[command(name = "device-verify")]
     DeviceVerify(DeviceVerifyArgs),
+    /// Alias for `x07-wasm device run`.
+    #[command(name = "device-run")]
+    DeviceRun(DeviceRunArgs),
+    /// Alias for `x07-wasm device package`.
+    #[command(name = "device-package")]
+    DevicePackage(DevicePackageArgs),
 
     /// Validate arch/wasm/index.x07wasm.json and referenced profile files.
     Profile(ProfileArgs),
@@ -529,6 +535,12 @@ impl Command {
                 DeviceCommand::Verify(v) => {
                     crate::device::verify::cmd_device_verify(raw_argv, scope, machine, v)
                 }
+                DeviceCommand::Run(v) => {
+                    crate::device::run::cmd_device_run(raw_argv, scope, machine, v)
+                }
+                DeviceCommand::Package(v) => {
+                    crate::device::package::cmd_device_package(raw_argv, scope, machine, v)
+                }
             },
             Command::DeviceIndexValidate(v) => {
                 crate::device::index_validate::cmd_device_index_validate(
@@ -545,6 +557,12 @@ impl Command {
             }
             Command::DeviceVerify(v) => {
                 crate::device::verify::cmd_device_verify(raw_argv, scope, machine, v)
+            }
+            Command::DeviceRun(v) => {
+                crate::device::run::cmd_device_run(raw_argv, scope, machine, v)
+            }
+            Command::DevicePackage(v) => {
+                crate::device::package::cmd_device_package(raw_argv, scope, machine, v)
             }
             Command::Profile(args) => match args.cmd {
                 ProfileCommand::Validate(v) => {
@@ -1842,6 +1860,8 @@ pub enum DeviceCommand {
     Profile(DeviceProfileArgs),
     Build(DeviceBuildArgs),
     Verify(DeviceVerifyArgs),
+    Run(DeviceRunArgs),
+    Package(DevicePackageArgs),
 }
 
 #[derive(Debug, Clone, Args)]
@@ -1938,6 +1958,36 @@ pub struct DeviceVerifyArgs {
     /// Directory containing the device bundle.
     #[arg(long, value_name = "DIR", default_value = "dist/device")]
     pub dir: PathBuf,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct DeviceRunArgs {
+    /// Directory containing the device bundle.
+    #[arg(long, value_name = "DIR", default_value = "dist/device")]
+    pub bundle: PathBuf,
+
+    /// Device target (currently only `desktop` is supported).
+    #[arg(long, value_name = "TARGET", default_value = "desktop")]
+    pub target: String,
+
+    /// Ask the host to exit quickly after the UI becomes ready (smoke mode).
+    #[arg(long)]
+    pub headless_smoke: bool,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct DevicePackageArgs {
+    /// Directory containing the device bundle.
+    #[arg(long, value_name = "DIR", default_value = "dist/device")]
+    pub bundle: PathBuf,
+
+    /// Device target (currently only `desktop` is supported).
+    #[arg(long, value_name = "TARGET", default_value = "desktop")]
+    pub target: String,
+
+    /// Output directory for the packaged payload + package.manifest.json.
+    #[arg(long, value_name = "DIR", default_value = "dist/device_package")]
+    pub out_dir: PathBuf,
 }
 
 #[derive(Debug, Clone, Args)]
@@ -2056,6 +2106,8 @@ pub enum Scope {
     DeviceProfileValidate,
     DeviceBuild,
     DeviceVerify,
+    DeviceRun,
+    DevicePackage,
     ProfileValidate,
     CliSpecrowsCheck,
 }
@@ -2158,11 +2210,15 @@ pub fn scope_for_command(cmd: Option<&Command>) -> Scope {
             DeviceCommand::Profile(_) => Scope::DeviceProfileValidate,
             DeviceCommand::Build(_) => Scope::DeviceBuild,
             DeviceCommand::Verify(_) => Scope::DeviceVerify,
+            DeviceCommand::Run(_) => Scope::DeviceRun,
+            DeviceCommand::Package(_) => Scope::DevicePackage,
         },
         Some(Command::DeviceIndexValidate(_)) => Scope::DeviceIndexValidate,
         Some(Command::DeviceProfileValidate(_)) => Scope::DeviceProfileValidate,
         Some(Command::DeviceBuild(_)) => Scope::DeviceBuild,
         Some(Command::DeviceVerify(_)) => Scope::DeviceVerify,
+        Some(Command::DeviceRun(_)) => Scope::DeviceRun,
+        Some(Command::DevicePackage(_)) => Scope::DevicePackage,
         Some(Command::Profile(_)) => Scope::ProfileValidate,
         Some(Command::ProfileValidate(_)) => Scope::ProfileValidate,
         Some(Command::Cli(_)) => Scope::CliSpecrowsCheck,

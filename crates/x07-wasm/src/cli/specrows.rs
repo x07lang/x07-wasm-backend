@@ -164,11 +164,21 @@ pub fn build_specrows_doc() -> Value {
         ["device-index-validate","about","Alias for `x07-wasm device index validate`. Validate device profile registry and emit x07.wasm.device.index.validate.report@0.1.0."],
         ["device-index-validate","opt","","--index","index","PATH","Path to arch/device/index.x07device.json.",{ "default": "arch/device/index.x07device.json" }],
 
+        ["device-package","about","Alias for `x07-wasm device package`. Package a device bundle into a desktop payload and emit x07.wasm.device.package.report@0.1.0."],
+        ["device-package","opt","","--bundle","bundle.dir","PATH","Directory containing the device bundle.",{ "default": "dist/device" }],
+        ["device-package","opt","","--out-dir","out.dir","PATH","Output directory for the packaged payload + package.manifest.json.",{ "default": "dist/device_package" }],
+        ["device-package","opt","","--target","target","STR","Device target (currently only `desktop` is supported).",{ "default": "desktop" }],
+
         ["device-profile-validate","about","Alias for `x07-wasm device profile validate`. Validate device profiles and cross-references. Emits x07.wasm.device.profile.validate.report@0.1.0."],
         ["device-profile-validate","flag","","--strict","strict","Treat warnings as errors (nonzero exit on any warning)."],
         ["device-profile-validate","opt","","--index","index","PATH","Path to arch/device/index.x07device.json.",{ "default": "arch/device/index.x07device.json" }],
         ["device-profile-validate","opt","","--profile","profile.id","STR","Only validate specific profile id(s).",{"multiple":true}],
         ["device-profile-validate","opt","","--profile-file","profile.file","PATH","Validate this device profile file directly (bypass index)."],
+
+        ["device-run","about","Alias for `x07-wasm device run`. Run a device UI bundle using the system WebView host and emit x07.wasm.device.run.report@0.1.0."],
+        ["device-run","flag","","--headless-smoke","headless.smoke","Ask the host to exit quickly after the UI becomes ready (smoke mode)."],
+        ["device-run","opt","","--bundle","bundle.dir","PATH","Directory containing the device bundle.",{ "default": "dist/device" }],
+        ["device-run","opt","","--target","target","STR","Device target (currently only `desktop` is supported).",{ "default": "desktop" }],
 
         ["device-verify","about","Alias for `x07-wasm device verify`. Verify a device bundle against its manifest + pinned host ABI and emit x07.wasm.device.verify.report@0.1.0."],
         ["device-verify","opt","","--dir","dir","PATH","Directory containing the device bundle.",{ "default": "dist/device" }],

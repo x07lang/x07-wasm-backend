@@ -17,6 +17,14 @@ set -euo pipefail
 # Phase-7 extension:
 # - If `X07WASM_DIAG_INCLUDE_PHASE7=1` is set, also scan `phase7` build trees and
 #   allow Phase-7 diagnostic codes.
+#
+# Phase-8 extension:
+# - If `X07WASM_DIAG_INCLUDE_PHASE8=1` is set, also scan `phase8` build trees and
+#   allow Phase-8 diagnostic codes.
+#
+# Phase-9 extension:
+# - If `X07WASM_DIAG_INCLUDE_PHASE9=1` is set, also scan `phase9` build trees and
+#   allow Phase-9 diagnostic codes.
 
 ROOT="${1:-build}"
 
@@ -39,6 +47,7 @@ import sys
 root = pathlib.Path(sys.argv[1])
 include_phase7 = os.environ.get("X07WASM_DIAG_INCLUDE_PHASE7", "").strip() == "1"
 include_phase8 = os.environ.get("X07WASM_DIAG_INCLUDE_PHASE8", "").strip() == "1"
+include_phase9 = os.environ.get("X07WASM_DIAG_INCLUDE_PHASE9", "").strip() == "1"
 
 PHASE5_CODES = [
     "X07WASM_APP_VERIFY_DIGEST_MISMATCH",
@@ -169,11 +178,36 @@ PHASE8_CODES = [
     "X07WASM_DEVICE_WEB_UI_INDEX_READ_FAILED",
 ]
 
+PHASE9_CODES = [
+    "X07WASM_DEVICE_RUN_FAILED",
+    "X07WASM_DEVICE_RUN_HOST_REPORT_PARSE_FAILED",
+    "X07WASM_DEVICE_RUN_HOST_REPORT_SCHEMA_INVALID",
+    "X07WASM_DEVICE_RUN_HOST_TOOL_MISSING",
+    "X07WASM_DEVICE_RUN_TARGET_UNSUPPORTED",
+
+    "X07WASM_DEVICE_PACKAGE_FAILED",
+    "X07WASM_DEVICE_PACKAGE_HOST_ABI_HASH_MISMATCH",
+    "X07WASM_DEVICE_PACKAGE_HOST_TOOL_MISSING",
+    "X07WASM_DEVICE_PACKAGE_WRITE_FAILED",
+
+    "X07WASM_INTERNAL_DEVICE_PACKAGE_SCHEMA_INVALID",
+
+    # Host runner codes (passed-through by `x07-wasm device run` on host-level failures).
+    "X07DEVHOST_ASSET_LOAD_FAILED",
+    "X07DEVHOST_BUNDLE_HOST_ABI_HASH_MISMATCH",
+    "X07DEVHOST_BUNDLE_MANIFEST_PARSE_FAILED",
+    "X07DEVHOST_BUNDLE_MANIFEST_READ_FAILED",
+    "X07DEVHOST_BUNDLE_SCHEMA_VERSION_UNSUPPORTED",
+    "X07DEVHOST_INTERNAL_ERROR",
+    "X07DEVHOST_UI_WASM_READ_FAILED",
+]
+
 ALLOWED = set(
     PHASE5_CODES
     + PHASE6_CODES
     + (PHASE7_CODES if include_phase7 else [])
     + (PHASE8_CODES if include_phase8 else [])
+    + (PHASE9_CODES if include_phase9 else [])
 )
 
 PHASE_DIRS = ["phase5", "phase6"]
@@ -181,6 +215,8 @@ if include_phase7:
     PHASE_DIRS.append("phase7")
 if include_phase8:
     PHASE_DIRS.append("phase8")
+if include_phase9:
+    PHASE_DIRS.append("phase9")
 
 def is_report(doc: dict) -> bool:
     sv = doc.get("schema_version")
@@ -297,6 +333,12 @@ if violations:
         print("", file=sys.stderr)
         print("diagcodes: allowed Phase-8 codes:", file=sys.stderr)
         for c in PHASE8_CODES:
+            print(f"  {c}", file=sys.stderr)
+
+    if include_phase9:
+        print("", file=sys.stderr)
+        print("diagcodes: allowed Phase-9 codes:", file=sys.stderr)
+        for c in PHASE9_CODES:
             print(f"  {c}", file=sys.stderr)
 
     sys.exit(1)

@@ -40,6 +40,10 @@ const DEVICE_BUILD_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.device.build.report.schema.json");
 const DEVICE_VERIFY_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.device.verify.report.schema.json");
+const DEVICE_RUN_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.device.run.report.schema.json");
+const DEVICE_PACKAGE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.device.package.report.schema.json");
 const WEB_UI_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] = include_bytes!(
     "../../../../spec/schemas/x07-wasm.web_ui.contracts.validate.report.schema.json"
 );
@@ -147,6 +151,8 @@ fn schema_bytes_for_scope(scope: Scope) -> Result<&'static [u8]> {
         Scope::DeviceProfileValidate => Ok(DEVICE_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES),
         Scope::DeviceBuild => Ok(DEVICE_BUILD_REPORT_SCHEMA_BYTES),
         Scope::DeviceVerify => Ok(DEVICE_VERIFY_REPORT_SCHEMA_BYTES),
+        Scope::DeviceRun => Ok(DEVICE_RUN_REPORT_SCHEMA_BYTES),
+        Scope::DevicePackage => Ok(DEVICE_PACKAGE_REPORT_SCHEMA_BYTES),
         Scope::WebUiContractsValidate => Ok(WEB_UI_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES),
         Scope::WebUiProfileValidate => Ok(WEB_UI_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES),
         Scope::WebUiBuild => Ok(WEB_UI_BUILD_REPORT_SCHEMA_BYTES),
@@ -195,6 +201,8 @@ fn schema_version_for_scope(scope: Scope) -> &'static str {
         Scope::DeviceProfileValidate => "x07.wasm.device.profile.validate.report@0.1.0",
         Scope::DeviceBuild => "x07.wasm.device.build.report@0.1.0",
         Scope::DeviceVerify => "x07.wasm.device.verify.report@0.1.0",
+        Scope::DeviceRun => "x07.wasm.device.run.report@0.1.0",
+        Scope::DevicePackage => "x07.wasm.device.package.report@0.1.0",
         Scope::WebUiContractsValidate => "x07.wasm.web_ui.contracts.validate.report@0.1.0",
         Scope::WebUiProfileValidate => "x07.wasm.web_ui.profile.validate.report@0.1.0",
         Scope::WebUiBuild => "x07.wasm.web_ui.build.report@0.1.0",

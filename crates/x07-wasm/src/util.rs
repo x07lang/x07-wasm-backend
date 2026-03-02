@@ -64,3 +64,13 @@ pub fn canon_value_jcs(v: &mut Value) {
 pub fn wasmtime_version() -> Option<String> {
     option_env!("X07_WASM_WASMTIME_VERSION").map(|s| s.to_string())
 }
+
+pub fn truncate_bytes_lossy(bytes: &[u8], max_bytes: usize) -> String {
+    if bytes.len() <= max_bytes {
+        return String::from_utf8_lossy(bytes).to_string();
+    }
+    let head = &bytes[..max_bytes];
+    let mut s = String::from_utf8_lossy(head).to_string();
+    s.push_str("...(truncated)");
+    s
+}

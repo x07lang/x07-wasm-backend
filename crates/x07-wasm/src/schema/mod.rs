@@ -146,6 +146,10 @@ const X07_WASM_DEVICE_BUILD_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.device.build.report.schema.json");
 const X07_WASM_DEVICE_VERIFY_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../spec/schemas/x07-wasm.device.verify.report.schema.json");
+const X07_WASM_DEVICE_RUN_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.device.run.report.schema.json");
+const X07_WASM_DEVICE_PACKAGE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../spec/schemas/x07-wasm.device.package.report.schema.json");
 const X07_WASM_WEB_UI_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] = include_bytes!(
     "../../../../spec/schemas/x07-wasm.web_ui.contracts.validate.report.schema.json"
 );
@@ -274,6 +278,8 @@ impl SchemaStore {
             X07_WASM_DEVICE_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES,
             X07_WASM_DEVICE_BUILD_REPORT_SCHEMA_BYTES,
             X07_WASM_DEVICE_VERIFY_REPORT_SCHEMA_BYTES,
+            X07_WASM_DEVICE_RUN_REPORT_SCHEMA_BYTES,
+            X07_WASM_DEVICE_PACKAGE_REPORT_SCHEMA_BYTES,
             X07_WASM_WEB_UI_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES,
             X07_WASM_WEB_UI_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES,
             X07_WASM_WEB_UI_BUILD_REPORT_SCHEMA_BYTES,
@@ -449,6 +455,8 @@ fn report_schema_id_for_scope(scope: Scope) -> &'static str {
         }
         Scope::DeviceBuild => "https://x07.io/spec/x07-wasm.device.build.report.schema.json",
         Scope::DeviceVerify => "https://x07.io/spec/x07-wasm.device.verify.report.schema.json",
+        Scope::DeviceRun => "https://x07.io/spec/x07-wasm.device.run.report.schema.json",
+        Scope::DevicePackage => "https://x07.io/spec/x07-wasm.device.package.report.schema.json",
         Scope::CliSpecrowsCheck => {
             "https://x07.io/spec/x07-wasm.cli.specrows.check.report.schema.json"
         }
@@ -540,6 +548,8 @@ mod tests {
             "https://x07.io/spec/x07-wasm.device.profile.validate.report.schema.json",
             "https://x07.io/spec/x07-wasm.device.build.report.schema.json",
             "https://x07.io/spec/x07-wasm.device.verify.report.schema.json",
+            "https://x07.io/spec/x07-wasm.device.run.report.schema.json",
+            "https://x07.io/spec/x07-wasm.device.package.report.schema.json",
             "https://x07.io/spec/x07-wasm.web_ui.contracts.validate.report.schema.json",
             "https://x07.io/spec/x07-wasm.web_ui.profile.validate.report.schema.json",
             "https://x07.io/spec/x07-wasm.web_ui.build.report.schema.json",

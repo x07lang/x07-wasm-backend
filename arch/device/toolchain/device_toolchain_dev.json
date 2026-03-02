@@ -1,0 +1,11 @@
+{
+  "schema_version": "x07.arch.device.toolchain@0.1.0",
+  "tools": [
+    {
+      "name": "x07-device-host-desktop",
+      "min_version": "0.1.0",
+      "locate": "PATH"
+    }
+  ]
+}
+

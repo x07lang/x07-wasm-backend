@@ -2543,6 +2543,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
 
 [[package]]
+name = "typed-path"
+version = "0.12.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8e28f89b80c87b8fb0cf04ab448d5dd0dd0ade2f8891bae878de66a75a28600e"
+
+[[package]]
 name = "typenum"
 version = "1.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3585,7 +3591,7 @@ checksum = "9edde0db4769d2dc68579893f2306b26c6ecfbe0ef499b013d731b7b9247e0b9"
 [[package]]
 name = "x07-device-host-abi"
 version = "0.1.0"
-source = "git+https://github.com/x07lang/x07-device-host.git?rev=5149df374fec8ceb2f04a9029507e18e121c78c1#5149df374fec8ceb2f04a9029507e18e121c78c1"
+source = "git+ssh://git@github.com/x07lang/x07-device-host.git?rev=19f2ad47fb9c0316ff388d810a54d87a7cb89ad9#19f2ad47fb9c0316ff388d810a54d87a7cb89ad9"
 dependencies = [
  "serde",
  "serde_json",
@@ -3596,7 +3602,7 @@ dependencies = [
 [[package]]
 name = "x07-device-host-assets"
 version = "0.1.0"
-source = "git+https://github.com/x07lang/x07-device-host.git?rev=5149df374fec8ceb2f04a9029507e18e121c78c1#5149df374fec8ceb2f04a9029507e18e121c78c1"
+source = "git+ssh://git@github.com/x07lang/x07-device-host.git?rev=19f2ad47fb9c0316ff388d810a54d87a7cb89ad9#19f2ad47fb9c0316ff388d810a54d87a7cb89ad9"
 
 [[package]]
 name = "x07-wasm"
@@ -3630,6 +3636,7 @@ dependencies = [
  "wasmtime-wasi-http",
  "wit-parser 0.245.1",
  "x07-device-host-abi",
+ "zip",
 ]
 
 [[package]]
@@ -3733,6 +3740,18 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "zip"
+version = "8.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e499faf5c6b97a0d086f4a8733de6d47aee2252b8127962439d8d4311a73f72"
+dependencies = [
+ "crc32fast",
+ "indexmap",
+ "memchr",
+ "typed-path",
 ]
 
 [[package]]

@@ -36,4 +36,5 @@ wasmtime = "36.0.6"
 wasmtime-wasi = "36.0.6"
 wasmtime-wasi-http = "36.0.6"
 wit-parser = "0.245.1"
-x07-device-host-abi = { git = "https://github.com/x07lang/x07-device-host.git", rev = "5149df374fec8ceb2f04a9029507e18e121c78c1" }
+x07-device-host-abi = { git = "ssh://git@github.com/x07lang/x07-device-host.git", rev = "19f2ad47fb9c0316ff388d810a54d87a7cb89ad9" }
+zip = { version = "8.1.0", default-features = false }
