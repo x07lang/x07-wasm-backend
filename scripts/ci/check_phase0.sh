@@ -209,6 +209,7 @@ cmp dist/json_patch.out.bin examples/json_patch/tests/expected.bin
 
 echo "==> gate: build + equivalence (task_sched)"
 x07-wasm build --project examples/task_sched/x07.json --profile wasm_release \
+  --codegen-backend c_toolchain_v1 \
   --out dist/task_sched.wasm --artifact-out dist/task_sched.wasm.manifest.json \
   --json --report-out build/wasm/build.task_sched.json --quiet-json
 check_build_report_invariants build/wasm/build.task_sched.json
