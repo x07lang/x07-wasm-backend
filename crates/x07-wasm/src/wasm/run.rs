@@ -244,7 +244,39 @@ pub fn cmd_run(
         };
         runtime_limits.max_wasm_stack_bytes = Some(u32::try_from(fallback).unwrap_or(u32::MAX));
     }
-    wasmtime_limits::apply_config(&mut config, &runtime_limits);
+    if let Err(err) = wasmtime_limits::apply_config(&mut config, &runtime_limits)
+        .and_then(|_| {
+            wasmtime_limits::apply_instance_allocator_config(&mut config, &runtime_limits, 1)
+                .map(|_| ())
+        })
+    {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_WASMTIME_ENGINE_FAILED",
+            Severity::Error,
+            Stage::Run,
+            format!("{err:#}"),
+        ));
+        let result = run_result_doc(
+            &profile_ref,
+            &wasm_digest,
+            &input,
+            arena_cap_bytes,
+            None,
+            None,
+            None,
+            None,
+            Some(mem_plan.clone()),
+        );
+        let report_doc = run_report_doc(meta, diagnostics, result);
+        return emit_run_report(
+            &store,
+            scope,
+            machine,
+            json_mode,
+            report_doc,
+            Some(input.bytes),
+        );
+    }
     let engine = match Engine::new(&config) {
         Ok(v) => v,
         Err(err) => {

@@ -104,13 +104,34 @@ pub struct WasmProfileDefaults {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct WasmRuntimeLimits {
+    #[serde(default)]
+    pub instance_allocator: WasmInstanceAllocator,
+
     pub max_fuel: Option<u64>,
     pub max_memory_bytes: Option<u64>,
     pub max_table_elements: Option<u32>,
     pub max_wasm_stack_bytes: Option<u32>,
 
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cache_config: Option<String>,
+
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum WasmInstanceAllocator {
+    #[serde(rename = "on_demand")]
+    OnDemand,
+    #[serde(rename = "pooling")]
+    Pooling,
+}
+
+impl Default for WasmInstanceAllocator {
+    fn default() -> Self {
+        Self::OnDemand
+    }
 }
 
 pub struct LoadedProfile {

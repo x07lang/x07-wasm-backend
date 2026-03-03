@@ -42,6 +42,11 @@ Budget failures surface as pinned diagnostics:
 - `X07WASM_BUDGET_EXCEEDED_MEMORY`
 - `X07WASM_BUDGET_EXCEEDED_TABLE`
 
+Optional host runtime knobs (profile-level):
+
+- `runtime.instance_allocator`: `on_demand` (default) or `pooling`
+- `runtime.cache_config`: path to a Wasmtime cache config file (passed to `Config::cache_config_load`)
+
 ## App pack / verify
 
 Phase 5 adds deployable pack artifacts:

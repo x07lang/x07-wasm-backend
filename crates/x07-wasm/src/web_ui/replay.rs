@@ -211,7 +211,8 @@ impl CoreWasmRunner {
         }
 
         let mut config = Config::new();
-        wasmtime_limits::apply_config(&mut config, &runtime_limits);
+        wasmtime_limits::apply_config(&mut config, &runtime_limits)?;
+        wasmtime_limits::apply_instance_allocator_config(&mut config, &runtime_limits, 1)?;
         let engine = Engine::new(&config)?;
         let module = Module::new(&engine, &wasm_bytes)?;
 

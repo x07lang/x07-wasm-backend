@@ -7,7 +7,7 @@ use http_body_util::{BodyExt as _, Full, Limited};
 use hyper::Request;
 
 use wasmtime::component::{Component, Linker, ResourceTable};
-use wasmtime::{Config, Engine, PoolingAllocationConfig, Store};
+use wasmtime::{Config, Engine, Store};
 use wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiCtxView, WasiView};
 use wasmtime_wasi_http::bindings::ProxyPre;
 use wasmtime_wasi_http::body::HyperOutgoingBody;
@@ -213,16 +213,16 @@ impl HttpComponentHost {
 fn build_engine(runtime_limits: &WasmRuntimeLimits, max_concurrency: usize) -> Result<Engine> {
     let mut config = Config::new();
     config.async_support(true);
-    wasmtime_limits::apply_config(&mut config, runtime_limits);
+    wasmtime_limits::apply_config(&mut config, runtime_limits)?;
     let pooling_enabled =
-        apply_pooling_allocator_config(&mut config, runtime_limits, max_concurrency);
+        wasmtime_limits::apply_instance_allocator_config(&mut config, runtime_limits, max_concurrency)?;
     match Engine::new(&config) {
         Ok(v) => Ok(v),
         Err(err) => {
             if pooling_enabled {
                 let mut fallback = Config::new();
                 fallback.async_support(true);
-                wasmtime_limits::apply_config(&mut fallback, runtime_limits);
+                wasmtime_limits::apply_config(&mut fallback, runtime_limits)?;
                 if let Ok(v) = Engine::new(&fallback) {
                     return Ok(v);
                 }
@@ -230,46 +230,6 @@ fn build_engine(runtime_limits: &WasmRuntimeLimits, max_concurrency: usize) -> R
             Err(err)
         }
     }
-}
-
-fn apply_pooling_allocator_config(
-    config: &mut Config,
-    runtime_limits: &WasmRuntimeLimits,
-    max_concurrency: usize,
-) -> bool {
-    let Ok(total_component_instances) = u32::try_from(max_concurrency.max(1)) else {
-        return false;
-    };
-    let Some(max_memory_bytes) = runtime_limits.max_memory_bytes else {
-        return false;
-    };
-    let Some(max_table_elements) = runtime_limits.max_table_elements else {
-        return false;
-    };
-    let Ok(max_memory_size) = usize::try_from(max_memory_bytes) else {
-        return false;
-    };
-    let Ok(table_elements) = usize::try_from(max_table_elements) else {
-        return false;
-    };
-    if max_memory_size == 0 || table_elements == 0 {
-        return false;
-    }
-
-    let total_core_instances = total_component_instances.saturating_mul(16).max(1);
-
-    let mut pooling = PoolingAllocationConfig::new();
-    pooling
-        .total_component_instances(total_component_instances)
-        .total_core_instances(total_core_instances)
-        .total_memories(total_core_instances)
-        .total_tables(total_core_instances)
-        .max_memories_per_module(1)
-        .max_tables_per_module(1)
-        .max_memory_size(max_memory_size)
-        .table_elements(table_elements);
-    config.allocation_strategy(pooling);
-    true
 }
 
 fn push_budget_exceeded_diagnostic(kind: BudgetExceededKind, out: &mut Vec<Diagnostic>) {

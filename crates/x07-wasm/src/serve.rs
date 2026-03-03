@@ -355,10 +355,12 @@ pub fn cmd_serve(
         p.doc.runtime
     })
     .unwrap_or(crate::arch::WasmRuntimeLimits {
+        instance_allocator: crate::arch::WasmInstanceAllocator::OnDemand,
         max_fuel: None,
         max_memory_bytes: None,
         max_table_elements: None,
         max_wasm_stack_bytes: Some(2 * 1024 * 1024),
+        cache_config: None,
         notes: None,
     });
     if let Some(v) = args.max_fuel {
@@ -370,7 +372,35 @@ pub fn cmd_serve(
     if let Some(v) = args.max_table_elements {
         runtime_limits.max_table_elements = Some(v);
     }
-    wasmtime_limits::apply_config(&mut config, &runtime_limits);
+    if let Err(err) = wasmtime_limits::apply_config(&mut config, &runtime_limits)
+        .and_then(|_| {
+            wasmtime_limits::apply_instance_allocator_config(&mut config, &runtime_limits, 1)
+                .map(|_| ())
+        })
+    {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_WASMTIME_ENGINE_FAILED",
+            Severity::Error,
+            Stage::Run,
+            format!("{err:#}"),
+        ));
+        let report_doc = serve_report_doc(
+            meta,
+            diagnostics,
+            &args,
+            budgets,
+            component_digest,
+            None,
+            Vec::new(),
+            Vec::new(),
+        );
+        let exit_code = report_doc
+            .get("exit_code")
+            .and_then(Value::as_u64)
+            .unwrap_or(2) as u8;
+        store.validate_report_and_emit(scope, machine, started, raw_argv, report_doc)?;
+        return Ok(exit_code);
+    }
     let engine = match Engine::new(&config) {
         Ok(v) => v,
         Err(err) => {

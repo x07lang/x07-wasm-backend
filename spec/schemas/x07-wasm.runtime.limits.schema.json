@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-wasm.runtime.limits.schema.json",
   "title": "x07.wasm.runtime.limits@0.1.0",
-  "description": "Host-enforced runtime limits for executing x07-produced WebAssembly (fuel, memory, table, stack).",
+  "description": "Host-enforced runtime limits and host runtime configuration for executing x07-produced WebAssembly (fuel, memory, table, stack, allocator, cache).",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -12,6 +12,12 @@
     "max_wasm_stack_bytes"
   ],
   "properties": {
+    "instance_allocator": {
+      "description": "Wasmtime instance allocator strategy.",
+      "type": "string",
+      "enum": ["on_demand", "pooling"],
+      "default": "on_demand"
+    },
     "max_fuel": {
       "description": "Maximum Wasmtime fuel for a single run. null disables fuel metering.",
       "oneOf": [
@@ -61,6 +67,14 @@
           "maximum": 2147483647
         }
       ]
+    },
+    "cache_config": {
+      "description": "Optional path to a Wasmtime cache config file (passed to wasmtime Config.cache_config_load).",
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string", "minLength": 1, "maxLength": 4096 }
+      ],
+      "default": null
     },
     "notes": {
       "type": "string",

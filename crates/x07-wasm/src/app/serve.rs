@@ -955,10 +955,12 @@ fn load_app_serve_settings(
                     max_wall_ms: 2_000,
                 },
                 crate::arch::WasmRuntimeLimits {
+                    instance_allocator: crate::arch::WasmInstanceAllocator::OnDemand,
                     max_fuel: Some(200_000_000),
                     max_memory_bytes: Some(268_435_456),
                     max_table_elements: Some(131_072),
                     max_wasm_stack_bytes: Some(2 * 1024 * 1024),
+                    cache_config: None,
                     notes: None,
                 },
                 16,
