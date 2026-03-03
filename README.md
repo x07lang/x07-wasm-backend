@@ -1,69 +1,14 @@
 # x07-wasm-backend
 
-Phase 0–10 WASM tooling for X07:
+WASM build pipeline, host runners, and full-stack app tooling for [X07](https://github.com/x07lang/x07) — covering Phases 0–10 of the [WASM roadmap](https://github.com/x07lang/x07/blob/main/dev-docs/phases/x07-wasm-plan.md).
 
-- `x07-wasm build`: build solve-pure wasm modules (Phase 7 defaults to native `x07 build --emit-wasm`; legacy `clang`/`wasm-ld` path is still available)
-- `x07-wasm run`: deterministic runner for the Phase 0 ABI (`x07_solve_v2` via WASM Basic C ABI sret)
-- `x07-wasm doctor`, `x07-wasm profile validate`, `x07-wasm cli specrows check`
-- Phase 1 (WASI 0.2 components):
-  - `x07-wasm wit validate`
-  - `x07-wasm component profile validate`
-  - `x07-wasm component build`
-  - `x07-wasm component compose`
-  - `x07-wasm component targets`
-  - `x07-wasm serve`
-  - `x07-wasm component run`
-- Phase 2 (web-ui):
-  - `x07-wasm web-ui contracts validate`
-  - `x07-wasm web-ui profile validate`
-  - `x07-wasm web-ui build`
-  - `x07-wasm web-ui serve`
-  - `x07-wasm web-ui test`
-  - `x07-wasm web-ui regress-from-incident`
-- Phase 3 (app bundle):
-  - `x07-wasm app contracts validate`
-  - `x07-wasm app profile validate`
-  - `x07-wasm app build`
-  - `x07-wasm app serve`
-  - `x07-wasm app test`
-  - `x07-wasm app regress from-incident`
-- Phase 4 (native backend targets):
-  - `x07-wasm component build --emit http-native`
-  - `x07-wasm component build --emit cli-native`
-- Phase 5 (hardening):
-  - `x07-wasm toolchain validate`
-  - `x07-wasm app pack`
-  - `x07-wasm app verify`
-  - `x07-wasm http contracts validate`
-  - `x07-wasm http serve`
-  - `x07-wasm http test`
-  - `x07-wasm http regress from-incident`
-- Phase 6 (ops / policy / SLO / deploy / provenance):
-  - `x07-wasm ops validate`
-  - `x07-wasm caps validate`
-  - `x07-wasm policy validate`
-  - `x07-wasm slo validate`
-  - `x07-wasm slo eval`
-  - `x07-wasm deploy plan`
-  - `x07-wasm provenance attest`
-  - `x07-wasm provenance verify`
-- Phase 7 (native x07 → wasm backend):
-  - wasm profiles add `codegen_backend` (default: `native_x07_wasm_v1`)
-  - `x07-wasm build --codegen-backend native_x07_wasm_v1` to force native backend
-  - `x07-wasm build --codegen-backend c_toolchain_v1` to force legacy C toolchain backend
-- Phase 8 (device bundles):
-  - `x07-wasm device index validate`
-  - `x07-wasm device profile validate`
-  - `x07-wasm device build`
-  - `x07-wasm device verify`
-- Phase 9 (device run/package):
-  - `x07-wasm device run`
-  - `x07-wasm device package`
-- Phase 10 (mobile project generation):
-  - `x07-wasm device package --target ios`
-  - `x07-wasm device package --target android`
+x07-wasm-backend is designed for **100% agentic coding** — an AI coding agent builds, tests, packages, deploys, and verifies WASM artifacts entirely on its own using structured contracts, deterministic runners, and machine-readable outputs. No human needs to write X07 by hand.
 
-## Install (local)
+## Prerequisites
+
+The [X07 toolchain](https://github.com/x07lang/x07) must be installed before using x07-wasm-backend. If you (or your agent) are new to X07, start with the **[Agent Quickstart](https://x07lang.org/docs/getting-started/agent-quickstart)** — it covers toolchain setup, project structure, and the workflow conventions an agent needs to be productive.
+
+## Install
 
 ```sh
 cargo install --locked --path crates/x07-wasm
@@ -89,49 +34,58 @@ x07-wasm run \
   --json
 ```
 
-## Phase 0 docs
+## Command surface
 
-- `docs/phase0.md`
+### Phase 0 — solve-pure WASM modules
 
-## Phase 1 docs
+- `x07-wasm build` — build solve-pure wasm modules (Phase 7 defaults to native `x07 build --emit-wasm`; legacy `clang`/`wasm-ld` path available via `--codegen-backend c_toolchain_v1`)
+- `x07-wasm run` — deterministic runner for Phase 0 ABI (`x07_solve_v2` via WASM Basic C ABI sret)
+- `x07-wasm doctor`, `x07-wasm profile validate`, `x07-wasm cli specrows check`
 
-- `docs/phase1.md`
+### Phase 1 — WASI 0.2 components
 
-## Phase 2 docs
+- `x07-wasm wit validate`
+- `x07-wasm component profile validate` / `build` / `compose` / `targets`
+- `x07-wasm serve` / `x07-wasm component run`
 
-- `docs/phase2.md`
+### Phase 2 — web UI
 
-## Phase 3 docs
+- `x07-wasm web-ui contracts validate` / `profile validate`
+- `x07-wasm web-ui build` / `serve` / `test` / `regress-from-incident`
 
-- `docs/phase3.md`
+### Phase 3 — full-stack app bundle
 
-## Phase 4 docs
+- `x07-wasm app contracts validate` / `profile validate`
+- `x07-wasm app build` / `serve` / `test` / `regress from-incident`
 
-- `docs/phase4.md`
+### Phase 4 — native backend targets
 
-## Phase 5 docs
+- `x07-wasm component build --emit http-native` / `--emit cli-native`
 
-- `docs/phase5.md`
+### Phase 5 — production hardening
 
-## Phase 6 docs
+- `x07-wasm toolchain validate`
+- `x07-wasm app pack` / `app verify`
+- `x07-wasm http contracts validate` / `http serve` / `http test` / `http regress from-incident`
 
-- `docs/phase6.md`
+### Phase 6 — ops / policy / SLO / deploy / provenance
 
-## Phase 7 docs
+- `x07-wasm ops validate` / `caps validate` / `policy validate`
+- `x07-wasm slo validate` / `slo eval`
+- `x07-wasm deploy plan`
+- `x07-wasm provenance attest` / `provenance verify`
 
-- `docs/phase7.md`
+### Phase 7 — native x07 → wasm backend
 
-## Phase 8 docs
+- Wasm profiles add `codegen_backend` (default: `native_x07_wasm_v1`)
+- `--codegen-backend native_x07_wasm_v1` (native) or `--codegen-backend c_toolchain_v1` (legacy)
 
-- `docs/phase8.md`
+### Phase 8–10 — device apps
 
-## Phase 9 docs
-
-- `docs/phase9.md`
-
-## Phase 10 docs
-
-- `docs/phase10.md`
+- `x07-wasm device index validate` / `device profile validate`
+- `x07-wasm device build` / `device verify`
+- `x07-wasm device run` / `device package`
+- `x07-wasm device package --target ios` / `--target android`
 
 ## Contracts-as-data
 
@@ -144,30 +98,38 @@ x07-wasm run \
 - Device profile registry: `arch/device/index.x07device.json`
 - Schemas (published to `https://x07.io/spec/`): `spec/schemas/*.schema.json`
 
-## CI / smoke
+## CI gates
 
-- Phase 0 gate: `scripts/ci/check_phase0.sh`
-- Phase 1 gate: `scripts/ci/check_phase1.sh`
-- Phase 2 gate: `scripts/ci/check_phase2.sh`
-- Phase 3 gate: `scripts/ci/check_phase3.sh`
-- Phase 4 gate: `scripts/ci/check_phase4.sh`
-- Phase 5 gate: `scripts/ci/check_phase5.sh`
-- Phase 6 gate: `scripts/ci/check_phase6.sh`
-- Phase 7 gate: `scripts/ci/check_phase7.sh`
-- Phase 8 gate: `scripts/ci/check_phase8.sh`
-- Phase 9 gate: `scripts/ci/check_phase9.sh`
-- Phase 10 gate: `scripts/ci/check_phase10.sh`
-- Example freestanding smoke: `examples/solve_pure_echo/ci/freestanding_smoke.sh`
+| Phase | Gate |
+|-------|------|
+| 0 | `scripts/ci/check_phase0.sh` |
+| 1 | `scripts/ci/check_phase1.sh` |
+| 2 | `scripts/ci/check_phase2.sh` |
+| 3 | `scripts/ci/check_phase3.sh` |
+| 4 | `scripts/ci/check_phase4.sh` |
+| 5 | `scripts/ci/check_phase5.sh` |
+| 6 | `scripts/ci/check_phase6.sh` |
+| 7 | `scripts/ci/check_phase7.sh` |
+| 8 | `scripts/ci/check_phase8.sh` |
+| 9 | `scripts/ci/check_phase9.sh` |
+| 10 | `scripts/ci/check_phase10.sh` |
+
+Example freestanding smoke: `examples/solve_pure_echo/ci/freestanding_smoke.sh`
+
+## Phase docs
+
+- `docs/phase0.md` through `docs/phase10.md`
 
 ## Incidents
 
-On `x07-wasm run` failures, a deterministic incident bundle is written under:
+On `x07-wasm run` failures, a deterministic incident bundle is written under `.x07-wasm/incidents/<YYYY-MM-DD>/<run_id>/` containing `input.bin`, `run.report.json`, `wasm.manifest.json`, and `stderr.txt`.
 
-- `.x07-wasm/incidents/<YYYY-MM-DD>/<run_id>/`
+## Links
 
-It includes:
+- [X07 Agent Quickstart](https://x07lang.org/docs/getting-started/agent-quickstart) — start here
+- [X07 toolchain](https://github.com/x07lang/x07)
+- [X07 website](https://x07lang.org)
 
-- `input.bin`
-- `run.report.json`
-- `wasm.manifest.json` (copied from `<wasm>.manifest.json` when present; otherwise a synthesized Phase 0 incident manifest)
-- `stderr.txt` (trap + diagnostics, if any)
+## License
+
+Dual-licensed under [Apache 2.0](LICENSE-APACHE) and [MIT](LICENSE).
