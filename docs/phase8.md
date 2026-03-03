@@ -4,6 +4,24 @@ Phase 8 introduces a device contract layer for running `std.web_ui` reducers in 
 
 The device bundle format pins the host ABI hash from `x07-device-host` so that a device app can reject incompatible hosts deterministically.
 
+## Host ABI pin
+
+The device host ABI is defined by the `x07-device-host` repo and includes the host bridge protocol version and the embedded host assets (including CSP).
+
+This repo vendors the device host ABI snapshot:
+
+- Source of truth: `../x07-device-host/arch/host_abi/host_abi.snapshot.json`
+- Vendored copy: `vendor/x07-device-host/host_abi.snapshot.json`
+
+Update/check vendoring:
+
+```sh
+python3 scripts/vendor_x07_device_host_abi.py update --src ../x07-device-host
+python3 scripts/vendor_x07_device_host_abi.py check
+```
+
+`x07-wasm device verify` enforces that `bundle.manifest.json` `host.host_abi_hash` matches the vendored snapshot and emits `X07WASM_DEVICE_BUNDLE_HOST_ABI_HASH_MISMATCH` (exit code 3) on mismatch.
+
 ## Contracts-as-data
 
 - Device profile registry: `arch/device/index.x07device.json`

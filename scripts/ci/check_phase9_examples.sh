@@ -158,6 +158,11 @@ x07-wasm device verify \
   --dir "${dev_bundle_dir}" \
   --json --report-out build/phase9_examples/device.verify.device_dev.json --quiet-json
 
+echo "==> phase9_examples: verify bundle (negative - tampered host ABI hash)"
+bash "${ROOT_DIR}/scripts/ci/check_phase9_host_abi_negative.sh" \
+  "${dev_bundle_dir}" \
+  "build/phase9_examples/device.verify.tampered_host_abi.json"
+
 echo "==> phase9_examples: build bundle (device_release)"
 release_bundle_dir="${OUT_DIR}/device_release_bundle"
 x07-wasm device build \

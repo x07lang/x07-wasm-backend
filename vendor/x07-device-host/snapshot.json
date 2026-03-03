@@ -1,0 +1,11 @@
+{
+  "digests": {
+    "arch/host_abi/host_abi.snapshot.json": {
+      "bytes_len": 867,
+      "sha256": "a9cf42adb9ea342c7aa83a8f452664f1cedfd6db89b0f640c0bbad3220564f59"
+    }
+  },
+  "git_sha": "4be7f76419ec387143c9a60868b0942975296367",
+  "host_abi_hash": "253d1b935a89b664edb2e9eeabe6b498930fe86c655cd5279e806767387de7ea",
+  "source": "https://github.com/x07lang/x07-device-host.git"
+}

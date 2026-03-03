@@ -47,6 +47,15 @@ Optional host runtime knobs (profile-level):
 - `runtime.instance_allocator`: `on_demand` (default) or `pooling`
 - `runtime.cache_config`: path to a Wasmtime cache config file (passed to `Config::cache_config_load`)
 
+Shipped WASM profiles:
+
+- `wasm_release` (default)
+- `wasm_release_cached` (enables Wasmtime compilation cache via `arch/wasm/toolchain/wasmtime_cache.toml`)
+- `wasm_release_pooling` (enables Wasmtime pooling allocator)
+- `wasm_web_ui_release` (optimized for web-ui reducers)
+- `wasm_web_ui_release_cached` (web-ui + compilation cache)
+- `wasm_web_ui_release_pooling` (web-ui + pooling allocator)
+
 ## App pack / verify
 
 Phase 5 adds deployable pack artifacts:

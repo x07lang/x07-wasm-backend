@@ -11,6 +11,15 @@ The desktop host tool must be available on PATH (or specified via `X07_DEVICE_HO
 
 - `arch/device/toolchain/device_toolchain_dev.json`
 
+## Host ABI sync gate
+
+Phase 9 adds a deterministic ABI sync gate so host/bundle drift is caught even when `x07-device-host-desktop` is not installed:
+
+- `scripts/ci/check_phase9_host_abi_sync.sh` enforces that:
+  - `vendor/x07-device-host/host_abi.snapshot.json` matches `vendor/x07-device-host/snapshot.json`, and
+  - `crates/x07-wasm/src/device/host_abi.rs` matches the vendored `host_abi_hash`.
+- `scripts/ci/check_phase9_host_abi_negative.sh` tampers a known-good bundle and asserts `x07-wasm device verify` fails with `X07WASM_DEVICE_BUNDLE_HOST_ABI_HASH_MISMATCH` (exit code 3).
+
 ## CLI
 
 Run a device bundle:
@@ -30,4 +39,3 @@ x07-wasm device package --bundle dist/device --target desktop --out-dir dist/dev
 ```sh
 bash scripts/ci/check_phase9.sh
 ```
-

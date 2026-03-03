@@ -1,4 +1,5 @@
 use std::ffi::OsString;
+use std::path::Path;
 
 use anyhow::Result;
 use serde_json::{json, Value};
@@ -12,6 +13,78 @@ use crate::schema::SchemaStore;
 use crate::util;
 
 const DEVICE_BUNDLE_MANIFEST_FILE: &str = "bundle.manifest.json";
+const VENDORED_HOST_ABI_SNAPSHOT: &str = "vendor/x07-device-host/host_abi.snapshot.json";
+
+fn load_vendored_host_abi_hash(
+    meta: &mut report::meta::ReportMeta,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> Option<String> {
+    let path = Path::new(VENDORED_HOST_ABI_SNAPSHOT);
+    let bytes = match std::fs::read(path) {
+        Ok(v) => v,
+        Err(err) => {
+            let mut d = Diagnostic::new(
+                "X07WASM_DEVICE_HOST_ABI_SNAPSHOT_LOAD_FAILED",
+                Severity::Error,
+                Stage::Parse,
+                format!(
+                    "failed to read vendored device host ABI snapshot {}: {err}",
+                    path.display()
+                ),
+            );
+            d.data
+                .insert("path".to_string(), json!(path.display().to_string()));
+            diagnostics.push(d);
+            return None;
+        }
+    };
+
+    meta.inputs.push(report::meta::FileDigest {
+        path: path.display().to_string(),
+        sha256: util::sha256_hex(&bytes),
+        bytes_len: bytes.len() as u64,
+    });
+
+    let doc: Value = match serde_json::from_slice(&bytes) {
+        Ok(v) => v,
+        Err(err) => {
+            let mut d = Diagnostic::new(
+                "X07WASM_DEVICE_HOST_ABI_SNAPSHOT_LOAD_FAILED",
+                Severity::Error,
+                Stage::Parse,
+                format!(
+                    "vendored device host ABI snapshot JSON invalid {}: {err}",
+                    path.display()
+                ),
+            );
+            d.data
+                .insert("path".to_string(), json!(path.display().to_string()));
+            diagnostics.push(d);
+            return None;
+        }
+    };
+
+    let host_abi_hash = doc.get("host_abi_hash").and_then(Value::as_str).unwrap_or("");
+    if host_abi_hash.len() != 64 {
+        let mut d = Diagnostic::new(
+            "X07WASM_DEVICE_HOST_ABI_SNAPSHOT_LOAD_FAILED",
+            Severity::Error,
+            Stage::Parse,
+            format!(
+                "vendored device host ABI snapshot host_abi_hash missing/invalid {}",
+                path.display()
+            ),
+        );
+        d.data
+            .insert("path".to_string(), json!(path.display().to_string()));
+        d.data
+            .insert("host_abi_hash".to_string(), json!(host_abi_hash));
+        diagnostics.push(d);
+        return None;
+    }
+
+    Some(host_abi_hash.to_string())
+}
 
 pub fn cmd_device_verify(
     raw_argv: &[OsString],
@@ -284,22 +357,33 @@ pub fn cmd_device_verify(
         }
 
         // Check host ABI hash matches the pinned host ABI.
-        let want_host_hash = host_abi::HOST_ABI_HASH_HEX;
-        host_abi_hash_ok = doc.host.host_abi_hash == want_host_hash;
-        if !host_abi_hash_ok {
-            let mut d = Diagnostic::new(
-                "X07WASM_DEVICE_BUNDLE_HOST_ABI_HASH_MISMATCH",
+        let want_host_hash = load_vendored_host_abi_hash(&mut meta, &mut diagnostics);
+        if let Some(want_host_hash) = want_host_hash.as_deref() {
+            host_abi_hash_ok = doc.host.host_abi_hash == want_host_hash;
+            if !host_abi_hash_ok {
+                let mut d = Diagnostic::new(
+                    "X07WASM_DEVICE_BUNDLE_HOST_ABI_HASH_MISMATCH",
+                    Severity::Error,
+                    Stage::Parse,
+                    "bundle host ABI hash does not match vendored device host ABI".to_string(),
+                );
+                d.data.insert(
+                    "expected_host_abi_hash".to_string(),
+                    json!(want_host_hash),
+                );
+                d.data.insert(
+                    "bundle_host_abi_hash".to_string(),
+                    json!(doc.host.host_abi_hash.clone()),
+                );
+                diagnostics.push(d);
+            }
+        } else if host_abi::HOST_ABI_HASH_HEX.len() != 64 {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_DEVICE_HOST_ABI_HASH_INVALID",
                 Severity::Error,
-                Stage::Run,
-                "host ABI hash mismatch".to_string(),
-            );
-            d.data
-                .insert("want_host_abi_hash".to_string(), json!(want_host_hash));
-            d.data.insert(
-                "got_host_abi_hash".to_string(),
-                json!(doc.host.host_abi_hash.clone()),
-            );
-            diagnostics.push(d);
+                Stage::Parse,
+                "pinned HOST_ABI_HASH_HEX is not a valid sha256".to_string(),
+            ));
         }
 
         // Recompute bundle_digest using canonical JSON with bundle_digest zeroed.

@@ -23,8 +23,12 @@ import sys
 paths = [
     pathlib.Path("arch/wasm/profiles/wasm_debug.json"),
     pathlib.Path("arch/wasm/profiles/wasm_release.json"),
+    pathlib.Path("arch/wasm/profiles/wasm_release_cached.json"),
+    pathlib.Path("arch/wasm/profiles/wasm_release_pooling.json"),
     pathlib.Path("arch/wasm/profiles/wasm_web_ui_debug.json"),
     pathlib.Path("arch/wasm/profiles/wasm_web_ui_release.json"),
+    pathlib.Path("arch/wasm/profiles/wasm_web_ui_release_cached.json"),
+    pathlib.Path("arch/wasm/profiles/wasm_web_ui_release_pooling.json"),
 ]
 
 violations = []

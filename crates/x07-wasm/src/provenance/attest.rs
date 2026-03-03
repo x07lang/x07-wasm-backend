@@ -146,31 +146,52 @@ pub fn cmd_provenance_attest(
     if let Some(bundle) = pack_doc.get("bundle_manifest") {
         let rel = bundle.get("path").and_then(Value::as_str).unwrap_or("");
         if !rel.is_empty() {
-            let bundle_path = pack_dir.join(rel);
-            let bytes = match std::fs::read(&bundle_path) {
-                Ok(v) => v,
+            let bundle_path = match util::safe_join_under_dir(&pack_dir, rel) {
+                Ok(v) => Some(v),
                 Err(err) => {
-                    diagnostics.push(Diagnostic::new(
-                        "X07WASM_PROVENANCE_MISSING_INPUT",
+                    let mut d = Diagnostic::new(
+                        "X07WASM_PROVENANCE_PATH_UNSAFE",
                         Severity::Error,
                         Stage::Parse,
-                        format!("missing bundle manifest {}: {err}", bundle_path.display()),
-                    ));
-                    Vec::new()
+                        "unsafe path in pack manifest".to_string(),
+                    );
+                    d.data.insert("field".to_string(), json!("bundle_manifest.path"));
+                    d.data.insert("path".to_string(), json!(err.rel));
+                    d.data.insert("kind".to_string(), json!(err.kind));
+                    d.data.insert("detail".to_string(), json!(err.detail));
+                    diagnostics.push(d);
+                    None
                 }
             };
-            if !bytes.is_empty() {
-                let sha256 = util::sha256_hex(&bytes);
-                meta.inputs.push(report::meta::FileDigest {
-                    path: bundle_path.display().to_string(),
-                    sha256: sha256.clone(),
-                    bytes_len: bytes.len() as u64,
-                });
-                subjects.push(json!({
-                  "name": rel,
-                  "digest": { "sha256": sha256 },
-                  "mediaType": "application/json",
-                }));
+            if let Some(bundle_path) = bundle_path.as_ref() {
+                let bytes = match std::fs::read(bundle_path) {
+                    Ok(v) => v,
+                    Err(err) => {
+                        diagnostics.push(Diagnostic::new(
+                            "X07WASM_PROVENANCE_MISSING_INPUT",
+                            Severity::Error,
+                            Stage::Parse,
+                            format!(
+                                "missing bundle manifest {}: {err}",
+                                bundle_path.display()
+                            ),
+                        ));
+                        Vec::new()
+                    }
+                };
+                if !bytes.is_empty() {
+                    let sha256 = util::sha256_hex(&bytes);
+                    meta.inputs.push(report::meta::FileDigest {
+                        path: bundle_path.display().to_string(),
+                        sha256: sha256.clone(),
+                        bytes_len: bytes.len() as u64,
+                    });
+                    subjects.push(json!({
+                      "name": rel,
+                      "digest": { "sha256": sha256 },
+                      "mediaType": "application/json",
+                    }));
+                }
             }
         }
     }
@@ -182,34 +203,53 @@ pub fn cmd_provenance_attest(
     {
         let rel = component.get("path").and_then(Value::as_str).unwrap_or("");
         if !rel.is_empty() {
-            let component_path = pack_dir.join(rel);
-            let bytes = match std::fs::read(&component_path) {
-                Ok(v) => v,
+            let component_path = match util::safe_join_under_dir(&pack_dir, rel) {
+                Ok(v) => Some(v),
                 Err(err) => {
-                    diagnostics.push(Diagnostic::new(
-                        "X07WASM_PROVENANCE_MISSING_INPUT",
+                    let mut d = Diagnostic::new(
+                        "X07WASM_PROVENANCE_PATH_UNSAFE",
                         Severity::Error,
                         Stage::Parse,
-                        format!(
-                            "missing backend component {}: {err}",
-                            component_path.display()
-                        ),
-                    ));
-                    Vec::new()
+                        "unsafe path in pack manifest".to_string(),
+                    );
+                    d.data
+                        .insert("field".to_string(), json!("backend.component.path"));
+                    d.data.insert("path".to_string(), json!(err.rel));
+                    d.data.insert("kind".to_string(), json!(err.kind));
+                    d.data.insert("detail".to_string(), json!(err.detail));
+                    diagnostics.push(d);
+                    None
                 }
             };
-            if !bytes.is_empty() {
-                let sha256 = util::sha256_hex(&bytes);
-                meta.inputs.push(report::meta::FileDigest {
-                    path: component_path.display().to_string(),
-                    sha256: sha256.clone(),
-                    bytes_len: bytes.len() as u64,
-                });
-                subjects.push(json!({
-                  "name": rel,
-                  "digest": { "sha256": sha256 },
-                  "mediaType": "application/wasm",
-                }));
+            if let Some(component_path) = component_path.as_ref() {
+                let bytes = match std::fs::read(component_path) {
+                    Ok(v) => v,
+                    Err(err) => {
+                        diagnostics.push(Diagnostic::new(
+                            "X07WASM_PROVENANCE_MISSING_INPUT",
+                            Severity::Error,
+                            Stage::Parse,
+                            format!(
+                                "missing backend component {}: {err}",
+                                component_path.display()
+                            ),
+                        ));
+                        Vec::new()
+                    }
+                };
+                if !bytes.is_empty() {
+                    let sha256 = util::sha256_hex(&bytes);
+                    meta.inputs.push(report::meta::FileDigest {
+                        path: component_path.display().to_string(),
+                        sha256: sha256.clone(),
+                        bytes_len: bytes.len() as u64,
+                    });
+                    subjects.push(json!({
+                      "name": rel,
+                      "digest": { "sha256": sha256 },
+                      "mediaType": "application/wasm",
+                    }));
+                }
             }
         }
     }
@@ -228,7 +268,23 @@ pub fn cmd_provenance_attest(
             continue;
         };
 
-        let asset_path = pack_dir.join(fp);
+        let asset_path = match util::safe_join_under_dir(&pack_dir, fp) {
+            Ok(v) => v,
+            Err(err) => {
+                let mut d = Diagnostic::new(
+                    "X07WASM_PROVENANCE_PATH_UNSAFE",
+                    Severity::Error,
+                    Stage::Parse,
+                    "unsafe path in pack manifest".to_string(),
+                );
+                d.data.insert("field".to_string(), json!("assets[].file.path"));
+                d.data.insert("path".to_string(), json!(err.rel));
+                d.data.insert("kind".to_string(), json!(err.kind));
+                d.data.insert("detail".to_string(), json!(err.detail));
+                diagnostics.push(d);
+                continue;
+            }
+        };
         let bytes = match std::fs::read(&asset_path) {
             Ok(v) => v,
             Err(err) => {

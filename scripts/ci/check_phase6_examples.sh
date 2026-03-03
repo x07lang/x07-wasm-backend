@@ -302,6 +302,41 @@ print("tampered:", str(p))
 PY
 }
 
+symlink_first_pack_asset_file() {
+  local pack_manifest_path="$1"
+  local target_path="$2"
+  "$PYTHON" - "$pack_manifest_path" "$target_path" <<'PY'
+import json, os, pathlib, sys
+
+manifest = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2]).resolve()
+doc = json.loads(manifest.read_text(encoding="utf-8"))
+
+assets = doc.get("assets", [])
+if not isinstance(assets, list) or len(assets) < 1:
+    raise SystemExit(f"pack manifest has no assets: {manifest}")
+
+asset0 = None
+for a in assets:
+    if isinstance(a, dict) and isinstance(a.get("file"), dict) and isinstance(a["file"].get("path"), str):
+        asset0 = a
+        break
+if asset0 is None:
+    raise SystemExit("pack manifest assets missing file.path")
+
+rel = asset0["file"]["path"]
+p = manifest.parent / rel
+p.parent.mkdir(parents=True, exist_ok=True)
+try:
+    p.unlink()
+except FileNotFoundError:
+    pass
+
+os.symlink(str(target), str(p))
+print("symlinked:", str(p), "->", str(target))
+PY
+}
+
 corrupt_pack_backend_component_file() {
   local pack_manifest_path="$1"
   "$PYTHON" - "$pack_manifest_path" <<'PY'
@@ -732,6 +767,27 @@ x07-wasm provenance verify \
   --trusted-public-key arch/provenance/dev.ed25519.public_key.b64 \
   --json --report-out build/phase6_examples/provenance.verify.ok.json --quiet-json
 require_report_ok build/phase6_examples/provenance.verify.ok.json
+
+echo "==> phase6_examples: provenance attest (negative - unsafe symlink path)"
+rm -rf dist/phase6_examples/app_min.pack.asset_symlink
+cp -a dist/phase6_examples/app_min.pack dist/phase6_examples/app_min.pack.asset_symlink
+printf "outside" > dist/phase6_examples/outside_asset.bin
+symlink_first_pack_asset_file dist/phase6_examples/app_min.pack.asset_symlink/app.pack.json dist/phase6_examples/outside_asset.bin >/dev/null
+
+set +e
+x07-wasm provenance attest \
+  --pack-manifest dist/phase6_examples/app_min.pack.asset_symlink/app.pack.json \
+  --ops arch/app/ops/ops_release.json \
+  --signing-key arch/provenance/dev.ed25519.signing_key.b64 \
+  --out dist/phase6_examples/app_min.pack.asset_symlink/provenance.dsse.json \
+  --json --report-out build/phase6_examples/provenance.attest.asset_symlink.json --quiet-json
+code=$?
+set -e
+if [ "$code" -ne 3 ]; then
+  echo "expected exit code 3 for provenance attest unsafe symlink path, got $code" >&2
+  exit 1
+fi
+require_report_exit_and_has_code build/phase6_examples/provenance.attest.asset_symlink.json 3 X07WASM_PROVENANCE_PATH_UNSAFE
 
 echo "==> phase6_examples: provenance verify (negative - tamper signature)"
 cp dist/phase6_examples/app_min.pack/provenance.dsse.json dist/phase6_examples/app_min.pack/provenance.dsse.bad_sig.json
