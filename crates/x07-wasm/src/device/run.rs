@@ -180,6 +180,7 @@ pub fn cmd_device_run(
     Ok(exit_code)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn emit_device_run_report(
     store: &SchemaStore,
     scope: Scope,

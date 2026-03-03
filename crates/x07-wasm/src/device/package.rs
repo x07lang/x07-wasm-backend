@@ -479,7 +479,7 @@ pub fn cmd_device_package(
     let host_tool_src = match resolve_host_tool_path() {
         Ok(p) => p,
         Err(d) => {
-            diagnostics.push(d);
+            diagnostics.push(*d);
             return emit_report(
                 &store,
                 scope,
@@ -497,7 +497,7 @@ pub fn cmd_device_package(
         }
     };
     if let Err(d) = check_host_tool_abi_hash(&host_tool_src, &bundle_doc.host.host_abi_hash) {
-        diagnostics.push(d);
+        diagnostics.push(*d);
         return emit_report(
             &store,
             scope,
@@ -838,6 +838,7 @@ pub fn cmd_device_package(
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 fn emit_report(
     store: &SchemaStore,
     scope: Scope,
@@ -943,7 +944,7 @@ fn info_plist_xml(display_name: &str, app_id: &str, version: &str, build: u64) -
     )
 }
 
-fn resolve_host_tool_path() -> std::result::Result<PathBuf, Diagnostic> {
+fn resolve_host_tool_path() -> std::result::Result<PathBuf, Box<Diagnostic>> {
     if let Some(p) = std::env::var_os("X07_DEVICE_HOST_DESKTOP") {
         if !p.is_empty() {
             return Ok(PathBuf::from(p));
@@ -959,28 +960,28 @@ fn resolve_host_tool_path() -> std::result::Result<PathBuf, Diagnostic> {
         return Ok(p);
     }
 
-    Err(Diagnostic::new(
+    Err(Box::new(Diagnostic::new(
         "X07WASM_DEVICE_PACKAGE_HOST_TOOL_MISSING",
         Severity::Error,
         Stage::Run,
         "missing host tool: x07-device-host-desktop (set X07_DEVICE_HOST_DESKTOP or ensure it is on PATH)".to_string(),
-    ))
+    )))
 }
 
 fn check_host_tool_abi_hash(
     host_tool: &Path,
     expected: &str,
-) -> std::result::Result<(), Diagnostic> {
+) -> std::result::Result<(), Box<Diagnostic>> {
     let out = Command::new(host_tool)
         .arg("--host-abi-hash")
         .output()
         .map_err(|err| {
-            Diagnostic::new(
+            Box::new(Diagnostic::new(
                 "X07WASM_DEVICE_PACKAGE_FAILED",
                 Severity::Error,
                 Stage::Run,
                 format!("failed to run host tool --host-abi-hash: {err}"),
-            )
+            ))
         })?;
     let got = String::from_utf8_lossy(&out.stdout).trim().to_string();
     if got != expected {
@@ -993,7 +994,7 @@ fn check_host_tool_abi_hash(
         d.data
             .insert("expected_host_abi_hash".to_string(), json!(expected));
         d.data.insert("got_host_abi_hash".to_string(), json!(got));
-        return Err(d);
+        return Err(Box::new(d));
     }
     Ok(())
 }

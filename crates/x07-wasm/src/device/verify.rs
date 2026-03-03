@@ -5,6 +5,7 @@ use serde_json::{json, Value};
 
 use crate::cli::{DeviceVerifyArgs, MachineArgs, Scope};
 use crate::device::contracts::DeviceBundleManifestDoc;
+use crate::device::host_abi;
 use crate::diag::{Diagnostic, Severity, Stage};
 use crate::report;
 use crate::schema::SchemaStore;
@@ -182,7 +183,7 @@ pub fn cmd_device_verify(
         }
 
         // Check host ABI hash matches the pinned host ABI.
-        let want_host_hash = x07_device_host_abi::host_abi_hash_hex();
+        let want_host_hash = host_abi::HOST_ABI_HASH_HEX;
         host_abi_hash_ok = doc.host.host_abi_hash == want_host_hash;
         if !host_abi_hash_ok {
             let mut d = Diagnostic::new(

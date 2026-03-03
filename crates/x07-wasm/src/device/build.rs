@@ -6,6 +6,7 @@ use serde_json::{json, Value};
 
 use crate::cli::{DeviceBuildArgs, MachineArgs, Scope, WebUiBuildArgs, WebUiBuildFormat};
 use crate::device::contracts::{DeviceIndexDoc, DeviceProfileDoc};
+use crate::device::host_abi;
 use crate::diag::{Diagnostic, Severity, Stage};
 use crate::report;
 use crate::schema::SchemaStore;
@@ -224,7 +225,7 @@ pub fn cmd_device_build(
                 }
             }
 
-            let host_abi_hash = x07_device_host_abi::host_abi_hash_hex();
+            let host_abi_hash = host_abi::HOST_ABI_HASH_HEX;
             if host_abi_hash.len() != 64 {
                 diagnostics.push(Diagnostic::new(
                     "X07WASM_DEVICE_HOST_ABI_HASH_INVALID",
@@ -248,9 +249,9 @@ pub fn cmd_device_build(
                   },
                   "ui_wasm": ui_wasm_digest,
                   "host": {
-                    "kind": "webview_v1",
-                    "abi_name": x07_device_host_abi::ABI_NAME,
-                    "abi_version": x07_device_host_abi::ABI_VERSION,
+                    "kind": host_abi::HOST_KIND,
+                    "abi_name": host_abi::ABI_NAME,
+                    "abi_version": host_abi::ABI_VERSION,
                     "host_abi_hash": host_abi_hash,
                   },
                   "bundle_digest": "0".repeat(64),
@@ -366,10 +367,10 @@ pub fn cmd_device_build(
         "bundle_manifest": bundle_manifest_digest,
         "ui_wasm": ui_wasm_digest,
         "host": {
-          "kind": "webview_v1",
-          "abi_name": x07_device_host_abi::ABI_NAME,
-          "abi_version": x07_device_host_abi::ABI_VERSION,
-          "host_abi_hash": x07_device_host_abi::host_abi_hash_hex(),
+          "kind": host_abi::HOST_KIND,
+          "abi_name": host_abi::ABI_NAME,
+          "abi_version": host_abi::ABI_VERSION,
+          "host_abi_hash": host_abi::HOST_ABI_HASH_HEX,
         },
         "artifacts": artifacts,
       }
