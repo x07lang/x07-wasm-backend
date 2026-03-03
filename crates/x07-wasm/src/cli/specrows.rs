@@ -11,7 +11,7 @@ use crate::schema::SchemaStore;
 use crate::util;
 
 pub fn build_specrows_doc() -> Value {
-    json!({
+    let mut doc = json!({
       "schema_version": "x07cli.specrows@0.1.0",
       "app": {
         "name": "x07-wasm",
@@ -148,11 +148,11 @@ pub fn build_specrows_doc() -> Value {
             ["component-targets","opt","","--wit","wit","PATH","Path to a .wit file containing the world to target."],
             ["component-targets","opt","","--world","world","STR","World name within the WIT file."],
 
-	        ["deploy-plan","about","Alias for `x07-wasm deploy plan`. Generate progressive delivery plan from pack + ops profile and emit x07.wasm.deploy.plan.report@0.1.0."],
-	        ["deploy-plan","opt","","--ops","ops","PATH","Ops profile file (x07.app.ops.profile@0.1.0)."],
-	        ["deploy-plan","opt","","--emit-k8s","emit.k8s","STR","Emit Kubernetes YAML outputs (true/false; default true)."],
-	        ["deploy-plan","opt","","--out-dir","out_dir","PATH","Output directory for deploy plan + emitted manifests."],
-	        ["deploy-plan","opt","","--pack-manifest","pack_manifest","PATH","App pack manifest file (x07.app.pack@0.1.0)."],
+            ["deploy-plan","about","Alias for `x07-wasm deploy plan`. Generate progressive delivery plan from pack + ops profile and emit x07.wasm.deploy.plan.report@0.1.0."],
+            ["deploy-plan","opt","","--ops","ops","PATH","Ops profile file (x07.app.ops.profile@0.1.0)."],
+            ["deploy-plan","opt","","--emit-k8s","emit.k8s","STR","Emit Kubernetes YAML outputs (true/false; default true)."],
+            ["deploy-plan","opt","","--out-dir","out_dir","PATH","Output directory for deploy plan + emitted manifests."],
+            ["deploy-plan","opt","","--pack-manifest","pack_manifest","PATH","App pack manifest file (x07.app.pack@0.1.0)."],
 
         ["device-build","about","Alias for `x07-wasm device build`. Build a device UI bundle (web-ui reducer wasm + pinned host ABI) and emit x07.wasm.device.build.report@0.1.0."],
         ["device-build","flag","","--clean","clean","Delete out-dir before writing bundle artifacts."],
@@ -328,10 +328,16 @@ pub fn build_specrows_doc() -> Value {
             ["wit-validate","about","Validate arch/wit/index.x07wit.json and all referenced WIT packages (offline)."],
             ["wit-validate","flag","","--list","list","List packages discovered in the registry and exit (still emits a report)."],
             ["wit-validate","flag","","--strict","strict","Treat warnings as errors."],
-            ["wit-validate","opt","","--index","index","PATH","Path to the WIT registry file (default: arch/wit/index.x07wit.json)."],
+        ["wit-validate","opt","","--index","index","PATH","Path to the WIT registry file (default: arch/wit/index.x07wit.json)."],
         ["wit-validate","opt","","--package","package","STR","Only validate specific package id(s), e.g. wasi:http@0.2.8.",{"multiple":true}]
       ]
-    })
+    });
+
+    if let Some(rows) = doc.get_mut("rows").and_then(Value::as_array_mut) {
+        rows.sort_by_key(canonical_row_key);
+    }
+
+    doc
 }
 
 pub fn cmd_cli_specrows_check(

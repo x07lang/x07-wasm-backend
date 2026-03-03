@@ -151,7 +151,7 @@ pub fn cmd_app_verify(
                         format!("missing bundle manifest file: {}", full.display()),
                     ));
                 } else {
-                    let bytes = std::fs::read(&full).map_err(|err| {
+                    let bytes = std::fs::read(full).map_err(|err| {
                         diagnostics.push(Diagnostic::new(
                             "X07WASM_APP_VERIFY_BUNDLE_MANIFEST_MISSING",
                             Severity::Error,
@@ -225,7 +225,7 @@ pub fn cmd_app_verify(
                         format!("missing backend component file: {}", full.display()),
                     ));
                 } else {
-                    let bytes = std::fs::read(&full).map_err(|err| {
+                    let bytes = std::fs::read(full).map_err(|err| {
                         diagnostics.push(Diagnostic::new(
                             "X07WASM_APP_VERIFY_BACKEND_COMPONENT_MISSING",
                             Severity::Error,

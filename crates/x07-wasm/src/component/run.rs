@@ -120,12 +120,10 @@ pub fn cmd_component_run(
     if let Some(v) = args.max_table_elements {
         runtime_limits.max_table_elements = Some(v);
     }
-    if let Err(err) = wasmtime_limits::apply_config(&mut config, &runtime_limits)
-        .and_then(|_| {
-            wasmtime_limits::apply_instance_allocator_config(&mut config, &runtime_limits, 1)
-                .map(|_| ())
-        })
-    {
+    if let Err(err) = wasmtime_limits::apply_config(&mut config, &runtime_limits).and_then(|_| {
+        wasmtime_limits::apply_instance_allocator_config(&mut config, &runtime_limits, 1)
+            .map(|_| ())
+    }) {
         diagnostics.push(Diagnostic::new(
             "X07WASM_WASMTIME_ENGINE_FAILED",
             Severity::Error,

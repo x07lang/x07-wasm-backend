@@ -161,7 +161,7 @@ pub fn cmd_device_verify(
                 d.data.insert("path".to_string(), json!(doc.ui_wasm.path));
                 diagnostics.push(d);
             } else {
-                match std::fs::read(&ui_path) {
+                match std::fs::read(ui_path) {
                     Ok(bytes) => {
                         files_checked += 1;
                         let got_sha = util::sha256_hex(&bytes);
@@ -236,7 +236,7 @@ pub fn cmd_device_verify(
                     .insert("path".to_string(), json!(doc.profile.file.path.clone()));
                 diagnostics.push(d);
             } else {
-                match std::fs::read(&profile_path) {
+                match std::fs::read(profile_path) {
                     Ok(bytes) => {
                         files_checked += 1;
                         let got_sha = util::sha256_hex(&bytes);

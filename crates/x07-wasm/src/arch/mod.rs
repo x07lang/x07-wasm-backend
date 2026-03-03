@@ -119,19 +119,14 @@ pub struct WasmRuntimeLimits {
     pub notes: Option<String>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum WasmInstanceAllocator {
+    #[default]
     #[serde(rename = "on_demand")]
     OnDemand,
     #[serde(rename = "pooling")]
     Pooling,
-}
-
-impl Default for WasmInstanceAllocator {
-    fn default() -> Self {
-        Self::OnDemand
-    }
 }
 
 pub struct LoadedProfile {

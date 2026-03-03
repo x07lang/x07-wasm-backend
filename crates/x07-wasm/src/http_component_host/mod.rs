@@ -214,8 +214,11 @@ fn build_engine(runtime_limits: &WasmRuntimeLimits, max_concurrency: usize) -> R
     let mut config = Config::new();
     config.async_support(true);
     wasmtime_limits::apply_config(&mut config, runtime_limits)?;
-    let pooling_enabled =
-        wasmtime_limits::apply_instance_allocator_config(&mut config, runtime_limits, max_concurrency)?;
+    let pooling_enabled = wasmtime_limits::apply_instance_allocator_config(
+        &mut config,
+        runtime_limits,
+        max_concurrency,
+    )?;
     match Engine::new(&config) {
         Ok(v) => Ok(v),
         Err(err) => {

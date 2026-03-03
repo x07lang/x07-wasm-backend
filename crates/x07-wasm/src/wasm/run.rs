@@ -244,12 +244,10 @@ pub fn cmd_run(
         };
         runtime_limits.max_wasm_stack_bytes = Some(u32::try_from(fallback).unwrap_or(u32::MAX));
     }
-    if let Err(err) = wasmtime_limits::apply_config(&mut config, &runtime_limits)
-        .and_then(|_| {
-            wasmtime_limits::apply_instance_allocator_config(&mut config, &runtime_limits, 1)
-                .map(|_| ())
-        })
-    {
+    if let Err(err) = wasmtime_limits::apply_config(&mut config, &runtime_limits).and_then(|_| {
+        wasmtime_limits::apply_instance_allocator_config(&mut config, &runtime_limits, 1)
+            .map(|_| ())
+    }) {
         diagnostics.push(Diagnostic::new(
             "X07WASM_WASMTIME_ENGINE_FAILED",
             Severity::Error,
