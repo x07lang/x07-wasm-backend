@@ -64,7 +64,10 @@ fn load_vendored_host_abi_hash(
         }
     };
 
-    let host_abi_hash = doc.get("host_abi_hash").and_then(Value::as_str).unwrap_or("");
+    let host_abi_hash = doc
+        .get("host_abi_hash")
+        .and_then(Value::as_str)
+        .unwrap_or("");
     if host_abi_hash.len() != 64 {
         let mut d = Diagnostic::new(
             "X07WASM_DEVICE_HOST_ABI_SNAPSHOT_LOAD_FAILED",
@@ -367,10 +370,8 @@ pub fn cmd_device_verify(
                     Stage::Parse,
                     "bundle host ABI hash does not match vendored device host ABI".to_string(),
                 );
-                d.data.insert(
-                    "expected_host_abi_hash".to_string(),
-                    json!(want_host_hash),
-                );
+                d.data
+                    .insert("expected_host_abi_hash".to_string(), json!(want_host_hash));
                 d.data.insert(
                     "bundle_host_abi_hash".to_string(),
                     json!(doc.host.host_abi_hash.clone()),

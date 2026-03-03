@@ -155,7 +155,8 @@ pub fn cmd_provenance_attest(
                         Stage::Parse,
                         "unsafe path in pack manifest".to_string(),
                     );
-                    d.data.insert("field".to_string(), json!("bundle_manifest.path"));
+                    d.data
+                        .insert("field".to_string(), json!("bundle_manifest.path"));
                     d.data.insert("path".to_string(), json!(err.rel));
                     d.data.insert("kind".to_string(), json!(err.kind));
                     d.data.insert("detail".to_string(), json!(err.detail));
@@ -171,10 +172,7 @@ pub fn cmd_provenance_attest(
                             "X07WASM_PROVENANCE_MISSING_INPUT",
                             Severity::Error,
                             Stage::Parse,
-                            format!(
-                                "missing bundle manifest {}: {err}",
-                                bundle_path.display()
-                            ),
+                            format!("missing bundle manifest {}: {err}", bundle_path.display()),
                         ));
                         Vec::new()
                     }
@@ -277,7 +275,8 @@ pub fn cmd_provenance_attest(
                     Stage::Parse,
                     "unsafe path in pack manifest".to_string(),
                 );
-                d.data.insert("field".to_string(), json!("assets[].file.path"));
+                d.data
+                    .insert("field".to_string(), json!("assets[].file.path"));
                 d.data.insert("path".to_string(), json!(err.rel));
                 d.data.insert("kind".to_string(), json!(err.kind));
                 d.data.insert("detail".to_string(), json!(err.detail));
