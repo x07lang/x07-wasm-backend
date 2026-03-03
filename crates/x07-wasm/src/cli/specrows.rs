@@ -164,10 +164,10 @@ pub fn build_specrows_doc() -> Value {
         ["device-index-validate","about","Alias for `x07-wasm device index validate`. Validate device profile registry and emit x07.wasm.device.index.validate.report@0.1.0."],
         ["device-index-validate","opt","","--index","index","PATH","Path to arch/device/index.x07device.json.",{ "default": "arch/device/index.x07device.json" }],
 
-        ["device-package","about","Alias for `x07-wasm device package`. Package a device bundle into a desktop payload and emit x07.wasm.device.package.report@0.1.0."],
+        ["device-package","about","Alias for `x07-wasm device package`. Package a device bundle into a target payload (desktop app bundle or iOS/Android project) and emit x07.wasm.device.package.report@0.1.0."],
         ["device-package","opt","","--bundle","bundle.dir","PATH","Directory containing the device bundle.",{ "default": "dist/device" }],
         ["device-package","opt","","--out-dir","out.dir","PATH","Output directory for the packaged payload + package.manifest.json.",{ "default": "dist/device_package" }],
-        ["device-package","opt","","--target","target","STR","Device target (currently only `desktop` is supported).",{ "default": "desktop" }],
+        ["device-package","opt","","--target","target","STR","Device target (`desktop`, `ios`, `android`).",{ "default": "desktop" }],
 
         ["device-profile-validate","about","Alias for `x07-wasm device profile validate`. Validate device profiles and cross-references. Emits x07.wasm.device.profile.validate.report@0.1.0."],
         ["device-profile-validate","flag","","--strict","strict","Treat warnings as errors (nonzero exit on any warning)."],

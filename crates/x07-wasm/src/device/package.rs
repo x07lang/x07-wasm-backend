@@ -9,6 +9,7 @@ use zip::write::FileOptions;
 
 use crate::cli::{DevicePackageArgs, MachineArgs, Scope};
 use crate::device::contracts::{DeviceBundleManifestDoc, DeviceProfileDoc};
+use crate::device::{package_android, package_ios};
 use crate::diag::{Diagnostic, Severity, Stage};
 use crate::report;
 use crate::schema::SchemaStore;
@@ -48,7 +49,8 @@ pub fn cmd_device_package(
     };
 
     let target = target_arg.trim();
-    if target != "desktop" {
+    let target_ok = matches!(target, "desktop" | "ios" | "android");
+    if !target_ok {
         diagnostics.push(Diagnostic::new(
             "X07WASM_DEVICE_PACKAGE_FAILED",
             Severity::Error,
@@ -61,6 +63,7 @@ pub fn cmd_device_package(
             machine,
             started,
             raw_argv,
+            "desktop",
             meta,
             diagnostics,
             profile_ref,
@@ -70,6 +73,7 @@ pub fn cmd_device_package(
             package_info,
         );
     }
+    meta.nondeterminism.uses_process = target == "desktop";
 
     let bundle_manifest_path = bundle_dir.join(DEVICE_BUNDLE_MANIFEST_FILE);
     let bundle_manifest_sha256 = match util::file_digest(&bundle_manifest_path) {
@@ -93,6 +97,7 @@ pub fn cmd_device_package(
                 machine,
                 started,
                 raw_argv,
+                target,
                 meta,
                 diagnostics,
                 profile_ref,
@@ -122,6 +127,7 @@ pub fn cmd_device_package(
                 machine,
                 started,
                 raw_argv,
+                target,
                 meta,
                 diagnostics,
                 profile_ref,
@@ -148,6 +154,7 @@ pub fn cmd_device_package(
                 machine,
                 started,
                 raw_argv,
+                target,
                 meta,
                 diagnostics,
                 profile_ref,
@@ -178,6 +185,7 @@ pub fn cmd_device_package(
             machine,
             started,
             raw_argv,
+            target,
             meta,
             diagnostics,
             profile_ref,
@@ -203,6 +211,7 @@ pub fn cmd_device_package(
                 machine,
                 started,
                 raw_argv,
+                target,
                 meta,
                 diagnostics,
                 profile_ref,
@@ -216,7 +225,7 @@ pub fn cmd_device_package(
 
     profile_ref = json!({ "id": bundle_doc.profile.id, "v": bundle_doc.profile.v });
 
-    if bundle_doc.target != "desktop" {
+    if bundle_doc.target != target {
         diagnostics.push(Diagnostic::new(
             "X07WASM_DEVICE_PACKAGE_FAILED",
             Severity::Error,
@@ -229,6 +238,7 @@ pub fn cmd_device_package(
             machine,
             started,
             raw_argv,
+            target,
             meta,
             diagnostics,
             profile_ref,
@@ -258,6 +268,7 @@ pub fn cmd_device_package(
                 machine,
                 started,
                 raw_argv,
+                target,
                 meta,
                 diagnostics,
                 profile_ref,
@@ -287,6 +298,7 @@ pub fn cmd_device_package(
                 machine,
                 started,
                 raw_argv,
+                target,
                 meta,
                 diagnostics,
                 profile_ref,
@@ -313,6 +325,7 @@ pub fn cmd_device_package(
                 machine,
                 started,
                 raw_argv,
+                target,
                 meta,
                 diagnostics,
                 profile_ref,
@@ -343,6 +356,7 @@ pub fn cmd_device_package(
             machine,
             started,
             raw_argv,
+            target,
             meta,
             diagnostics,
             profile_ref,
@@ -368,6 +382,7 @@ pub fn cmd_device_package(
                 machine,
                 started,
                 raw_argv,
+                target,
                 meta,
                 diagnostics,
                 profile_ref,
@@ -392,6 +407,7 @@ pub fn cmd_device_package(
             machine,
             started,
             raw_argv,
+            target,
             meta,
             diagnostics,
             profile_ref,
@@ -402,12 +418,12 @@ pub fn cmd_device_package(
         );
     }
 
-    let Some(desktop) = profile_doc.desktop.as_ref() else {
+    if profile_doc.target != target {
         diagnostics.push(Diagnostic::new(
             "X07WASM_DEVICE_PACKAGE_FAILED",
             Severity::Error,
             Stage::Parse,
-            "device profile missing desktop config".to_string(),
+            format!("profile target mismatch: {:?}", profile_doc.target),
         ));
         return emit_report(
             &store,
@@ -415,6 +431,7 @@ pub fn cmd_device_package(
             machine,
             started,
             raw_argv,
+            target,
             meta,
             diagnostics,
             profile_ref,
@@ -424,95 +441,6 @@ pub fn cmd_device_package(
             package_info,
         );
     };
-
-    let package_kind = desktop.package.kind.as_str();
-    let is_archive = match package_kind {
-        "dir" => false,
-        "archive" => true,
-        _ => {
-            diagnostics.push(Diagnostic::new(
-                "X07WASM_DEVICE_PACKAGE_FAILED",
-                Severity::Error,
-                Stage::Parse,
-                format!("unsupported desktop.package.kind: {package_kind:?}"),
-            ));
-            return emit_report(
-                &store,
-                scope,
-                machine,
-                started,
-                raw_argv,
-                meta,
-                diagnostics,
-                profile_ref,
-                &bundle_dir,
-                &out_dir,
-                package_manifest_digest,
-                package_info,
-            );
-        }
-    };
-
-    if is_archive && desktop.package.format.as_deref() != Some("zip") {
-        diagnostics.push(Diagnostic::new(
-            "X07WASM_DEVICE_PACKAGE_FAILED",
-            Severity::Error,
-            Stage::Parse,
-            "desktop.package.kind=archive requires desktop.package.format=zip".to_string(),
-        ));
-        return emit_report(
-            &store,
-            scope,
-            machine,
-            started,
-            raw_argv,
-            meta,
-            diagnostics,
-            profile_ref,
-            &bundle_dir,
-            &out_dir,
-            package_manifest_digest,
-            package_info,
-        );
-    }
-
-    let host_tool_src = match resolve_host_tool_path() {
-        Ok(p) => p,
-        Err(d) => {
-            diagnostics.push(*d);
-            return emit_report(
-                &store,
-                scope,
-                machine,
-                started,
-                raw_argv,
-                meta,
-                diagnostics,
-                profile_ref,
-                &bundle_dir,
-                &out_dir,
-                package_manifest_digest,
-                package_info,
-            );
-        }
-    };
-    if let Err(d) = check_host_tool_abi_hash(&host_tool_src, &bundle_doc.host.host_abi_hash) {
-        diagnostics.push(*d);
-        return emit_report(
-            &store,
-            scope,
-            machine,
-            started,
-            raw_argv,
-            meta,
-            diagnostics,
-            profile_ref,
-            &bundle_dir,
-            &out_dir,
-            package_manifest_digest,
-            package_info,
-        );
-    }
 
     if let Err(err) = std::fs::create_dir_all(&out_dir)
         .with_context(|| format!("create dir: {}", out_dir.display()))
@@ -529,6 +457,7 @@ pub fn cmd_device_package(
             machine,
             started,
             raw_argv,
+            target,
             meta,
             diagnostics,
             profile_ref,
@@ -539,197 +468,14 @@ pub fn cmd_device_package(
         );
     }
 
-    let app_name = safe_app_name(&profile_doc.identity.display_name, &profile_doc.id);
-    let app_bundle_name = format!("{app_name}.app");
-    let app_dir = out_dir.join(&app_bundle_name);
-
-    if app_dir.exists() {
-        if let Err(err) = std::fs::remove_dir_all(&app_dir) {
-            diagnostics.push(Diagnostic::new(
-                "X07WASM_DEVICE_PACKAGE_WRITE_FAILED",
-                Severity::Error,
-                Stage::Run,
-                format!(
-                    "failed to remove existing app bundle {}: {err}",
-                    app_dir.display()
-                ),
-            ));
-            return emit_report(
-                &store,
-                scope,
-                machine,
-                started,
-                raw_argv,
-                meta,
-                diagnostics,
-                profile_ref,
-                &bundle_dir,
-                &out_dir,
-                package_manifest_digest,
-                package_info,
-            );
-        }
-    }
-
-    let contents_dir = app_dir.join("Contents");
-    let macos_dir = contents_dir.join("MacOS");
-    let bundle_dst = contents_dir.join("Resources").join("bundle");
-
-    if let Err(err) = std::fs::create_dir_all(&bundle_dst) {
-        diagnostics.push(Diagnostic::new(
-            "X07WASM_DEVICE_PACKAGE_WRITE_FAILED",
-            Severity::Error,
-            Stage::Run,
-            format!("failed to create app bundle dirs: {err}"),
-        ));
-        return emit_report(
-            &store,
-            scope,
-            machine,
-            started,
-            raw_argv,
-            meta,
-            diagnostics,
-            profile_ref,
-            &bundle_dir,
-            &out_dir,
-            package_manifest_digest,
-            package_info,
-        );
-    }
-    if let Err(err) = std::fs::create_dir_all(&macos_dir) {
-        diagnostics.push(Diagnostic::new(
-            "X07WASM_DEVICE_PACKAGE_WRITE_FAILED",
-            Severity::Error,
-            Stage::Run,
-            format!("failed to create app bundle dirs: {err}"),
-        ));
-        return emit_report(
-            &store,
-            scope,
-            machine,
-            started,
-            raw_argv,
-            meta,
-            diagnostics,
-            profile_ref,
-            &bundle_dir,
-            &out_dir,
-            package_manifest_digest,
-            package_info,
-        );
-    }
-
-    let host_tool_dst = macos_dir.join("x07-device-host-desktop");
-    if let Err(err) = std::fs::copy(&host_tool_src, &host_tool_dst) {
-        diagnostics.push(Diagnostic::new(
-            "X07WASM_DEVICE_PACKAGE_WRITE_FAILED",
-            Severity::Error,
-            Stage::Run,
-            format!(
-                "failed to copy host tool {} -> {}: {err}",
-                host_tool_src.display(),
-                host_tool_dst.display()
-            ),
-        ));
-        return emit_report(
-            &store,
-            scope,
-            machine,
-            started,
-            raw_argv,
-            meta,
-            diagnostics,
-            profile_ref,
-            &bundle_dir,
-            &out_dir,
-            package_manifest_digest,
-            package_info,
-        );
-    }
-
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt as _;
-        if let Ok(mut perms) = std::fs::metadata(&host_tool_dst).map(|m| m.permissions()) {
-            perms.set_mode(0o755);
-            let _ = std::fs::set_permissions(&host_tool_dst, perms);
-        }
-    }
-
-    let info_plist_path = contents_dir.join("Info.plist");
-    let info_plist = info_plist_xml(
-        &profile_doc.identity.display_name,
-        &profile_doc.identity.app_id,
-        &profile_doc.version.version,
-        profile_doc.version.build,
-    );
-    if let Err(err) = std::fs::write(&info_plist_path, info_plist.as_bytes()) {
-        diagnostics.push(Diagnostic::new(
-            "X07WASM_DEVICE_PACKAGE_WRITE_FAILED",
-            Severity::Error,
-            Stage::Run,
-            format!(
-                "failed to write Info.plist {}: {err}",
-                info_plist_path.display()
-            ),
-        ));
-        return emit_report(
-            &store,
-            scope,
-            machine,
-            started,
-            raw_argv,
-            meta,
-            diagnostics,
-            profile_ref,
-            &bundle_dir,
-            &out_dir,
-            package_manifest_digest,
-            package_info,
-        );
-    }
-
-    if let Err(err) = copy_dir_recursive(&bundle_dir, &bundle_dst) {
-        diagnostics.push(Diagnostic::new(
-            "X07WASM_DEVICE_PACKAGE_WRITE_FAILED",
-            Severity::Error,
-            Stage::Run,
-            format!("{err:#}"),
-        ));
-        return emit_report(
-            &store,
-            scope,
-            machine,
-            started,
-            raw_argv,
-            meta,
-            diagnostics,
-            profile_ref,
-            &bundle_dir,
-            &out_dir,
-            package_manifest_digest,
-            package_info,
-        );
-    }
-
-    if is_archive {
-        let zip_name = format!("{app_name}.zip");
-        let zip_path = out_dir.join(&zip_name);
-        let _ = std::fs::remove_file(&zip_path);
-        match write_deterministic_zip(&app_dir, &zip_path) {
-            Ok(sha256) => {
-                package_info = json!({ "kind": "archive", "path": zip_name, "sha256": sha256 });
-                if let Ok(d) = file_digest_rel(&out_dir, &zip_path) {
-                    meta.outputs.push(d);
-                }
-            }
-            Err(err) => {
+    match target {
+        "desktop" => {
+            let Some(desktop) = profile_doc.desktop.as_ref() else {
                 diagnostics.push(Diagnostic::new(
-                    "X07WASM_DEVICE_PACKAGE_WRITE_FAILED",
+                    "X07WASM_DEVICE_PACKAGE_FAILED",
                     Severity::Error,
-                    Stage::Run,
-                    format!("failed to write zip: {err:#}"),
+                    Stage::Parse,
+                    "device profile missing desktop config".to_string(),
                 ));
                 return emit_report(
                     &store,
@@ -737,6 +483,60 @@ pub fn cmd_device_package(
                     machine,
                     started,
                     raw_argv,
+                    target,
+                    meta,
+                    diagnostics,
+                    profile_ref,
+                    &bundle_dir,
+                    &out_dir,
+                    package_manifest_digest,
+                    package_info,
+                );
+            };
+
+            let package_kind = desktop.package.kind.as_str();
+            let is_archive = match package_kind {
+                "dir" => false,
+                "archive" => true,
+                _ => {
+                    diagnostics.push(Diagnostic::new(
+                        "X07WASM_DEVICE_PACKAGE_FAILED",
+                        Severity::Error,
+                        Stage::Parse,
+                        format!("unsupported desktop.package.kind: {package_kind:?}"),
+                    ));
+                    return emit_report(
+                        &store,
+                        scope,
+                        machine,
+                        started,
+                        raw_argv,
+                        target,
+                        meta,
+                        diagnostics,
+                        profile_ref,
+                        &bundle_dir,
+                        &out_dir,
+                        package_manifest_digest,
+                        package_info,
+                    );
+                }
+            };
+
+            if is_archive && desktop.package.format.as_deref() != Some("zip") {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_DEVICE_PACKAGE_FAILED",
+                    Severity::Error,
+                    Stage::Parse,
+                    "desktop.package.kind=archive requires desktop.package.format=zip".to_string(),
+                ));
+                return emit_report(
+                    &store,
+                    scope,
+                    machine,
+                    started,
+                    raw_argv,
+                    target,
                     meta,
                     diagnostics,
                     profile_ref,
@@ -746,15 +546,444 @@ pub fn cmd_device_package(
                     package_info,
                 );
             }
+
+            let host_tool_src = match resolve_host_tool_path() {
+                Ok(p) => p,
+                Err(d) => {
+                    diagnostics.push(*d);
+                    return emit_report(
+                        &store,
+                        scope,
+                        machine,
+                        started,
+                        raw_argv,
+                        target,
+                        meta,
+                        diagnostics,
+                        profile_ref,
+                        &bundle_dir,
+                        &out_dir,
+                        package_manifest_digest,
+                        package_info,
+                    );
+                }
+            };
+            if let Err(d) = check_host_tool_abi_hash(&host_tool_src, &bundle_doc.host.host_abi_hash)
+            {
+                diagnostics.push(*d);
+                return emit_report(
+                    &store,
+                    scope,
+                    machine,
+                    started,
+                    raw_argv,
+                    target,
+                    meta,
+                    diagnostics,
+                    profile_ref,
+                    &bundle_dir,
+                    &out_dir,
+                    package_manifest_digest,
+                    package_info,
+                );
+            }
+
+            let app_name = safe_app_name(&profile_doc.identity.display_name, &profile_doc.id);
+            let app_bundle_name = format!("{app_name}.app");
+            let app_dir = out_dir.join(&app_bundle_name);
+
+            if app_dir.exists() {
+                if let Err(err) = std::fs::remove_dir_all(&app_dir) {
+                    diagnostics.push(Diagnostic::new(
+                        "X07WASM_DEVICE_PACKAGE_WRITE_FAILED",
+                        Severity::Error,
+                        Stage::Run,
+                        format!(
+                            "failed to remove existing app bundle {}: {err}",
+                            app_dir.display()
+                        ),
+                    ));
+                    return emit_report(
+                        &store,
+                        scope,
+                        machine,
+                        started,
+                        raw_argv,
+                        target,
+                        meta,
+                        diagnostics,
+                        profile_ref,
+                        &bundle_dir,
+                        &out_dir,
+                        package_manifest_digest,
+                        package_info,
+                    );
+                }
+            }
+
+            let contents_dir = app_dir.join("Contents");
+            let macos_dir = contents_dir.join("MacOS");
+            let bundle_dst = contents_dir.join("Resources").join("bundle");
+
+            if let Err(err) = std::fs::create_dir_all(&bundle_dst) {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_DEVICE_PACKAGE_WRITE_FAILED",
+                    Severity::Error,
+                    Stage::Run,
+                    format!("failed to create app bundle dirs: {err}"),
+                ));
+                return emit_report(
+                    &store,
+                    scope,
+                    machine,
+                    started,
+                    raw_argv,
+                    target,
+                    meta,
+                    diagnostics,
+                    profile_ref,
+                    &bundle_dir,
+                    &out_dir,
+                    package_manifest_digest,
+                    package_info,
+                );
+            }
+            if let Err(err) = std::fs::create_dir_all(&macos_dir) {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_DEVICE_PACKAGE_WRITE_FAILED",
+                    Severity::Error,
+                    Stage::Run,
+                    format!("failed to create app bundle dirs: {err}"),
+                ));
+                return emit_report(
+                    &store,
+                    scope,
+                    machine,
+                    started,
+                    raw_argv,
+                    target,
+                    meta,
+                    diagnostics,
+                    profile_ref,
+                    &bundle_dir,
+                    &out_dir,
+                    package_manifest_digest,
+                    package_info,
+                );
+            }
+
+            let host_tool_dst = macos_dir.join("x07-device-host-desktop");
+            if let Err(err) = std::fs::copy(&host_tool_src, &host_tool_dst) {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_DEVICE_PACKAGE_WRITE_FAILED",
+                    Severity::Error,
+                    Stage::Run,
+                    format!(
+                        "failed to copy host tool {} -> {}: {err}",
+                        host_tool_src.display(),
+                        host_tool_dst.display()
+                    ),
+                ));
+                return emit_report(
+                    &store,
+                    scope,
+                    machine,
+                    started,
+                    raw_argv,
+                    target,
+                    meta,
+                    diagnostics,
+                    profile_ref,
+                    &bundle_dir,
+                    &out_dir,
+                    package_manifest_digest,
+                    package_info,
+                );
+            }
+
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt as _;
+                if let Ok(mut perms) = std::fs::metadata(&host_tool_dst).map(|m| m.permissions()) {
+                    perms.set_mode(0o755);
+                    let _ = std::fs::set_permissions(&host_tool_dst, perms);
+                }
+            }
+
+            let info_plist_path = contents_dir.join("Info.plist");
+            let info_plist = info_plist_xml(
+                &profile_doc.identity.display_name,
+                &profile_doc.identity.app_id,
+                &profile_doc.version.version,
+                profile_doc.version.build,
+            );
+            if let Err(err) = std::fs::write(&info_plist_path, info_plist.as_bytes()) {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_DEVICE_PACKAGE_WRITE_FAILED",
+                    Severity::Error,
+                    Stage::Run,
+                    format!(
+                        "failed to write Info.plist {}: {err}",
+                        info_plist_path.display()
+                    ),
+                ));
+                return emit_report(
+                    &store,
+                    scope,
+                    machine,
+                    started,
+                    raw_argv,
+                    target,
+                    meta,
+                    diagnostics,
+                    profile_ref,
+                    &bundle_dir,
+                    &out_dir,
+                    package_manifest_digest,
+                    package_info,
+                );
+            }
+
+            if let Err(err) = util::copy_dir_recursive(&bundle_dir, &bundle_dst) {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_DEVICE_PACKAGE_WRITE_FAILED",
+                    Severity::Error,
+                    Stage::Run,
+                    format!("{err:#}"),
+                ));
+                return emit_report(
+                    &store,
+                    scope,
+                    machine,
+                    started,
+                    raw_argv,
+                    target,
+                    meta,
+                    diagnostics,
+                    profile_ref,
+                    &bundle_dir,
+                    &out_dir,
+                    package_manifest_digest,
+                    package_info,
+                );
+            }
+
+            if is_archive {
+                let zip_name = format!("{app_name}.zip");
+                let zip_path = out_dir.join(&zip_name);
+                let _ = std::fs::remove_file(&zip_path);
+                match write_deterministic_zip(&app_dir, &zip_path) {
+                    Ok(sha256) => {
+                        package_info =
+                            json!({ "kind": "archive", "path": zip_name, "sha256": sha256 });
+                        if let Ok(d) = file_digest_rel(&out_dir, &zip_path) {
+                            meta.outputs.push(d);
+                        }
+                    }
+                    Err(err) => {
+                        diagnostics.push(Diagnostic::new(
+                            "X07WASM_DEVICE_PACKAGE_WRITE_FAILED",
+                            Severity::Error,
+                            Stage::Run,
+                            format!("failed to write zip: {err:#}"),
+                        ));
+                        return emit_report(
+                            &store,
+                            scope,
+                            machine,
+                            started,
+                            raw_argv,
+                            target,
+                            meta,
+                            diagnostics,
+                            profile_ref,
+                            &bundle_dir,
+                            &out_dir,
+                            package_manifest_digest,
+                            package_info,
+                        );
+                    }
+                }
+            } else {
+                package_info = json!({ "kind": "dir", "path": app_bundle_name });
+            }
         }
-    } else {
-        package_info = json!({ "kind": "dir", "path": app_bundle_name });
+        "ios" => {
+            let Some(ios) = profile_doc.ios.as_ref() else {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_DEVICE_PACKAGE_FAILED",
+                    Severity::Error,
+                    Stage::Parse,
+                    "device profile missing ios config".to_string(),
+                ));
+                return emit_report(
+                    &store,
+                    scope,
+                    machine,
+                    started,
+                    raw_argv,
+                    target,
+                    meta,
+                    diagnostics,
+                    profile_ref,
+                    &bundle_dir,
+                    &out_dir,
+                    package_manifest_digest,
+                    package_info,
+                );
+            };
+
+            let payload_name = "ios_project";
+            let payload_dir = out_dir.join(payload_name);
+            if payload_dir.exists() {
+                if let Err(err) = std::fs::remove_dir_all(&payload_dir) {
+                    diagnostics.push(Diagnostic::new(
+                        "X07WASM_DEVICE_PACKAGE_TEMPLATE_RENDER_FAILED",
+                        Severity::Error,
+                        Stage::Run,
+                        format!(
+                            "failed to remove existing iOS project dir {}: {err}",
+                            payload_dir.display()
+                        ),
+                    ));
+                    return emit_report(
+                        &store,
+                        scope,
+                        machine,
+                        started,
+                        raw_argv,
+                        target,
+                        meta,
+                        diagnostics,
+                        profile_ref,
+                        &bundle_dir,
+                        &out_dir,
+                        package_manifest_digest,
+                        package_info,
+                    );
+                }
+            }
+
+            let tokens = package_ios::IosPackageTokens {
+                display_name: profile_doc.identity.display_name.clone(),
+                bundle_id: ios.bundle_id.clone(),
+                version: profile_doc.version.version.clone(),
+                build: profile_doc.version.build,
+            };
+            if let Err(d) = package_ios::write_ios_project(&bundle_dir, &payload_dir, tokens) {
+                diagnostics.push(*d);
+                return emit_report(
+                    &store,
+                    scope,
+                    machine,
+                    started,
+                    raw_argv,
+                    target,
+                    meta,
+                    diagnostics,
+                    profile_ref,
+                    &bundle_dir,
+                    &out_dir,
+                    package_manifest_digest,
+                    package_info,
+                );
+            }
+
+            package_info = json!({ "kind": "dir", "path": payload_name });
+        }
+        "android" => {
+            let Some(android) = profile_doc.android.as_ref() else {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_DEVICE_PACKAGE_FAILED",
+                    Severity::Error,
+                    Stage::Parse,
+                    "device profile missing android config".to_string(),
+                ));
+                return emit_report(
+                    &store,
+                    scope,
+                    machine,
+                    started,
+                    raw_argv,
+                    target,
+                    meta,
+                    diagnostics,
+                    profile_ref,
+                    &bundle_dir,
+                    &out_dir,
+                    package_manifest_digest,
+                    package_info,
+                );
+            };
+
+            let payload_name = "android_project";
+            let payload_dir = out_dir.join(payload_name);
+            if payload_dir.exists() {
+                if let Err(err) = std::fs::remove_dir_all(&payload_dir) {
+                    diagnostics.push(Diagnostic::new(
+                        "X07WASM_DEVICE_PACKAGE_TEMPLATE_RENDER_FAILED",
+                        Severity::Error,
+                        Stage::Run,
+                        format!(
+                            "failed to remove existing Android project dir {}: {err}",
+                            payload_dir.display()
+                        ),
+                    ));
+                    return emit_report(
+                        &store,
+                        scope,
+                        machine,
+                        started,
+                        raw_argv,
+                        target,
+                        meta,
+                        diagnostics,
+                        profile_ref,
+                        &bundle_dir,
+                        &out_dir,
+                        package_manifest_digest,
+                        package_info,
+                    );
+                }
+            }
+
+            let tokens = package_android::AndroidPackageTokens {
+                display_name: profile_doc.identity.display_name.clone(),
+                application_id: android.application_id.clone(),
+                min_sdk: android.min_sdk,
+                version: profile_doc.version.version.clone(),
+                build: profile_doc.version.build,
+            };
+            if let Err(d) =
+                package_android::write_android_project(&bundle_dir, &payload_dir, tokens)
+            {
+                diagnostics.push(*d);
+                return emit_report(
+                    &store,
+                    scope,
+                    machine,
+                    started,
+                    raw_argv,
+                    target,
+                    meta,
+                    diagnostics,
+                    profile_ref,
+                    &bundle_dir,
+                    &out_dir,
+                    package_manifest_digest,
+                    package_info,
+                );
+            }
+
+            package_info = json!({ "kind": "dir", "path": payload_name });
+        }
+        _ => {}
     }
 
     let mut package_doc = json!({
       "schema_version": "x07.device.package.manifest@0.1.0",
       "kind": "device_package",
-      "target": "desktop",
+      "target": target,
       "bundle_manifest_sha256": bundle_manifest_sha256,
       "package": package_info,
     });
@@ -782,6 +1011,7 @@ pub fn cmd_device_package(
             machine,
             started,
             raw_argv,
+            target,
             meta,
             diagnostics,
             profile_ref,
@@ -809,6 +1039,7 @@ pub fn cmd_device_package(
             machine,
             started,
             raw_argv,
+            target,
             meta,
             diagnostics,
             profile_ref,
@@ -828,6 +1059,7 @@ pub fn cmd_device_package(
         machine,
         started,
         raw_argv,
+        target,
         meta,
         diagnostics,
         profile_ref,
@@ -845,6 +1077,7 @@ fn emit_report(
     machine: &MachineArgs,
     started: std::time::Instant,
     raw_argv: &[OsString],
+    target: &str,
     meta: report::meta::ReportMeta,
     diagnostics: Vec<Diagnostic>,
     profile: Value,
@@ -864,7 +1097,7 @@ fn emit_report(
       "diagnostics": diagnostics,
       "meta": meta,
       "result": {
-        "target": "desktop",
+        "target": target,
         "profile": profile,
         "bundle_dir": bundle_dir.display().to_string(),
         "out_dir": out_dir.display().to_string(),
@@ -1008,30 +1241,6 @@ fn find_in_path(name: &str) -> Option<PathBuf> {
         }
     }
     None
-}
-
-fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<()> {
-    let mut entries = std::fs::read_dir(src)
-        .with_context(|| format!("read dir: {}", src.display()))?
-        .collect::<std::result::Result<Vec<_>, _>>()?;
-    entries.sort_by_key(|e| e.file_name());
-
-    for e in entries {
-        let ty = e.file_type()?;
-        let name = e.file_name();
-        let src_path = e.path();
-        let dst_path = dst.join(name);
-        if ty.is_dir() {
-            std::fs::create_dir_all(&dst_path)
-                .with_context(|| format!("create dir: {}", dst_path.display()))?;
-            copy_dir_recursive(&src_path, &dst_path)?;
-        } else if ty.is_file() {
-            std::fs::copy(&src_path, &dst_path).with_context(|| {
-                format!("copy {} -> {}", src_path.display(), dst_path.display())
-            })?;
-        }
-    }
-    Ok(())
 }
 
 fn write_deterministic_zip(app_dir: &Path, zip_path: &Path) -> Result<String> {

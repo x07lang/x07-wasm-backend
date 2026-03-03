@@ -74,3 +74,27 @@ pub fn truncate_bytes_lossy(bytes: &[u8], max_bytes: usize) -> String {
     s.push_str("...(truncated)");
     s
 }
+
+pub fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<()> {
+    let mut entries = std::fs::read_dir(src)
+        .with_context(|| format!("read dir: {}", src.display()))?
+        .collect::<std::result::Result<Vec<_>, _>>()?;
+    entries.sort_by_key(|e| e.file_name());
+
+    for e in entries {
+        let ty = e.file_type()?;
+        let name = e.file_name();
+        let src_path = e.path();
+        let dst_path = dst.join(name);
+        if ty.is_dir() {
+            std::fs::create_dir_all(&dst_path)
+                .with_context(|| format!("create dir: {}", dst_path.display()))?;
+            copy_dir_recursive(&src_path, &dst_path)?;
+        } else if ty.is_file() {
+            std::fs::copy(&src_path, &dst_path).with_context(|| {
+                format!("copy {} -> {}", src_path.display(), dst_path.display())
+            })?;
+        }
+    }
+    Ok(())
+}

@@ -1,0 +1,42 @@
+{
+  "schema_version": "x07.device.profile@0.1.0",
+  "id": "device_ios_dev",
+  "v": 1,
+  "target": "ios",
+  "identity": {
+    "display_name": "x07 Device (iOS Dev)",
+    "app_id": "org.x07.device.ios.dev"
+  },
+  "version": {
+    "version": "0.1.0",
+    "build": 1
+  },
+  "security": {
+    "allow_dynamic_code_loading": false
+  },
+  "ui": {
+    "project": "examples/device_min/frontend/x07.json",
+    "web_ui_profile_id": "web_ui_debug"
+  },
+  "backend": {
+    "mode": "remote_http",
+    "base_url": "http://127.0.0.1:8080",
+    "allowed_hosts": ["127.0.0.1", "localhost"]
+  },
+  "capabilities": {
+    "network": {
+      "mode": "deny_by_default",
+      "allow_hosts": ["127.0.0.1", "localhost"]
+    },
+    "device": {
+      "clipboard": true,
+      "local_kv": true,
+      "notifications": false
+    }
+  },
+  "ios": {
+    "bundle_id": "org.x07.device.ios.dev",
+    "signing_mode": "dev"
+  }
+}
+

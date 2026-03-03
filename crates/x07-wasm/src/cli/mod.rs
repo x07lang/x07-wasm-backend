@@ -1981,7 +1981,7 @@ pub struct DevicePackageArgs {
     #[arg(long, value_name = "DIR", default_value = "dist/device")]
     pub bundle: PathBuf,
 
-    /// Device target (currently only `desktop` is supported).
+    /// Device target (`desktop`, `ios`, `android`).
     #[arg(long, value_name = "TARGET", default_value = "desktop")]
     pub target: String,
 

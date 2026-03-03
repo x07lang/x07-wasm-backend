@@ -193,7 +193,7 @@ echo "==> phase9_examples: device package (unsupported target => expected diag c
 set +e
 x07-wasm device package \
   --bundle "${dev_bundle_dir}" \
-  --target ios \
+  --target bogus \
   --out-dir "${OUT_DIR}/package_unsupported_target" \
   --json --report-out build/phase9_examples/device.package.unsupported_target.json --quiet-json
 code=$?

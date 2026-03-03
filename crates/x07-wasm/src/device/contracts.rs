@@ -31,6 +31,12 @@ pub(crate) struct DeviceProfileDoc {
 
     #[serde(default)]
     pub(crate) desktop: Option<DeviceProfileDesktop>,
+
+    #[serde(default)]
+    pub(crate) ios: Option<DeviceProfileIos>,
+
+    #[serde(default)]
+    pub(crate) android: Option<DeviceProfileAndroid>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -61,6 +67,21 @@ pub(crate) struct DeviceProfileDesktopPackage {
     pub(crate) kind: String,
     #[serde(default)]
     pub(crate) format: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub(crate) struct DeviceProfileIos {
+    pub(crate) bundle_id: String,
+    #[allow(dead_code)]
+    pub(crate) signing_mode: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub(crate) struct DeviceProfileAndroid {
+    pub(crate) application_id: String,
+    pub(crate) min_sdk: u64,
+    #[allow(dead_code)]
+    pub(crate) signing_mode: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]

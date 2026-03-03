@@ -25,6 +25,10 @@ set -euo pipefail
 # Phase-9 extension:
 # - If `X07WASM_DIAG_INCLUDE_PHASE9=1` is set, also scan `phase9` build trees and
 #   allow Phase-9 diagnostic codes.
+#
+# Phase-10 extension:
+# - If `X07WASM_DIAG_INCLUDE_PHASE10=1` is set, also scan `phase10` build trees and
+#   allow Phase-10 diagnostic codes.
 
 ROOT="${1:-build}"
 
@@ -48,6 +52,7 @@ root = pathlib.Path(sys.argv[1])
 include_phase7 = os.environ.get("X07WASM_DIAG_INCLUDE_PHASE7", "").strip() == "1"
 include_phase8 = os.environ.get("X07WASM_DIAG_INCLUDE_PHASE8", "").strip() == "1"
 include_phase9 = os.environ.get("X07WASM_DIAG_INCLUDE_PHASE9", "").strip() == "1"
+include_phase10 = os.environ.get("X07WASM_DIAG_INCLUDE_PHASE10", "").strip() == "1"
 
 PHASE5_CODES = [
     "X07WASM_APP_VERIFY_DIGEST_MISMATCH",
@@ -202,12 +207,19 @@ PHASE9_CODES = [
     "X07DEVHOST_UI_WASM_READ_FAILED",
 ]
 
+PHASE10_CODES = [
+    "X07WASM_DEVICE_PACKAGE_IOS_TEMPLATE_MISSING",
+    "X07WASM_DEVICE_PACKAGE_ANDROID_TEMPLATE_MISSING",
+    "X07WASM_DEVICE_PACKAGE_TEMPLATE_RENDER_FAILED",
+]
+
 ALLOWED = set(
     PHASE5_CODES
     + PHASE6_CODES
     + (PHASE7_CODES if include_phase7 else [])
     + (PHASE8_CODES if include_phase8 else [])
     + (PHASE9_CODES if include_phase9 else [])
+    + (PHASE10_CODES if include_phase10 else [])
 )
 
 PHASE_DIRS = ["phase5", "phase6"]
@@ -217,6 +229,8 @@ if include_phase8:
     PHASE_DIRS.append("phase8")
 if include_phase9:
     PHASE_DIRS.append("phase9")
+if include_phase10:
+    PHASE_DIRS.append("phase10")
 
 def is_report(doc: dict) -> bool:
     sv = doc.get("schema_version")
@@ -339,6 +353,12 @@ if violations:
         print("", file=sys.stderr)
         print("diagcodes: allowed Phase-9 codes:", file=sys.stderr)
         for c in PHASE9_CODES:
+            print(f"  {c}", file=sys.stderr)
+
+    if include_phase10:
+        print("", file=sys.stderr)
+        print("diagcodes: allowed Phase-10 codes:", file=sys.stderr)
+        for c in PHASE10_CODES:
             print(f"  {c}", file=sys.stderr)
 
     sys.exit(1)
