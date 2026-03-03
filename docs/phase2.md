@@ -43,7 +43,9 @@ Outputs (minimum):
 - `dist/app.wasm.manifest.json`
 - `dist/web-ui.profile.json`
 - `dist/index.html`
+- `dist/bootstrap.js`
 - `dist/app-host.mjs`
+- `dist/main.mjs`
 
 Component bundle (browser runs transpiled ESM; `app.wasm` is still emitted as a core fallback):
 

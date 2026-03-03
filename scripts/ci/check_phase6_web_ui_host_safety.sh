@@ -6,6 +6,7 @@ set -euo pipefail
 HOST_DIR="vendor/x07-web-ui/host"
 APP_HOST="${HOST_DIR}/app-host.mjs"
 INDEX_HTML="${HOST_DIR}/index.html"
+BOOTSTRAP_JS="${HOST_DIR}/bootstrap.js"
 MAIN_MJS="${HOST_DIR}/main.mjs"
 
 if [ ! -f "${APP_HOST}" ]; then
@@ -14,6 +15,10 @@ if [ ! -f "${APP_HOST}" ]; then
 fi
 if [ ! -f "${INDEX_HTML}" ]; then
   echo "missing vendored host file: ${INDEX_HTML}" >&2
+  exit 1
+fi
+if [ ! -f "${BOOTSTRAP_JS}" ]; then
+  echo "missing vendored host file: ${BOOTSTRAP_JS}" >&2
   exit 1
 fi
 if [ ! -f "${MAIN_MJS}" ]; then
@@ -32,7 +37,7 @@ if grep -q "innerHTML" "${APP_HOST}"; then
 fi
 
 grep -q "Content-Security-Policy" "${INDEX_HTML}"
-grep -q "<script type=\\\"module\\\" src=\\\"\\./main\\.mjs\\\"></script>" "${INDEX_HTML}"
+grep -q "<script type=\\\"module\\\" src=\\\"\\./bootstrap\\.js\\\"></script>" "${INDEX_HTML}"
 
 if grep -q "<script type=\\\"module\\\">" "${INDEX_HTML}"; then
   echo "inline module script is not allowed: ${INDEX_HTML}" >&2
