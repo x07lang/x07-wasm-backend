@@ -25,10 +25,21 @@ Build a device bundle (web-ui reducer wasm + pinned host ABI):
 x07-wasm device build --profile device_dev --out-dir dist/device --clean --json
 ```
 
+Bundle layout notes:
+
+- The resolved device profile is embedded into the bundle under `profile/device.profile.json` and is digest-verified by `x07-wasm device verify`.
+
 Verify a device bundle:
 
 ```sh
 x07-wasm device verify --dir dist/device --json
+```
+
+Create and verify a signed provenance attestation for a device bundle:
+
+```sh
+x07-wasm device provenance attest --dir dist/device --signing-key arch/provenance/dev.ed25519.signing_key.b64 --out dist/device.provenance.dsse.json --json
+x07-wasm device provenance verify --attestation dist/device.provenance.dsse.json --bundle-dir dist/device --trusted-public-key arch/provenance/dev.ed25519.public_key.b64 --json
 ```
 
 ## CI gate
@@ -36,4 +47,3 @@ x07-wasm device verify --dir dist/device --json
 ```sh
 bash scripts/ci/check_phase8.sh
 ```
-

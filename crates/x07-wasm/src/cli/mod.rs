@@ -226,6 +226,12 @@ pub enum Command {
     /// Alias for `x07-wasm device package`.
     #[command(name = "device-package")]
     DevicePackage(DevicePackageArgs),
+    /// Alias for `x07-wasm device provenance attest`.
+    #[command(name = "device-provenance-attest")]
+    DeviceProvenanceAttest(DeviceProvenanceAttestArgs),
+    /// Alias for `x07-wasm device provenance verify`.
+    #[command(name = "device-provenance-verify")]
+    DeviceProvenanceVerify(DeviceProvenanceVerifyArgs),
 
     /// Validate arch/wasm/index.x07wasm.json and referenced profile files.
     Profile(ProfileArgs),
@@ -535,6 +541,18 @@ impl Command {
                 DeviceCommand::Verify(v) => {
                     crate::device::verify::cmd_device_verify(raw_argv, scope, machine, v)
                 }
+                DeviceCommand::Provenance(p) => match p.cmd {
+                    DeviceProvenanceCommand::Attest(v) => {
+                        crate::device::provenance::cmd_device_provenance_attest(
+                            raw_argv, scope, machine, v,
+                        )
+                    }
+                    DeviceProvenanceCommand::Verify(v) => {
+                        crate::device::provenance::cmd_device_provenance_verify(
+                            raw_argv, scope, machine, v,
+                        )
+                    }
+                },
                 DeviceCommand::Run(v) => {
                     crate::device::run::cmd_device_run(raw_argv, scope, machine, v)
                 }
@@ -563,6 +581,12 @@ impl Command {
             }
             Command::DevicePackage(v) => {
                 crate::device::package::cmd_device_package(raw_argv, scope, machine, v)
+            }
+            Command::DeviceProvenanceAttest(v) => {
+                crate::device::provenance::cmd_device_provenance_attest(raw_argv, scope, machine, v)
+            }
+            Command::DeviceProvenanceVerify(v) => {
+                crate::device::provenance::cmd_device_provenance_verify(raw_argv, scope, machine, v)
             }
             Command::Profile(args) => match args.cmd {
                 ProfileCommand::Validate(v) => {
@@ -1860,6 +1884,7 @@ pub enum DeviceCommand {
     Profile(DeviceProfileArgs),
     Build(DeviceBuildArgs),
     Verify(DeviceVerifyArgs),
+    Provenance(DeviceProvenanceArgs),
     Run(DeviceRunArgs),
     Package(DevicePackageArgs),
 }
@@ -1992,6 +2017,57 @@ pub struct DevicePackageArgs {
 
 #[derive(Debug, Clone, Args)]
 #[command(subcommand_required = true)]
+pub struct DeviceProvenanceArgs {
+    #[command(subcommand)]
+    pub cmd: DeviceProvenanceCommand,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum DeviceProvenanceCommand {
+    Attest(DeviceProvenanceAttestArgs),
+    Verify(DeviceProvenanceVerifyArgs),
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct DeviceProvenanceAttestArgs {
+    /// Directory containing the device bundle.
+    #[arg(long, value_name = "DIR", default_value = "dist/device")]
+    pub bundle_dir: PathBuf,
+
+    /// Ed25519 signing key seed file (base64, 32 bytes).
+    #[arg(long, value_name = "PATH")]
+    pub signing_key: PathBuf,
+
+    /// In-toto Statement predicateType.
+    #[arg(
+        long,
+        value_name = "STR",
+        default_value = "https://slsa.dev/provenance/v1"
+    )]
+    pub predicate_type: String,
+
+    /// Output DSSE envelope file.
+    #[arg(long, value_name = "PATH")]
+    pub out: PathBuf,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct DeviceProvenanceVerifyArgs {
+    /// DSSE envelope file (x07.provenance.dsse.envelope@0.1.0).
+    #[arg(long, value_name = "PATH")]
+    pub attestation: PathBuf,
+
+    /// Directory containing the device bundle referenced by the attestation.
+    #[arg(long, value_name = "DIR", default_value = "dist/device")]
+    pub bundle_dir: PathBuf,
+
+    /// Trusted Ed25519 public key file (base64, 32 bytes).
+    #[arg(long, value_name = "PATH")]
+    pub trusted_public_key: PathBuf,
+}
+
+#[derive(Debug, Clone, Args)]
+#[command(subcommand_required = true)]
 pub struct ProfileArgs {
     #[command(subcommand)]
     pub cmd: ProfileCommand,
@@ -2106,6 +2182,8 @@ pub enum Scope {
     DeviceProfileValidate,
     DeviceBuild,
     DeviceVerify,
+    DeviceProvenanceAttest,
+    DeviceProvenanceVerify,
     DeviceRun,
     DevicePackage,
     ProfileValidate,
@@ -2205,11 +2283,15 @@ pub fn scope_for_command(cmd: Option<&Command>) -> Scope {
         Some(Command::HttpServe(_)) => Scope::HttpServe,
         Some(Command::HttpTest(_)) => Scope::HttpTest,
         Some(Command::HttpRegressFromIncident(_)) => Scope::HttpRegressFromIncident,
-        Some(Command::Device(args)) => match args.cmd {
+        Some(Command::Device(args)) => match &args.cmd {
             DeviceCommand::Index(_) => Scope::DeviceIndexValidate,
             DeviceCommand::Profile(_) => Scope::DeviceProfileValidate,
             DeviceCommand::Build(_) => Scope::DeviceBuild,
             DeviceCommand::Verify(_) => Scope::DeviceVerify,
+            DeviceCommand::Provenance(p) => match &p.cmd {
+                DeviceProvenanceCommand::Attest(_) => Scope::DeviceProvenanceAttest,
+                DeviceProvenanceCommand::Verify(_) => Scope::DeviceProvenanceVerify,
+            },
             DeviceCommand::Run(_) => Scope::DeviceRun,
             DeviceCommand::Package(_) => Scope::DevicePackage,
         },
@@ -2219,6 +2301,8 @@ pub fn scope_for_command(cmd: Option<&Command>) -> Scope {
         Some(Command::DeviceVerify(_)) => Scope::DeviceVerify,
         Some(Command::DeviceRun(_)) => Scope::DeviceRun,
         Some(Command::DevicePackage(_)) => Scope::DevicePackage,
+        Some(Command::DeviceProvenanceAttest(_)) => Scope::DeviceProvenanceAttest,
+        Some(Command::DeviceProvenanceVerify(_)) => Scope::DeviceProvenanceVerify,
         Some(Command::Profile(_)) => Scope::ProfileValidate,
         Some(Command::ProfileValidate(_)) => Scope::ProfileValidate,
         Some(Command::Cli(_)) => Scope::CliSpecrowsCheck,

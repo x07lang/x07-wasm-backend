@@ -101,6 +101,15 @@ pub fn cmd_device_build(
         sha256: "0".repeat(64),
         bytes_len: 0,
     };
+    let mut profile_file_digest = report::meta::FileDigest {
+        path: out_dir
+            .join("profile")
+            .join("device.profile.json")
+            .display()
+            .to_string(),
+        sha256: "0".repeat(64),
+        bytes_len: 0,
+    };
 
     if let Some(profile) = loaded_profile.as_ref() {
         if diagnostics.iter().all(|d| d.severity != Severity::Error) {
@@ -225,6 +234,52 @@ pub fn cmd_device_build(
                 }
             }
 
+            // Copy the resolved device profile into the bundle so it is self-contained.
+            let dst_profile_dir = out_dir.join("profile");
+            if let Err(err) = std::fs::create_dir_all(&dst_profile_dir)
+                .with_context(|| format!("create dir: {}", dst_profile_dir.display()))
+            {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_DEVICE_BUILD_OUTDIR_CREATE_FAILED",
+                    Severity::Error,
+                    Stage::Run,
+                    format!("{err:#}"),
+                ));
+            }
+
+            let dst_profile = dst_profile_dir.join("device.profile.json");
+            if let Err(err) = std::fs::copy(&profile.path, &dst_profile) {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_DEVICE_BUILD_COPY_FAILED",
+                    Severity::Error,
+                    Stage::Run,
+                    format!(
+                        "failed to copy device profile {} -> {}: {err}",
+                        profile.path.display(),
+                        dst_profile.display()
+                    ),
+                ));
+            }
+
+            if dst_profile.is_file() {
+                match file_digest_rel(&out_dir, &dst_profile) {
+                    Ok(d) => {
+                        profile_file_digest = d.clone();
+                        meta.outputs.push(d.clone());
+                        artifacts.push(d);
+                    }
+                    Err(err) => diagnostics.push(Diagnostic::new(
+                        "X07WASM_DEVICE_BUILD_DIGEST_FAILED",
+                        Severity::Error,
+                        Stage::Run,
+                        format!(
+                            "failed to digest device profile copy {}: {err:#}",
+                            dst_profile.display()
+                        ),
+                    )),
+                }
+            }
+
             let host_abi_hash = host_abi::HOST_ABI_HASH_HEX;
             if host_abi_hash.len() != 64 {
                 diagnostics.push(Diagnostic::new(
@@ -236,8 +291,6 @@ pub fn cmd_device_build(
             }
 
             if diagnostics.iter().all(|d| d.severity != Severity::Error) {
-                let profile_file = file_digest_for_manifest(&profile.path, profile.digest.clone());
-
                 let mut bundle_doc = json!({
                   "schema_version": "x07.device.bundle.manifest@0.1.0",
                   "kind": "device_bundle",
@@ -245,7 +298,7 @@ pub fn cmd_device_build(
                   "profile": {
                     "id": profile.doc.id,
                     "v": profile.doc.v,
-                    "file": profile_file,
+                    "file": profile_file_digest,
                   },
                   "ui_wasm": ui_wasm_digest,
                   "host": {
@@ -438,14 +491,6 @@ fn load_device_profile_file(
         doc,
         index_digest,
         path: path.clone(),
-    })
-}
-
-fn file_digest_for_manifest(path: &Path, digest: report::meta::FileDigest) -> Value {
-    json!({
-      "path": path.display().to_string(),
-      "sha256": digest.sha256,
-      "bytes_len": digest.bytes_len,
     })
 }
 

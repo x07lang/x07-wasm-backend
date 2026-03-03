@@ -7,6 +7,7 @@ pub mod package;
 pub(crate) mod package_android;
 pub(crate) mod package_ios;
 pub mod profile_validate;
+pub mod provenance;
 pub mod run;
 pub(crate) mod template_render;
 pub mod verify;

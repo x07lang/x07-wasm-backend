@@ -169,6 +169,17 @@ pub fn build_specrows_doc() -> Value {
         ["device-package","opt","","--out-dir","out.dir","PATH","Output directory for the packaged payload + package.manifest.json.",{ "default": "dist/device_package" }],
         ["device-package","opt","","--target","target","STR","Device target (`desktop`, `ios`, `android`).",{ "default": "desktop" }],
 
+        ["device-provenance-attest","about","Alias for `x07-wasm device provenance attest`. Create SLSA provenance attestation for a device bundle and emit x07.wasm.device.provenance.attest.report@0.1.0."],
+        ["device-provenance-attest","opt","","--bundle-dir","bundle.dir","PATH","Directory containing the device bundle.",{ "default": "dist/device" }],
+        ["device-provenance-attest","opt","","--out","out","PATH","Output attestation file."],
+        ["device-provenance-attest","opt","","--predicate-type","predicate_type","STR","In-toto Statement predicateType."],
+        ["device-provenance-attest","opt","","--signing-key","signing_key","PATH","Ed25519 signing key seed file (base64, 32 bytes)."],
+
+        ["device-provenance-verify","about","Alias for `x07-wasm device provenance verify`. Verify SLSA provenance attestation against current device bundle artifacts and emit x07.wasm.device.provenance.verify.report@0.1.0."],
+        ["device-provenance-verify","opt","","--attestation","attestation","PATH","DSSE envelope file (x07.provenance.dsse.envelope@0.1.0)."],
+        ["device-provenance-verify","opt","","--bundle-dir","bundle.dir","PATH","Directory containing the device bundle referenced by the attestation.",{ "default": "dist/device" }],
+        ["device-provenance-verify","opt","","--trusted-public-key","trusted_public_key","PATH","Trusted Ed25519 public key file (base64, 32 bytes)."],
+
         ["device-profile-validate","about","Alias for `x07-wasm device profile validate`. Validate device profiles and cross-references. Emits x07.wasm.device.profile.validate.report@0.1.0."],
         ["device-profile-validate","flag","","--strict","strict","Treat warnings as errors (nonzero exit on any warning)."],
         ["device-profile-validate","opt","","--index","index","PATH","Path to arch/device/index.x07device.json.",{ "default": "arch/device/index.x07device.json" }],

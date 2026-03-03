@@ -46,10 +46,25 @@ x07-wasm device build \
   --json --report-out build/phase8_examples/device.build.device_dev.json --quiet-json
 test -f "${bundle_dir}/bundle.manifest.json"
 test -f "${bundle_dir}/ui/reducer.wasm"
+test -f "${bundle_dir}/profile/device.profile.json"
 
 x07-wasm device verify \
   --dir "${bundle_dir}" \
   --json --report-out build/phase8_examples/device.verify.device_dev.json --quiet-json
+
+echo "==> phase8_examples: device provenance attest + verify (ok)"
+x07-wasm device provenance attest \
+  --bundle-dir "${bundle_dir}" \
+  --signing-key arch/provenance/dev.ed25519.signing_key.b64 \
+  --out "${bundle_dir}/provenance.dsse.json" \
+  --json --report-out build/phase8_examples/device.provenance.attest.json --quiet-json
+test -f "${bundle_dir}/provenance.dsse.json"
+
+x07-wasm device provenance verify \
+  --attestation "${bundle_dir}/provenance.dsse.json" \
+  --bundle-dir "${bundle_dir}" \
+  --trusted-public-key arch/provenance/dev.ed25519.public_key.b64 \
+  --json --report-out build/phase8_examples/device.provenance.verify.ok.json --quiet-json
 
 echo "==> phase8_examples: device verify (corrupt reducer.wasm => failure + expected diag code)"
 "$PYTHON" - "${bundle_dir}" <<'PY'
@@ -95,5 +110,36 @@ if "X07WASM_DEVICE_BUNDLE_SHA256_MISMATCH" not in codes:
 print("ok: expected diag code present:", p)
 PY
 
-echo "phase8_examples: PASS"
+echo "==> phase8_examples: device provenance verify (corrupt reducer.wasm => failure + expected diag code)"
+set +e
+x07-wasm device provenance verify \
+  --attestation "${bundle_dir}/provenance.dsse.json" \
+  --bundle-dir "${bundle_dir}" \
+  --trusted-public-key arch/provenance/dev.ed25519.public_key.b64 \
+  --json --report-out build/phase8_examples/device.provenance.verify.corrupt.json --quiet-json
+code=$?
+set -e
+if [ "$code" -eq 0 ]; then
+  echo "expected nonzero exit code for corrupt device provenance verify" >&2
+  exit 1
+fi
 
+"$PYTHON" - build/phase8_examples/device.provenance.verify.corrupt.json <<'PY'
+import json
+import pathlib
+import sys
+
+p = pathlib.Path(sys.argv[1])
+doc = json.loads(p.read_text(encoding="utf-8"))
+codes = []
+for d in doc.get("diagnostics", []):
+    if isinstance(d, dict) and isinstance(d.get("code"), str):
+        codes.append(d["code"])
+if "X07WASM_PROVENANCE_DIGEST_MISMATCH" not in codes:
+    print("expected diagnostic X07WASM_PROVENANCE_DIGEST_MISMATCH; got:", codes, file=sys.stderr)
+    print(p.read_text(encoding="utf-8")[:2000], file=sys.stderr)
+    sys.exit(1)
+print("ok: expected diag code present:", p)
+PY
+
+echo "phase8_examples: PASS"

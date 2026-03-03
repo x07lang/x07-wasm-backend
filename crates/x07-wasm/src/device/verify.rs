@@ -131,53 +131,154 @@ pub fn cmd_device_verify(
         let _ = (&doc.host.kind, &doc.host.abi_name, &doc.host.abi_version);
 
         // Check reducer wasm digest.
-        let ui_path = bundle_dir.join(&doc.ui_wasm.path);
-        if !ui_path.is_file() {
-            missing_files += 1;
-            let mut d = Diagnostic::new(
-                "X07WASM_DEVICE_BUNDLE_FILE_MISSING",
-                Severity::Error,
-                Stage::Run,
-                "bundle file missing".to_string(),
-            );
-            d.data.insert("path".to_string(), json!(doc.ui_wasm.path));
-            diagnostics.push(d);
-        } else {
-            match std::fs::read(&ui_path) {
-                Ok(bytes) => {
-                    files_checked += 1;
-                    let got_sha = util::sha256_hex(&bytes);
-                    let got_len = bytes.len() as u64;
-                    if got_sha != doc.ui_wasm.sha256 || got_len != doc.ui_wasm.bytes_len {
-                        digest_mismatches += 1;
+        let ui_path = match util::safe_join_under_dir(&bundle_dir, &doc.ui_wasm.path) {
+            Ok(v) => Some(v),
+            Err(err) => {
+                missing_files += 1;
+                let mut d = Diagnostic::new(
+                    "X07WASM_DEVICE_BUNDLE_PATH_UNSAFE",
+                    Severity::Error,
+                    Stage::Run,
+                    "unsafe bundle path".to_string(),
+                );
+                d.data.insert("field".to_string(), json!("ui_wasm.path"));
+                d.data.insert("path".to_string(), json!(err.rel));
+                d.data.insert("kind".to_string(), json!(err.kind));
+                d.data.insert("detail".to_string(), json!(err.detail));
+                diagnostics.push(d);
+                None
+            }
+        };
+        if let Some(ui_path) = ui_path.as_ref() {
+            if !ui_path.is_file() {
+                missing_files += 1;
+                let mut d = Diagnostic::new(
+                    "X07WASM_DEVICE_BUNDLE_FILE_MISSING",
+                    Severity::Error,
+                    Stage::Run,
+                    "bundle file missing".to_string(),
+                );
+                d.data.insert("path".to_string(), json!(doc.ui_wasm.path));
+                diagnostics.push(d);
+            } else {
+                match std::fs::read(&ui_path) {
+                    Ok(bytes) => {
+                        files_checked += 1;
+                        let got_sha = util::sha256_hex(&bytes);
+                        let got_len = bytes.len() as u64;
+                        if got_sha != doc.ui_wasm.sha256 || got_len != doc.ui_wasm.bytes_len {
+                            digest_mismatches += 1;
+                            let mut d = Diagnostic::new(
+                                "X07WASM_DEVICE_BUNDLE_SHA256_MISMATCH",
+                                Severity::Error,
+                                Stage::Run,
+                                "bundle file digest mismatch".to_string(),
+                            );
+                            d.data
+                                .insert("path".to_string(), json!(doc.ui_wasm.path.clone()));
+                            d.data.insert(
+                                "want_sha256".to_string(),
+                                json!(doc.ui_wasm.sha256.clone()),
+                            );
+                            d.data.insert("got_sha256".to_string(), json!(got_sha));
+                            d.data
+                                .insert("want_bytes_len".to_string(), json!(doc.ui_wasm.bytes_len));
+                            d.data.insert("got_bytes_len".to_string(), json!(got_len));
+                            diagnostics.push(d);
+                        }
+                    }
+                    Err(err) => {
+                        missing_files += 1;
                         let mut d = Diagnostic::new(
-                            "X07WASM_DEVICE_BUNDLE_SHA256_MISMATCH",
+                            "X07WASM_DEVICE_BUNDLE_FILE_MISSING",
                             Severity::Error,
                             Stage::Run,
-                            "bundle file digest mismatch".to_string(),
+                            "failed to read bundle file".to_string(),
                         );
-                        d.data
-                            .insert("path".to_string(), json!(doc.ui_wasm.path.clone()));
-                        d.data
-                            .insert("want_sha256".to_string(), json!(doc.ui_wasm.sha256.clone()));
-                        d.data.insert("got_sha256".to_string(), json!(got_sha));
-                        d.data
-                            .insert("want_bytes_len".to_string(), json!(doc.ui_wasm.bytes_len));
-                        d.data.insert("got_bytes_len".to_string(), json!(got_len));
+                        d.data.insert("path".to_string(), json!(doc.ui_wasm.path));
+                        d.data.insert("error".to_string(), json!(err.to_string()));
                         diagnostics.push(d);
                     }
                 }
-                Err(err) => {
-                    missing_files += 1;
-                    let mut d = Diagnostic::new(
-                        "X07WASM_DEVICE_BUNDLE_FILE_MISSING",
-                        Severity::Error,
-                        Stage::Run,
-                        "failed to read bundle file".to_string(),
-                    );
-                    d.data.insert("path".to_string(), json!(doc.ui_wasm.path));
-                    d.data.insert("error".to_string(), json!(err.to_string()));
-                    diagnostics.push(d);
+            }
+        }
+
+        // Check embedded device profile digest (bundle must be self-contained).
+        let profile_path = match util::safe_join_under_dir(&bundle_dir, &doc.profile.file.path) {
+            Ok(v) => Some(v),
+            Err(err) => {
+                missing_files += 1;
+                let mut d = Diagnostic::new(
+                    "X07WASM_DEVICE_BUNDLE_PATH_UNSAFE",
+                    Severity::Error,
+                    Stage::Run,
+                    "unsafe bundle path".to_string(),
+                );
+                d.data
+                    .insert("field".to_string(), json!("profile.file.path"));
+                d.data.insert("path".to_string(), json!(err.rel));
+                d.data.insert("kind".to_string(), json!(err.kind));
+                d.data.insert("detail".to_string(), json!(err.detail));
+                diagnostics.push(d);
+                None
+            }
+        };
+        if let Some(profile_path) = profile_path.as_ref() {
+            if !profile_path.is_file() {
+                missing_files += 1;
+                let mut d = Diagnostic::new(
+                    "X07WASM_DEVICE_BUNDLE_FILE_MISSING",
+                    Severity::Error,
+                    Stage::Run,
+                    "bundle file missing".to_string(),
+                );
+                d.data
+                    .insert("path".to_string(), json!(doc.profile.file.path.clone()));
+                diagnostics.push(d);
+            } else {
+                match std::fs::read(&profile_path) {
+                    Ok(bytes) => {
+                        files_checked += 1;
+                        let got_sha = util::sha256_hex(&bytes);
+                        let got_len = bytes.len() as u64;
+                        if got_sha != doc.profile.file.sha256
+                            || got_len != doc.profile.file.bytes_len
+                        {
+                            digest_mismatches += 1;
+                            let mut d = Diagnostic::new(
+                                "X07WASM_DEVICE_BUNDLE_SHA256_MISMATCH",
+                                Severity::Error,
+                                Stage::Run,
+                                "bundle file digest mismatch".to_string(),
+                            );
+                            d.data
+                                .insert("path".to_string(), json!(doc.profile.file.path.clone()));
+                            d.data.insert(
+                                "want_sha256".to_string(),
+                                json!(doc.profile.file.sha256.clone()),
+                            );
+                            d.data.insert("got_sha256".to_string(), json!(got_sha));
+                            d.data.insert(
+                                "want_bytes_len".to_string(),
+                                json!(doc.profile.file.bytes_len),
+                            );
+                            d.data.insert("got_bytes_len".to_string(), json!(got_len));
+                            diagnostics.push(d);
+                        }
+                    }
+                    Err(err) => {
+                        missing_files += 1;
+                        let mut d = Diagnostic::new(
+                            "X07WASM_DEVICE_BUNDLE_FILE_MISSING",
+                            Severity::Error,
+                            Stage::Run,
+                            "failed to read bundle file".to_string(),
+                        );
+                        d.data
+                            .insert("path".to_string(), json!(doc.profile.file.path.clone()));
+                        d.data.insert("error".to_string(), json!(err.to_string()));
+                        diagnostics.push(d);
+                    }
                 }
             }
         }

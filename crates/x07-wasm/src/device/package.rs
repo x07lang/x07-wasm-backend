@@ -249,48 +249,15 @@ pub fn cmd_device_package(
         );
     }
 
-    let profile_path = PathBuf::from(&bundle_doc.profile.file.path);
-    match util::file_digest(&profile_path) {
-        Ok(d) => meta.inputs.push(d),
-        Err(err) => {
-            diagnostics.push(Diagnostic::new(
-                "X07WASM_DEVICE_PROFILE_READ_FAILED",
-                Severity::Error,
-                Stage::Parse,
-                format!(
-                    "failed to read device profile {}: {err:#}",
-                    profile_path.display()
-                ),
-            ));
-            return emit_report(
-                &store,
-                scope,
-                machine,
-                started,
-                raw_argv,
-                target,
-                meta,
-                diagnostics,
-                profile_ref,
-                &bundle_dir,
-                &out_dir,
-                package_manifest_digest,
-                package_info,
-            );
-        }
-    }
-
-    let profile_bytes = match std::fs::read(&profile_path) {
+    let profile_rel = bundle_doc.profile.file.path.clone();
+    let profile_path = match util::safe_join_under_dir(&bundle_dir, &profile_rel) {
         Ok(v) => v,
         Err(err) => {
             diagnostics.push(Diagnostic::new(
-                "X07WASM_DEVICE_PROFILE_READ_FAILED",
+                "X07WASM_DEVICE_BUNDLE_PATH_UNSAFE",
                 Severity::Error,
                 Stage::Parse,
-                format!(
-                    "failed to read device profile {}: {err}",
-                    profile_path.display()
-                ),
+                format!("unsafe bundle path: {profile_rel:?} ({})", err.detail),
             ));
             return emit_report(
                 &store,
@@ -309,6 +276,78 @@ pub fn cmd_device_package(
             );
         }
     };
+
+    let profile_bytes = match std::fs::read(&profile_path) {
+        Ok(v) => v,
+        Err(err) => {
+            let mut d = Diagnostic::new(
+                "X07WASM_DEVICE_BUNDLE_FILE_MISSING",
+                Severity::Error,
+                Stage::Parse,
+                format!("missing bundle file {}: {err}", profile_path.display()),
+            );
+            d.data.insert("path".to_string(), json!(profile_rel));
+            diagnostics.push(d);
+            return emit_report(
+                &store,
+                scope,
+                machine,
+                started,
+                raw_argv,
+                target,
+                meta,
+                diagnostics,
+                profile_ref,
+                &bundle_dir,
+                &out_dir,
+                package_manifest_digest,
+                package_info,
+            );
+        }
+    };
+
+    let got_sha = util::sha256_hex(&profile_bytes);
+    let got_len = profile_bytes.len() as u64;
+    meta.inputs.push(report::meta::FileDigest {
+        path: profile_path.display().to_string(),
+        sha256: got_sha.clone(),
+        bytes_len: got_len,
+    });
+    if got_sha != bundle_doc.profile.file.sha256 || got_len != bundle_doc.profile.file.bytes_len {
+        let mut d = Diagnostic::new(
+            "X07WASM_DEVICE_BUNDLE_SHA256_MISMATCH",
+            Severity::Error,
+            Stage::Parse,
+            "bundle file digest mismatch".to_string(),
+        );
+        d.data.insert("path".to_string(), json!(profile_rel));
+        d.data.insert(
+            "want_sha256".to_string(),
+            json!(bundle_doc.profile.file.sha256.clone()),
+        );
+        d.data.insert("got_sha256".to_string(), json!(got_sha));
+        d.data.insert(
+            "want_bytes_len".to_string(),
+            json!(bundle_doc.profile.file.bytes_len),
+        );
+        d.data.insert("got_bytes_len".to_string(), json!(got_len));
+        diagnostics.push(d);
+        return emit_report(
+            &store,
+            scope,
+            machine,
+            started,
+            raw_argv,
+            target,
+            meta,
+            diagnostics,
+            profile_ref,
+            &bundle_dir,
+            &out_dir,
+            package_manifest_digest,
+            package_info,
+        );
+    }
 
     let profile_json: Value = match serde_json::from_slice(&profile_bytes) {
         Ok(v) => v,

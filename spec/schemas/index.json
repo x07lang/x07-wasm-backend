@@ -221,6 +221,14 @@
       "path": "x07-wasm.device.profile.validate.report.schema.json"
     },
     {
+      "id": "https://x07.io/spec/x07-wasm.device.provenance.attest.report.schema.json",
+      "path": "x07-wasm.device.provenance.attest.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.device.provenance.verify.report.schema.json",
+      "path": "x07-wasm.device.provenance.verify.report.schema.json"
+    },
+    {
       "id": "https://x07.io/spec/x07-wasm.device.run.report.schema.json",
       "path": "x07-wasm.device.run.report.schema.json"
     },
