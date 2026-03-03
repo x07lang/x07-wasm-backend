@@ -15,7 +15,7 @@
     "allow_dynamic_code_loading": false
   },
   "ui": {
-    "project": "examples/app_min/frontend/x07.json",
+    "project": "examples/device_min/frontend/x07.json",
     "web_ui_profile_id": "web_ui_debug"
   },
   "backend": {
@@ -45,4 +45,3 @@
     }
   }
 }
-

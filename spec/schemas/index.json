@@ -1,0 +1,368 @@
+{
+  "schemas": [
+    {
+      "id": "https://x07.io/spec/x07-app.bundle.schema.json",
+      "path": "x07-app.bundle.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-app.capabilities.schema.json",
+      "path": "x07-app.capabilities.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-app.ops.profile.schema.json",
+      "path": "x07-app.ops.profile.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-app.pack.schema.json",
+      "path": "x07-app.pack.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-app.profile.schema.json",
+      "path": "x07-app.profile.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-app.trace.schema.json",
+      "path": "x07-app.trace.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-arch.app.index.schema.json",
+      "path": "x07-arch.app.index.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-arch.app.ops.index.schema.json",
+      "path": "x07-arch.app.ops.index.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-arch.device.index.schema.json",
+      "path": "x07-arch.device.index.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-arch.wasm.component.index.schema.json",
+      "path": "x07-arch.wasm.component.index.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-arch.wasm.index.schema.json",
+      "path": "x07-arch.wasm.index.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-arch.wasm.toolchain.index.schema.json",
+      "path": "x07-arch.wasm.toolchain.index.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-arch.web_ui.index.schema.json",
+      "path": "x07-arch.web_ui.index.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-arch.wit.index.schema.json",
+      "path": "x07-arch.wit.index.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-deploy.plan.schema.json",
+      "path": "x07-deploy.plan.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-device.bundle.manifest.schema.json",
+      "path": "x07-device.bundle.manifest.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-device.package.manifest.schema.json",
+      "path": "x07-device.package.manifest.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-device.profile.schema.json",
+      "path": "x07-device.profile.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-http.dispatch.schema.json",
+      "path": "x07-http.dispatch.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-http.effect.schema.json",
+      "path": "x07-http.effect.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-http.frame.schema.json",
+      "path": "x07-http.frame.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-http.request.envelope.schema.json",
+      "path": "x07-http.request.envelope.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-http.response.envelope.schema.json",
+      "path": "x07-http.response.envelope.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-http.trace.schema.json",
+      "path": "x07-http.trace.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-metrics.snapshot.schema.json",
+      "path": "x07-metrics.snapshot.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-policy.card.schema.json",
+      "path": "x07-policy.card.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-provenance.dsse.envelope.schema.json",
+      "path": "x07-provenance.dsse.envelope.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-provenance.slsa.attestation.schema.json",
+      "path": "x07-provenance.slsa.attestation.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-slo.profile.schema.json",
+      "path": "x07-slo.profile.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.app.build.report.schema.json",
+      "path": "x07-wasm.app.build.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.app.contracts.validate.report.schema.json",
+      "path": "x07-wasm.app.contracts.validate.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.app.pack.report.schema.json",
+      "path": "x07-wasm.app.pack.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.app.profile.validate.report.schema.json",
+      "path": "x07-wasm.app.profile.validate.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.app.regress.from_incident.report.schema.json",
+      "path": "x07-wasm.app.regress.from_incident.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.app.serve.report.schema.json",
+      "path": "x07-wasm.app.serve.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.app.test.report.schema.json",
+      "path": "x07-wasm.app.test.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.app.verify.report.schema.json",
+      "path": "x07-wasm.app.verify.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.artifact.schema.json",
+      "path": "x07-wasm.artifact.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.build.report.schema.json",
+      "path": "x07-wasm.build.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.caps.evidence.schema.json",
+      "path": "x07-wasm.caps.evidence.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.caps.validate.report.schema.json",
+      "path": "x07-wasm.caps.validate.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.cli.parse.report.schema.json",
+      "path": "x07-wasm.cli.parse.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.cli.specrows.check.report.schema.json",
+      "path": "x07-wasm.cli.specrows.check.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.component.artifact.schema.json",
+      "path": "x07-wasm.component.artifact.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.component.build.report.schema.json",
+      "path": "x07-wasm.component.build.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.component.compose.report.schema.json",
+      "path": "x07-wasm.component.compose.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.component.profile.schema.json",
+      "path": "x07-wasm.component.profile.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.component.profile.validate.report.schema.json",
+      "path": "x07-wasm.component.profile.validate.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.component.run.report.schema.json",
+      "path": "x07-wasm.component.run.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.component.targets.report.schema.json",
+      "path": "x07-wasm.component.targets.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.deploy.plan.report.schema.json",
+      "path": "x07-wasm.deploy.plan.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.device.build.report.schema.json",
+      "path": "x07-wasm.device.build.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.device.index.validate.report.schema.json",
+      "path": "x07-wasm.device.index.validate.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.device.package.report.schema.json",
+      "path": "x07-wasm.device.package.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.device.profile.validate.report.schema.json",
+      "path": "x07-wasm.device.profile.validate.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.device.run.report.schema.json",
+      "path": "x07-wasm.device.run.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.device.verify.report.schema.json",
+      "path": "x07-wasm.device.verify.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.doctor.report.schema.json",
+      "path": "x07-wasm.doctor.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.http.contracts.validate.report.schema.json",
+      "path": "x07-wasm.http.contracts.validate.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.http.regress.from.incident.report.schema.json",
+      "path": "x07-wasm.http.regress.from.incident.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.http.serve.report.schema.json",
+      "path": "x07-wasm.http.serve.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.http.test.report.schema.json",
+      "path": "x07-wasm.http.test.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.ops.validate.report.schema.json",
+      "path": "x07-wasm.ops.validate.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.policy.validate.report.schema.json",
+      "path": "x07-wasm.policy.validate.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.profile.schema.json",
+      "path": "x07-wasm.profile.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.profile.validate.report.schema.json",
+      "path": "x07-wasm.profile.validate.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.provenance.attest.report.schema.json",
+      "path": "x07-wasm.provenance.attest.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.provenance.verify.report.schema.json",
+      "path": "x07-wasm.provenance.verify.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.run.report.schema.json",
+      "path": "x07-wasm.run.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.runtime.limits.schema.json",
+      "path": "x07-wasm.runtime.limits.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.serve.report.schema.json",
+      "path": "x07-wasm.serve.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.slo.eval.report.schema.json",
+      "path": "x07-wasm.slo.eval.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.slo.validate.report.schema.json",
+      "path": "x07-wasm.slo.validate.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.toolchain.profile.schema.json",
+      "path": "x07-wasm.toolchain.profile.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.toolchain.validate.report.schema.json",
+      "path": "x07-wasm.toolchain.validate.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.web_ui.build.report.schema.json",
+      "path": "x07-wasm.web_ui.build.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.web_ui.contracts.validate.report.schema.json",
+      "path": "x07-wasm.web_ui.contracts.validate.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.web_ui.profile.validate.report.schema.json",
+      "path": "x07-wasm.web_ui.profile.validate.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.web_ui.regress.from.incident.report.schema.json",
+      "path": "x07-wasm.web_ui.regress.from.incident.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.web_ui.serve.report.schema.json",
+      "path": "x07-wasm.web_ui.serve.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.web_ui.test.report.schema.json",
+      "path": "x07-wasm.web_ui.test.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-wasm.wit.validate.report.schema.json",
+      "path": "x07-wasm.wit.validate.report.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-web_ui.dispatch.schema.json",
+      "path": "x07-web_ui.dispatch.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-web_ui.effect.schema.json",
+      "path": "x07-web_ui.effect.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-web_ui.frame.schema.json",
+      "path": "x07-web_ui.frame.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-web_ui.patchset.schema.json",
+      "path": "x07-web_ui.patchset.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-web_ui.profile.schema.json",
+      "path": "x07-web_ui.profile.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-web_ui.trace.schema.json",
+      "path": "x07-web_ui.trace.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-web_ui.tree.schema.json",
+      "path": "x07-web_ui.tree.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07diag.schema.json",
+      "path": "x07diag.schema.json"
+    },
+    {
+      "id": "https://x07.org/spec/x07cli.specrows.schema.json",
+      "path": "x07cli.specrows.schema.json"
+    }
+  ]
+}
