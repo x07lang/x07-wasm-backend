@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-deploy.plan.schema.json",
-  "title": "x07.deploy.plan@0.1.0",
+  "title": "x07.deploy.plan@0.2.0",
   "description": "Machine-readable progressive delivery plan (canary/blue-green) derived from app pack + ops profile + policy + SLO.",
   "type": "object",
   "additionalProperties": false,
@@ -17,7 +17,7 @@
     "outputs"
   ],
   "properties": {
-    "schema_version": { "const": "x07.deploy.plan@0.1.0" },
+    "schema_version": { "const": "x07.deploy.plan@0.2.0" },
     "id": { "$ref": "#/$defs/id" },
     "v": { "type": "integer", "minimum": 1 },
     "pack_manifest": { "$ref": "#/$defs/file_digest" },
@@ -30,9 +30,10 @@
     "strategy": { "$ref": "#/$defs/strategy" },
     "outputs": {
       "type": "array",
-      "minItems": 1,
+      "minItems": 0,
       "maxItems": 64,
-      "items": { "$ref": "#/$defs/file_digest" }
+      "items": { "$ref": "#/$defs/file_digest" },
+      "default": []
     }
   },
   "$defs": {

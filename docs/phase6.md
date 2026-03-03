@@ -111,10 +111,16 @@ Pinned exit codes:
 
 ## Deploy plan generation
 
-Generate a deploy plan and emit Kubernetes YAMLs (Argo Rollouts concepts):
+Generate a deploy plan (optionally emit Kubernetes YAMLs; Argo Rollouts concepts):
 
 ```sh
 x07-wasm deploy plan --pack-manifest dist/app.pack.json --ops arch/app/ops/ops_release.json --out-dir dist/deploy_plan --json
+```
+
+Plan-only mode (no Kubernetes YAML outputs):
+
+```sh
+x07-wasm deploy plan --pack-manifest dist/app.pack.json --ops arch/app/ops/ops_release.json --emit-k8s false --out-dir dist/deploy_plan --json
 ```
 
 ## Provenance
@@ -136,7 +142,7 @@ Notes:
 
 Phase 6 outputs are intended to be consumed by an autonomous deployer (for example `x07-platform`) as a closed-loop contract:
 
-- **Deploy intent**: `x07-wasm deploy plan` emits `deploy.plan.json` plus Kubernetes YAML outputs under `--out-dir`.
+- **Deploy intent**: `x07-wasm deploy plan` emits `deploy.plan.json`. By default it also emits Kubernetes YAML outputs under `--out-dir` (disable via `--emit-k8s false`).
 - **Authorization**: `x07-wasm provenance verify` recomputes digests against the pack directory; platforms can gate deployment on a verified attestation and record `predicate.x07.compatibility_hash`.
 - **Promotion**: `x07-wasm app serve --mode canary --ops <ops.json>` evaluates SLOs (if referenced by ops) and emits a pinned `promote|rollback|inconclusive` decision.
 - **Incidents → regressions**: incident bundles under `.x07-wasm/incidents/...` can be converted into replayable cases via `* regress-from-incident` commands.

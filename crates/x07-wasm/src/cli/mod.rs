@@ -968,6 +968,10 @@ pub struct DeployPlanArgs {
     #[arg(long, value_name = "PATH")]
     pub ops: PathBuf,
 
+    /// Emit Kubernetes YAML outputs (rollout/analysis-template/service/ingress).
+    #[arg(long, value_name = "BOOL", default_value_t = true, action = clap::ArgAction::Set)]
+    pub emit_k8s: bool,
+
     /// Output directory for deploy plan + emitted manifests.
     #[arg(long, value_name = "PATH")]
     pub out_dir: PathBuf,

@@ -148,10 +148,11 @@ pub fn build_specrows_doc() -> Value {
             ["component-targets","opt","","--wit","wit","PATH","Path to a .wit file containing the world to target."],
             ["component-targets","opt","","--world","world","STR","World name within the WIT file."],
 
-        ["deploy-plan","about","Alias for `x07-wasm deploy plan`. Generate progressive delivery plan from pack + ops profile and emit x07.wasm.deploy.plan.report@0.1.0."],
-        ["deploy-plan","opt","","--ops","ops","PATH","Ops profile file (x07.app.ops.profile@0.1.0)."],
-        ["deploy-plan","opt","","--out-dir","out_dir","PATH","Output directory for deploy plan + emitted manifests."],
-        ["deploy-plan","opt","","--pack-manifest","pack_manifest","PATH","App pack manifest file (x07.app.pack@0.1.0)."],
+	        ["deploy-plan","about","Alias for `x07-wasm deploy plan`. Generate progressive delivery plan from pack + ops profile and emit x07.wasm.deploy.plan.report@0.1.0."],
+	        ["deploy-plan","opt","","--ops","ops","PATH","Ops profile file (x07.app.ops.profile@0.1.0)."],
+	        ["deploy-plan","opt","","--emit-k8s","emit.k8s","STR","Emit Kubernetes YAML outputs (true/false; default true)."],
+	        ["deploy-plan","opt","","--out-dir","out_dir","PATH","Output directory for deploy plan + emitted manifests."],
+	        ["deploy-plan","opt","","--pack-manifest","pack_manifest","PATH","App pack manifest file (x07.app.pack@0.1.0)."],
 
         ["device-build","about","Alias for `x07-wasm device build`. Build a device UI bundle (web-ui reducer wasm + pinned host ABI) and emit x07.wasm.device.build.report@0.1.0."],
         ["device-build","flag","","--clean","clean","Delete out-dir before writing bundle artifacts."],

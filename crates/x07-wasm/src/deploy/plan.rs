@@ -194,59 +194,33 @@ pub fn cmd_deploy_plan(
         );
     }
 
-    let rollout_path = args.out_dir.join("rollout.yaml");
-    let analysis_path = args.out_dir.join("analysis-template.yaml");
-    let service_path = args.out_dir.join("service.yaml");
-    let ingress_path = args.out_dir.join("ingress.yaml");
-
     let k8s_name = k8s_name(pack_profile_id);
-    let analysis_name = format!("{k8s_name}-analysis");
-
     let strategy = build_strategy(&loaded_ops.ops.doc_json);
 
-    let rollout_yaml = rollout_yaml(&k8s_name, &analysis_name, &strategy);
-    let analysis_yaml = analysis_template_yaml(&analysis_name);
-    let service_yaml = service_yaml(&k8s_name);
-    let ingress_yaml = ingress_yaml(&k8s_name);
-
-    let yaml_ok = yaml_sanity_check("rollout.yaml", "Rollout", &rollout_yaml, &mut diagnostics)
-        && yaml_sanity_check(
-            "analysis-template.yaml",
-            "AnalysisTemplate",
-            &analysis_yaml,
-            &mut diagnostics,
-        )
-        && yaml_sanity_check("service.yaml", "Service", &service_yaml, &mut diagnostics)
-        && yaml_sanity_check("ingress.yaml", "Ingress", &ingress_yaml, &mut diagnostics);
-    if !yaml_ok {
-        return emit_report(
-            &store,
-            scope,
-            machine,
-            started,
-            raw_argv,
-            meta,
-            diagnostics,
-            &args.out_dir,
-            None,
-            Vec::new(),
-        );
-    }
-
     let mut outputs: Vec<report::meta::FileDigest> = Vec::new();
-    for (path, content) in [
-        (&rollout_path, rollout_yaml),
-        (&analysis_path, analysis_yaml),
-        (&service_path, service_yaml),
-        (&ingress_path, ingress_yaml),
-    ] {
-        if let Err(err) = std::fs::write(path, content.as_bytes()) {
-            diagnostics.push(Diagnostic::new(
-                "X07WASM_DEPLOY_PLAN_EMIT_FAILED",
-                Severity::Error,
-                Stage::Run,
-                format!("failed to write {}: {err}", path.display()),
-            ));
+    if args.emit_k8s {
+        let rollout_path = args.out_dir.join("rollout.yaml");
+        let analysis_path = args.out_dir.join("analysis-template.yaml");
+        let service_path = args.out_dir.join("service.yaml");
+        let ingress_path = args.out_dir.join("ingress.yaml");
+
+        let analysis_name = format!("{k8s_name}-analysis");
+
+        let rollout_yaml = rollout_yaml(&k8s_name, &analysis_name, &strategy);
+        let analysis_yaml = analysis_template_yaml(&analysis_name);
+        let service_yaml = service_yaml(&k8s_name);
+        let ingress_yaml = ingress_yaml(&k8s_name);
+
+        let yaml_ok = yaml_sanity_check("rollout.yaml", "Rollout", &rollout_yaml, &mut diagnostics)
+            && yaml_sanity_check(
+                "analysis-template.yaml",
+                "AnalysisTemplate",
+                &analysis_yaml,
+                &mut diagnostics,
+            )
+            && yaml_sanity_check("service.yaml", "Service", &service_yaml, &mut diagnostics)
+            && yaml_sanity_check("ingress.yaml", "Ingress", &ingress_yaml, &mut diagnostics);
+        if !yaml_ok {
             return emit_report(
                 &store,
                 scope,
@@ -260,14 +234,42 @@ pub fn cmd_deploy_plan(
                 Vec::new(),
             );
         }
-        let d = util::file_digest(path)?;
-        meta.outputs.push(d.clone());
-        outputs.push(d);
+
+        for (path, content) in [
+            (&rollout_path, rollout_yaml),
+            (&analysis_path, analysis_yaml),
+            (&service_path, service_yaml),
+            (&ingress_path, ingress_yaml),
+        ] {
+            if let Err(err) = std::fs::write(path, content.as_bytes()) {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_DEPLOY_PLAN_EMIT_FAILED",
+                    Severity::Error,
+                    Stage::Run,
+                    format!("failed to write {}: {err}", path.display()),
+                ));
+                return emit_report(
+                    &store,
+                    scope,
+                    machine,
+                    started,
+                    raw_argv,
+                    meta,
+                    diagnostics,
+                    &args.out_dir,
+                    None,
+                    Vec::new(),
+                );
+            }
+            let d = util::file_digest(path)?;
+            meta.outputs.push(d.clone());
+            outputs.push(d);
+        }
     }
     let outputs_report = outputs.clone();
 
     let mut plan_doc = json!({
-      "schema_version": "x07.deploy.plan@0.1.0",
+      "schema_version": "x07.deploy.plan@0.2.0",
       "id": format!("{pack_profile_id}.{k8s_name}"),
       "v": 1,
       "pack_manifest": pack_digest,

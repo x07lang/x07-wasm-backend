@@ -152,6 +152,50 @@ print("ok: deploy plan outputs exist")
 PY
 }
 
+require_deploy_plan_outputs_absent() {
+  local report_path="$1"
+  "$PYTHON" - "$report_path" <<'PY'
+import json, pathlib, sys
+p = pathlib.Path(sys.argv[1])
+doc = json.loads(p.read_text(encoding="utf-8"))
+
+res = doc.get("result", {})
+out_dir = res.get("out_dir")
+if not isinstance(out_dir, str) or not out_dir:
+    print("missing result.out_dir in", p, file=sys.stderr)
+    sys.exit(1)
+
+pm = res.get("plan_manifest", {})
+pm_path = pm.get("path")
+if not isinstance(pm_path, str) or not pm_path:
+    print("missing result.plan_manifest.path in", p, file=sys.stderr)
+    sys.exit(1)
+
+pm_file = pathlib.Path(pm_path)
+if not pm_file.is_file():
+    print("plan_manifest missing:", pm_file, file=sys.stderr)
+    sys.exit(1)
+
+outs = res.get("outputs", [])
+if not isinstance(outs, list) or len(outs) != 0:
+    print("expected 0 outputs in result.outputs", file=sys.stderr)
+    print("got:", outs, file=sys.stderr)
+    sys.exit(1)
+
+out_dir_path = pathlib.Path(out_dir)
+unexpected = []
+for name in ["rollout.yaml", "analysis-template.yaml", "service.yaml", "ingress.yaml"]:
+    fp = out_dir_path / name
+    if fp.exists():
+        unexpected.append(str(fp))
+if unexpected:
+    print("unexpected deploy outputs:", unexpected, file=sys.stderr)
+    sys.exit(1)
+
+print("ok: deploy plan outputs absent")
+PY
+}
+
 get_first_response_body_sha256() {
   local report_path="$1"
   "$PYTHON" - "$report_path" <<'PY'
@@ -811,6 +855,16 @@ x07-wasm deploy plan \
   --json --report-out build/phase6_examples/deploy.plan.json --quiet-json
 require_report_ok build/phase6_examples/deploy.plan.json
 require_deploy_plan_outputs_exist build/phase6_examples/deploy.plan.json
+
+echo "==> phase6_examples: deploy plan (plan-only; no k8s outputs)"
+x07-wasm deploy plan \
+  --pack-manifest dist/phase6_examples/app_min.pack/app.pack.json \
+  --ops arch/app/ops/ops_release_policy_patch.json \
+  --emit-k8s false \
+  --out-dir dist/phase6_examples/deploy_plan.no_k8s \
+  --json --report-out build/phase6_examples/deploy.plan.no_k8s.json --quiet-json
+require_report_ok build/phase6_examples/deploy.plan.no_k8s.json
+require_deploy_plan_outputs_absent build/phase6_examples/deploy.plan.no_k8s.json
 
 echo "==> phase6_examples: deploy plan (policy warn)"
 x07-wasm deploy plan \
