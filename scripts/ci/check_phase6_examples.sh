@@ -287,6 +287,61 @@ print("tampered:", str(p))
 PY
 }
 
+corrupt_pack_bundle_manifest_file() {
+  local pack_manifest_path="$1"
+  "$PYTHON" - "$pack_manifest_path" <<'PY'
+import json, pathlib, sys
+
+manifest = pathlib.Path(sys.argv[1])
+doc = json.loads(manifest.read_text(encoding="utf-8"))
+
+bundle = doc.get("bundle_manifest", {})
+if not isinstance(bundle, dict) or not isinstance(bundle.get("path"), str):
+    print("pack manifest bundle_manifest.path missing:", manifest, file=sys.stderr)
+    sys.exit(1)
+
+rel = bundle["path"]
+p = (manifest.parent / rel).resolve()
+if not p.is_file():
+    print("bundle manifest file missing:", p, file=sys.stderr)
+    sys.exit(1)
+
+p.write_bytes(p.read_bytes() + b"\x00")
+print("tampered:", str(p))
+PY
+}
+
+symlink_pack_backend_component_file() {
+  local pack_manifest_path="$1"
+  local target_path="$2"
+  "$PYTHON" - "$pack_manifest_path" "$target_path" <<'PY'
+import json, os, pathlib, sys
+
+manifest = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2]).resolve()
+doc = json.loads(manifest.read_text(encoding="utf-8"))
+
+backend = doc.get("backend", {})
+if not isinstance(backend, dict):
+    raise SystemExit(f"pack manifest backend invalid: {manifest}")
+
+component = backend.get("component", {})
+if not isinstance(component, dict) or not isinstance(component.get("path"), str):
+    raise SystemExit(f"pack manifest backend.component.path missing: {manifest}")
+
+rel = component["path"]
+p = manifest.parent / rel
+p.parent.mkdir(parents=True, exist_ok=True)
+try:
+    p.unlink()
+except FileNotFoundError:
+    pass
+
+os.symlink(str(target), str(p))
+print("symlinked:", str(p), "->", str(target))
+PY
+}
+
 echo "==> phase6_examples: Phase-5 examples gate"
 bash scripts/ci/check_phase5_examples.sh
 
@@ -503,6 +558,15 @@ if [ "$code" -ne 1 ]; then
 fi
 require_report_exit_and_has_code build/phase6_examples/serve.caps_net_ip_literal_denied.json 1 X07WASM_CAPS_NET_PRIVATE_IP_DENIED
 
+echo "==> phase6_examples: caps net allowlist ok (default port http)"
+x07-wasm serve \
+  --component guest/phase6-caps-fixture/target/wasm32-wasip2/release/x07_wasm_phase6_caps_fixture.wasm \
+  --mode canary \
+  --path /net_default_port_http \
+  --ops arch/app/ops/ops_allow_localhost_http.json \
+  --json --report-out build/phase6_examples/serve.caps_net_default_port_http.ok.json --quiet-json
+require_report_ok build/phase6_examples/serve.caps_net_default_port_http.ok.json
+
 echo "==> phase6_examples: build app_min -> pack -> verify (fresh, phase6 dir)"
 rm -rf dist/phase6_examples/app_min dist/phase6_examples/app_min.pack dist/phase6_examples/deploy_plan
 x07-wasm app build --profile-file examples/app_min/app_release.json \
@@ -537,6 +601,39 @@ if [ "$code" -ne 1 ]; then
   exit 1
 fi
 require_report_exit_and_has_code build/phase6_examples/app.verify.app_min.backend_tampered.json 1 X07WASM_APP_VERIFY_BACKEND_COMPONENT_DIGEST_MISMATCH
+
+echo "==> phase6_examples: app verify (negative - tamper bundle manifest)"
+rm -rf dist/phase6_examples/app_min.pack.bundle_manifest_tampered
+cp -a dist/phase6_examples/app_min.pack dist/phase6_examples/app_min.pack.bundle_manifest_tampered
+corrupt_pack_bundle_manifest_file dist/phase6_examples/app_min.pack.bundle_manifest_tampered/app.pack.json >/dev/null
+
+set +e
+x07-wasm app verify --pack-manifest dist/phase6_examples/app_min.pack.bundle_manifest_tampered/app.pack.json \
+  --json --report-out build/phase6_examples/app.verify.app_min.bundle_manifest_tampered.json --quiet-json
+code=$?
+set -e
+if [ "$code" -ne 1 ]; then
+  echo "expected exit code 1 for app verify bundle manifest digest mismatch, got $code" >&2
+  exit 1
+fi
+require_report_exit_and_has_code build/phase6_examples/app.verify.app_min.bundle_manifest_tampered.json 1 X07WASM_APP_VERIFY_BUNDLE_MANIFEST_DIGEST_MISMATCH
+
+echo "==> phase6_examples: app verify (negative - unsafe symlink path)"
+rm -rf dist/phase6_examples/app_min.pack.backend_symlink
+cp -a dist/phase6_examples/app_min.pack dist/phase6_examples/app_min.pack.backend_symlink
+printf "outside" > dist/phase6_examples/outside.bin
+symlink_pack_backend_component_file dist/phase6_examples/app_min.pack.backend_symlink/app.pack.json dist/phase6_examples/outside.bin >/dev/null
+
+set +e
+x07-wasm app verify --pack-manifest dist/phase6_examples/app_min.pack.backend_symlink/app.pack.json \
+  --json --report-out build/phase6_examples/app.verify.app_min.backend_symlink.json --quiet-json
+code=$?
+set -e
+if [ "$code" -ne 1 ]; then
+  echo "expected exit code 1 for app verify unsafe symlink path, got $code" >&2
+  exit 1
+fi
+require_report_exit_and_has_code build/phase6_examples/app.verify.app_min.backend_symlink.json 1 X07WASM_APP_VERIFY_PATH_UNSAFE
 
 echo "==> phase6_examples: build app_min_spin -> pack -> verify -> canary (budget exceeded)"
 rm -rf dist/phase6_examples/app_min_spin dist/phase6_examples/app_min_spin.pack
@@ -628,6 +725,59 @@ if [ "$code" -ne 1 ]; then
   exit 1
 fi
 require_report_exit_and_has_code build/phase6_examples/provenance.verify.bad.json 1 X07WASM_PROVENANCE_DIGEST_MISMATCH
+
+echo "==> phase6_examples: provenance verify (negative - tamper backend component)"
+rm -rf dist/phase6_examples/app_min.pack.backend_tampered2
+cp -a dist/phase6_examples/app_min.pack dist/phase6_examples/app_min.pack.backend_tampered2
+corrupt_pack_backend_component_file dist/phase6_examples/app_min.pack.backend_tampered2/app.pack.json >/dev/null
+
+set +e
+x07-wasm provenance verify \
+  --attestation dist/phase6_examples/app_min.pack/provenance.dsse.json \
+  --pack-dir dist/phase6_examples/app_min.pack.backend_tampered2 \
+  --trusted-public-key arch/provenance/dev.ed25519.public_key.b64 \
+  --json --report-out build/phase6_examples/provenance.verify.backend_tampered.json --quiet-json
+code=$?
+set -e
+if [ "$code" -ne 1 ]; then
+  echo "expected exit code 1 for provenance digest mismatch (backend component), got $code" >&2
+  exit 1
+fi
+require_report_exit_and_has_code build/phase6_examples/provenance.verify.backend_tampered.json 1 X07WASM_PROVENANCE_DIGEST_MISMATCH
+
+echo "==> phase6_examples: provenance verify (negative - tamper bundle manifest)"
+rm -rf dist/phase6_examples/app_min.pack.bundle_manifest_tampered2
+cp -a dist/phase6_examples/app_min.pack dist/phase6_examples/app_min.pack.bundle_manifest_tampered2
+corrupt_pack_bundle_manifest_file dist/phase6_examples/app_min.pack.bundle_manifest_tampered2/app.pack.json >/dev/null
+
+set +e
+x07-wasm provenance verify \
+  --attestation dist/phase6_examples/app_min.pack/provenance.dsse.json \
+  --pack-dir dist/phase6_examples/app_min.pack.bundle_manifest_tampered2 \
+  --trusted-public-key arch/provenance/dev.ed25519.public_key.b64 \
+  --json --report-out build/phase6_examples/provenance.verify.bundle_manifest_tampered.json --quiet-json
+code=$?
+set -e
+if [ "$code" -ne 1 ]; then
+  echo "expected exit code 1 for provenance digest mismatch (bundle manifest), got $code" >&2
+  exit 1
+fi
+require_report_exit_and_has_code build/phase6_examples/provenance.verify.bundle_manifest_tampered.json 1 X07WASM_PROVENANCE_DIGEST_MISMATCH
+
+echo "==> phase6_examples: provenance verify (negative - unsafe symlink subject path)"
+set +e
+x07-wasm provenance verify \
+  --attestation dist/phase6_examples/app_min.pack/provenance.dsse.json \
+  --pack-dir dist/phase6_examples/app_min.pack.backend_symlink \
+  --trusted-public-key arch/provenance/dev.ed25519.public_key.b64 \
+  --json --report-out build/phase6_examples/provenance.verify.subject_path_unsafe.json --quiet-json
+code=$?
+set -e
+if [ "$code" -ne 1 ]; then
+  echo "expected exit code 1 for provenance subject path unsafe, got $code" >&2
+  exit 1
+fi
+require_report_exit_and_has_code build/phase6_examples/provenance.verify.subject_path_unsafe.json 1 X07WASM_PROVENANCE_SUBJECT_PATH_UNSAFE
 
 echo "==> phase6_examples: provenance verify (negative - unsupported predicateType)"
 x07-wasm provenance attest \

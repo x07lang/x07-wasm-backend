@@ -1,5 +1,5 @@
 use std::ffi::OsString;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use anyhow::Result;
 use base64::engine::general_purpose::STANDARD;
@@ -417,8 +417,25 @@ pub fn cmd_provenance_verify(
 
         subjects_checked += 1;
 
-        let path = sanitize_subject_path(name);
-        let full = args.pack_dir.join(path);
+        let full = match util::safe_join_under_dir(&args.pack_dir, name) {
+            Ok(v) => v,
+            Err(err) => {
+                subjects_mismatched += 1;
+                let mut d = Diagnostic::new(
+                    "X07WASM_PROVENANCE_SUBJECT_PATH_UNSAFE",
+                    Severity::Error,
+                    Stage::Run,
+                    format!("unsafe subject path: {name:?}"),
+                );
+                d.data
+                    .insert("subject".to_string(), json!(name.to_string()));
+                d.data.insert("path".to_string(), json!(err.rel));
+                d.data.insert("kind".to_string(), json!(err.kind));
+                d.data.insert("detail".to_string(), json!(err.detail));
+                diagnostics.push(d);
+                continue;
+            }
+        };
         let bytes = match std::fs::read(&full) {
             Ok(v) => v,
             Err(err) => {
@@ -472,21 +489,6 @@ pub fn cmd_provenance_verify(
         subjects_mismatched,
         exit_code,
     )
-}
-
-fn sanitize_subject_path(name: &str) -> PathBuf {
-    let p = Path::new(name);
-    if p.is_absolute() {
-        return PathBuf::from("__invalid_absolute__");
-    }
-    let mut out = PathBuf::new();
-    for c in p.components() {
-        match c {
-            std::path::Component::Normal(part) => out.push(part),
-            _ => return PathBuf::from("__invalid_path__"),
-        }
-    }
-    out
 }
 
 #[allow(clippy::too_many_arguments)]

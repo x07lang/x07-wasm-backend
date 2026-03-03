@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Component, Path, PathBuf};
 
 use anyhow::{Context, Result};
 use serde_json::Value;
@@ -97,4 +97,80 @@ pub fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<()> {
         }
     }
     Ok(())
+}
+
+#[derive(Debug, Clone)]
+pub struct UnsafePathError {
+    pub kind: &'static str,
+    pub rel: String,
+    pub detail: String,
+}
+
+pub fn safe_join_under_dir(
+    base_dir: &Path,
+    rel: &str,
+) -> std::result::Result<PathBuf, UnsafePathError> {
+    if rel.is_empty() {
+        return Err(UnsafePathError {
+            kind: "empty",
+            rel: rel.to_string(),
+            detail: "path is empty".to_string(),
+        });
+    }
+
+    let p = Path::new(rel);
+    if p.is_absolute() {
+        return Err(UnsafePathError {
+            kind: "absolute",
+            rel: rel.to_string(),
+            detail: "absolute paths are not allowed".to_string(),
+        });
+    }
+
+    let mut cleaned = PathBuf::new();
+    for c in p.components() {
+        match c {
+            Component::Normal(part) => cleaned.push(part),
+            _ => {
+                return Err(UnsafePathError {
+                    kind: "non_normal_component",
+                    rel: rel.to_string(),
+                    detail: "path must not contain ., .., or prefix/root components".to_string(),
+                })
+            }
+        }
+    }
+
+    // Reject symlinks in any existing path component under base_dir.
+    // Missing paths are handled by callers (e.g. verify commands emit "missing file" diagnostics).
+    let mut cur = base_dir.to_path_buf();
+    for c in cleaned.components() {
+        let Component::Normal(part) = c else {
+            continue;
+        };
+        cur.push(part);
+        match std::fs::symlink_metadata(&cur) {
+            Ok(md) => {
+                if md.file_type().is_symlink() {
+                    return Err(UnsafePathError {
+                        kind: "symlink",
+                        rel: rel.to_string(),
+                        detail: format!("symlink path component: {}", cur.display()),
+                    });
+                }
+            }
+            Err(err) => {
+                if err.kind() == std::io::ErrorKind::NotFound {
+                    break;
+                }
+                return Err(UnsafePathError {
+                    kind: "metadata_failed",
+                    rel: rel.to_string(),
+                    detail: format!("symlink_metadata failed for {}: {err}", cur.display()),
+                });
+            }
+        }
+    }
+
+    Ok(base_dir.join(cleaned))
 }

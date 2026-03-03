@@ -143,6 +143,77 @@ pub fn cmd_provenance_attest(
       "mediaType": "application/json",
     }));
 
+    if let Some(bundle) = pack_doc.get("bundle_manifest") {
+        let rel = bundle.get("path").and_then(Value::as_str).unwrap_or("");
+        if !rel.is_empty() {
+            let bundle_path = pack_dir.join(rel);
+            let bytes = match std::fs::read(&bundle_path) {
+                Ok(v) => v,
+                Err(err) => {
+                    diagnostics.push(Diagnostic::new(
+                        "X07WASM_PROVENANCE_MISSING_INPUT",
+                        Severity::Error,
+                        Stage::Parse,
+                        format!("missing bundle manifest {}: {err}", bundle_path.display()),
+                    ));
+                    Vec::new()
+                }
+            };
+            if !bytes.is_empty() {
+                let sha256 = util::sha256_hex(&bytes);
+                meta.inputs.push(report::meta::FileDigest {
+                    path: bundle_path.display().to_string(),
+                    sha256: sha256.clone(),
+                    bytes_len: bytes.len() as u64,
+                });
+                subjects.push(json!({
+                  "name": rel,
+                  "digest": { "sha256": sha256 },
+                  "mediaType": "application/json",
+                }));
+            }
+        }
+    }
+
+    if let Some(component) = pack_doc
+        .get("backend")
+        .and_then(|b| b.get("component"))
+        .and_then(Value::as_object)
+    {
+        let rel = component.get("path").and_then(Value::as_str).unwrap_or("");
+        if !rel.is_empty() {
+            let component_path = pack_dir.join(rel);
+            let bytes = match std::fs::read(&component_path) {
+                Ok(v) => v,
+                Err(err) => {
+                    diagnostics.push(Diagnostic::new(
+                        "X07WASM_PROVENANCE_MISSING_INPUT",
+                        Severity::Error,
+                        Stage::Parse,
+                        format!(
+                            "missing backend component {}: {err}",
+                            component_path.display()
+                        ),
+                    ));
+                    Vec::new()
+                }
+            };
+            if !bytes.is_empty() {
+                let sha256 = util::sha256_hex(&bytes);
+                meta.inputs.push(report::meta::FileDigest {
+                    path: component_path.display().to_string(),
+                    sha256: sha256.clone(),
+                    bytes_len: bytes.len() as u64,
+                });
+                subjects.push(json!({
+                  "name": rel,
+                  "digest": { "sha256": sha256 },
+                  "mediaType": "application/wasm",
+                }));
+            }
+        }
+    }
+
     let assets = pack_doc
         .get("assets")
         .and_then(Value::as_array)

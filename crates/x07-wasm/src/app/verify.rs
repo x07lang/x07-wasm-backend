@@ -126,43 +126,60 @@ pub fn cmd_app_verify(
             let rel = bundle.get("path").and_then(Value::as_str).unwrap_or("");
             let want_sha = bundle.get("sha256").and_then(Value::as_str).unwrap_or("");
             let want_len = bundle.get("bytes_len").and_then(Value::as_u64).unwrap_or(0);
-            let full = pack_dir.join(rel);
-            if !full.is_file() {
-                diagnostics.push(Diagnostic::new(
-                    "X07WASM_APP_VERIFY_BUNDLE_MANIFEST_MISSING",
-                    Severity::Error,
-                    Stage::Run,
-                    format!("missing bundle manifest file: {}", full.display()),
-                ));
-            } else {
-                let bytes = std::fs::read(&full).map_err(|err| {
+            let full = match util::safe_join_under_dir(&pack_dir, rel) {
+                Ok(v) => Some(v),
+                Err(err) => {
+                    let mut d = Diagnostic::new(
+                        "X07WASM_APP_VERIFY_PATH_UNSAFE",
+                        Severity::Error,
+                        Stage::Run,
+                        format!("unsafe bundle manifest path: {rel:?}"),
+                    );
+                    d.data.insert("path".to_string(), json!(err.rel));
+                    d.data.insert("kind".to_string(), json!(err.kind));
+                    d.data.insert("detail".to_string(), json!(err.detail));
+                    diagnostics.push(d);
+                    None
+                }
+            };
+            if let Some(full) = full.as_ref() {
+                if !full.is_file() {
                     diagnostics.push(Diagnostic::new(
                         "X07WASM_APP_VERIFY_BUNDLE_MANIFEST_MISSING",
                         Severity::Error,
                         Stage::Run,
-                        format!(
-                            "failed to read bundle manifest file {}: {err}",
-                            full.display()
-                        ),
+                        format!("missing bundle manifest file: {}", full.display()),
                     ));
-                    err
-                });
-                if let Ok(bytes) = bytes {
-                    let got_sha = util::sha256_hex(&bytes);
-                    let got_len = bytes.len() as u64;
-                    if got_sha != want_sha || got_len != want_len {
-                        let mut d = Diagnostic::new(
-                            "X07WASM_APP_VERIFY_BUNDLE_MANIFEST_DIGEST_MISMATCH",
+                } else {
+                    let bytes = std::fs::read(&full).map_err(|err| {
+                        diagnostics.push(Diagnostic::new(
+                            "X07WASM_APP_VERIFY_BUNDLE_MANIFEST_MISSING",
                             Severity::Error,
                             Stage::Run,
-                            "bundle manifest digest mismatch".to_string(),
-                        );
-                        d.data.insert("path".to_string(), json!(rel));
-                        d.data.insert("want_sha256".to_string(), json!(want_sha));
-                        d.data.insert("got_sha256".to_string(), json!(got_sha));
-                        d.data.insert("want_bytes_len".to_string(), json!(want_len));
-                        d.data.insert("got_bytes_len".to_string(), json!(got_len));
-                        diagnostics.push(d);
+                            format!(
+                                "failed to read bundle manifest file {}: {err}",
+                                full.display()
+                            ),
+                        ));
+                        err
+                    });
+                    if let Ok(bytes) = bytes {
+                        let got_sha = util::sha256_hex(&bytes);
+                        let got_len = bytes.len() as u64;
+                        if got_sha != want_sha || got_len != want_len {
+                            let mut d = Diagnostic::new(
+                                "X07WASM_APP_VERIFY_BUNDLE_MANIFEST_DIGEST_MISMATCH",
+                                Severity::Error,
+                                Stage::Run,
+                                "bundle manifest digest mismatch".to_string(),
+                            );
+                            d.data.insert("path".to_string(), json!(rel));
+                            d.data.insert("want_sha256".to_string(), json!(want_sha));
+                            d.data.insert("got_sha256".to_string(), json!(got_sha));
+                            d.data.insert("want_bytes_len".to_string(), json!(want_len));
+                            d.data.insert("got_bytes_len".to_string(), json!(got_len));
+                            diagnostics.push(d);
+                        }
                     }
                 }
             }
@@ -183,43 +200,60 @@ pub fn cmd_app_verify(
                 .get("bytes_len")
                 .and_then(Value::as_u64)
                 .unwrap_or(0);
-            let full = pack_dir.join(rel);
-            if !full.is_file() {
-                diagnostics.push(Diagnostic::new(
-                    "X07WASM_APP_VERIFY_BACKEND_COMPONENT_MISSING",
-                    Severity::Error,
-                    Stage::Run,
-                    format!("missing backend component file: {}", full.display()),
-                ));
-            } else {
-                let bytes = std::fs::read(&full).map_err(|err| {
+            let full = match util::safe_join_under_dir(&pack_dir, rel) {
+                Ok(v) => Some(v),
+                Err(err) => {
+                    let mut d = Diagnostic::new(
+                        "X07WASM_APP_VERIFY_PATH_UNSAFE",
+                        Severity::Error,
+                        Stage::Run,
+                        format!("unsafe backend component path: {rel:?}"),
+                    );
+                    d.data.insert("path".to_string(), json!(err.rel));
+                    d.data.insert("kind".to_string(), json!(err.kind));
+                    d.data.insert("detail".to_string(), json!(err.detail));
+                    diagnostics.push(d);
+                    None
+                }
+            };
+            if let Some(full) = full.as_ref() {
+                if !full.is_file() {
                     diagnostics.push(Diagnostic::new(
                         "X07WASM_APP_VERIFY_BACKEND_COMPONENT_MISSING",
                         Severity::Error,
                         Stage::Run,
-                        format!(
-                            "failed to read backend component file {}: {err}",
-                            full.display()
-                        ),
+                        format!("missing backend component file: {}", full.display()),
                     ));
-                    err
-                });
-                if let Ok(bytes) = bytes {
-                    let got_sha = util::sha256_hex(&bytes);
-                    let got_len = bytes.len() as u64;
-                    if got_sha != want_sha || got_len != want_len {
-                        let mut d = Diagnostic::new(
-                            "X07WASM_APP_VERIFY_BACKEND_COMPONENT_DIGEST_MISMATCH",
+                } else {
+                    let bytes = std::fs::read(&full).map_err(|err| {
+                        diagnostics.push(Diagnostic::new(
+                            "X07WASM_APP_VERIFY_BACKEND_COMPONENT_MISSING",
                             Severity::Error,
                             Stage::Run,
-                            "backend component digest mismatch".to_string(),
-                        );
-                        d.data.insert("path".to_string(), json!(rel));
-                        d.data.insert("want_sha256".to_string(), json!(want_sha));
-                        d.data.insert("got_sha256".to_string(), json!(got_sha));
-                        d.data.insert("want_bytes_len".to_string(), json!(want_len));
-                        d.data.insert("got_bytes_len".to_string(), json!(got_len));
-                        diagnostics.push(d);
+                            format!(
+                                "failed to read backend component file {}: {err}",
+                                full.display()
+                            ),
+                        ));
+                        err
+                    });
+                    if let Ok(bytes) = bytes {
+                        let got_sha = util::sha256_hex(&bytes);
+                        let got_len = bytes.len() as u64;
+                        if got_sha != want_sha || got_len != want_len {
+                            let mut d = Diagnostic::new(
+                                "X07WASM_APP_VERIFY_BACKEND_COMPONENT_DIGEST_MISMATCH",
+                                Severity::Error,
+                                Stage::Run,
+                                "backend component digest mismatch".to_string(),
+                            );
+                            d.data.insert("path".to_string(), json!(rel));
+                            d.data.insert("want_sha256".to_string(), json!(want_sha));
+                            d.data.insert("got_sha256".to_string(), json!(got_sha));
+                            d.data.insert("want_bytes_len".to_string(), json!(want_len));
+                            d.data.insert("got_bytes_len".to_string(), json!(got_len));
+                            diagnostics.push(d);
+                        }
                     }
                 }
             }
@@ -263,7 +297,23 @@ pub fn cmd_app_verify(
                 .get("serve_path")
                 .and_then(Value::as_str)
                 .unwrap_or("");
-            let full = pack_dir.join(&rel);
+            let full = match util::safe_join_under_dir(&pack_dir, &rel) {
+                Ok(v) => v,
+                Err(err) => {
+                    missing_assets += 1;
+                    let mut d = Diagnostic::new(
+                        "X07WASM_APP_VERIFY_PATH_UNSAFE",
+                        Severity::Error,
+                        Stage::Run,
+                        format!("unsafe asset path: {rel:?}"),
+                    );
+                    d.data.insert("path".to_string(), json!(err.rel));
+                    d.data.insert("kind".to_string(), json!(err.kind));
+                    d.data.insert("detail".to_string(), json!(err.detail));
+                    diagnostics.push(d);
+                    continue;
+                }
+            };
             if !full.is_file() {
                 missing_assets += 1;
                 diagnostics.push(Diagnostic::new(
