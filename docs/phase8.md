@@ -13,6 +13,11 @@ This repo vendors the device host ABI snapshot:
 - Source of truth: `../x07-device-host/arch/host_abi/host_abi.snapshot.json`
 - Vendored copy: `vendor/x07-device-host/host_abi.snapshot.json`
 
+The web WebView host assets are also pinned via the canonical snapshot from `x07-web-ui`:
+
+- Source of truth: `../x07-web-ui/host/host.snapshot.json`
+- Vendored copy: `vendor/x07-web-ui/host/host.snapshot.json`
+
 Update/check vendoring:
 
 ```sh
