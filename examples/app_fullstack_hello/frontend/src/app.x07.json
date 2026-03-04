@@ -1,134 +1,322 @@
 {
-  "schema_version": "x07.x07ast@0.3.0",
-  "kind": "module",
-  "module_id": "app",
-  "imports": [
-    "std.web_ui.effects.http",
-    "std.web_ui.runtime",
-    "std.web_ui.vdom"
-  ],
   "decls": [
-    { "kind": "export", "names": ["app.step_v1"] },
     {
-      "kind": "defn",
-      "name": "app.step_v1",
-      "params": [{ "name": "dispatch_json", "ty": "bytes_view" }],
-      "result": "bytes",
+      "kind": "export",
+      "names": [
+        "app.step_v1"
+      ]
+    },
+    {
       "body": [
         "begin",
-
-        ["let", "err", ["bytes.lit", "ERR"]],
-
+        [
+          "let",
+          "err",
+          [
+            "bytes.lit",
+            "ERR"
+          ]
+        ],
         [
           "let",
           "body_text_json",
-          ["std.web_ui.effects.http.dispatch_response_body_text_canon_or_err_v1", "dispatch_json"]
+          [
+            "std.web_ui.effects.http.dispatch_response_body_text_canon_or_err_v1",
+            "dispatch_json"
+          ]
         ],
         [
           "let",
           "body_b64_json",
-          ["std.web_ui.effects.http.dispatch_response_body_base64_canon_or_err_v1", "dispatch_json"]
+          [
+            "std.web_ui.effects.http.dispatch_response_body_base64_canon_or_err_v1",
+            "dispatch_json"
+          ]
         ],
-
         [
           "let",
           "need_request",
           [
             "if",
-            ["view.eq", ["bytes.view", "body_text_json"], ["bytes.view", "err"]],
-            ["view.eq", ["bytes.view", "body_b64_json"], ["bytes.view", "err"]],
+            [
+              "view.eq",
+              [
+                "bytes.view",
+                "body_text_json"
+              ],
+              [
+                "bytes.view",
+                "err"
+              ]
+            ],
+            [
+              "view.eq",
+              [
+                "bytes.view",
+                "body_b64_json"
+              ],
+              [
+                "bytes.view",
+                "err"
+              ]
+            ],
             0
           ]
         ],
-
         [
           "let",
           "resp_text_json",
           [
             "if",
-            ["view.eq", ["bytes.view", "body_text_json"], ["bytes.view", "err"]],
+            [
+              "view.eq",
+              [
+                "bytes.view",
+                "body_text_json"
+              ],
+              [
+                "bytes.view",
+                "err"
+              ]
+            ],
             [
               "if",
-              ["view.eq", ["bytes.view", "body_b64_json"], ["bytes.view", "err"]],
-              ["bytes.lit", "\"loading...\""],
-              ["bytes.lit", "\"(binary response)\""]
+              [
+                "view.eq",
+                [
+                  "bytes.view",
+                  "body_b64_json"
+                ],
+                [
+                  "bytes.view",
+                  "err"
+                ]
+              ],
+              [
+                "bytes.lit",
+                "\"loading...\""
+              ],
+              [
+                "bytes.lit",
+                "\"(binary response)\""
+              ]
             ],
             "body_text_json"
           ]
         ],
-
-        ["let", "title_json", ["bytes.lit", "\"Fullstack Hello\""]],
-
-        ["let", "key_t1", ["bytes.lit", "\"t_title\""]],
+        [
+          "let",
+          "title_json",
+          [
+            "bytes.lit",
+            "\"Fullstack Hello\""
+          ]
+        ],
+        [
+          "let",
+          "key_t1",
+          [
+            "bytes.lit",
+            "\"t_title\""
+          ]
+        ],
         [
           "let",
           "node_t1",
-          ["std.web_ui.vdom.text_v1", ["bytes.view", "key_t1"], ["bytes.view", "title_json"]]
+          [
+            "std.web_ui.vdom.text_v1",
+            [
+              "bytes.view",
+              "key_t1"
+            ],
+            [
+              "bytes.view",
+              "title_json"
+            ]
+          ]
         ],
-
-        ["let", "key_t2", ["bytes.lit", "\"t_resp\""]],
+        [
+          "let",
+          "key_t2",
+          [
+            "bytes.lit",
+            "\"t_resp\""
+          ]
+        ],
         [
           "let",
           "node_t2",
-          ["std.web_ui.vdom.text_v1", ["bytes.view", "key_t2"], ["bytes.view", "resp_text_json"]]
+          [
+            "std.web_ui.vdom.text_v1",
+            [
+              "bytes.view",
+              "key_t2"
+            ],
+            [
+              "bytes.view",
+              "resp_text_json"
+            ]
+          ]
         ],
-
         [
           "let",
           "root_children",
-          ["std.web_ui.vdom.children2_v1", ["bytes.view", "node_t1"], ["bytes.view", "node_t2"]]
+          [
+            "std.web_ui.vdom.children2_v1",
+            [
+              "bytes.view",
+              "node_t1"
+            ],
+            [
+              "bytes.view",
+              "node_t2"
+            ]
+          ]
         ],
-        ["let", "root_attrs", ["bytes.lit", "{}"]],
-        ["let", "root_class", ["bytes.lit", "[\"app\"]"]],
-        ["let", "root_style", ["bytes.lit", "{}"]],
+        [
+          "let",
+          "root_attrs",
+          [
+            "bytes.lit",
+            "{}"
+          ]
+        ],
+        [
+          "let",
+          "root_class",
+          [
+            "bytes.lit",
+            "[\"app\"]"
+          ]
+        ],
+        [
+          "let",
+          "root_style",
+          [
+            "bytes.lit",
+            "{}"
+          ]
+        ],
         [
           "let",
           "root_props",
           [
             "std.web_ui.vdom.props_v1",
-            ["bytes.view", "root_attrs"],
-            ["bytes.view", "root_class"],
-            ["bytes.view", "root_style"]
+            [
+              "bytes.view",
+              "root_attrs"
+            ],
+            [
+              "bytes.view",
+              "root_class"
+            ],
+            [
+              "bytes.view",
+              "root_style"
+            ]
           ]
         ],
-        ["let", "root_on", ["std.web_ui.vdom.on_empty_v1"]],
-        ["let", "tag_div", ["bytes.lit", "\"div\""]],
-        ["let", "key_root", ["bytes.lit", "\"root\""]],
+        [
+          "let",
+          "root_on",
+          [
+            "std.web_ui.vdom.on_empty_v1"
+          ]
+        ],
+        [
+          "let",
+          "tag_div",
+          [
+            "bytes.lit",
+            "\"div\""
+          ]
+        ],
+        [
+          "let",
+          "key_root",
+          [
+            "bytes.lit",
+            "\"root\""
+          ]
+        ],
         [
           "let",
           "root_node",
           [
             "std.web_ui.vdom.el_v1",
-            ["bytes.view", "tag_div"],
-            ["bytes.view", "key_root"],
-            ["bytes.view", "root_props"],
-            ["bytes.view", "root_on"],
-            ["bytes.view", "root_children"]
+            [
+              "bytes.view",
+              "tag_div"
+            ],
+            [
+              "bytes.view",
+              "key_root"
+            ],
+            [
+              "bytes.view",
+              "root_props"
+            ],
+            [
+              "bytes.view",
+              "root_on"
+            ],
+            [
+              "bytes.view",
+              "root_children"
+            ]
           ]
         ],
-
-        ["let", "ui_tree", ["std.web_ui.vdom.tree_v1", ["bytes.view", "root_node"]]],
-
+        [
+          "let",
+          "ui_tree",
+          [
+            "std.web_ui.vdom.tree_v1",
+            [
+              "bytes.view",
+              "root_node"
+            ]
+          ]
+        ],
         [
           "let",
           "patches",
           [
             "if",
             "need_request",
-            ["bytes.lit", "[]"],
+            [
+              "bytes.lit",
+              "[]"
+            ],
             [
               "begin",
               [
                 "let",
                 "patch_pre",
-                ["bytes.lit", "[{\"op\":\"replace\",\"path\":\"/root/children/1/text\",\"value\":"]
+                [
+                  "bytes.lit",
+                  "[{\"op\":\"replace\",\"path\":\"/root/children/1/text\",\"value\":"
+                ]
               ],
-              ["let", "patch_mid", ["bytes.concat", "patch_pre", "resp_text_json"]],
-              ["bytes.concat", "patch_mid", ["bytes.lit", "}]"]]
+              [
+                "let",
+                "patch_mid",
+                [
+                  "bytes.concat",
+                  "patch_pre",
+                  "resp_text_json"
+                ]
+              ],
+              [
+                "bytes.concat",
+                "patch_mid",
+                [
+                  "bytes.lit",
+                  "}]"
+                ]
+              ]
             ]
           ]
         ],
-
         [
           "let",
           "effects",
@@ -137,35 +325,108 @@
             "need_request",
             [
               "begin",
-              ["let", "id_json", ["bytes.lit", "\"req0\""]],
-              ["let", "path_json", ["bytes.lit", "\"/ping\""]],
+              [
+                "let",
+                "id_json",
+                [
+                  "bytes.lit",
+                  "\"req0\""
+                ]
+              ],
+              [
+                "let",
+                "path_json",
+                [
+                  "bytes.lit",
+                  "\"/ping\""
+                ]
+              ],
               [
                 "let",
                 "eff0",
                 [
                   "std.web_ui.effects.http.request_get_v1",
-                  ["bytes.view", "id_json"],
-                  ["bytes.view", "path_json"]
+                  [
+                    "bytes.view",
+                    "id_json"
+                  ],
+                  [
+                    "bytes.view",
+                    "path_json"
+                  ]
                 ]
               ],
-              ["std.web_ui.effects.http.effects1_v1", ["bytes.view", "eff0"]]
+              [
+                "std.web_ui.effects.http.effects1_v1",
+                [
+                  "bytes.view",
+                  "eff0"
+                ]
+              ]
             ],
-            ["bytes.lit", "[]"]
+            [
+              "bytes.lit",
+              "[]"
+            ]
           ]
         ],
-
-        ["let", "state_json", ["bytes.lit", "null"]],
-        ["let", "telemetry", ["bytes.lit", "{}"]],
+        [
+          "let",
+          "state_json",
+          [
+            "bytes.lit",
+            "null"
+          ]
+        ],
+        [
+          "let",
+          "telemetry",
+          [
+            "bytes.lit",
+            "{}"
+          ]
+        ],
         [
           "std.web_ui.runtime.frame_v1",
-          ["bytes.view", "state_json"],
-          ["bytes.view", "ui_tree"],
-          ["bytes.view", "patches"],
-          ["bytes.view", "effects"],
-          ["bytes.view", "telemetry"]
+          [
+            "bytes.view",
+            "state_json"
+          ],
+          [
+            "bytes.view",
+            "ui_tree"
+          ],
+          [
+            "bytes.view",
+            "patches"
+          ],
+          [
+            "bytes.view",
+            "effects"
+          ],
+          [
+            "bytes.view",
+            "telemetry"
+          ]
         ]
-      ]
+      ],
+      "kind": "defn",
+      "name": "app.step_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
     }
-  ]
+  ],
+  "imports": [
+    "std.web_ui.effects.http",
+    "std.web_ui.runtime",
+    "std.web_ui.vdom"
+  ],
+  "kind": "module",
+  "module_id": "app",
+  "schema_version": "x07.x07ast@0.5.0"
 }
-

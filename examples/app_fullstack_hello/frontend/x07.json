@@ -4,9 +4,8 @@
   "entry": "src/main.x07.json",
   "module_roots": [
     "src",
-    "$workspace/vendor/x07-web-ui/packages/std-web-ui/0.1.2/modules"
+    "$workspace/vendor/x07-web-ui/packages/std-web-ui/0.1.4/modules"
   ],
   "lockfile": null,
   "dependencies": []
 }
-

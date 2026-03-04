@@ -63,7 +63,7 @@ def update_rust_constant(host_abi_hash: str) -> None:
             f"{HOST_ABI_RS}"
         )
 
-    new_text = pat.sub(rf"\1{host_abi_hash}\3", text, count=1)
+    new_text = pat.sub(rf"\g<1>{host_abi_hash}\g<3>", text, count=1)
     if new_text == text:
         return
 

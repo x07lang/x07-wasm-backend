@@ -7,7 +7,7 @@ This repo implements the `x07-wasm web-ui ...` toolchain. The canonical `std.web
 ## Contracts
 
 - Dispatch envelope (input): `x07.web_ui.dispatch@0.1.0` (UTF-8 JSON bytes)
-- Frame (output): `x07.web_ui.frame@0.1.0` (UTF-8 JSON bytes)
+- Frame (output): `x07.web_ui.frame@0.2.0` (UTF-8 JSON bytes)
 - Trace artifact: `x07.web_ui.trace@0.1.0` (dispatch+frame steps)
 
 ## Registries (contracts-as-data)
@@ -100,7 +100,7 @@ Vendored/synced inputs from `x07-web-ui`:
 
 - host assets: `vendor/x07-web-ui/host/*`
 - examples + traces: `vendor/x07-web-ui/examples/*`
-- `std-web-ui` modules: `vendor/x07-web-ui/packages/std-web-ui/0.1.2/modules/*`
+- `std-web-ui` modules: `vendor/x07-web-ui/packages/std-web-ui/0.1.4/modules/*`
 - WIT contract: `wit/x07/web_ui/0.2.0/*`
 
 Update/check:
