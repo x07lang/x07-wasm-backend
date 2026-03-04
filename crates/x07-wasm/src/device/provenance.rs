@@ -17,6 +17,10 @@ use crate::util;
 
 const DEVICE_BUNDLE_MANIFEST_FILE: &str = "bundle.manifest.json";
 
+// Hard caps to prevent verification from reading unbounded data.
+const MAX_ATTESTATION_BYTES: u64 = 16 * 1024 * 1024; // 16 MiB
+const MAX_SUBJECT_FILE_BYTES: u64 = 256 * 1024 * 1024; // 256 MiB
+
 pub fn cmd_device_provenance_attest(
     raw_argv: &[OsString],
     scope: Scope,
@@ -497,19 +501,48 @@ pub fn cmd_device_provenance_verify(
 
     let mut diagnostics: Vec<Diagnostic> = Vec::new();
 
-    let attest_bytes = match std::fs::read(&args.attestation) {
+    let mut default_attest_digest = report::meta::FileDigest {
+        path: args.attestation.display().to_string(),
+        sha256: "0".repeat(64),
+        bytes_len: 0,
+    };
+
+    let attest_bytes = match util::read_file_capped(&args.attestation, MAX_ATTESTATION_BYTES) {
         Ok(v) => v,
         Err(err) => {
-            diagnostics.push(Diagnostic::new(
-                "X07WASM_PROVENANCE_INPUT_READ_FAILED",
-                Severity::Error,
-                Stage::Parse,
-                format!(
-                    "failed to read attestation {}: {err}",
-                    args.attestation.display()
-                ),
-            ));
-            return emit_verify_report(
+            default_attest_digest.bytes_len = err.bytes_len;
+            if err.kind == "too_large" {
+                let mut d = Diagnostic::new(
+                    "X07WASM_PROVENANCE_FILE_TOO_LARGE",
+                    Severity::Error,
+                    Stage::Parse,
+                    format!(
+                        "attestation exceeds size cap: {} bytes (max {})",
+                        err.bytes_len, err.max_bytes
+                    ),
+                );
+                d.data.insert("role".to_string(), json!("attestation"));
+                d.data.insert(
+                    "path".to_string(),
+                    json!(args.attestation.display().to_string()),
+                );
+                d.data.insert("bytes_len".to_string(), json!(err.bytes_len));
+                d.data
+                    .insert("max_bytes_len".to_string(), json!(err.max_bytes));
+                diagnostics.push(d);
+            } else {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_PROVENANCE_INPUT_READ_FAILED",
+                    Severity::Error,
+                    Stage::Parse,
+                    format!(
+                        "failed to read attestation {}: {}",
+                        args.attestation.display(),
+                        err.detail
+                    ),
+                ));
+            }
+            return emit_verify_report_with_attestation(
                 &store,
                 scope,
                 machine,
@@ -517,7 +550,7 @@ pub fn cmd_device_provenance_verify(
                 raw_argv,
                 meta,
                 diagnostics,
-                &args.attestation,
+                default_attest_digest,
                 0,
                 0,
                 1,
@@ -541,7 +574,7 @@ pub fn cmd_device_provenance_verify(
                 Stage::Parse,
                 format!("attestation JSON invalid: {err}"),
             ));
-            return emit_verify_report(
+            return emit_verify_report_with_attestation(
                 &store,
                 scope,
                 machine,
@@ -549,7 +582,7 @@ pub fn cmd_device_provenance_verify(
                 raw_argv,
                 meta,
                 diagnostics,
-                &args.attestation,
+                attest_digest.clone(),
                 0,
                 0,
                 1,
@@ -572,7 +605,7 @@ pub fn cmd_device_provenance_verify(
             d.data = dd.data;
             diagnostics.push(d);
         }
-        return emit_verify_report(
+        return emit_verify_report_with_attestation(
             &store,
             scope,
             machine,
@@ -580,7 +613,7 @@ pub fn cmd_device_provenance_verify(
             raw_argv,
             meta,
             diagnostics,
-            &args.attestation,
+            attest_digest.clone(),
             0,
             0,
             1,
@@ -596,7 +629,7 @@ pub fn cmd_device_provenance_verify(
                 Stage::Parse,
                 format!("failed to parse DSSE envelope: {err}"),
             ));
-            return emit_verify_report(
+            return emit_verify_report_with_attestation(
                 &store,
                 scope,
                 machine,
@@ -604,7 +637,7 @@ pub fn cmd_device_provenance_verify(
                 raw_argv,
                 meta,
                 diagnostics,
-                &args.attestation,
+                attest_digest.clone(),
                 0,
                 0,
                 1,
@@ -624,7 +657,7 @@ pub fn cmd_device_provenance_verify(
                     args.trusted_public_key.display()
                 ),
             ));
-            return emit_verify_report(
+            return emit_verify_report_with_attestation(
                 &store,
                 scope,
                 machine,
@@ -632,7 +665,7 @@ pub fn cmd_device_provenance_verify(
                 raw_argv,
                 meta,
                 diagnostics,
-                &args.attestation,
+                attest_digest.clone(),
                 0,
                 0,
                 1,
@@ -648,7 +681,7 @@ pub fn cmd_device_provenance_verify(
                 Stage::Parse,
                 format!("trusted public key base64 decode failed: {err}"),
             ));
-            return emit_verify_report(
+            return emit_verify_report_with_attestation(
                 &store,
                 scope,
                 machine,
@@ -656,7 +689,7 @@ pub fn cmd_device_provenance_verify(
                 raw_argv,
                 meta,
                 diagnostics,
-                &args.attestation,
+                attest_digest.clone(),
                 0,
                 0,
                 1,
@@ -672,7 +705,7 @@ pub fn cmd_device_provenance_verify(
                 Stage::Parse,
                 "trusted public key must be exactly 32 bytes".to_string(),
             ));
-            return emit_verify_report(
+            return emit_verify_report_with_attestation(
                 &store,
                 scope,
                 machine,
@@ -680,7 +713,7 @@ pub fn cmd_device_provenance_verify(
                 raw_argv,
                 meta,
                 diagnostics,
-                &args.attestation,
+                attest_digest.clone(),
                 0,
                 0,
                 1,
@@ -696,7 +729,7 @@ pub fn cmd_device_provenance_verify(
                 Stage::Parse,
                 format!("trusted public key invalid: {err}"),
             ));
-            return emit_verify_report(
+            return emit_verify_report_with_attestation(
                 &store,
                 scope,
                 machine,
@@ -704,7 +737,7 @@ pub fn cmd_device_provenance_verify(
                 raw_argv,
                 meta,
                 diagnostics,
-                &args.attestation,
+                attest_digest.clone(),
                 0,
                 0,
                 1,
@@ -719,7 +752,7 @@ pub fn cmd_device_provenance_verify(
             Stage::Run,
             "DSSE signature verification failed".to_string(),
         ));
-        return emit_verify_report(
+        return emit_verify_report_with_attestation(
             &store,
             scope,
             machine,
@@ -727,7 +760,7 @@ pub fn cmd_device_provenance_verify(
             raw_argv,
             meta,
             diagnostics,
-            &args.attestation,
+            attest_digest.clone(),
             0,
             0,
             1,
@@ -741,7 +774,7 @@ pub fn cmd_device_provenance_verify(
             Stage::Parse,
             format!("unsupported DSSE payloadType: {:?}", envelope.payload_type),
         ));
-        return emit_verify_report(
+        return emit_verify_report_with_attestation(
             &store,
             scope,
             machine,
@@ -749,7 +782,7 @@ pub fn cmd_device_provenance_verify(
             raw_argv,
             meta,
             diagnostics,
-            &args.attestation,
+            attest_digest.clone(),
             0,
             0,
             1,
@@ -765,7 +798,7 @@ pub fn cmd_device_provenance_verify(
                 Stage::Parse,
                 "failed to decode DSSE payload base64".to_string(),
             ));
-            return emit_verify_report(
+            return emit_verify_report_with_attestation(
                 &store,
                 scope,
                 machine,
@@ -773,7 +806,7 @@ pub fn cmd_device_provenance_verify(
                 raw_argv,
                 meta,
                 diagnostics,
-                &args.attestation,
+                attest_digest.clone(),
                 0,
                 0,
                 1,
@@ -789,7 +822,7 @@ pub fn cmd_device_provenance_verify(
                 Stage::Parse,
                 format!("attestation payload JSON invalid: {err}"),
             ));
-            return emit_verify_report(
+            return emit_verify_report_with_attestation(
                 &store,
                 scope,
                 machine,
@@ -797,7 +830,7 @@ pub fn cmd_device_provenance_verify(
                 raw_argv,
                 meta,
                 diagnostics,
-                &args.attestation,
+                attest_digest.clone(),
                 0,
                 0,
                 1,
@@ -820,7 +853,7 @@ pub fn cmd_device_provenance_verify(
             d.data = dd.data;
             diagnostics.push(d);
         }
-        return emit_verify_report(
+        return emit_verify_report_with_attestation(
             &store,
             scope,
             machine,
@@ -828,7 +861,7 @@ pub fn cmd_device_provenance_verify(
             raw_argv,
             meta,
             diagnostics,
-            &args.attestation,
+            attest_digest.clone(),
             0,
             0,
             1,
@@ -846,7 +879,7 @@ pub fn cmd_device_provenance_verify(
             Stage::Parse,
             format!("unsupported predicateType: {predicate_type:?}"),
         ));
-        return emit_verify_report(
+        return emit_verify_report_with_attestation(
             &store,
             scope,
             machine,
@@ -854,7 +887,7 @@ pub fn cmd_device_provenance_verify(
             raw_argv,
             meta,
             diagnostics,
-            &args.attestation,
+            attest_digest.clone(),
             0,
             0,
             1,
@@ -903,28 +936,41 @@ pub fn cmd_device_provenance_verify(
                 continue;
             }
         };
-        let bytes = match std::fs::read(&full) {
+        let digest = match util::file_digest_capped(&full, MAX_SUBJECT_FILE_BYTES) {
             Ok(v) => v,
             Err(err) => {
                 subjects_mismatched += 1;
-                let mut d = Diagnostic::new(
-                    "X07WASM_PROVENANCE_SUBJECT_MISSING",
-                    Severity::Error,
-                    Stage::Run,
-                    format!("missing subject file {}: {err}", full.display()),
-                );
-                d.data
-                    .insert("subject".to_string(), json!(name.to_string()));
-                diagnostics.push(d);
+                if err.kind == "too_large" {
+                    let mut d = Diagnostic::new(
+                        "X07WASM_PROVENANCE_FILE_TOO_LARGE",
+                        Severity::Error,
+                        Stage::Run,
+                        format!("subject exceeds size cap: {name:?}"),
+                    );
+                    d.data.insert("role".to_string(), json!("subject"));
+                    d.data
+                        .insert("subject".to_string(), json!(name.to_string()));
+                    d.data.insert("path".to_string(), json!(name.to_string()));
+                    d.data.insert("bytes_len".to_string(), json!(err.bytes_len));
+                    d.data
+                        .insert("max_bytes_len".to_string(), json!(err.max_bytes));
+                    diagnostics.push(d);
+                } else {
+                    let mut d = Diagnostic::new(
+                        "X07WASM_PROVENANCE_SUBJECT_MISSING",
+                        Severity::Error,
+                        Stage::Run,
+                        format!("missing subject file {}: {}", full.display(), err.detail),
+                    );
+                    d.data
+                        .insert("subject".to_string(), json!(name.to_string()));
+                    diagnostics.push(d);
+                }
                 continue;
             }
         };
-        let got = util::sha256_hex(&bytes);
-        meta.inputs.push(report::meta::FileDigest {
-            path: full.display().to_string(),
-            sha256: got.clone(),
-            bytes_len: bytes.len() as u64,
-        });
+        meta.inputs.push(digest.clone());
+        let got = digest.sha256;
         if got != want {
             subjects_mismatched += 1;
             let mut d = Diagnostic::new(
@@ -943,7 +989,7 @@ pub fn cmd_device_provenance_verify(
 
     let exit_code = if subjects_mismatched > 0 { 1u8 } else { 0u8 };
 
-    emit_verify_report(
+    emit_verify_report_with_attestation(
         &store,
         scope,
         machine,
@@ -951,7 +997,7 @@ pub fn cmd_device_provenance_verify(
         raw_argv,
         meta,
         diagnostics,
-        &args.attestation,
+        attest_digest,
         subjects_checked,
         subjects_mismatched,
         exit_code,
@@ -1016,7 +1062,7 @@ fn emit_attest_report(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn emit_verify_report(
+fn emit_verify_report_with_attestation(
     store: &SchemaStore,
     scope: Scope,
     machine: &MachineArgs,
@@ -1024,7 +1070,7 @@ fn emit_verify_report(
     raw_argv: &[OsString],
     meta: report::meta::ReportMeta,
     diagnostics: Vec<Diagnostic>,
-    attestation_path: &Path,
+    attestation: report::meta::FileDigest,
     subjects_checked: u64,
     subjects_mismatched: u64,
     exit_code: u8,
@@ -1037,11 +1083,7 @@ fn emit_verify_report(
       "diagnostics": diagnostics,
       "meta": meta,
       "result": {
-        "attestation": util::file_digest(attestation_path).unwrap_or(report::meta::FileDigest {
-          path: attestation_path.display().to_string(),
-          sha256: "0".repeat(64),
-          bytes_len: 0,
-        }),
+        "attestation": attestation,
         "subjects_checked": subjects_checked,
         "subjects_mismatched": subjects_mismatched,
       }

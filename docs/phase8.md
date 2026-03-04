@@ -58,6 +58,12 @@ Verify a device bundle:
 x07-wasm device verify --dir dist/device --json
 ```
 
+Notes:
+
+- `x07-wasm device verify` streams digests and enforces hard size caps to avoid unbounded reads:
+  - bundle manifest: 8 MiB (`X07WASM_DEVICE_BUNDLE_MANIFEST_TOO_LARGE`)
+  - bundle files: 256 MiB (`X07WASM_DEVICE_BUNDLE_FILE_TOO_LARGE` with `role=ui_wasm|profile`)
+
 Create and verify a signed provenance attestation for a device bundle:
 
 ```sh

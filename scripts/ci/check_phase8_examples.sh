@@ -66,6 +66,53 @@ x07-wasm device provenance verify \
   --trusted-public-key arch/provenance/dev.ed25519.public_key.b64 \
   --json --report-out build/phase8_examples/device.provenance.verify.ok.json --quiet-json
 
+echo "==> phase8_examples: device verify (oversize reducer.wasm => failure + expected diag code)"
+too_large_dir="${bundle_dir}.too_large"
+rm -rf "${too_large_dir}"
+cp -a "${bundle_dir}" "${too_large_dir}"
+
+MAX_BUNDLE_FILE_BYTES=$((256 * 1024 * 1024))
+"$PYTHON" - "${too_large_dir}" "$((MAX_BUNDLE_FILE_BYTES + 1))" <<'PY'
+import os
+import pathlib
+import sys
+
+bundle = pathlib.Path(sys.argv[1])
+size = int(sys.argv[2])
+p = bundle / "ui" / "reducer.wasm"
+os.truncate(p, size)
+print("oversized:", p, "size=", size)
+PY
+
+set +e
+x07-wasm device verify \
+  --dir "${too_large_dir}" \
+  --json --report-out build/phase8_examples/device.verify.too_large.json --quiet-json
+code=$?
+set -e
+if [ "$code" -ne 1 ]; then
+  echo "expected exit code 1 for oversize bundle verify, got $code" >&2
+  exit 1
+fi
+
+"$PYTHON" - build/phase8_examples/device.verify.too_large.json <<'PY'
+import json
+import pathlib
+import sys
+
+p = pathlib.Path(sys.argv[1])
+doc = json.loads(p.read_text(encoding="utf-8"))
+codes = []
+for d in doc.get("diagnostics", []):
+    if isinstance(d, dict) and isinstance(d.get("code"), str):
+        codes.append(d["code"])
+if "X07WASM_DEVICE_BUNDLE_FILE_TOO_LARGE" not in codes:
+    print("expected diagnostic X07WASM_DEVICE_BUNDLE_FILE_TOO_LARGE; got:", codes, file=sys.stderr)
+    print(p.read_text(encoding="utf-8")[:2000], file=sys.stderr)
+    sys.exit(1)
+print("ok: expected diag code present:", p)
+PY
+
 echo "==> phase8_examples: device verify (corrupt reducer.wasm => failure + expected diag code)"
 "$PYTHON" - "${bundle_dir}" <<'PY'
 import pathlib

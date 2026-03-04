@@ -139,6 +139,10 @@ Notes:
 - `predicateType` is schema-validated as a non-empty string; `x07-wasm provenance verify` enforces the supported SLSA v1 predicate type after signature verification.
 - `x07-wasm provenance attest` fails closed (no DSSE envelope is written) when any subject path is unsafe and emits `X07WASM_PROVENANCE_SUBJECT_PATH_UNSAFE` (exit code 1).
 - `x07-wasm provenance attest` pre-deletes `--out` and `--out.tmp` before it starts, and writes DSSE output atomically (`*.tmp` then rename).
+- `x07-wasm app verify` and `x07-wasm provenance verify` stream digests and enforce hard size caps to avoid unbounded reads:
+  - pack manifest: 8 MiB (`X07WASM_APP_VERIFY_MANIFEST_TOO_LARGE`)
+  - pack files/subjects: 256 MiB (`X07WASM_APP_VERIFY_FILE_TOO_LARGE`, `X07WASM_PROVENANCE_FILE_TOO_LARGE`)
+  - DSSE attestation input: 16 MiB (`X07WASM_PROVENANCE_FILE_TOO_LARGE`)
 
 ## Platform handoff (Phase 6)
 

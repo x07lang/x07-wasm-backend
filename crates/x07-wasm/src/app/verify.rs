@@ -10,6 +10,10 @@ use crate::report;
 use crate::schema::SchemaStore;
 use crate::util;
 
+// Hard caps to prevent verification from reading unbounded data.
+const MAX_PACK_MANIFEST_BYTES: u64 = 8 * 1024 * 1024; // 8 MiB
+const MAX_PACK_FILE_BYTES: u64 = 256 * 1024 * 1024; // 256 MiB
+
 pub fn cmd_app_verify(
     raw_argv: &[OsString],
     scope: Scope,
@@ -26,56 +30,67 @@ pub fn cmd_app_verify(
 
     let mut diagnostics: Vec<Diagnostic> = Vec::new();
 
-    let pack_digest = match util::file_digest(&args.pack_manifest) {
-        Ok(d) => {
-            meta.inputs.push(d.clone());
-            d
-        }
-        Err(err) => {
-            diagnostics.push(Diagnostic::new(
-                "X07WASM_APP_VERIFY_MANIFEST_READ_FAILED",
-                Severity::Error,
-                Stage::Parse,
-                format!(
-                    "failed to digest pack manifest {}: {err:#}",
-                    args.pack_manifest.display()
-                ),
-            ));
-            report::meta::FileDigest {
-                path: args.pack_manifest.display().to_string(),
-                sha256: "0".repeat(64),
-                bytes_len: 0,
+    let mut pack_digest = report::meta::FileDigest {
+        path: args.pack_manifest.display().to_string(),
+        sha256: "0".repeat(64),
+        bytes_len: 0,
+    };
+
+    let pack_bytes: Option<Vec<u8>> =
+        match util::read_file_capped(&args.pack_manifest, MAX_PACK_MANIFEST_BYTES) {
+            Ok(bytes) => {
+                pack_digest = report::meta::FileDigest {
+                    path: args.pack_manifest.display().to_string(),
+                    sha256: util::sha256_hex(&bytes),
+                    bytes_len: bytes.len() as u64,
+                };
+                meta.inputs.push(pack_digest.clone());
+                Some(bytes)
             }
-        }
-    };
+            Err(err) => {
+                if err.kind == "too_large" {
+                    let mut d = Diagnostic::new(
+                        "X07WASM_APP_VERIFY_MANIFEST_TOO_LARGE",
+                        Severity::Error,
+                        Stage::Parse,
+                        format!("pack manifest exceeds size cap: {}", err.path),
+                    );
+                    d.data.insert("path".to_string(), json!(err.path.clone()));
+                    d.data.insert("bytes_len".to_string(), json!(err.bytes_len));
+                    d.data
+                        .insert("max_bytes_len".to_string(), json!(err.max_bytes));
+                    diagnostics.push(d);
+                } else {
+                    diagnostics.push(Diagnostic::new(
+                        "X07WASM_APP_VERIFY_MANIFEST_READ_FAILED",
+                        Severity::Error,
+                        Stage::Parse,
+                        format!(
+                            "failed to read pack manifest {}: {}",
+                            args.pack_manifest.display(),
+                            err.detail
+                        ),
+                    ));
+                }
+                pack_digest.bytes_len = err.bytes_len;
+                None
+            }
+        };
 
-    let bytes = match std::fs::read(&args.pack_manifest) {
-        Ok(v) => v,
-        Err(err) => {
-            diagnostics.push(Diagnostic::new(
-                "X07WASM_APP_VERIFY_MANIFEST_READ_FAILED",
-                Severity::Error,
-                Stage::Parse,
-                format!(
-                    "failed to read pack manifest {}: {err}",
-                    args.pack_manifest.display()
-                ),
-            ));
-            Vec::new()
-        }
-    };
-
-    let doc_json: Value = match serde_json::from_slice(&bytes) {
-        Ok(v) => v,
-        Err(err) => {
-            diagnostics.push(Diagnostic::new(
-                "X07WASM_APP_VERIFY_MANIFEST_READ_FAILED",
-                Severity::Error,
-                Stage::Parse,
-                format!("pack manifest is not JSON: {err}"),
-            ));
-            Value::Null
-        }
+    let doc_json: Value = match pack_bytes.as_deref() {
+        Some(bytes) => match serde_json::from_slice(bytes) {
+            Ok(v) => v,
+            Err(err) => {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_APP_VERIFY_MANIFEST_READ_FAILED",
+                    Severity::Error,
+                    Stage::Parse,
+                    format!("pack manifest is not JSON: {err}"),
+                ));
+                Value::Null
+            }
+        },
+        None => Value::Null,
     };
 
     let mut schema_valid = false;
@@ -151,7 +166,7 @@ pub fn cmd_app_verify(
                         format!("missing bundle manifest file: {}", full.display()),
                     ));
                 } else {
-                    match util::sha256_file_hex(full) {
+                    match util::sha256_file_hex_capped(full, MAX_PACK_FILE_BYTES) {
                         Ok((got_sha, got_len)) => {
                             if got_sha != want_sha || got_len != want_len {
                                 let mut d = Diagnostic::new(
@@ -169,15 +184,31 @@ pub fn cmd_app_verify(
                             }
                         }
                         Err(err) => {
-                            diagnostics.push(Diagnostic::new(
-                                "X07WASM_APP_VERIFY_BUNDLE_MANIFEST_MISSING",
-                                Severity::Error,
-                                Stage::Run,
-                                format!(
-                                    "failed to digest bundle manifest file {}: {err:#}",
-                                    full.display()
-                                ),
-                            ));
+                            if err.kind == "too_large" {
+                                let mut d = Diagnostic::new(
+                                    "X07WASM_APP_VERIFY_FILE_TOO_LARGE",
+                                    Severity::Error,
+                                    Stage::Run,
+                                    format!("pack file exceeds size cap: {}", full.display()),
+                                );
+                                d.data.insert("path".to_string(), json!(rel));
+                                d.data.insert("bytes_len".to_string(), json!(err.bytes_len));
+                                d.data
+                                    .insert("max_bytes_len".to_string(), json!(err.max_bytes));
+                                d.data.insert("role".to_string(), json!("bundle_manifest"));
+                                diagnostics.push(d);
+                            } else {
+                                diagnostics.push(Diagnostic::new(
+                                    "X07WASM_APP_VERIFY_BUNDLE_MANIFEST_MISSING",
+                                    Severity::Error,
+                                    Stage::Run,
+                                    format!(
+                                        "failed to read bundle manifest file {}: {}",
+                                        full.display(),
+                                        err.detail
+                                    ),
+                                ));
+                            }
                         }
                     }
                 }
@@ -224,7 +255,7 @@ pub fn cmd_app_verify(
                         format!("missing backend component file: {}", full.display()),
                     ));
                 } else {
-                    match util::sha256_file_hex(full) {
+                    match util::sha256_file_hex_capped(full, MAX_PACK_FILE_BYTES) {
                         Ok((got_sha, got_len)) => {
                             if got_sha != want_sha || got_len != want_len {
                                 let mut d = Diagnostic::new(
@@ -242,15 +273,32 @@ pub fn cmd_app_verify(
                             }
                         }
                         Err(err) => {
-                            diagnostics.push(Diagnostic::new(
-                                "X07WASM_APP_VERIFY_BACKEND_COMPONENT_MISSING",
-                                Severity::Error,
-                                Stage::Run,
-                                format!(
-                                    "failed to digest backend component file {}: {err:#}",
-                                    full.display()
-                                ),
-                            ));
+                            if err.kind == "too_large" {
+                                let mut d = Diagnostic::new(
+                                    "X07WASM_APP_VERIFY_FILE_TOO_LARGE",
+                                    Severity::Error,
+                                    Stage::Run,
+                                    format!("pack file exceeds size cap: {}", full.display()),
+                                );
+                                d.data.insert("path".to_string(), json!(rel));
+                                d.data.insert("bytes_len".to_string(), json!(err.bytes_len));
+                                d.data
+                                    .insert("max_bytes_len".to_string(), json!(err.max_bytes));
+                                d.data
+                                    .insert("role".to_string(), json!("backend_component"));
+                                diagnostics.push(d);
+                            } else {
+                                diagnostics.push(Diagnostic::new(
+                                    "X07WASM_APP_VERIFY_BACKEND_COMPONENT_MISSING",
+                                    Severity::Error,
+                                    Stage::Run,
+                                    format!(
+                                        "failed to read backend component file {}: {}",
+                                        full.display(),
+                                        err.detail
+                                    ),
+                                ));
+                            }
                         }
                     }
                 }
@@ -323,16 +371,36 @@ pub fn cmd_app_verify(
                 continue;
             }
 
-            let (got_sha, got_len) = match util::sha256_file_hex(&full) {
+            let (got_sha, got_len) = match util::sha256_file_hex_capped(&full, MAX_PACK_FILE_BYTES)
+            {
                 Ok(v) => v,
                 Err(err) => {
                     missing_assets += 1;
-                    diagnostics.push(Diagnostic::new(
-                        "X07WASM_APP_VERIFY_MISSING_ASSET",
-                        Severity::Error,
-                        Stage::Run,
-                        format!("failed to digest asset file {}: {err:#}", full.display()),
-                    ));
+                    if err.kind == "too_large" {
+                        let mut d = Diagnostic::new(
+                            "X07WASM_APP_VERIFY_FILE_TOO_LARGE",
+                            Severity::Error,
+                            Stage::Run,
+                            format!("pack file exceeds size cap: {}", full.display()),
+                        );
+                        d.data.insert("path".to_string(), json!(rel));
+                        d.data.insert("bytes_len".to_string(), json!(err.bytes_len));
+                        d.data
+                            .insert("max_bytes_len".to_string(), json!(err.max_bytes));
+                        d.data.insert("role".to_string(), json!("asset"));
+                        diagnostics.push(d);
+                    } else {
+                        diagnostics.push(Diagnostic::new(
+                            "X07WASM_APP_VERIFY_MISSING_ASSET",
+                            Severity::Error,
+                            Stage::Run,
+                            format!(
+                                "failed to read asset file {}: {}",
+                                full.display(),
+                                err.detail
+                            ),
+                        ));
+                    }
                     continue;
                 }
             };

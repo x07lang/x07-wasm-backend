@@ -15,6 +15,10 @@ use crate::util;
 const DEVICE_BUNDLE_MANIFEST_FILE: &str = "bundle.manifest.json";
 const VENDORED_HOST_ABI_SNAPSHOT: &str = "vendor/x07-device-host/host_abi.snapshot.json";
 
+// Hard caps to prevent verification from reading unbounded data.
+const MAX_BUNDLE_MANIFEST_BYTES: u64 = 8 * 1024 * 1024; // 8 MiB
+const MAX_BUNDLE_FILE_BYTES: u64 = 256 * 1024 * 1024; // 256 MiB
+
 fn load_vendored_host_abi_hash(
     meta: &mut report::meta::ReportMeta,
     diagnostics: &mut Vec<Diagnostic>,
@@ -108,56 +112,67 @@ pub fn cmd_device_verify(
     let bundle_dir = args.dir;
     let manifest_path = bundle_dir.join(DEVICE_BUNDLE_MANIFEST_FILE);
 
-    let manifest_digest = match util::file_digest(&manifest_path) {
-        Ok(d) => {
-            meta.inputs.push(d.clone());
-            d
-        }
-        Err(err) => {
-            diagnostics.push(Diagnostic::new(
-                "X07WASM_DEVICE_BUNDLE_MANIFEST_READ_FAILED",
-                Severity::Error,
-                Stage::Parse,
-                format!(
-                    "failed to read bundle manifest {}: {err:#}",
-                    manifest_path.display()
-                ),
-            ));
-            report::meta::FileDigest {
-                path: manifest_path.display().to_string(),
-                sha256: "0".repeat(64),
-                bytes_len: 0,
+    let mut manifest_digest = report::meta::FileDigest {
+        path: manifest_path.display().to_string(),
+        sha256: "0".repeat(64),
+        bytes_len: 0,
+    };
+
+    let manifest_bytes: Option<Vec<u8>> =
+        match util::read_file_capped(&manifest_path, MAX_BUNDLE_MANIFEST_BYTES) {
+            Ok(v) => {
+                manifest_digest = report::meta::FileDigest {
+                    path: manifest_path.display().to_string(),
+                    sha256: util::sha256_hex(&v),
+                    bytes_len: v.len() as u64,
+                };
+                meta.inputs.push(manifest_digest.clone());
+                Some(v)
             }
-        }
-    };
+            Err(err) => {
+                manifest_digest.bytes_len = err.bytes_len;
+                if err.kind == "too_large" {
+                    let mut d = Diagnostic::new(
+                        "X07WASM_DEVICE_BUNDLE_MANIFEST_TOO_LARGE",
+                        Severity::Error,
+                        Stage::Parse,
+                        format!("bundle manifest exceeds size cap: {}", err.path),
+                    );
+                    d.data.insert("path".to_string(), json!(err.path.clone()));
+                    d.data.insert("bytes_len".to_string(), json!(err.bytes_len));
+                    d.data
+                        .insert("max_bytes_len".to_string(), json!(err.max_bytes));
+                    diagnostics.push(d);
+                } else {
+                    diagnostics.push(Diagnostic::new(
+                        "X07WASM_DEVICE_BUNDLE_MANIFEST_READ_FAILED",
+                        Severity::Error,
+                        Stage::Parse,
+                        format!(
+                            "failed to read bundle manifest {}: {}",
+                            manifest_path.display(),
+                            err.detail
+                        ),
+                    ));
+                }
+                None
+            }
+        };
 
-    let manifest_bytes = match std::fs::read(&manifest_path) {
-        Ok(v) => v,
-        Err(err) => {
-            diagnostics.push(Diagnostic::new(
-                "X07WASM_DEVICE_BUNDLE_MANIFEST_READ_FAILED",
-                Severity::Error,
-                Stage::Parse,
-                format!(
-                    "failed to read bundle manifest {}: {err}",
-                    manifest_path.display()
-                ),
-            ));
-            Vec::new()
-        }
-    };
-
-    let manifest_json: Value = match serde_json::from_slice(&manifest_bytes) {
-        Ok(v) => v,
-        Err(err) => {
-            diagnostics.push(Diagnostic::new(
-                "X07WASM_DEVICE_BUNDLE_MANIFEST_JSON_INVALID",
-                Severity::Error,
-                Stage::Parse,
-                format!("bundle manifest is not JSON: {err}"),
-            ));
-            json!(null)
-        }
+    let manifest_json: Value = match manifest_bytes.as_deref() {
+        Some(bytes) => match serde_json::from_slice(bytes) {
+            Ok(v) => v,
+            Err(err) => {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_DEVICE_BUNDLE_MANIFEST_JSON_INVALID",
+                    Severity::Error,
+                    Stage::Parse,
+                    format!("bundle manifest is not JSON: {err}"),
+                ));
+                Value::Null
+            }
+        },
+        None => Value::Null,
     };
 
     let mut doc: Option<DeviceBundleManifestDoc> = None;
@@ -237,11 +252,9 @@ pub fn cmd_device_verify(
                 d.data.insert("path".to_string(), json!(doc.ui_wasm.path));
                 diagnostics.push(d);
             } else {
-                match std::fs::read(ui_path) {
-                    Ok(bytes) => {
+                match util::sha256_file_hex_capped(ui_path, MAX_BUNDLE_FILE_BYTES) {
+                    Ok((got_sha, got_len)) => {
                         files_checked += 1;
-                        let got_sha = util::sha256_hex(&bytes);
-                        let got_len = bytes.len() as u64;
                         if got_sha != doc.ui_wasm.sha256 || got_len != doc.ui_wasm.bytes_len {
                             digest_mismatches += 1;
                             let mut d = Diagnostic::new(
@@ -265,15 +278,32 @@ pub fn cmd_device_verify(
                     }
                     Err(err) => {
                         missing_files += 1;
-                        let mut d = Diagnostic::new(
-                            "X07WASM_DEVICE_BUNDLE_FILE_MISSING",
-                            Severity::Error,
-                            Stage::Run,
-                            "failed to read bundle file".to_string(),
-                        );
-                        d.data.insert("path".to_string(), json!(doc.ui_wasm.path));
-                        d.data.insert("error".to_string(), json!(err.to_string()));
-                        diagnostics.push(d);
+                        if err.kind == "too_large" {
+                            let mut d = Diagnostic::new(
+                                "X07WASM_DEVICE_BUNDLE_FILE_TOO_LARGE",
+                                Severity::Error,
+                                Stage::Run,
+                                format!("bundle file exceeds size cap: {}", ui_path.display()),
+                            );
+                            d.data
+                                .insert("path".to_string(), json!(doc.ui_wasm.path.clone()));
+                            d.data.insert("bytes_len".to_string(), json!(err.bytes_len));
+                            d.data
+                                .insert("max_bytes_len".to_string(), json!(err.max_bytes));
+                            d.data.insert("role".to_string(), json!("ui_wasm"));
+                            diagnostics.push(d);
+                        } else {
+                            let mut d = Diagnostic::new(
+                                "X07WASM_DEVICE_BUNDLE_FILE_MISSING",
+                                Severity::Error,
+                                Stage::Run,
+                                "failed to read bundle file".to_string(),
+                            );
+                            d.data
+                                .insert("path".to_string(), json!(doc.ui_wasm.path.clone()));
+                            d.data.insert("error".to_string(), json!(err.detail));
+                            diagnostics.push(d);
+                        }
                     }
                 }
             }
@@ -312,11 +342,9 @@ pub fn cmd_device_verify(
                     .insert("path".to_string(), json!(doc.profile.file.path.clone()));
                 diagnostics.push(d);
             } else {
-                match std::fs::read(profile_path) {
-                    Ok(bytes) => {
+                match util::sha256_file_hex_capped(profile_path, MAX_BUNDLE_FILE_BYTES) {
+                    Ok((got_sha, got_len)) => {
                         files_checked += 1;
-                        let got_sha = util::sha256_hex(&bytes);
-                        let got_len = bytes.len() as u64;
                         if got_sha != doc.profile.file.sha256
                             || got_len != doc.profile.file.bytes_len
                         {
@@ -344,16 +372,32 @@ pub fn cmd_device_verify(
                     }
                     Err(err) => {
                         missing_files += 1;
-                        let mut d = Diagnostic::new(
-                            "X07WASM_DEVICE_BUNDLE_FILE_MISSING",
-                            Severity::Error,
-                            Stage::Run,
-                            "failed to read bundle file".to_string(),
-                        );
-                        d.data
-                            .insert("path".to_string(), json!(doc.profile.file.path.clone()));
-                        d.data.insert("error".to_string(), json!(err.to_string()));
-                        diagnostics.push(d);
+                        if err.kind == "too_large" {
+                            let mut d = Diagnostic::new(
+                                "X07WASM_DEVICE_BUNDLE_FILE_TOO_LARGE",
+                                Severity::Error,
+                                Stage::Run,
+                                format!("bundle file exceeds size cap: {}", profile_path.display()),
+                            );
+                            d.data
+                                .insert("path".to_string(), json!(doc.profile.file.path.clone()));
+                            d.data.insert("bytes_len".to_string(), json!(err.bytes_len));
+                            d.data
+                                .insert("max_bytes_len".to_string(), json!(err.max_bytes));
+                            d.data.insert("role".to_string(), json!("profile"));
+                            diagnostics.push(d);
+                        } else {
+                            let mut d = Diagnostic::new(
+                                "X07WASM_DEVICE_BUNDLE_FILE_MISSING",
+                                Severity::Error,
+                                Stage::Run,
+                                "failed to read bundle file".to_string(),
+                            );
+                            d.data
+                                .insert("path".to_string(), json!(doc.profile.file.path.clone()));
+                            d.data.insert("error".to_string(), json!(err.detail));
+                            diagnostics.push(d);
+                        }
                     }
                 }
             }

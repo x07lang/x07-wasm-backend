@@ -96,6 +96,140 @@ pub fn write_file_atomic(out: &Path, bytes: &[u8]) -> std::io::Result<()> {
     Ok(())
 }
 
+#[derive(Debug, Clone)]
+pub struct FileReadCappedError {
+    pub kind: &'static str,
+    pub path: String,
+    pub bytes_len: u64,
+    pub max_bytes: u64,
+    pub detail: String,
+}
+
+fn file_len_checked(path: &Path, max_bytes: u64) -> std::result::Result<u64, FileReadCappedError> {
+    let md = std::fs::metadata(path).map_err(|err| FileReadCappedError {
+        kind: "metadata_failed",
+        path: path.display().to_string(),
+        bytes_len: 0,
+        max_bytes,
+        detail: format!("metadata failed: {err}"),
+    })?;
+    if !md.is_file() {
+        return Err(FileReadCappedError {
+            kind: "not_file",
+            path: path.display().to_string(),
+            bytes_len: md.len(),
+            max_bytes,
+            detail: "not a regular file".to_string(),
+        });
+    }
+    let len = md.len();
+    if len > max_bytes {
+        return Err(FileReadCappedError {
+            kind: "too_large",
+            path: path.display().to_string(),
+            bytes_len: len,
+            max_bytes,
+            detail: format!("file size {len} exceeds cap {max_bytes}"),
+        });
+    }
+    if len > (usize::MAX as u64) {
+        return Err(FileReadCappedError {
+            kind: "too_large",
+            path: path.display().to_string(),
+            bytes_len: len,
+            max_bytes,
+            detail: "file too large for this platform".to_string(),
+        });
+    }
+    Ok(len)
+}
+
+pub fn read_file_capped(
+    path: &Path,
+    max_bytes: u64,
+) -> std::result::Result<Vec<u8>, FileReadCappedError> {
+    let len = file_len_checked(path, max_bytes)?;
+    let mut f = std::fs::File::open(path).map_err(|err| FileReadCappedError {
+        kind: "open_failed",
+        path: path.display().to_string(),
+        bytes_len: len,
+        max_bytes,
+        detail: format!("open failed: {err}"),
+    })?;
+    let mut buf: Vec<u8> = Vec::with_capacity(len as usize);
+    f.read_to_end(&mut buf).map_err(|err| FileReadCappedError {
+        kind: "read_failed",
+        path: path.display().to_string(),
+        bytes_len: len,
+        max_bytes,
+        detail: format!("read failed: {err}"),
+    })?;
+    if (buf.len() as u64) > max_bytes {
+        return Err(FileReadCappedError {
+            kind: "too_large",
+            path: path.display().to_string(),
+            bytes_len: buf.len() as u64,
+            max_bytes,
+            detail: "read exceeded cap".to_string(),
+        });
+    }
+    Ok(buf)
+}
+
+pub fn sha256_file_hex_capped(
+    path: &Path,
+    max_bytes: u64,
+) -> std::result::Result<(String, u64), FileReadCappedError> {
+    let len = file_len_checked(path, max_bytes)?;
+    let mut f = std::fs::File::open(path).map_err(|err| FileReadCappedError {
+        kind: "open_failed",
+        path: path.display().to_string(),
+        bytes_len: len,
+        max_bytes,
+        detail: format!("open failed: {err}"),
+    })?;
+
+    let mut h = Sha256::new();
+    let mut buf = [0u8; 8192];
+    let mut total: u64 = 0;
+    loop {
+        let n = f.read(&mut buf).map_err(|err| FileReadCappedError {
+            kind: "read_failed",
+            path: path.display().to_string(),
+            bytes_len: len,
+            max_bytes,
+            detail: format!("read failed: {err}"),
+        })?;
+        if n == 0 {
+            break;
+        }
+        total = total.saturating_add(n as u64);
+        if total > max_bytes {
+            return Err(FileReadCappedError {
+                kind: "too_large",
+                path: path.display().to_string(),
+                bytes_len: total,
+                max_bytes,
+                detail: "read exceeded cap".to_string(),
+            });
+        }
+        h.update(&buf[..n]);
+    }
+    Ok((hex_lower(&h.finalize()), total))
+}
+
+pub fn file_digest_capped(
+    path: &Path,
+    max_bytes: u64,
+) -> std::result::Result<FileDigest, FileReadCappedError> {
+    let (sha256, bytes_len) = sha256_file_hex_capped(path, max_bytes)?;
+    Ok(FileDigest {
+        path: path.display().to_string(),
+        sha256,
+        bytes_len,
+    })
+}
+
 pub fn canon_value_jcs(v: &mut Value) {
     match v {
         Value::Array(arr) => {

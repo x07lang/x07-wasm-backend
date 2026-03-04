@@ -337,6 +337,38 @@ print("symlinked:", str(p), "->", str(target))
 PY
 }
 
+oversize_first_pack_asset_file() {
+  local pack_manifest_path="$1"
+  local size="$2"
+  "$PYTHON" - "$pack_manifest_path" "$size" <<'PY'
+import json, os, pathlib, sys
+
+manifest = pathlib.Path(sys.argv[1])
+size = int(sys.argv[2])
+doc = json.loads(manifest.read_text(encoding="utf-8"))
+
+assets = doc.get("assets", [])
+if not isinstance(assets, list) or len(assets) < 1:
+    raise SystemExit(f"pack manifest has no assets: {manifest}")
+
+asset0 = None
+for a in assets:
+    if isinstance(a, dict) and isinstance(a.get("file"), dict) and isinstance(a["file"].get("path"), str):
+        asset0 = a
+        break
+if asset0 is None:
+    raise SystemExit("pack manifest assets missing file.path")
+
+rel = asset0["file"]["path"]
+p = (manifest.parent / rel).resolve()
+if not p.is_file():
+    raise SystemExit(f"asset file missing: {p}")
+
+os.truncate(p, size)
+print("oversized:", str(p), "size=", size)
+PY
+}
+
 corrupt_pack_backend_component_file() {
   local pack_manifest_path="$1"
   "$PYTHON" - "$pack_manifest_path" <<'PY'
@@ -714,6 +746,23 @@ if [ "$code" -ne 1 ]; then
 fi
 require_report_exit_and_has_code build/phase6_examples/app.verify.app_min.backend_symlink.json 1 X07WASM_APP_VERIFY_PATH_UNSAFE
 
+echo "==> phase6_examples: app verify (negative - asset too large)"
+rm -rf dist/phase6_examples/app_min.pack.asset_too_large
+cp -a dist/phase6_examples/app_min.pack dist/phase6_examples/app_min.pack.asset_too_large
+APP_VERIFY_MAX_FILE_BYTES=$((256 * 1024 * 1024))
+oversize_first_pack_asset_file dist/phase6_examples/app_min.pack.asset_too_large/app.pack.json $((APP_VERIFY_MAX_FILE_BYTES + 1)) >/dev/null
+
+set +e
+x07-wasm app verify --pack-manifest dist/phase6_examples/app_min.pack.asset_too_large/app.pack.json \
+  --json --report-out build/phase6_examples/app.verify.app_min.asset_too_large.json --quiet-json
+code=$?
+set -e
+if [ "$code" -ne 1 ]; then
+  echo "expected exit code 1 for app verify asset too large, got $code" >&2
+  exit 1
+fi
+require_report_exit_and_has_code build/phase6_examples/app.verify.app_min.asset_too_large.json 1 X07WASM_APP_VERIFY_FILE_TOO_LARGE
+
 echo "==> phase6_examples: build app_min_spin -> pack -> verify -> canary (budget exceeded)"
 rm -rf dist/phase6_examples/app_min_spin dist/phase6_examples/app_min_spin.pack
 x07-wasm app build --profile-file examples/app_min/app_release_spin.json \
@@ -870,6 +919,25 @@ if [ "$code" -ne 1 ]; then
   exit 1
 fi
 require_report_exit_and_has_code build/phase6_examples/provenance.verify.bundle_manifest_tampered.json 1 X07WASM_PROVENANCE_DIGEST_MISMATCH
+
+echo "==> phase6_examples: provenance verify (negative - subject too large)"
+rm -rf dist/phase6_examples/app_min.pack.subject_too_large
+cp -a dist/phase6_examples/app_min.pack dist/phase6_examples/app_min.pack.subject_too_large
+PROVENANCE_MAX_SUBJECT_FILE_BYTES=$((256 * 1024 * 1024))
+oversize_first_pack_asset_file dist/phase6_examples/app_min.pack.subject_too_large/app.pack.json $((PROVENANCE_MAX_SUBJECT_FILE_BYTES + 1)) >/dev/null
+
+set +e
+x07-wasm provenance verify --attestation dist/phase6_examples/app_min.pack/provenance.dsse.json \
+  --pack-dir dist/phase6_examples/app_min.pack.subject_too_large \
+  --trusted-public-key arch/provenance/dev.ed25519.public_key.b64 \
+  --json --report-out build/phase6_examples/provenance.verify.subject_too_large.json --quiet-json
+code=$?
+set -e
+if [ "$code" -ne 1 ]; then
+  echo "expected exit code 1 for provenance verify subject too large, got $code" >&2
+  exit 1
+fi
+require_report_exit_and_has_code build/phase6_examples/provenance.verify.subject_too_large.json 1 X07WASM_PROVENANCE_FILE_TOO_LARGE
 
 echo "==> phase6_examples: provenance verify (negative - unsafe symlink subject path)"
 set +e
