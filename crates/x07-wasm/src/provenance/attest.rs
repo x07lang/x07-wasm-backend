@@ -164,30 +164,25 @@ pub fn cmd_provenance_attest(
                 }
             };
             if let Some(bundle_path) = bundle_path.as_ref() {
-                let bytes = match std::fs::read(bundle_path) {
-                    Ok(v) => v,
+                let digest = match util::file_digest(bundle_path) {
+                    Ok(v) => Some(v),
                     Err(err) => {
                         let mut d = Diagnostic::new(
                             "X07WASM_PROVENANCE_SUBJECT_MISSING",
                             Severity::Error,
                             Stage::Run,
-                            format!("missing subject file {}: {err}", bundle_path.display()),
+                            format!("missing subject file {}: {err:#}", bundle_path.display()),
                         );
                         d.data.insert("subject".to_string(), json!(rel.to_string()));
                         diagnostics.push(d);
-                        Vec::new()
+                        None
                     }
                 };
-                if !bytes.is_empty() {
-                    let sha256 = util::sha256_hex(&bytes);
-                    meta.inputs.push(report::meta::FileDigest {
-                        path: bundle_path.display().to_string(),
-                        sha256: sha256.clone(),
-                        bytes_len: bytes.len() as u64,
-                    });
+                if let Some(digest) = digest {
+                    meta.inputs.push(digest.clone());
                     subjects.push(json!({
                       "name": rel,
-                      "digest": { "sha256": sha256 },
+                      "digest": { "sha256": digest.sha256 },
                       "mediaType": "application/json",
                     }));
                 }
@@ -220,30 +215,25 @@ pub fn cmd_provenance_attest(
                 }
             };
             if let Some(component_path) = component_path.as_ref() {
-                let bytes = match std::fs::read(component_path) {
-                    Ok(v) => v,
+                let digest = match util::file_digest(component_path) {
+                    Ok(v) => Some(v),
                     Err(err) => {
                         let mut d = Diagnostic::new(
                             "X07WASM_PROVENANCE_SUBJECT_MISSING",
                             Severity::Error,
                             Stage::Run,
-                            format!("missing subject file {}: {err}", component_path.display()),
+                            format!("missing subject file {}: {err:#}", component_path.display()),
                         );
                         d.data.insert("subject".to_string(), json!(rel.to_string()));
                         diagnostics.push(d);
-                        Vec::new()
+                        None
                     }
                 };
-                if !bytes.is_empty() {
-                    let sha256 = util::sha256_hex(&bytes);
-                    meta.inputs.push(report::meta::FileDigest {
-                        path: component_path.display().to_string(),
-                        sha256: sha256.clone(),
-                        bytes_len: bytes.len() as u64,
-                    });
+                if let Some(digest) = digest {
+                    meta.inputs.push(digest.clone());
                     subjects.push(json!({
                       "name": rel,
-                      "digest": { "sha256": sha256 },
+                      "digest": { "sha256": digest.sha256 },
                       "mediaType": "application/wasm",
                     }));
                 }
@@ -282,29 +272,24 @@ pub fn cmd_provenance_attest(
                 continue;
             }
         };
-        let bytes = match std::fs::read(&asset_path) {
+        let digest = match util::file_digest(&asset_path) {
             Ok(v) => v,
             Err(err) => {
                 let mut d = Diagnostic::new(
                     "X07WASM_PROVENANCE_SUBJECT_MISSING",
                     Severity::Error,
                     Stage::Run,
-                    format!("missing subject file {}: {err}", asset_path.display()),
+                    format!("missing subject file {}: {err:#}", asset_path.display()),
                 );
                 d.data.insert("subject".to_string(), json!(fp.to_string()));
                 diagnostics.push(d);
                 continue;
             }
         };
-        let sha256 = util::sha256_hex(&bytes);
-        meta.inputs.push(report::meta::FileDigest {
-            path: asset_path.display().to_string(),
-            sha256: sha256.clone(),
-            bytes_len: bytes.len() as u64,
-        });
+        meta.inputs.push(digest.clone());
         subjects.push(json!({
           "name": fp,
-          "digest": { "sha256": sha256 },
+          "digest": { "sha256": digest.sha256 },
         }));
     }
     subjects.sort_by_key(|s| {

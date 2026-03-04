@@ -436,7 +436,7 @@ pub fn cmd_provenance_verify(
                 continue;
             }
         };
-        let bytes = match std::fs::read(&full) {
+        let digest = match util::file_digest(&full) {
             Ok(v) => v,
             Err(err) => {
                 subjects_mismatched += 1;
@@ -444,7 +444,7 @@ pub fn cmd_provenance_verify(
                     "X07WASM_PROVENANCE_SUBJECT_MISSING",
                     Severity::Error,
                     Stage::Run,
-                    format!("missing subject file {}: {err}", full.display()),
+                    format!("missing subject file {}: {err:#}", full.display()),
                 );
                 d.data
                     .insert("subject".to_string(), json!(name.to_string()));
@@ -452,12 +452,8 @@ pub fn cmd_provenance_verify(
                 continue;
             }
         };
-        let got = util::sha256_hex(&bytes);
-        meta.inputs.push(report::meta::FileDigest {
-            path: full.display().to_string(),
-            sha256: got.clone(),
-            bytes_len: bytes.len() as u64,
-        });
+        meta.inputs.push(digest.clone());
+        let got = digest.sha256;
         if got != want {
             subjects_mismatched += 1;
             let mut d = Diagnostic::new(

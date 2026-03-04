@@ -1,3 +1,4 @@
+use std::io::Read;
 use std::path::{Component, Path, PathBuf};
 
 use anyhow::{Context, Result};
@@ -7,11 +8,11 @@ use sha2::{Digest as _, Sha256};
 use crate::report::meta::FileDigest;
 
 pub fn file_digest(path: &Path) -> Result<FileDigest> {
-    let bytes = std::fs::read(path).with_context(|| format!("read: {}", path.display()))?;
+    let (sha256, bytes_len) = sha256_file_hex(path)?;
     Ok(FileDigest {
         path: path.display().to_string(),
-        sha256: sha256_hex(&bytes),
-        bytes_len: bytes.len() as u64,
+        sha256,
+        bytes_len,
     })
 }
 
@@ -36,6 +37,26 @@ fn nibble_to_hex(n: u8) -> char {
         10..=15 => (b'a' + (n - 10)) as char,
         _ => '?',
     }
+}
+
+pub fn sha256_file_hex(path: &Path) -> Result<(String, u64)> {
+    let mut f = std::fs::File::open(path).with_context(|| format!("open: {}", path.display()))?;
+    let mut h = Sha256::new();
+    let mut bytes_len: u64 = 0;
+
+    let mut buf = [0u8; 1024 * 1024];
+    loop {
+        let n = f
+            .read(&mut buf)
+            .with_context(|| format!("read: {}", path.display()))?;
+        if n == 0 {
+            break;
+        }
+        h.update(&buf[..n]);
+        bytes_len += n as u64;
+    }
+
+    Ok((hex_lower(&h.finalize()), bytes_len))
 }
 
 pub fn canon_value_jcs(v: &mut Value) {
