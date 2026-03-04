@@ -48,6 +48,10 @@
       "bytes_len": 2327,
       "sha256": "f413cfc31725030c843d3e1a347d281c83c872a90e10b996b6c64db5143a89c6"
     },
+    "host/host.snapshot.json": {
+      "bytes_len": 867,
+      "sha256": "c891fe88394fafa4338fb2eec60ac399496b340b6a7d5cae4daeb840dc1a2e5f"
+    },
     "host/index.html": {
       "bytes_len": 894,
       "sha256": "32dd8528fcd0a92d51031119e7f4b13de9b0b6120eb6dc79aa294d3a39fb7e5a"
@@ -137,6 +141,6 @@
       "sha256": "23987f7afcd9bec97a983c4e5f1682373cee253347202cc1da149ad66d90d1f3"
     }
   },
-  "git_sha": "a42ac841b84b7e4d6da46ae4862e04fe4a43a54c",
+  "git_sha": "b0c765708fdcb2e08ee83ad34f312a8c4e679951",
   "source": "https://github.com/x07lang/x07-web-ui.git"
 }

@@ -23,6 +23,7 @@ HOST_FILES = [
     ("host/app-host.mjs", VENDORED_HOST_DIR / "app-host.mjs"),
     ("host/bootstrap.js", VENDORED_HOST_DIR / "bootstrap.js"),
     ("host/main.mjs", VENDORED_HOST_DIR / "main.mjs"),
+    ("host/host.snapshot.json", VENDORED_HOST_DIR / "host.snapshot.json"),
 ]
 
 WIT_FILES = [
