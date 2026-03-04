@@ -11,7 +11,7 @@
         "group": 1,
         "source": "stdout"
       },
-      "constraint": "=0.1.51",
+      "constraint": "=0.1.52",
       "required": true
     },
     "clang": {
