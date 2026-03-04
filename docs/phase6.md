@@ -137,7 +137,7 @@ Notes:
 - `x07-wasm provenance attest` includes `predicate.x07.compatibility_hash` (matches `x07-wasm ops validate`).
 - Attestations are emitted as `x07.provenance.dsse.envelope@0.1.0` (`https://x07.io/spec/x07-provenance.dsse.envelope.schema.json`) where the payload is an in-toto Statement.
 - `predicateType` is schema-validated as a non-empty string; `x07-wasm provenance verify` enforces the supported SLSA v1 predicate type after signature verification.
-- `x07-wasm provenance attest` rejects unsafe pack paths (absolute paths, `..`, symlink traversal) with `X07WASM_PROVENANCE_PATH_UNSAFE` (exit code 3).
+- `x07-wasm provenance attest` fails closed (no DSSE envelope is written) when any subject path is unsafe and emits `X07WASM_PROVENANCE_SUBJECT_PATH_UNSAFE` (exit code 1).
 
 ## Platform handoff (Phase 6)
 

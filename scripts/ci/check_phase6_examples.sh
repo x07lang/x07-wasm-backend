@@ -768,26 +768,28 @@ x07-wasm provenance verify \
   --json --report-out build/phase6_examples/provenance.verify.ok.json --quiet-json
 require_report_ok build/phase6_examples/provenance.verify.ok.json
 
-echo "==> phase6_examples: provenance attest (negative - unsafe symlink path)"
+echo "==> phase6_examples: provenance attest (negative - unsafe symlink subject path)"
 rm -rf dist/phase6_examples/app_min.pack.asset_symlink
 cp -a dist/phase6_examples/app_min.pack dist/phase6_examples/app_min.pack.asset_symlink
 printf "outside" > dist/phase6_examples/outside_asset.bin
 symlink_first_pack_asset_file dist/phase6_examples/app_min.pack.asset_symlink/app.pack.json dist/phase6_examples/outside_asset.bin >/dev/null
+rm -f dist/phase6_examples/app_min.pack.asset_symlink/provenance.bad.dsse.json
 
 set +e
 x07-wasm provenance attest \
   --pack-manifest dist/phase6_examples/app_min.pack.asset_symlink/app.pack.json \
   --ops arch/app/ops/ops_release.json \
   --signing-key arch/provenance/dev.ed25519.signing_key.b64 \
-  --out dist/phase6_examples/app_min.pack.asset_symlink/provenance.dsse.json \
+  --out dist/phase6_examples/app_min.pack.asset_symlink/provenance.bad.dsse.json \
   --json --report-out build/phase6_examples/provenance.attest.asset_symlink.json --quiet-json
 code=$?
 set -e
-if [ "$code" -ne 3 ]; then
-  echo "expected exit code 3 for provenance attest unsafe symlink path, got $code" >&2
+if [ "$code" -ne 1 ]; then
+  echo "expected exit code 1 for provenance attest unsafe symlink subject path, got $code" >&2
   exit 1
 fi
-require_report_exit_and_has_code build/phase6_examples/provenance.attest.asset_symlink.json 3 X07WASM_PROVENANCE_PATH_UNSAFE
+require_report_exit_and_has_code build/phase6_examples/provenance.attest.asset_symlink.json 1 X07WASM_PROVENANCE_SUBJECT_PATH_UNSAFE
+test ! -f dist/phase6_examples/app_min.pack.asset_symlink/provenance.bad.dsse.json
 
 echo "==> phase6_examples: provenance verify (negative - tamper signature)"
 cp dist/phase6_examples/app_min.pack/provenance.dsse.json dist/phase6_examples/app_min.pack/provenance.dsse.bad_sig.json

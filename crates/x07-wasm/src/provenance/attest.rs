@@ -150,13 +150,12 @@ pub fn cmd_provenance_attest(
                 Ok(v) => Some(v),
                 Err(err) => {
                     let mut d = Diagnostic::new(
-                        "X07WASM_PROVENANCE_PATH_UNSAFE",
+                        "X07WASM_PROVENANCE_SUBJECT_PATH_UNSAFE",
                         Severity::Error,
-                        Stage::Parse,
-                        "unsafe path in pack manifest".to_string(),
+                        Stage::Run,
+                        format!("unsafe subject path: {rel:?}"),
                     );
-                    d.data
-                        .insert("field".to_string(), json!("bundle_manifest.path"));
+                    d.data.insert("subject".to_string(), json!(rel.to_string()));
                     d.data.insert("path".to_string(), json!(err.rel));
                     d.data.insert("kind".to_string(), json!(err.kind));
                     d.data.insert("detail".to_string(), json!(err.detail));
@@ -168,12 +167,14 @@ pub fn cmd_provenance_attest(
                 let bytes = match std::fs::read(bundle_path) {
                     Ok(v) => v,
                     Err(err) => {
-                        diagnostics.push(Diagnostic::new(
-                            "X07WASM_PROVENANCE_MISSING_INPUT",
+                        let mut d = Diagnostic::new(
+                            "X07WASM_PROVENANCE_SUBJECT_MISSING",
                             Severity::Error,
-                            Stage::Parse,
-                            format!("missing bundle manifest {}: {err}", bundle_path.display()),
-                        ));
+                            Stage::Run,
+                            format!("missing subject file {}: {err}", bundle_path.display()),
+                        );
+                        d.data.insert("subject".to_string(), json!(rel.to_string()));
+                        diagnostics.push(d);
                         Vec::new()
                     }
                 };
@@ -205,13 +206,12 @@ pub fn cmd_provenance_attest(
                 Ok(v) => Some(v),
                 Err(err) => {
                     let mut d = Diagnostic::new(
-                        "X07WASM_PROVENANCE_PATH_UNSAFE",
+                        "X07WASM_PROVENANCE_SUBJECT_PATH_UNSAFE",
                         Severity::Error,
-                        Stage::Parse,
-                        "unsafe path in pack manifest".to_string(),
+                        Stage::Run,
+                        format!("unsafe subject path: {rel:?}"),
                     );
-                    d.data
-                        .insert("field".to_string(), json!("backend.component.path"));
+                    d.data.insert("subject".to_string(), json!(rel.to_string()));
                     d.data.insert("path".to_string(), json!(err.rel));
                     d.data.insert("kind".to_string(), json!(err.kind));
                     d.data.insert("detail".to_string(), json!(err.detail));
@@ -223,15 +223,14 @@ pub fn cmd_provenance_attest(
                 let bytes = match std::fs::read(component_path) {
                     Ok(v) => v,
                     Err(err) => {
-                        diagnostics.push(Diagnostic::new(
-                            "X07WASM_PROVENANCE_MISSING_INPUT",
+                        let mut d = Diagnostic::new(
+                            "X07WASM_PROVENANCE_SUBJECT_MISSING",
                             Severity::Error,
-                            Stage::Parse,
-                            format!(
-                                "missing backend component {}: {err}",
-                                component_path.display()
-                            ),
-                        ));
+                            Stage::Run,
+                            format!("missing subject file {}: {err}", component_path.display()),
+                        );
+                        d.data.insert("subject".to_string(), json!(rel.to_string()));
+                        diagnostics.push(d);
                         Vec::new()
                     }
                 };
@@ -270,13 +269,12 @@ pub fn cmd_provenance_attest(
             Ok(v) => v,
             Err(err) => {
                 let mut d = Diagnostic::new(
-                    "X07WASM_PROVENANCE_PATH_UNSAFE",
+                    "X07WASM_PROVENANCE_SUBJECT_PATH_UNSAFE",
                     Severity::Error,
-                    Stage::Parse,
-                    "unsafe path in pack manifest".to_string(),
+                    Stage::Run,
+                    format!("unsafe subject path: {fp:?}"),
                 );
-                d.data
-                    .insert("field".to_string(), json!("assets[].file.path"));
+                d.data.insert("subject".to_string(), json!(fp.to_string()));
                 d.data.insert("path".to_string(), json!(err.rel));
                 d.data.insert("kind".to_string(), json!(err.kind));
                 d.data.insert("detail".to_string(), json!(err.detail));
@@ -287,12 +285,14 @@ pub fn cmd_provenance_attest(
         let bytes = match std::fs::read(&asset_path) {
             Ok(v) => v,
             Err(err) => {
-                diagnostics.push(Diagnostic::new(
-                    "X07WASM_PROVENANCE_MISSING_INPUT",
+                let mut d = Diagnostic::new(
+                    "X07WASM_PROVENANCE_SUBJECT_MISSING",
                     Severity::Error,
-                    Stage::Parse,
-                    format!("missing pack asset {}: {err}", asset_path.display()),
-                ));
+                    Stage::Run,
+                    format!("missing subject file {}: {err}", asset_path.display()),
+                );
+                d.data.insert("subject".to_string(), json!(fp.to_string()));
+                diagnostics.push(d);
                 continue;
             }
         };
@@ -313,6 +313,25 @@ pub fn cmd_provenance_attest(
             .unwrap_or("")
             .to_string()
     });
+
+    // Fail closed: do not emit a DSSE envelope when any Error diag exists.
+    if diagnostics.iter().any(|d| d.severity == Severity::Error) {
+        return emit_report(
+            &store,
+            scope,
+            machine,
+            started,
+            raw_argv,
+            meta,
+            diagnostics,
+            &args.pack_manifest,
+            Some(report::meta::FileDigest {
+                path: args.out.display().to_string(),
+                sha256: "0".repeat(64),
+                bytes_len: 0,
+            }),
+        );
+    }
 
     let mut resolved_deps: Vec<Value> = Vec::new();
     resolved_deps.push(resource_descriptor(&loaded_ops.ops.digest));
