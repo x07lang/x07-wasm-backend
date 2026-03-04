@@ -33,6 +33,10 @@ pub fn cmd_device_provenance_attest(
 
     let mut diagnostics: Vec<Diagnostic> = Vec::new();
 
+    // Fail-closed invariant: remove any stale output before we start so errors cannot leave
+    // a usable DSSE envelope behind.
+    let out_tmp = util::preunlink_out(&args.out);
+
     let bundle_dir = args.bundle_dir.clone();
     let manifest_path = bundle_dir.join(DEVICE_BUNDLE_MANIFEST_FILE);
 
@@ -431,13 +435,19 @@ pub fn cmd_device_provenance_attest(
         std::fs::create_dir_all(parent).ok();
     }
     let attestation_bytes = report::canon::canonical_pretty_json_bytes(&envelope_doc)?;
-    if let Err(err) = std::fs::write(&args.out, &attestation_bytes) {
+    if let Err(err) = util::write_file_atomic(&args.out, &attestation_bytes) {
         diagnostics.push(Diagnostic::new(
             "X07WASM_PROVENANCE_ATTEST_WRITE_FAILED",
             Severity::Error,
             Stage::Run,
-            format!("failed to write attestation {}: {err}", args.out.display()),
+            format!(
+                "failed to write attestation {} -> {}: {err}",
+                out_tmp.display(),
+                args.out.display()
+            ),
         ));
+        let _ = std::fs::remove_file(&args.out);
+        let _ = std::fs::remove_file(&out_tmp);
         return emit_attest_report(
             &store,
             scope,
@@ -451,7 +461,11 @@ pub fn cmd_device_provenance_attest(
         );
     }
 
-    let attestation_digest = util::file_digest(&args.out)?;
+    let attestation_digest = report::meta::FileDigest {
+        path: args.out.display().to_string(),
+        sha256: util::sha256_hex(&attestation_bytes),
+        bytes_len: attestation_bytes.len() as u64,
+    };
     meta.outputs.push(attestation_digest.clone());
 
     emit_attest_report(

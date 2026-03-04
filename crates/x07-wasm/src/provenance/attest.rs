@@ -1,5 +1,5 @@
 use std::ffi::OsString;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 use base64::engine::general_purpose::STANDARD;
@@ -30,6 +30,10 @@ pub fn cmd_provenance_attest(
     meta.nondeterminism.uses_os_time = true;
 
     let mut diagnostics: Vec<Diagnostic> = Vec::new();
+
+    // Fail-closed invariant: remove any stale output before we start so errors cannot leave
+    // a usable DSSE envelope behind.
+    let out_tmp: PathBuf = util::preunlink_out(&args.out);
 
     let pack_bytes = match std::fs::read(&args.pack_manifest) {
         Ok(v) => v,
@@ -301,6 +305,8 @@ pub fn cmd_provenance_attest(
 
     // Fail closed: do not emit a DSSE envelope when any Error diag exists.
     if diagnostics.iter().any(|d| d.severity == Severity::Error) {
+        let _ = std::fs::remove_file(&args.out);
+        let _ = std::fs::remove_file(&out_tmp);
         return emit_report(
             &store,
             scope,
@@ -508,13 +514,19 @@ pub fn cmd_provenance_attest(
         std::fs::create_dir_all(parent).ok();
     }
     let attestation_bytes = report::canon::canonical_pretty_json_bytes(&envelope_doc)?;
-    if let Err(err) = std::fs::write(&args.out, &attestation_bytes) {
+    if let Err(err) = util::write_file_atomic(&args.out, &attestation_bytes) {
         diagnostics.push(Diagnostic::new(
             "X07WASM_PROVENANCE_ATTEST_WRITE_FAILED",
             Severity::Error,
             Stage::Run,
-            format!("failed to write attestation {}: {err}", args.out.display()),
+            format!(
+                "failed to write attestation {} -> {}: {err}",
+                out_tmp.display(),
+                args.out.display()
+            ),
         ));
+        let _ = std::fs::remove_file(&args.out);
+        let _ = std::fs::remove_file(&out_tmp);
         return emit_report(
             &store,
             scope,
@@ -528,7 +540,11 @@ pub fn cmd_provenance_attest(
         );
     }
 
-    let attestation_digest = util::file_digest(&args.out)?;
+    let attestation_digest = report::meta::FileDigest {
+        path: args.out.display().to_string(),
+        sha256: util::sha256_hex(&attestation_bytes),
+        bytes_len: attestation_bytes.len() as u64,
+    };
     meta.outputs.push(attestation_digest.clone());
 
     emit_report(

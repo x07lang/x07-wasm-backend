@@ -1,3 +1,4 @@
+use std::ffi::{OsStr, OsString};
 use std::io::Read;
 use std::path::{Component, Path, PathBuf};
 
@@ -57,6 +58,42 @@ pub fn sha256_file_hex(path: &Path) -> Result<(String, u64)> {
     }
 
     Ok((hex_lower(&h.finalize()), bytes_len))
+}
+
+pub fn out_tmp_path(out: &Path) -> PathBuf {
+    let Some(file_name) = out.file_name() else {
+        return PathBuf::from(format!("{}.tmp", out.display()));
+    };
+    let mut file_name_tmp: OsString = OsString::from(file_name);
+    file_name_tmp.push(OsStr::new(".tmp"));
+
+    let mut out_tmp = out.to_path_buf();
+    out_tmp.set_file_name(file_name_tmp);
+    out_tmp
+}
+
+// Fail-closed invariant: remove any stale output (and temp output) before
+// commands begin producing new bytes.
+pub fn preunlink_out(out: &Path) -> PathBuf {
+    let out_tmp = out_tmp_path(out);
+    let _ = std::fs::remove_file(out);
+    let _ = std::fs::remove_file(&out_tmp);
+    out_tmp
+}
+
+pub fn write_file_atomic(out: &Path, bytes: &[u8]) -> std::io::Result<()> {
+    let out_tmp = out_tmp_path(out);
+    let w = std::fs::write(&out_tmp, bytes);
+    if let Err(err) = w {
+        let _ = std::fs::remove_file(&out_tmp);
+        return Err(err);
+    }
+    let r = std::fs::rename(&out_tmp, out);
+    if let Err(err) = r {
+        let _ = std::fs::remove_file(&out_tmp);
+        return Err(err);
+    }
+    Ok(())
 }
 
 pub fn canon_value_jcs(v: &mut Value) {

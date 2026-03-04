@@ -773,7 +773,11 @@ rm -rf dist/phase6_examples/app_min.pack.asset_symlink
 cp -a dist/phase6_examples/app_min.pack dist/phase6_examples/app_min.pack.asset_symlink
 printf "outside" > dist/phase6_examples/outside_asset.bin
 symlink_first_pack_asset_file dist/phase6_examples/app_min.pack.asset_symlink/app.pack.json dist/phase6_examples/outside_asset.bin >/dev/null
-rm -f dist/phase6_examples/app_min.pack.asset_symlink/provenance.bad.dsse.json
+
+# Fail-closed invariant: if attest fails, it MUST NOT leave a DSSE output behind.
+# Create stale files to ensure the command removes them.
+printf "stale" > dist/phase6_examples/app_min.pack.asset_symlink/provenance.bad.dsse.json
+printf "stale" > dist/phase6_examples/app_min.pack.asset_symlink/provenance.bad.dsse.json.tmp
 
 set +e
 x07-wasm provenance attest \
@@ -790,6 +794,7 @@ if [ "$code" -ne 1 ]; then
 fi
 require_report_exit_and_has_code build/phase6_examples/provenance.attest.asset_symlink.json 1 X07WASM_PROVENANCE_SUBJECT_PATH_UNSAFE
 test ! -f dist/phase6_examples/app_min.pack.asset_symlink/provenance.bad.dsse.json
+test ! -f dist/phase6_examples/app_min.pack.asset_symlink/provenance.bad.dsse.json.tmp
 
 echo "==> phase6_examples: provenance verify (negative - tamper signature)"
 cp dist/phase6_examples/app_min.pack/provenance.dsse.json dist/phase6_examples/app_min.pack/provenance.dsse.bad_sig.json
