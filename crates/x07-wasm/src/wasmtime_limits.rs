@@ -151,6 +151,15 @@ pub fn classify_budget_exceeded(err: &anyhow::Error) -> Option<BudgetExceededKin
     None
 }
 
+pub fn budget_exceeded_diagnostic_code(kind: BudgetExceededKind) -> &'static str {
+    match kind {
+        BudgetExceededKind::CpuFuel => "X07WASM_BUDGET_EXCEEDED_CPU_FUEL",
+        BudgetExceededKind::WasmStack => "X07WASM_BUDGET_EXCEEDED_WASM_STACK",
+        BudgetExceededKind::Memory => "X07WASM_BUDGET_EXCEEDED_MEMORY",
+        BudgetExceededKind::Table => "X07WASM_BUDGET_EXCEEDED_TABLE",
+    }
+}
+
 pub fn apply_instance_allocator_config(
     config: &mut Config,
     limits: &WasmRuntimeLimits,

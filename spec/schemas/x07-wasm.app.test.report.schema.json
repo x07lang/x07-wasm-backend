@@ -94,6 +94,7 @@
         "dir": { "type": "string", "minLength": 1, "maxLength": 4096 },
         "passed": { "type": "integer", "minimum": 0 },
         "failed": { "type": "integer", "minimum": 0 },
+        "incident_dir": { "type": ["string", "null"], "minLength": 1, "maxLength": 4096 },
         "updated_golden": { "type": "boolean" },
         "cases": {
           "type": "array",

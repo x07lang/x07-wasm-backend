@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
@@ -306,6 +307,11 @@ pub fn cmd_app_test(
     let mut current_state: Value = Value::Null;
     let mut observed_steps: Vec<Value> = Vec::new();
     let mut incident_dir: Option<PathBuf> = None;
+    let mut effects_state = AppTestEffectsState {
+        storage: BTreeMap::new(),
+        nav_href: "http://localhost/".to_string(),
+        timers: BTreeMap::new(),
+    };
 
     let max_steps = args.max_steps as usize;
     let mut host = host;
@@ -336,12 +342,21 @@ pub fn cmd_app_test(
             let out_bytes = match core.call(&input_bytes) {
                 Ok(v) => v,
                 Err(err) => {
-                    diagnostics.push(Diagnostic::new(
-                        "X07WASM_APP_TEST_CALL_FAILED",
-                        Severity::Error,
-                        Stage::Run,
-                        format!("step {idx}: {err:#}"),
-                    ));
+                    if let Some(kind) = crate::wasmtime_limits::classify_budget_exceeded(&err) {
+                        diagnostics.push(Diagnostic::new(
+                            crate::wasmtime_limits::budget_exceeded_diagnostic_code(kind),
+                            Severity::Error,
+                            Stage::Run,
+                            format!("step {idx}: {err:#}"),
+                        ));
+                    } else {
+                        diagnostics.push(Diagnostic::new(
+                            "X07WASM_APP_TEST_CALL_FAILED",
+                            Severity::Error,
+                            Stage::Run,
+                            format!("step {idx}: {err:#}"),
+                        ));
+                    }
                     mismatches = mismatches.saturating_add(1);
                     break;
                 }
@@ -389,15 +404,12 @@ pub fn cmd_app_test(
                 break;
             }
 
-            let (frame2, exchanges) = match run_http_effects_loop(
+            let (frame2, exchanges) = match run_effects_loop(
                 &store,
                 &mut host,
                 &http_budgets,
                 &app_budgets,
                 idx,
-                args.dir.as_path(),
-                &bundle,
-                &args,
                 &mut core,
                 &mut prev_ui,
                 &mut current_state,
@@ -405,17 +417,27 @@ pub fn cmd_app_test(
                 frame,
                 caps.clone(),
                 wasi_base_dir.as_path(),
+                &mut effects_state,
             )
             .await
             {
                 Ok(v) => v,
                 Err(err) => {
-                    diagnostics.push(Diagnostic::new(
-                        "X07WASM_APP_TEST_HTTP_EFFECT_FAILED",
-                        Severity::Error,
-                        Stage::Run,
-                        format!("step {idx}: {err:#}"),
-                    ));
+                    if let Some(kind) = crate::wasmtime_limits::classify_budget_exceeded(&err) {
+                        diagnostics.push(Diagnostic::new(
+                            crate::wasmtime_limits::budget_exceeded_diagnostic_code(kind),
+                            Severity::Error,
+                            Stage::Run,
+                            format!("step {idx}: {err:#}"),
+                        ));
+                    } else {
+                        diagnostics.push(Diagnostic::new(
+                            "X07WASM_APP_TEST_EFFECTS_LOOP_FAILED",
+                            Severity::Error,
+                            Stage::Run,
+                            format!("step {idx}: {err:#}"),
+                        ));
+                    }
                     mismatches = mismatches.saturating_add(1);
                     break;
                 }
@@ -535,6 +557,12 @@ struct AppTestBudgets {
     arena_cap_bytes: u32,
     max_output_bytes: u32,
     api_prefix: String,
+}
+
+struct AppTestEffectsState {
+    storage: BTreeMap<String, String>,
+    nav_href: String,
+    timers: BTreeMap<String, u64>,
 }
 
 fn load_app_test_budgets(
@@ -733,15 +761,12 @@ fn normalize_stream_payload(v: Option<&Value>) -> Result<Value> {
 }
 
 #[allow(clippy::too_many_arguments)]
-async fn run_http_effects_loop(
+async fn run_effects_loop(
     store: &SchemaStore,
     host: &mut HttpComponentHost,
     http_budgets: &HttpComponentBudgets,
     app_budgets: &AppTestBudgets,
     step_index: usize,
-    _bundle_dir: &Path,
-    _bundle: &LoadedAppBundle,
-    _args: &AppTestArgs,
     core: &mut replay::CoreWasmRunner,
     prev_ui: &mut Option<Value>,
     current_state: &mut Value,
@@ -749,31 +774,107 @@ async fn run_http_effects_loop(
     first_frame: Value,
     caps: Option<std::sync::Arc<CapabilitiesDoc>>,
     wasi_base_dir: &Path,
+    effects_state: &mut AppTestEffectsState,
 ) -> Result<(Value, Vec<Value>)> {
     let mut frame = first_frame;
     let mut exchanges: Vec<Value> = Vec::new();
 
     let max_loops = 16;
+    let max_effects_per_step = 32;
     for _ in 0..max_loops {
-        let reqs = find_http_request_effects(&frame)?;
-        if reqs.is_empty() {
+        let effects = frame_effects(&frame);
+        if effects.is_empty() {
             break;
         }
-        if reqs.len() != 1 {
+        if effects.len() > max_effects_per_step {
             anyhow::bail!(
-                "expected exactly one http request effect (got {})",
-                reqs.len()
+                "too many effects: n={} max={}",
+                effects.len(),
+                max_effects_per_step
             );
         }
 
-        let req0 = reqs.into_iter().next().unwrap();
-        let req_env = build_exec_request_envelope(app_budgets.api_prefix.as_str(), &req0)?;
+        let mut injected_state = current_state.clone();
 
-        let resp_env =
-            execute_http_request(host, http_budgets, &req_env, caps.clone(), wasi_base_dir).await?;
-        exchanges.push(json!({ "request": req_env.clone(), "response": resp_env.clone() }));
+        for eff in effects {
+            if let Some(req0) = parse_http_request_effect(&eff)? {
+                let req_env = build_exec_request_envelope(app_budgets.api_prefix.as_str(), &req0)?;
+                let resp_env = execute_http_request(
+                    host,
+                    http_budgets,
+                    &req_env,
+                    caps.clone(),
+                    wasi_base_dir,
+                )
+                .await?;
+                exchanges.push(json!({ "request": req_env.clone(), "response": resp_env.clone() }));
+                injected_state = inject_http_response_state(injected_state, resp_env);
+                continue;
+            }
 
-        let injected_state = inject_http_response_state(current_state.clone(), resp_env);
+            if let Some(key) = parse_storage_get_effect(&eff)? {
+                let value = effects_state.storage.get(&key).cloned();
+                injected_state = inject_merge_object_field(
+                    injected_state,
+                    "__x07_storage",
+                    json!({ "get": { "key": key, "value": value } }),
+                )?;
+                continue;
+            }
+
+            if let Some((key, value)) = parse_storage_set_effect(&eff)? {
+                effects_state.storage.insert(key.clone(), value.clone());
+                injected_state = inject_merge_object_field(
+                    injected_state,
+                    "__x07_storage",
+                    json!({ "set": { "key": key, "value": value, "ok": true } }),
+                )?;
+                continue;
+            }
+
+            if let Some(path) = parse_nav_push_effect(&eff)? {
+                let href = set_nav_href(&mut effects_state.nav_href, &path);
+                injected_state = inject_set_field(
+                    injected_state,
+                    "__x07_nav",
+                    json!({ "op": "push", "path": path, "href": href }),
+                );
+                continue;
+            }
+
+            if let Some(path) = parse_nav_replace_effect(&eff)? {
+                let href = set_nav_href(&mut effects_state.nav_href, &path);
+                injected_state = inject_set_field(
+                    injected_state,
+                    "__x07_nav",
+                    json!({ "op": "replace", "path": path, "href": href }),
+                );
+                continue;
+            }
+
+            if let Some((id, delay_ms)) = parse_timer_set_effect(&eff)? {
+                effects_state.timers.insert(id.clone(), delay_ms);
+                injected_state = inject_merge_object_field(
+                    injected_state,
+                    "__x07_timer",
+                    json!({ "set": { "id": id, "delay_ms": delay_ms, "ok": true } }),
+                )?;
+                continue;
+            }
+
+            if let Some(id) = parse_timer_clear_effect(&eff)? {
+                effects_state.timers.remove(&id);
+                injected_state = inject_merge_object_field(
+                    injected_state,
+                    "__x07_timer",
+                    json!({ "clear": { "id": id, "ok": true } }),
+                )?;
+                continue;
+            }
+
+            anyhow::bail!("unsupported effect: {eff}");
+        }
+
         let env = json!({
           "v": 1,
           "kind": "x07.web_ui.dispatch",
@@ -800,22 +901,19 @@ async fn run_http_effects_loop(
         frame = next_frame;
     }
 
+    let remaining = frame_effects(&frame);
+    if !remaining.is_empty() {
+        anyhow::bail!("effects loop exceeded max_loops={max_loops}");
+    }
+
     Ok((frame, exchanges))
 }
 
-fn find_http_request_effects(frame: &Value) -> Result<Vec<Value>> {
-    let mut out = Vec::new();
-    let effects = frame
-        .get("effects")
+fn frame_effects(frame: &Value) -> Vec<Value> {
+    frame.get("effects")
         .and_then(Value::as_array)
         .cloned()
-        .unwrap_or_default();
-    for eff in effects {
-        if let Some(req) = parse_http_request_effect(&eff)? {
-            out.push(req);
-        }
-    }
-    Ok(out)
+        .unwrap_or_default()
 }
 
 fn parse_http_request_effect(effect: &Value) -> Result<Option<Value>> {
@@ -836,6 +934,92 @@ fn parse_http_request_effect(effect: &Value) -> Result<Option<Value>> {
         anyhow::bail!("unsupported request envelope schema_version: {schema_version:?}");
     }
     Ok(Some(req))
+}
+
+fn parse_storage_get_effect(effect: &Value) -> Result<Option<String>> {
+    let v = effect.get("v").and_then(Value::as_u64).unwrap_or(0);
+    let kind = effect.get("kind").and_then(Value::as_str).unwrap_or("");
+    if v != 1 || kind != "x07.web_ui.effect.storage.get" {
+        return Ok(None);
+    }
+    let key = effect
+        .get("key")
+        .and_then(Value::as_str)
+        .ok_or_else(|| anyhow::anyhow!("storage.get effect missing key"))?;
+    Ok(Some(key.to_string()))
+}
+
+fn parse_storage_set_effect(effect: &Value) -> Result<Option<(String, String)>> {
+    let v = effect.get("v").and_then(Value::as_u64).unwrap_or(0);
+    let kind = effect.get("kind").and_then(Value::as_str).unwrap_or("");
+    if v != 1 || kind != "x07.web_ui.effect.storage.set" {
+        return Ok(None);
+    }
+    let key = effect
+        .get("key")
+        .and_then(Value::as_str)
+        .ok_or_else(|| anyhow::anyhow!("storage.set effect missing key"))?;
+    let value = effect
+        .get("value")
+        .and_then(Value::as_str)
+        .ok_or_else(|| anyhow::anyhow!("storage.set effect missing value"))?;
+    Ok(Some((key.to_string(), value.to_string())))
+}
+
+fn parse_nav_push_effect(effect: &Value) -> Result<Option<String>> {
+    let v = effect.get("v").and_then(Value::as_u64).unwrap_or(0);
+    let kind = effect.get("kind").and_then(Value::as_str).unwrap_or("");
+    if v != 1 || kind != "x07.web_ui.effect.nav.push" {
+        return Ok(None);
+    }
+    let path = effect
+        .get("path")
+        .and_then(Value::as_str)
+        .ok_or_else(|| anyhow::anyhow!("nav.push effect missing path"))?;
+    Ok(Some(path.to_string()))
+}
+
+fn parse_nav_replace_effect(effect: &Value) -> Result<Option<String>> {
+    let v = effect.get("v").and_then(Value::as_u64).unwrap_or(0);
+    let kind = effect.get("kind").and_then(Value::as_str).unwrap_or("");
+    if v != 1 || kind != "x07.web_ui.effect.nav.replace" {
+        return Ok(None);
+    }
+    let path = effect
+        .get("path")
+        .and_then(Value::as_str)
+        .ok_or_else(|| anyhow::anyhow!("nav.replace effect missing path"))?;
+    Ok(Some(path.to_string()))
+}
+
+fn parse_timer_set_effect(effect: &Value) -> Result<Option<(String, u64)>> {
+    let v = effect.get("v").and_then(Value::as_u64).unwrap_or(0);
+    let kind = effect.get("kind").and_then(Value::as_str).unwrap_or("");
+    if v != 1 || kind != "x07.web_ui.effect.timer.set" {
+        return Ok(None);
+    }
+    let id = effect
+        .get("id")
+        .and_then(Value::as_str)
+        .ok_or_else(|| anyhow::anyhow!("timer.set effect missing id"))?;
+    let delay_ms = effect.get("delay_ms").and_then(Value::as_f64).unwrap_or(0.0);
+    if !delay_ms.is_finite() || delay_ms < 0.0 || delay_ms > (u64::MAX as f64) {
+        anyhow::bail!("timer.set effect invalid delay_ms");
+    }
+    Ok(Some((id.to_string(), delay_ms.floor() as u64)))
+}
+
+fn parse_timer_clear_effect(effect: &Value) -> Result<Option<String>> {
+    let v = effect.get("v").and_then(Value::as_u64).unwrap_or(0);
+    let kind = effect.get("kind").and_then(Value::as_str).unwrap_or("");
+    if v != 1 || kind != "x07.web_ui.effect.timer.clear" {
+        return Ok(None);
+    }
+    let id = effect
+        .get("id")
+        .and_then(Value::as_str)
+        .ok_or_else(|| anyhow::anyhow!("timer.clear effect missing id"))?;
+    Ok(Some(id.to_string()))
 }
 
 fn build_exec_request_envelope(api_prefix: &str, req0: &Value) -> Result<Value> {
@@ -889,13 +1073,53 @@ fn join_url_path(prefix: &str, path: &str) -> String {
     format!("{pfx}{p}")
 }
 
-fn inject_http_response_state(state: Value, resp_env: Value) -> Value {
+fn set_nav_href(current_href: &mut String, path: &str) -> String {
+    let path = if path.is_empty() {
+        "/".to_string()
+    } else if path.starts_with('/') {
+        path.to_string()
+    } else {
+        format!("/{path}")
+    };
+    let href = format!("http://localhost{path}");
+    *current_href = href.clone();
+    href
+}
+
+fn inject_set_field(state: Value, field: &str, value: Value) -> Value {
     let mut obj = match state {
         Value::Object(map) => map,
         _ => serde_json::Map::new(),
     };
-    obj.insert("__x07_http".to_string(), json!({ "response": resp_env }));
+    obj.insert(field.to_string(), value);
     Value::Object(obj)
+}
+
+fn inject_merge_object_field(state: Value, field: &str, inj: Value) -> Result<Value> {
+    let mut obj = match state {
+        Value::Object(map) => map,
+        _ => serde_json::Map::new(),
+    };
+    let Value::Object(inj_obj) = inj else {
+        anyhow::bail!("injection must be an object");
+    };
+
+    let merged = match obj.remove(field) {
+        Some(Value::Object(mut prev)) => {
+            for (k, v) in inj_obj {
+                prev.insert(k, v);
+            }
+            Value::Object(prev)
+        }
+        _ => Value::Object(inj_obj),
+    };
+
+    obj.insert(field.to_string(), merged);
+    Ok(Value::Object(obj))
+}
+
+fn inject_http_response_state(state: Value, resp_env: Value) -> Value {
+    inject_set_field(state, "__x07_http", json!({ "response": resp_env }))
 }
 
 async fn execute_http_request(
@@ -1032,10 +1256,12 @@ fn emit_report(
         .count() as u64;
     let failed = cases.len() as u64 - passed;
 
+    let incident_dir_str = incident_dir.map(|p| p.display().to_string());
     let stdout_json = json!({
       "dir": args.dir.display().to_string(),
       "passed": passed,
       "failed": failed,
+      "incident_dir": incident_dir_str,
       "updated_golden": updated_golden,
       "cases": cases
     });
