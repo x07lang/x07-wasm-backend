@@ -5,11 +5,17 @@ on:
     tags:
       - "v*.*.*"
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish
+        required: true
+        type: string
 
 permissions: {}
 
 env:
   CARGO_TERM_COLOR: always
+  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
 
 jobs:
   verify_tag:
@@ -19,6 +25,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
       - uses: actions/checkout@v4
         with:
           repository: x07lang/x07
@@ -26,7 +34,7 @@ jobs:
       - name: Verify tag matches crate version
         shell: bash
         run: |
-          bash .release-tools/scripts/release/verify-tag.sh --repo-kind x07-wasm-backend --tag "${GITHUB_REF_NAME}"
+          bash .release-tools/scripts/release/verify-tag.sh --repo-kind x07-wasm-backend --tag "${RELEASE_TAG}"
 
   test:
     name: test
@@ -36,6 +44,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -128,6 +138,8 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
       - uses: actions/checkout@v4
         with:
           repository: x07lang/x07
@@ -150,7 +162,7 @@ jobs:
           X07_RELEASE_TOOLS_DIR: ${{ github.workspace }}/.release-tools/scripts/release
         shell: bash
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${RELEASE_TAG#v}"
           ASSET_PATH="$(bash scripts/release/build-wasm-archive.sh \
             --component x07-wasm \
             --version "${VERSION}" \
@@ -182,6 +194,8 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
       - uses: actions/checkout@v4
         with:
           repository: x07lang/x07
@@ -201,7 +215,7 @@ jobs:
         id: meta
         shell: bash
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${RELEASE_TAG#v}"
           HOST_ABI_HASH="$(python3 - <<'PY'
           import json
           from pathlib import Path
@@ -233,7 +247,7 @@ jobs:
             --schema x07.component.release@0.1.0 \
             --component x07_wasm \
             --version "${{ steps.meta.outputs.version }}" \
-            --tag "${GITHUB_REF_NAME}" \
+            --tag "${RELEASE_TAG}" \
             --repo "https://github.com/${GITHUB_REPOSITORY}" \
             --assets-dir dist/release \
             --compat-file "releases/compat/${{ steps.meta.outputs.version }}.json" \
@@ -274,19 +288,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          if ! gh release view "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
-            gh release create "${GITHUB_REF_NAME}" \
+          if ! gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release create "${RELEASE_TAG}" \
               --repo "${GITHUB_REPOSITORY}" \
               --draft \
               --verify-tag \
-              --title "${GITHUB_REF_NAME}"
+              --title "${RELEASE_TAG}"
           fi
       - name: Upload release assets
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          gh release upload "${GITHUB_REF_NAME}" dist/release/* \
+          gh release upload "${RELEASE_TAG}" dist/release/* \
             --repo "${GITHUB_REPOSITORY}" \
             --clobber
       - name: Publish immutable release
@@ -294,6 +308,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          gh release edit "${GITHUB_REF_NAME}" \
+          gh release edit "${RELEASE_TAG}" \
             --repo "${GITHUB_REPOSITORY}" \
             --draft=false
