@@ -14,3 +14,6 @@
 **/*.o
 **/*.a
 **/*.d
+
+# Keep these checked in for the embedded-adapters path used by x07-wasm.
+!crates/x07-wasm/src/support/adapters/*.wasm

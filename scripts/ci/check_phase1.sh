@@ -83,6 +83,19 @@ x07-wasm cli specrows check --json --report-out build/wasm/cli.specrows.check.js
 x07-wasm wit validate --json --report-out build/wasm/wit.validate.json --quiet-json
 x07-wasm component profile validate --json --report-out build/wasm/component.profile.validate.json --quiet-json
 
+echo "==> gate: embedded adapter snapshots"
+cargo build --release --locked --target wasm32-wasip2 --manifest-path guest/http-adapter/Cargo.toml
+cargo build --release --locked --target wasm32-wasip2 --manifest-path guest/cli-adapter/Cargo.toml
+
+if ! cmp -s guest/http-adapter/target/wasm32-wasip2/release/x07_wasm_http_adapter.wasm crates/x07-wasm/src/support/adapters/http-adapter.component.wasm; then
+  echo "ERROR: embedded http-adapter.component.wasm is out of sync with guest/http-adapter output" >&2
+  exit 1
+fi
+if ! cmp -s guest/cli-adapter/target/wasm32-wasip2/release/x07_wasm_cli_adapter.wasm crates/x07-wasm/src/support/adapters/cli-adapter.component.wasm; then
+  echo "ERROR: embedded cli-adapter.component.wasm is out of sync with guest/cli-adapter output" >&2
+  exit 1
+fi
+
 echo "==> gate: adapters"
 x07-wasm component build --project examples/solve_pure_echo/x07.json --emit http-adapter --out-dir target/x07-wasm/component/adapters --clean \
   --json --report-out build/wasm/component.build.http_adapter.json --quiet-json
@@ -140,4 +153,3 @@ decode_first_serve_response_body_b64 build/wasm/serve.http_echo.json dist/http_e
 cmp dist/http_echo.response_body.bin examples/http_echo/tests/fixtures/response_body.bin
 
 echo "phase1: PASS"
-

@@ -6,6 +6,7 @@ use anyhow::{Context, Result};
 use serde::Deserialize;
 use serde_json::{json, Value};
 
+use crate::adapters;
 use crate::arch;
 use crate::cli::{ComponentBuildArgs, ComponentBuildEmit, MachineArgs, Scope};
 use crate::cmdutil;
@@ -2831,74 +2832,61 @@ fn build_adapter_component(
     meta: &mut report::meta::ReportMeta,
     diagnostics: &mut Vec<Diagnostic>,
 ) -> Result<Option<Value>> {
-    let manifest_path = Path::new(cargo_manifest);
-    if let Ok(d) = util::file_digest(manifest_path) {
-        meta.inputs.push(d);
-    }
-    let lock_path = Path::new(cargo_lock);
-    if lock_path.is_file() {
-        if let Ok(d) = util::file_digest(lock_path) {
+    let out_component = out_dir.join(format!("{kind}.component.wasm"));
+    let use_source = adapters::adapters_from_source_enabled();
+
+    let bytes = if use_source {
+        let manifest_path = Path::new(cargo_manifest);
+        if let Ok(d) = util::file_digest(manifest_path) {
             meta.inputs.push(d);
         }
-    }
-
-    let cargo_args = vec![
-        "build".to_string(),
-        "--release".to_string(),
-        "--locked".to_string(),
-        "--target".to_string(),
-        "wasm32-wasip2".to_string(),
-        "--manifest-path".to_string(),
-        manifest_path.display().to_string(),
-    ];
-    let cargo_out = match cmdutil::run_cmd_capture("cargo", &cargo_args) {
-        Ok(v) => Some(v),
-        Err(err) => {
-            diagnostics.push(cmdutil::diag_cmd_spawn_failed(
-                "X07WASM_CARGO_BUILD_SPAWN_FAILED",
-                Stage::Run,
-                "cargo build (adapter)",
-                &err,
-            ));
-            None
+        let lock_path = Path::new(cargo_lock);
+        if lock_path.is_file() {
+            if let Ok(d) = util::file_digest(lock_path) {
+                meta.inputs.push(d);
+            }
         }
-    };
-    if cargo_out.as_ref().is_some_and(|o| !o.status.success()) {
-        diagnostics.push(cmdutil::diag_cmd_failed(
-            "X07WASM_CARGO_BUILD_FAILED",
-            Stage::Run,
-            "cargo build (adapter)",
-            cargo_out.as_ref().unwrap().code,
-            &cargo_out.as_ref().unwrap().stderr,
-        ));
-        return Ok(None);
-    }
-    if cargo_out.is_none() {
-        return Ok(None);
-    }
 
-    let built_path = Path::new(built_component_wasm);
-    if !built_path.is_file() {
+        let built_path = Path::new(built_component_wasm);
+        let Some(bytes) = adapters::build_wasm32_wasip2_release_bytes(
+            manifest_path,
+            built_path,
+            diagnostics,
+            "cargo build (adapter)",
+        ) else {
+            return Ok(None);
+        };
+        std::borrow::Cow::Owned(bytes)
+    } else {
+        let embedded = match kind {
+            "http-adapter" => adapters::EMBEDDED_HTTP_ADAPTER_COMPONENT_WASM,
+            "cli-adapter" => adapters::EMBEDDED_CLI_ADAPTER_COMPONENT_WASM,
+            other => {
+                diagnostics.push(Diagnostic::new(
+                    "X07WASM_ADAPTER_KIND_UNSUPPORTED",
+                    Severity::Error,
+                    Stage::Run,
+                    format!("unsupported embedded adapter kind: {other:?}"),
+                ));
+                return Ok(None);
+            }
+        };
+        meta.inputs.push(adapters::embedded_digest(
+            &format!("embedded:{kind}.component.wasm"),
+            embedded,
+        ));
+        std::borrow::Cow::Borrowed(embedded)
+    };
+
+    if let Err(err) = adapters::write_bytes(&out_component, bytes.as_ref()) {
         diagnostics.push(Diagnostic::new(
-            "X07WASM_ADAPTER_BUILD_OUTPUT_MISSING",
+            "X07WASM_ADAPTER_COMPONENT_COPY_FAILED",
             Severity::Error,
             Stage::Run,
-            format!("adapter build output missing: {}", built_path.display()),
-        ));
-        return Ok(None);
-    }
-
-    let out_component = out_dir.join(format!("{kind}.component.wasm"));
-    if let Err(err) = std::fs::copy(built_path, &out_component) {
-        diagnostics.push(cmdutil::diag_io_failed(
-            "X07WASM_ADAPTER_COMPONENT_COPY_FAILED",
-            Stage::Run,
             format!(
-                "failed to copy adapter component {} -> {}",
-                built_path.display(),
+                "failed to write adapter component {}: {err:#}",
                 out_component.display()
             ),
-            &anyhow::Error::new(err),
         ));
         return Ok(None);
     }

@@ -5,6 +5,7 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
+use crate::adapters;
 use crate::cli::{MachineArgs, Scope, WebUiBuildArgs, WebUiBuildFormat};
 use crate::cmdutil;
 use crate::diag::{Diagnostic, Severity, Stage};
@@ -28,7 +29,6 @@ const WIT_WEB_UI_APP_DIR: &str = "wit/x07/web_ui/0.2.0";
 const WIT_WEB_UI_APP_WORLD: &str = "web-ui-app";
 
 const WEB_UI_ADAPTER_MANIFEST: &str = "guest/web-ui-adapter/Cargo.toml";
-const WEB_UI_ADAPTER_LOCK: &str = "guest/web-ui-adapter/Cargo.lock";
 const WEB_UI_ADAPTER_COMPONENT_WASM: &str =
     "guest/web-ui-adapter/target/wasm32-wasip2/release/x07_wasm_web_ui_adapter.wasm";
 
@@ -887,71 +887,32 @@ fn build_web_ui_adapter_component(
     out_path: &Path,
     diagnostics: &mut Vec<Diagnostic>,
 ) -> Result<()> {
-    let manifest_path = Path::new(WEB_UI_ADAPTER_MANIFEST);
-    let lock_path = Path::new(WEB_UI_ADAPTER_LOCK);
-
-    let cargo_args = vec![
-        "build".to_string(),
-        "--release".to_string(),
-        "--locked".to_string(),
-        "--target".to_string(),
-        "wasm32-wasip2".to_string(),
-        "--manifest-path".to_string(),
-        manifest_path.display().to_string(),
-    ];
-    let cargo_out = match cmdutil::run_cmd_capture("cargo", &cargo_args) {
-        Ok(v) => Some(v),
-        Err(err) => {
-            diagnostics.push(cmdutil::diag_cmd_spawn_failed(
-                "X07WASM_CARGO_BUILD_SPAWN_FAILED",
-                Stage::Run,
-                "cargo build (web-ui-adapter)",
-                &err,
-            ));
-            None
-        }
-    };
-    if cargo_out.as_ref().is_some_and(|o| !o.status.success()) {
-        diagnostics.push(cmdutil::diag_cmd_failed(
-            "X07WASM_CARGO_BUILD_FAILED",
-            Stage::Run,
+    let bytes = if adapters::adapters_from_source_enabled() {
+        let manifest_path = Path::new(WEB_UI_ADAPTER_MANIFEST);
+        let built_path = Path::new(WEB_UI_ADAPTER_COMPONENT_WASM);
+        let Some(bytes) = adapters::build_wasm32_wasip2_release_bytes(
+            manifest_path,
+            built_path,
+            diagnostics,
             "cargo build (web-ui-adapter)",
-            cargo_out.as_ref().unwrap().code,
-            &cargo_out.as_ref().unwrap().stderr,
-        ));
-        return Ok(());
-    }
-    if cargo_out.is_none() {
-        return Ok(());
-    }
+        ) else {
+            return Ok(());
+        };
+        std::borrow::Cow::Owned(bytes)
+    } else {
+        std::borrow::Cow::Borrowed(adapters::EMBEDDED_WEB_UI_ADAPTER_COMPONENT_WASM)
+    };
 
-    let built_path = Path::new(WEB_UI_ADAPTER_COMPONENT_WASM);
-    if !built_path.is_file() {
-        diagnostics.push(Diagnostic::new(
-            "X07WASM_ADAPTER_BUILD_OUTPUT_MISSING",
-            Severity::Error,
-            Stage::Run,
-            format!("adapter build output missing: {}", built_path.display()),
-        ));
-        return Ok(());
-    }
-
-    if let Some(parent) = out_path.parent() {
-        let _ = std::fs::create_dir_all(parent);
-    }
-    if let Err(err) = std::fs::copy(built_path, out_path) {
+    if let Err(err) = adapters::write_bytes(out_path, bytes.as_ref()) {
         diagnostics.push(Diagnostic::new(
             "X07WASM_ADAPTER_COMPONENT_COPY_FAILED",
             Severity::Error,
             Stage::Run,
             format!(
-                "failed to copy adapter component {} -> {}: {err}",
-                built_path.display(),
+                "failed to write adapter component {}: {err:#}",
                 out_path.display()
             ),
         ));
     }
-
-    let _ = lock_path;
     Ok(())
 }

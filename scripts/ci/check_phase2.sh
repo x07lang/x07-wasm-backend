@@ -50,6 +50,13 @@ x07-wasm cli specrows check --json --report-out build/wasm/cli.specrows.check.js
 x07-wasm wit validate --json --report-out build/wasm/wit.validate.json --quiet-json
 x07-wasm component profile validate --json --report-out build/wasm/component.profile.validate.json --quiet-json
 
+echo "==> gate: embedded web-ui adapter snapshot"
+cargo build --release --locked --target wasm32-wasip2 --manifest-path guest/web-ui-adapter/Cargo.toml
+if ! cmp -s guest/web-ui-adapter/target/wasm32-wasip2/release/x07_wasm_web_ui_adapter.wasm crates/x07-wasm/src/support/adapters/web-ui-adapter.component.wasm; then
+  echo "ERROR: embedded web-ui-adapter.component.wasm is out of sync with guest/web-ui-adapter output" >&2
+  exit 1
+fi
+
 echo "==> gate: contracts"
 x07-wasm web-ui contracts validate --json --report-out build/wasm/web-ui.contracts.validate.json --quiet-json
 x07-wasm web-ui profile validate --json --report-out build/wasm/web-ui.profile.validate.json --quiet-json

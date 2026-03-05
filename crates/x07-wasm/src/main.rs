@@ -1,5 +1,6 @@
 #![recursion_limit = "1024"]
 
+mod adapters;
 mod app;
 mod arch;
 mod blob;
