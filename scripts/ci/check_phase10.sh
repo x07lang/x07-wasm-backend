@@ -6,8 +6,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # Re-run Phase0..9 gates first.
 bash "${ROOT_DIR}/scripts/ci/check_phase9.sh"
 
-IOS_TEMPLATE_DIR="${ROOT_DIR}/mobile/ios/template"
-ANDROID_TEMPLATE_DIR="${ROOT_DIR}/mobile/android/template"
+IOS_TEMPLATE_DIR="${ROOT_DIR}/crates/x07-wasm/src/support/mobile/ios/template"
+ANDROID_TEMPLATE_DIR="${ROOT_DIR}/crates/x07-wasm/src/support/mobile/android/template"
 VENDORED_HOST_DIR="${ROOT_DIR}/vendor/x07-web-ui/host"
 
 test -d "${IOS_TEMPLATE_DIR}"
