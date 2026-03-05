@@ -317,12 +317,17 @@ fn build_frontend(
         web_ui_args,
     )?;
     if code != 0 {
-        diagnostics.push(Diagnostic::new(
+        let mut d = Diagnostic::new(
             "X07WASM_APP_WEB_UI_BUILD_FAILED",
             Severity::Error,
             Stage::Run,
             format!("x07-wasm web-ui build failed (exit_code={code})"),
-        ));
+        );
+        d.data.insert(
+            "report_out".to_string(),
+            json!(nested_report_out.display().to_string()),
+        );
+        diagnostics.push(d);
     }
     Ok(())
 }
@@ -386,12 +391,17 @@ fn build_backend(
         build_args,
     )?;
     if code != 0 {
-        diagnostics.push(Diagnostic::new(
+        let mut d = Diagnostic::new(
             "X07WASM_APP_COMPONENT_BUILD_FAILED",
             Severity::Error,
             Stage::Run,
             format!("x07-wasm component build failed (exit_code={code})"),
-        ));
+        );
+        d.data.insert(
+            "report_out".to_string(),
+            json!(component_build_report.display().to_string()),
+        );
+        diagnostics.push(d);
         return Ok(());
     }
 
@@ -564,4 +574,153 @@ fn collect_files_recursively(dir: &Path, out: &mut Vec<PathBuf>) -> Result<()> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Mutex;
+
+    static CWD_LOCK: Mutex<()> = Mutex::new(());
+    static TMP_SEQ: AtomicUsize = AtomicUsize::new(0);
+
+    fn tmp_dir(tag: &str) -> PathBuf {
+        let n = TMP_SEQ.fetch_add(1, Ordering::Relaxed);
+        let name = format!("x07-wasm-app-build-{tag}-{}-{n}", std::process::id());
+        std::env::temp_dir().join(name)
+    }
+
+    struct CwdGuard {
+        prev: PathBuf,
+    }
+
+    impl Drop for CwdGuard {
+        fn drop(&mut self) {
+            let _ = std::env::set_current_dir(&self.prev);
+        }
+    }
+
+    fn enter_tmp_cwd(tag: &str) -> (PathBuf, CwdGuard) {
+        let prev = std::env::current_dir().expect("current_dir");
+        let dir = tmp_dir(tag);
+        std::fs::create_dir_all(&dir).expect("create_dir_all tmp");
+        std::env::set_current_dir(&dir).expect("set_current_dir tmp");
+        (dir, CwdGuard { prev })
+    }
+
+    #[test]
+    fn app_build_web_ui_failure_includes_nested_report_out() {
+        let _guard = CWD_LOCK.lock().unwrap();
+        let (tmp, cwd) = enter_tmp_cwd("web_ui_report_out");
+
+        let store = SchemaStore::new().expect("SchemaStore::new");
+        let mut meta = report::meta::tool_meta(&[], std::time::Instant::now());
+        let mut diagnostics: Vec<Diagnostic> = Vec::new();
+
+        let profile = LoadedAppProfileForBuild {
+            id: "test_profile".to_string(),
+            frontend: AppProfileFrontendForBuild {
+                format: "core_wasm_v1".to_string(),
+                project: PathBuf::from("frontend/x07.json"),
+                web_ui_profile_id: "web_ui_release".to_string(),
+                out_dir_rel: PathBuf::from("frontend"),
+            },
+            backend: AppProfileBackendForBuild {
+                adapter: "wasi_http_proxy_v1".to_string(),
+                project: PathBuf::from("backend/x07.json"),
+                component_profile_id: "component_release".to_string(),
+                out_rel: PathBuf::from("backend/app.http.component.wasm"),
+            },
+            routing_api_prefix: "/api".to_string(),
+        };
+
+        build_frontend(
+            &store,
+            &profile,
+            Path::new("dist/frontend"),
+            &mut meta,
+            &mut diagnostics,
+            false,
+        )
+        .expect("build_frontend");
+
+        let d = diagnostics
+            .iter()
+            .find(|d| d.code == "X07WASM_APP_WEB_UI_BUILD_FAILED")
+            .expect("expected X07WASM_APP_WEB_UI_BUILD_FAILED diagnostic");
+        let expected = PathBuf::from("target")
+            .join("x07-wasm")
+            .join("app")
+            .join(&profile.id)
+            .join("frontend")
+            .join("web-ui.build.report.json")
+            .display()
+            .to_string();
+        assert_eq!(
+            d.data.get("report_out").and_then(|v| v.as_str()),
+            Some(expected.as_str())
+        );
+
+        drop(cwd);
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    #[test]
+    fn app_build_component_failure_includes_nested_report_out() {
+        let _guard = CWD_LOCK.lock().unwrap();
+        let (tmp, cwd) = enter_tmp_cwd("component_report_out");
+
+        let store = SchemaStore::new().expect("SchemaStore::new");
+        let mut meta = report::meta::tool_meta(&[], std::time::Instant::now());
+        let mut diagnostics: Vec<Diagnostic> = Vec::new();
+
+        let profile = LoadedAppProfileForBuild {
+            id: "test_profile".to_string(),
+            frontend: AppProfileFrontendForBuild {
+                format: "core_wasm_v1".to_string(),
+                project: PathBuf::from("frontend/x07.json"),
+                web_ui_profile_id: "web_ui_release".to_string(),
+                out_dir_rel: PathBuf::from("frontend"),
+            },
+            backend: AppProfileBackendForBuild {
+                adapter: "wasi_http_proxy_v1".to_string(),
+                project: PathBuf::from("backend/x07.json"),
+                component_profile_id: "component_release".to_string(),
+                out_rel: PathBuf::from("backend/app.http.component.wasm"),
+            },
+            routing_api_prefix: "/api".to_string(),
+        };
+
+        build_backend(
+            &store,
+            &profile,
+            Path::new("dist"),
+            &mut meta,
+            &mut diagnostics,
+            false,
+        )
+        .expect("build_backend");
+
+        let d = diagnostics
+            .iter()
+            .find(|d| d.code == "X07WASM_APP_COMPONENT_BUILD_FAILED")
+            .expect("expected X07WASM_APP_COMPONENT_BUILD_FAILED diagnostic");
+        let expected = PathBuf::from("target")
+            .join("x07-wasm")
+            .join("app")
+            .join(&profile.id)
+            .join("backend")
+            .join("component.build.report.json")
+            .display()
+            .to_string();
+        assert_eq!(
+            d.data.get("report_out").and_then(|v| v.as_str()),
+            Some(expected.as_str())
+        );
+
+        drop(cwd);
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
 }
