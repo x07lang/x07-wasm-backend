@@ -84,33 +84,7 @@ x07-wasm wit validate --json --report-out build/wasm/wit.validate.json --quiet-j
 x07-wasm component profile validate --json --report-out build/wasm/component.profile.validate.json --quiet-json
 
 echo "==> gate: embedded adapter snapshots"
-if ! command -v wasm-tools >/dev/null 2>&1; then
-  echo "wasm-tools not found on PATH (required to canonicalize adapter snapshots)" >&2
-  exit 1
-fi
-
-canon_tmp_dir="$(mktemp -d)"
-cleanup_canon_tmp_dir() {
-  rm -rf "${canon_tmp_dir}"
-}
-trap cleanup_canon_tmp_dir EXIT
-
-cargo build --release --locked --target wasm32-wasip2 --manifest-path guest/http-adapter/Cargo.toml
-cargo build --release --locked --target wasm32-wasip2 --manifest-path guest/cli-adapter/Cargo.toml
-
-wasm-tools strip -a guest/http-adapter/target/wasm32-wasip2/release/x07_wasm_http_adapter.wasm -o "${canon_tmp_dir}/http-adapter.guest.wasm"
-wasm-tools strip -a crates/x07-wasm/src/support/adapters/http-adapter.component.wasm -o "${canon_tmp_dir}/http-adapter.embedded.wasm"
-if ! cmp -s "${canon_tmp_dir}/http-adapter.guest.wasm" "${canon_tmp_dir}/http-adapter.embedded.wasm"; then
-  echo "ERROR: embedded http-adapter.component.wasm is out of sync with guest/http-adapter output" >&2
-  exit 1
-fi
-
-wasm-tools strip -a guest/cli-adapter/target/wasm32-wasip2/release/x07_wasm_cli_adapter.wasm -o "${canon_tmp_dir}/cli-adapter.guest.wasm"
-wasm-tools strip -a crates/x07-wasm/src/support/adapters/cli-adapter.component.wasm -o "${canon_tmp_dir}/cli-adapter.embedded.wasm"
-if ! cmp -s "${canon_tmp_dir}/cli-adapter.guest.wasm" "${canon_tmp_dir}/cli-adapter.embedded.wasm"; then
-  echo "ERROR: embedded cli-adapter.component.wasm is out of sync with guest/cli-adapter output" >&2
-  exit 1
-fi
+scripts/ci/check_embedded_adapter_snapshots.sh http cli
 
 echo "==> gate: adapters"
 x07-wasm component build --project examples/solve_pure_echo/x07.json --emit http-adapter --out-dir target/x07-wasm/component/adapters --clean \

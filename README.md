@@ -139,14 +139,12 @@ If CI fails in a phase gate, run the corresponding `scripts/ci/check_phase*.sh` 
 Some phase gates (notably Phase 1–2) also validate that embedded adapter snapshots under `crates/x07-wasm/src/support/adapters/` match what `guest/*` builds produce. If you change `guest/*` or bump `rust-toolchain.toml`, refresh the snapshots:
 
 ```sh
-cargo build --release --locked --target wasm32-wasip2 --manifest-path guest/http-adapter/Cargo.toml
-cargo build --release --locked --target wasm32-wasip2 --manifest-path guest/cli-adapter/Cargo.toml
-cargo build --release --locked --target wasm32-wasip2 --manifest-path guest/web-ui-adapter/Cargo.toml
-
-cp guest/http-adapter/target/wasm32-wasip2/release/x07_wasm_http_adapter.wasm crates/x07-wasm/src/support/adapters/http-adapter.component.wasm
-cp guest/cli-adapter/target/wasm32-wasip2/release/x07_wasm_cli_adapter.wasm crates/x07-wasm/src/support/adapters/cli-adapter.component.wasm
-cp guest/web-ui-adapter/target/wasm32-wasip2/release/x07_wasm_web_ui_adapter.wasm crates/x07-wasm/src/support/adapters/web-ui-adapter.component.wasm
+bash scripts/update_adapter_snapshots.sh
 ```
+
+Notes:
+- Adapter WASM bytes are not stable across host OSes. Snapshots are treated as Linux/amd64-canonical, and the drift check runs only on Linux (Ubuntu CI).
+- `scripts/update_adapter_snapshots.sh` requires Docker; it builds the guest adapters in a linux/amd64 container using the pinned `rust-toolchain.toml` channel, then copies the outputs into `crates/x07-wasm/src/support/adapters/*.component.wasm`.
 
 ## Phase docs
 

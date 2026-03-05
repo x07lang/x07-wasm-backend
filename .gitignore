@@ -6,6 +6,8 @@
 /.wasi-sdk/
 /.wasmtime/
 /tmp_wit_bindgen/
+/.tmp-linux-amd64-target/
+/.tmp-linux-target/
 **/target/
 **/build/
 **/dist/
