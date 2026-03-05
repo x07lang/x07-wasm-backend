@@ -47,6 +47,10 @@ TREE_DIRS = [
         VENDORED_REPO_DIR / "packages" / "std-web-ui" / "0.1.4" / "modules",
     ),
     (
+        "packages/std-web-ui/0.1.5/modules",
+        VENDORED_REPO_DIR / "packages" / "std-web-ui" / "0.1.5" / "modules",
+    ),
+    (
         "examples/web_ui_counter",
         VENDORED_REPO_DIR / "examples" / "web_ui_counter",
     ),
