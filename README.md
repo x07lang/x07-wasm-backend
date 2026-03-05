@@ -116,6 +116,24 @@ x07-wasm run \
 
 Example freestanding smoke: `examples/solve_pure_echo/ci/freestanding_smoke.sh`
 
+## Avoiding CI reruns (pre-push checklist)
+
+The CI workflow runs `cargo fmt --check`, `cargo test`, and `cargo clippy --all-targets -- -D warnings` on every push. Run these locally before pushing (especially to `main`) to avoid “fix-and-push-again” loops:
+
+```sh
+cargo fmt --all -- --check
+cargo test
+cargo clippy --all-targets -- -D warnings
+```
+
+Then run the phase gate(s) that match what you changed:
+- Phase 0–1: WASM / components toolchain changes.
+- Phase 2–3: web-ui and app pipeline changes.
+- Phase 4–7: native backend / hardening / ops / provenance changes.
+- Phase 8–10: device pipeline / templates / host ABI changes.
+
+If CI fails in a phase gate, run the corresponding `scripts/ci/check_phase*.sh` locally; they are the same entry points CI uses.
+
 ## Phase docs
 
 - `docs/phase0.md` through `docs/phase10.md`
