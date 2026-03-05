@@ -55,6 +55,46 @@ jobs:
             zlib1g-dev \
             libsqlite3-dev \
             xz-utils
+      - name: Install x07 (pinned tag)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.53 x07
+          cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.53 x07-host-runner
+          x07 --version
+      - name: Install wasmtime (pinned)
+        shell: bash
+        run: |
+          set -euo pipefail
+          V=42.0.0
+          OS="linux"
+          ARCH="x86_64"
+          EXT="tar.xz"
+          ASSET="wasmtime-v${V}-${ARCH}-${OS}.${EXT}"
+          URL="https://github.com/bytecodealliance/wasmtime/releases/download/v${V}/${ASSET}"
+          mkdir -p .wasmtime
+          curl -fsSL --retry 10 --retry-connrefused --retry-all-errors --retry-delay 2 "$URL" -o ".wasmtime/wasmtime.${EXT}"
+          tar -xJf ".wasmtime/wasmtime.${EXT}" -C .wasmtime
+          wasmtime_dir="${PWD}/.wasmtime/wasmtime-v${V}-${ARCH}-${OS}"
+          echo "${wasmtime_dir}" >> "${GITHUB_PATH}"
+          export PATH="${wasmtime_dir}:${PATH}"
+          wasmtime --version
+      - name: Install component toolchain (pinned)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo install --locked --version 1.245.1 wasm-tools
+          cargo install --locked --version 0.53.1 wit-bindgen-cli
+          cargo install --locked --version 0.9.0 wac-cli
+          wasm-tools --version
+          wit-bindgen --version
+          wac --version
+      - name: Install jco (pinned)
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install -g @bytecodealliance/jco@1.16.1
+          jco --version
       - name: Run release gate
         shell: bash
         run: |
