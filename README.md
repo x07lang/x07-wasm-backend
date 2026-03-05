@@ -8,6 +8,8 @@ x07-wasm-backend is designed for **100% agentic coding** — an AI coding agent 
 
 The [X07 toolchain](https://github.com/x07lang/x07) must be installed before using x07-wasm-backend. If you (or your agent) are new to X07, start with the **[Agent Quickstart](https://x07lang.org/docs/getting-started/agent-quickstart)** — it covers toolchain setup, project structure, and the workflow conventions an agent needs to be productive.
 
+Rust is pinned via `rust-toolchain.toml` for deterministic outputs (including embedded WASM adapter snapshots). Run `cargo`/CI gate scripts from this repo root so `rustup` applies the pin.
+
 ## Install
 
 ```sh
@@ -133,6 +135,18 @@ Then run the phase gate(s) that match what you changed:
 - Phase 8–10: device pipeline / templates / host ABI changes.
 
 If CI fails in a phase gate, run the corresponding `scripts/ci/check_phase*.sh` locally; they are the same entry points CI uses.
+
+Some phase gates (notably Phase 1–2) also validate that embedded adapter snapshots under `crates/x07-wasm/src/support/adapters/` match what `guest/*` builds produce. If you change `guest/*` or bump `rust-toolchain.toml`, refresh the snapshots:
+
+```sh
+cargo build --release --locked --target wasm32-wasip2 --manifest-path guest/http-adapter/Cargo.toml
+cargo build --release --locked --target wasm32-wasip2 --manifest-path guest/cli-adapter/Cargo.toml
+cargo build --release --locked --target wasm32-wasip2 --manifest-path guest/web-ui-adapter/Cargo.toml
+
+cp guest/http-adapter/target/wasm32-wasip2/release/x07_wasm_http_adapter.wasm crates/x07-wasm/src/support/adapters/http-adapter.component.wasm
+cp guest/cli-adapter/target/wasm32-wasip2/release/x07_wasm_cli_adapter.wasm crates/x07-wasm/src/support/adapters/cli-adapter.component.wasm
+cp guest/web-ui-adapter/target/wasm32-wasip2/release/x07_wasm_web_ui_adapter.wasm crates/x07-wasm/src/support/adapters/web-ui-adapter.component.wasm
+```
 
 ## Phase docs
 
