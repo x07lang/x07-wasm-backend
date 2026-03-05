@@ -799,14 +799,9 @@ async fn run_effects_loop(
         for eff in effects {
             if let Some(req0) = parse_http_request_effect(&eff)? {
                 let req_env = build_exec_request_envelope(app_budgets.api_prefix.as_str(), &req0)?;
-                let resp_env = execute_http_request(
-                    host,
-                    http_budgets,
-                    &req_env,
-                    caps.clone(),
-                    wasi_base_dir,
-                )
-                .await?;
+                let resp_env =
+                    execute_http_request(host, http_budgets, &req_env, caps.clone(), wasi_base_dir)
+                        .await?;
                 exchanges.push(json!({ "request": req_env.clone(), "response": resp_env.clone() }));
                 injected_state = inject_http_response_state(injected_state, resp_env);
                 continue;
@@ -910,7 +905,8 @@ async fn run_effects_loop(
 }
 
 fn frame_effects(frame: &Value) -> Vec<Value> {
-    frame.get("effects")
+    frame
+        .get("effects")
         .and_then(Value::as_array)
         .cloned()
         .unwrap_or_default()
@@ -1002,7 +998,10 @@ fn parse_timer_set_effect(effect: &Value) -> Result<Option<(String, u64)>> {
         .get("id")
         .and_then(Value::as_str)
         .ok_or_else(|| anyhow::anyhow!("timer.set effect missing id"))?;
-    let delay_ms = effect.get("delay_ms").and_then(Value::as_f64).unwrap_or(0.0);
+    let delay_ms = effect
+        .get("delay_ms")
+        .and_then(Value::as_f64)
+        .unwrap_or(0.0);
     if !delay_ms.is_finite() || delay_ms < 0.0 || delay_ms > (u64::MAX as f64) {
         anyhow::bail!("timer.set effect invalid delay_ms");
     }
