@@ -41,7 +41,7 @@ All Phase 0 commands support JSON reports with:
 - `--json-schema` / `--json-schema-id` discovery
 - `--report-out` + `--quiet-json` for file-only emission
 
-Schemas live in `spec/schemas/` and are intended to be published under `https://x07.io/spec/`.
+Schemas live in `crates/x07-wasm/spec/schemas/` and are intended to be published under `https://x07.io/spec/`.
 
 ## Incident bundles
 

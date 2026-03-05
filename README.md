@@ -96,7 +96,7 @@ x07-wasm run \
 - Web UI profile registry: `arch/web_ui/index.x07webui.json`
 - App profile registry: `arch/app/index.x07app.json`
 - Device profile registry: `arch/device/index.x07device.json`
-- Schemas (published to `https://x07.io/spec/`): `spec/schemas/*.schema.json`
+- Schemas (published to `https://x07.io/spec/`): `crates/x07-wasm/spec/schemas/*.schema.json`
 
 ## CI gates
 

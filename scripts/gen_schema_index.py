@@ -27,7 +27,7 @@ def main() -> int:
     args = ap.parse_args()
 
     root = pathlib.Path(__file__).resolve().parents[1]
-    schemas_dir = root / "spec" / "schemas"
+    schemas_dir = root / "crates" / "x07-wasm" / "spec" / "schemas"
     out_path = schemas_dir / "index.json"
 
     index_doc = build_index(schemas_dir)
@@ -50,4 +50,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

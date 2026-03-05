@@ -9,203 +9,198 @@ use crate::diag::{Diagnostic, Severity, Stage};
 use crate::report;
 use crate::report::machine::{self, JsonMode};
 
-const X07DIAG_SCHEMA_BYTES: &[u8] = include_bytes!("../../../../spec/schemas/x07diag.schema.json");
+const X07DIAG_SCHEMA_BYTES: &[u8] = include_bytes!("../../spec/schemas/x07diag.schema.json");
 const X07CLI_SPECROWS_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07cli.specrows.schema.json");
+    include_bytes!("../../spec/schemas/x07cli.specrows.schema.json");
 
 const X07_ARCH_WASM_INDEX_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-arch.wasm.index.schema.json");
+    include_bytes!("../../spec/schemas/x07-arch.wasm.index.schema.json");
 const X07_ARCH_WIT_INDEX_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-arch.wit.index.schema.json");
+    include_bytes!("../../spec/schemas/x07-arch.wit.index.schema.json");
 const X07_ARCH_WASM_COMPONENT_INDEX_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-arch.wasm.component.index.schema.json");
+    include_bytes!("../../spec/schemas/x07-arch.wasm.component.index.schema.json");
 const X07_ARCH_WEB_UI_INDEX_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-arch.web_ui.index.schema.json");
+    include_bytes!("../../spec/schemas/x07-arch.web_ui.index.schema.json");
 const X07_ARCH_DEVICE_INDEX_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-arch.device.index.schema.json");
+    include_bytes!("../../spec/schemas/x07-arch.device.index.schema.json");
 const X07_ARCH_APP_INDEX_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-arch.app.index.schema.json");
+    include_bytes!("../../spec/schemas/x07-arch.app.index.schema.json");
 const X07_ARCH_APP_OPS_INDEX_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-arch.app.ops.index.schema.json");
+    include_bytes!("../../spec/schemas/x07-arch.app.ops.index.schema.json");
 const X07_APP_OPS_PROFILE_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-app.ops.profile.schema.json");
+    include_bytes!("../../spec/schemas/x07-app.ops.profile.schema.json");
 const X07_APP_CAPABILITIES_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-app.capabilities.schema.json");
+    include_bytes!("../../spec/schemas/x07-app.capabilities.schema.json");
 const X07_POLICY_CARD_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-policy.card.schema.json");
+    include_bytes!("../../spec/schemas/x07-policy.card.schema.json");
 const X07_SLO_PROFILE_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-slo.profile.schema.json");
+    include_bytes!("../../spec/schemas/x07-slo.profile.schema.json");
 const X07_WASM_CAPS_EVIDENCE_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.caps.evidence.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.caps.evidence.schema.json");
 const X07_METRICS_SNAPSHOT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-metrics.snapshot.schema.json");
+    include_bytes!("../../spec/schemas/x07-metrics.snapshot.schema.json");
 const X07_DEPLOY_PLAN_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-deploy.plan.schema.json");
+    include_bytes!("../../spec/schemas/x07-deploy.plan.schema.json");
 const X07_PROVENANCE_DSSE_ENVELOPE_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-provenance.dsse.envelope.schema.json");
+    include_bytes!("../../spec/schemas/x07-provenance.dsse.envelope.schema.json");
 const X07_PROVENANCE_SLSA_ATTESTATION_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-provenance.slsa.attestation.schema.json");
+    include_bytes!("../../spec/schemas/x07-provenance.slsa.attestation.schema.json");
 const X07_ARCH_WASM_TOOLCHAIN_INDEX_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-arch.wasm.toolchain.index.schema.json");
+    include_bytes!("../../spec/schemas/x07-arch.wasm.toolchain.index.schema.json");
 const X07_WASM_PROFILE_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.profile.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.profile.schema.json");
 const X07_WASM_RUNTIME_LIMITS_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.runtime.limits.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.runtime.limits.schema.json");
 const X07_WASM_COMPONENT_PROFILE_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.component.profile.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.component.profile.schema.json");
 const X07_WASM_COMPONENT_ARTIFACT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.component.artifact.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.component.artifact.schema.json");
 const X07_WASM_ARTIFACT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.artifact.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.artifact.schema.json");
 
 const X07_WASM_TOOLCHAIN_PROFILE_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.toolchain.profile.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.toolchain.profile.schema.json");
 
 const X07_WEB_UI_PROFILE_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-web_ui.profile.schema.json");
+    include_bytes!("../../spec/schemas/x07-web_ui.profile.schema.json");
 const X07_WEB_UI_DISPATCH_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-web_ui.dispatch.schema.json");
+    include_bytes!("../../spec/schemas/x07-web_ui.dispatch.schema.json");
 const X07_WEB_UI_TREE_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-web_ui.tree.schema.json");
+    include_bytes!("../../spec/schemas/x07-web_ui.tree.schema.json");
 const X07_WEB_UI_PATCHSET_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-web_ui.patchset.schema.json");
+    include_bytes!("../../spec/schemas/x07-web_ui.patchset.schema.json");
 const X07_WEB_UI_FRAME_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-web_ui.frame.schema.json");
+    include_bytes!("../../spec/schemas/x07-web_ui.frame.schema.json");
 const X07_WEB_UI_EFFECT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-web_ui.effect.schema.json");
+    include_bytes!("../../spec/schemas/x07-web_ui.effect.schema.json");
 const X07_WEB_UI_TRACE_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-web_ui.trace.schema.json");
+    include_bytes!("../../spec/schemas/x07-web_ui.trace.schema.json");
 
 const X07_DEVICE_PROFILE_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-device.profile.schema.json");
+    include_bytes!("../../spec/schemas/x07-device.profile.schema.json");
 const X07_DEVICE_BUNDLE_MANIFEST_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-device.bundle.manifest.schema.json");
+    include_bytes!("../../spec/schemas/x07-device.bundle.manifest.schema.json");
 const X07_DEVICE_PACKAGE_MANIFEST_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-device.package.manifest.schema.json");
+    include_bytes!("../../spec/schemas/x07-device.package.manifest.schema.json");
 
 const X07_APP_PROFILE_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-app.profile.schema.json");
+    include_bytes!("../../spec/schemas/x07-app.profile.schema.json");
 const X07_APP_BUNDLE_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-app.bundle.schema.json");
+    include_bytes!("../../spec/schemas/x07-app.bundle.schema.json");
 const X07_APP_PACK_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-app.pack.schema.json");
+    include_bytes!("../../spec/schemas/x07-app.pack.schema.json");
 const X07_HTTP_REQUEST_ENVELOPE_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-http.request.envelope.schema.json");
+    include_bytes!("../../spec/schemas/x07-http.request.envelope.schema.json");
 const X07_HTTP_RESPONSE_ENVELOPE_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-http.response.envelope.schema.json");
+    include_bytes!("../../spec/schemas/x07-http.response.envelope.schema.json");
 const X07_HTTP_EFFECT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-http.effect.schema.json");
+    include_bytes!("../../spec/schemas/x07-http.effect.schema.json");
 const X07_HTTP_DISPATCH_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-http.dispatch.schema.json");
+    include_bytes!("../../spec/schemas/x07-http.dispatch.schema.json");
 const X07_HTTP_FRAME_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-http.frame.schema.json");
+    include_bytes!("../../spec/schemas/x07-http.frame.schema.json");
 const X07_HTTP_TRACE_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-http.trace.schema.json");
+    include_bytes!("../../spec/schemas/x07-http.trace.schema.json");
 const X07_APP_TRACE_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-app.trace.schema.json");
+    include_bytes!("../../spec/schemas/x07-app.trace.schema.json");
 
 const X07_WASM_TOOLCHAIN_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.toolchain.validate.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.toolchain.validate.report.schema.json");
 const X07_WASM_OPS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.ops.validate.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.ops.validate.report.schema.json");
 const X07_WASM_CAPS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.caps.validate.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.caps.validate.report.schema.json");
 const X07_WASM_POLICY_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.policy.validate.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.policy.validate.report.schema.json");
 const X07_WASM_SLO_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.slo.validate.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.slo.validate.report.schema.json");
 const X07_WASM_SLO_EVAL_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.slo.eval.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.slo.eval.report.schema.json");
 const X07_WASM_DEPLOY_PLAN_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.deploy.plan.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.deploy.plan.report.schema.json");
 const X07_WASM_PROVENANCE_ATTEST_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.provenance.attest.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.provenance.attest.report.schema.json");
 const X07_WASM_PROVENANCE_VERIFY_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.provenance.verify.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.provenance.verify.report.schema.json");
 const X07_WASM_BUILD_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.build.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.build.report.schema.json");
 const X07_WASM_RUN_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.run.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.run.report.schema.json");
 const X07_WASM_SERVE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.serve.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.serve.report.schema.json");
 const X07_WASM_COMPONENT_BUILD_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.component.build.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.component.build.report.schema.json");
 const X07_WASM_COMPONENT_COMPOSE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.component.compose.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.component.compose.report.schema.json");
 const X07_WASM_COMPONENT_TARGETS_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.component.targets.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.component.targets.report.schema.json");
 const X07_WASM_COMPONENT_RUN_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.component.run.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.component.run.report.schema.json");
 const X07_WASM_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.profile.validate.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.profile.validate.report.schema.json");
 const X07_WASM_DEVICE_INDEX_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.device.index.validate.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.device.index.validate.report.schema.json");
 const X07_WASM_DEVICE_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.device.profile.validate.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.device.profile.validate.report.schema.json");
 const X07_WASM_DEVICE_BUILD_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.device.build.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.device.build.report.schema.json");
 const X07_WASM_DEVICE_VERIFY_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.device.verify.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.device.verify.report.schema.json");
 const X07_WASM_DEVICE_PROVENANCE_ATTEST_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.device.provenance.attest.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.device.provenance.attest.report.schema.json");
 const X07_WASM_DEVICE_PROVENANCE_VERIFY_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.device.provenance.verify.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.device.provenance.verify.report.schema.json");
 const X07_WASM_DEVICE_RUN_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.device.run.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.device.run.report.schema.json");
 const X07_WASM_DEVICE_PACKAGE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.device.package.report.schema.json");
-const X07_WASM_WEB_UI_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] = include_bytes!(
-    "../../../../spec/schemas/x07-wasm.web_ui.contracts.validate.report.schema.json"
-);
+    include_bytes!("../../spec/schemas/x07-wasm.device.package.report.schema.json");
+const X07_WASM_WEB_UI_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../spec/schemas/x07-wasm.web_ui.contracts.validate.report.schema.json");
 const X07_WASM_WEB_UI_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.web_ui.profile.validate.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.web_ui.profile.validate.report.schema.json");
 const X07_WASM_WEB_UI_BUILD_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.web_ui.build.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.web_ui.build.report.schema.json");
 const X07_WASM_WEB_UI_SERVE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.web_ui.serve.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.web_ui.serve.report.schema.json");
 const X07_WASM_WEB_UI_TEST_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.web_ui.test.report.schema.json");
-const X07_WASM_WEB_UI_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES: &[u8] = include_bytes!(
-    "../../../../spec/schemas/x07-wasm.web_ui.regress.from.incident.report.schema.json"
-);
+    include_bytes!("../../spec/schemas/x07-wasm.web_ui.test.report.schema.json");
+const X07_WASM_WEB_UI_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../spec/schemas/x07-wasm.web_ui.regress.from.incident.report.schema.json");
 const X07_WASM_APP_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.app.profile.validate.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.app.profile.validate.report.schema.json");
 const X07_WASM_APP_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.app.contracts.validate.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.app.contracts.validate.report.schema.json");
 const X07_WASM_APP_BUILD_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.app.build.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.app.build.report.schema.json");
 const X07_WASM_APP_SERVE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.app.serve.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.app.serve.report.schema.json");
 const X07_WASM_APP_TEST_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.app.test.report.schema.json");
-const X07_WASM_APP_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES: &[u8] = include_bytes!(
-    "../../../../spec/schemas/x07-wasm.app.regress.from_incident.report.schema.json"
-);
+    include_bytes!("../../spec/schemas/x07-wasm.app.test.report.schema.json");
+const X07_WASM_APP_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../spec/schemas/x07-wasm.app.regress.from_incident.report.schema.json");
 const X07_WASM_APP_PACK_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.app.pack.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.app.pack.report.schema.json");
 const X07_WASM_APP_VERIFY_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.app.verify.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.app.verify.report.schema.json");
 
 const X07_WASM_HTTP_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.http.contracts.validate.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.http.contracts.validate.report.schema.json");
 const X07_WASM_HTTP_SERVE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.http.serve.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.http.serve.report.schema.json");
 const X07_WASM_HTTP_TEST_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.http.test.report.schema.json");
-const X07_WASM_HTTP_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES: &[u8] = include_bytes!(
-    "../../../../spec/schemas/x07-wasm.http.regress.from.incident.report.schema.json"
-);
+    include_bytes!("../../spec/schemas/x07-wasm.http.test.report.schema.json");
+const X07_WASM_HTTP_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../spec/schemas/x07-wasm.http.regress.from.incident.report.schema.json");
 const X07_WASM_CLI_PARSE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.cli.parse.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.cli.parse.report.schema.json");
 const X07_WASM_CLI_SPECROWS_CHECK_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.cli.specrows.check.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.cli.specrows.check.report.schema.json");
 const X07_WASM_DOCTOR_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.doctor.report.schema.json");
+    include_bytes!("../../spec/schemas/x07-wasm.doctor.report.schema.json");
 const X07_WASM_WIT_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../spec/schemas/x07-wasm.wit.validate.report.schema.json");
-const X07_WASM_COMPONENT_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] = include_bytes!(
-    "../../../../spec/schemas/x07-wasm.component.profile.validate.report.schema.json"
-);
+    include_bytes!("../../spec/schemas/x07-wasm.wit.validate.report.schema.json");
+const X07_WASM_COMPONENT_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../spec/schemas/x07-wasm.component.profile.validate.report.schema.json");
 
 #[derive(Debug, Clone)]
 pub struct SchemaStore {

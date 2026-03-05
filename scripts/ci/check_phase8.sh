@@ -9,7 +9,7 @@ bash "${ROOT_DIR}/scripts/ci/check_phase7.sh"
 # Phase8: ensure device-host ABI hash stays in sync with the pinned web-ui host snapshot.
 bash "${ROOT_DIR}/scripts/ci/check_phase8_device_host_abi_sync.sh"
 
-# Schema index must be complete and in sync with spec/schemas/*.schema.json.
+# Schema index must be complete and in sync with crates/x07-wasm/spec/schemas/*.schema.json.
 bash "${ROOT_DIR}/scripts/ci/check_schema_index.sh"
 
 # Phase8 examples: device contracts + bundle build/verify.
