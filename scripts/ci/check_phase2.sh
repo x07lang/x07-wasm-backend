@@ -51,8 +51,22 @@ x07-wasm wit validate --json --report-out build/wasm/wit.validate.json --quiet-j
 x07-wasm component profile validate --json --report-out build/wasm/component.profile.validate.json --quiet-json
 
 echo "==> gate: embedded web-ui adapter snapshot"
+if ! command -v wasm-tools >/dev/null 2>&1; then
+  echo "wasm-tools not found on PATH (required to canonicalize adapter snapshots)" >&2
+  exit 1
+fi
+
+canon_tmp_dir="$(mktemp -d)"
+cleanup_canon_tmp_dir() {
+  rm -rf "${canon_tmp_dir}"
+}
+trap cleanup_canon_tmp_dir EXIT
+
 cargo build --release --locked --target wasm32-wasip2 --manifest-path guest/web-ui-adapter/Cargo.toml
-if ! cmp -s guest/web-ui-adapter/target/wasm32-wasip2/release/x07_wasm_web_ui_adapter.wasm crates/x07-wasm/src/support/adapters/web-ui-adapter.component.wasm; then
+
+wasm-tools strip -a guest/web-ui-adapter/target/wasm32-wasip2/release/x07_wasm_web_ui_adapter.wasm -o "${canon_tmp_dir}/web-ui-adapter.guest.wasm"
+wasm-tools strip -a crates/x07-wasm/src/support/adapters/web-ui-adapter.component.wasm -o "${canon_tmp_dir}/web-ui-adapter.embedded.wasm"
+if ! cmp -s "${canon_tmp_dir}/web-ui-adapter.guest.wasm" "${canon_tmp_dir}/web-ui-adapter.embedded.wasm"; then
   echo "ERROR: embedded web-ui-adapter.component.wasm is out of sync with guest/web-ui-adapter output" >&2
   exit 1
 fi
