@@ -143,7 +143,7 @@ bash scripts/update_adapter_snapshots.sh
 ```
 
 Notes:
-- Adapter WASM bytes are not stable across host OSes. Snapshots are treated as Linux/amd64-canonical, and the drift check runs only on Linux (Ubuntu CI).
+- Adapter WASM bytes are not stable across build environments. To keep CI deterministic, the snapshot drift check builds adapters inside a pinned `rust:<channel>` container and runs only on Linux (Ubuntu CI, Docker required).
 - `scripts/update_adapter_snapshots.sh` requires Docker; it builds the guest adapters in a linux/amd64 container using the pinned `rust-toolchain.toml` channel, then copies the outputs into `crates/x07-wasm/src/support/adapters/*.component.wasm`.
 
 ## Phase docs
