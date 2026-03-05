@@ -59,6 +59,7 @@ jobs:
         shell: bash
         run: |
           cargo build --locked --release -p x07-wasm
+          export PATH="${GITHUB_WORKSPACE}/target/release:${PATH}"
           echo "${GITHUB_WORKSPACE}/target/release" >> "${GITHUB_PATH}"
           bash scripts/ci/check_phase10.sh
           ./target/release/x07-wasm doctor --json
