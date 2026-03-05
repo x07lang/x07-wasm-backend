@@ -58,8 +58,9 @@ jobs:
       - name: Run release gate
         shell: bash
         run: |
-          bash scripts/ci/check_phase10.sh
           cargo build --locked --release -p x07-wasm
+          echo "${GITHUB_WORKSPACE}/target/release" >> "${GITHUB_PATH}"
+          bash scripts/ci/check_phase10.sh
           ./target/release/x07-wasm doctor --json
 
   build_matrix:
