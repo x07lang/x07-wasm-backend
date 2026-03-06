@@ -100,7 +100,7 @@ Vendored/synced inputs from `x07-web-ui`:
 
 - host assets: `vendor/x07-web-ui/host/*`
 - examples + traces: `vendor/x07-web-ui/examples/*`
-- `std-web-ui` modules: `vendor/x07-web-ui/packages/std-web-ui/0.1.5/modules/*`
+- `std-web-ui` modules: `vendor/x07-web-ui/packages/std-web-ui/0.1.6/modules/*`
 - WIT contract: `wit/x07/web_ui/0.2.0/*`
 
 Update/check:

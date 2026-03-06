@@ -1,0 +1,186 @@
+{
+  "decls": [
+    {
+      "kind": "export",
+      "names": [
+        "std.web_ui.effects.http.dispatch_response_body_base64_canon_or_err_v1",
+        "std.web_ui.effects.http.dispatch_response_body_text_canon_or_err_v1",
+        "std.web_ui.effects.http.dispatch_response_status_canon_or_err_v1",
+        "std.web_ui.effects.http.effects1_v1",
+        "std.web_ui.effects.http.request_get_v1"
+      ]
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "state.__x07_http.response.body.base64"
+          ]
+        ],
+        [
+          "std.web_ui.runtime.dispatch_extract_canon_or_err_v1",
+          "dispatch_json",
+          [
+            "bytes.view",
+            "path"
+          ]
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.http.dispatch_response_body_base64_canon_or_err_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "state.__x07_http.response.body.text"
+          ]
+        ],
+        [
+          "std.web_ui.runtime.dispatch_extract_canon_or_err_v1",
+          "dispatch_json",
+          [
+            "bytes.view",
+            "path"
+          ]
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.http.dispatch_response_body_text_canon_or_err_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "state.__x07_http.response.status"
+          ]
+        ],
+        [
+          "std.web_ui.runtime.dispatch_extract_canon_or_err_v1",
+          "dispatch_json",
+          [
+            "bytes.view",
+            "path"
+          ]
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.http.dispatch_response_status_canon_or_err_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          [
+            "bytes.lit",
+            "["
+          ],
+          [
+            "view.to_bytes",
+            "effect_json"
+          ]
+        ],
+        [
+          "bytes.lit",
+          "]"
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.http.effects1_v1",
+      "params": [
+        {
+          "name": "effect_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          [
+            "bytes.concat",
+            [
+              "bytes.lit",
+              "{\"v\":1,\"kind\":\"x07.web_ui.effect.http.request\",\"request\":{\"schema_version\":\"x07.http.request.envelope@0.1.0\",\"id\":"
+            ],
+            [
+              "view.to_bytes",
+              "id_json"
+            ]
+          ],
+          [
+            "bytes.concat",
+            [
+              "bytes.lit",
+              ",\"method\":\"GET\",\"path\":"
+            ],
+            [
+              "view.to_bytes",
+              "path_json"
+            ]
+          ]
+        ],
+        [
+          "bytes.lit",
+          ",\"headers\":[],\"body\":{\"bytes_len\":0}}}"
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.http.request_get_v1",
+      "params": [
+        {
+          "name": "id_json",
+          "ty": "bytes_view"
+        },
+        {
+          "name": "path_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    }
+  ],
+  "imports": [
+    "std.web_ui.runtime"
+  ],
+  "kind": "module",
+  "module_id": "std.web_ui.effects.http",
+  "schema_version": "x07.x07ast@0.5.0"
+}

@@ -257,7 +257,7 @@ jobs:
             --compat-file "releases/compat/${{ steps.meta.outputs.version }}.json" \
             --metadata "host_abi_hash=sha256:${{ steps.meta.outputs.host_abi_hash }}" \
             --metadata "package_name=std-web-ui" \
-            --metadata "package_version=0.1.5" \
+            --metadata "package_version=0.1.6" \
             --out "${{ steps.meta.outputs.component_manifest }}"
       - name: Validate component release manifest
         shell: bash
