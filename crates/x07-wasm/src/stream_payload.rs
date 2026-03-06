@@ -2,12 +2,6 @@ use anyhow::{Context, Result};
 use base64::Engine as _;
 use serde_json::{json, Value};
 
-fn is_json_string_safe_bytes(bytes: &[u8]) -> bool {
-    bytes
-        .iter()
-        .all(|b| !matches!(*b, 0x00..=0x1f | b'"' | b'\\'))
-}
-
 pub fn stream_payload_to_bytes(payload: &Value) -> Result<Vec<u8>> {
     let bytes_len = payload
         .get("bytes_len")
@@ -40,10 +34,8 @@ pub fn bytes_to_stream_payload(bytes: &[u8]) -> Value {
     let mut obj = serde_json::Map::new();
     obj.insert("bytes_len".to_string(), json!(bytes.len() as u64));
     obj.insert("base64".to_string(), Value::String(b64));
-    if is_json_string_safe_bytes(bytes) {
-        if let Ok(text) = std::str::from_utf8(bytes) {
-            obj.insert("text".to_string(), Value::String(text.to_string()));
-        }
+    if let Ok(text) = std::str::from_utf8(bytes) {
+        obj.insert("text".to_string(), Value::String(text.to_string()));
     }
     Value::Object(obj)
 }
@@ -61,26 +53,13 @@ mod tests {
     }
 
     #[test]
-    fn bytes_to_stream_payload_omits_text_for_quote() {
-        let v = bytes_to_stream_payload(b"\"");
-        assert_eq!(v.get("bytes_len").and_then(Value::as_u64), Some(1));
-        assert!(v.get("text").is_none());
-        assert!(v.get("base64").and_then(Value::as_str).is_some());
-    }
-
-    #[test]
-    fn bytes_to_stream_payload_omits_text_for_backslash() {
-        let v = bytes_to_stream_payload(b"\\");
-        assert_eq!(v.get("bytes_len").and_then(Value::as_u64), Some(1));
-        assert!(v.get("text").is_none());
-        assert!(v.get("base64").and_then(Value::as_str).is_some());
-    }
-
-    #[test]
-    fn bytes_to_stream_payload_omits_text_for_control_byte() {
-        let v = bytes_to_stream_payload(b"\n");
-        assert_eq!(v.get("bytes_len").and_then(Value::as_u64), Some(1));
-        assert!(v.get("text").is_none());
+    fn bytes_to_stream_payload_includes_text_for_json_bytes() {
+        let v = bytes_to_stream_payload(br#"{"projects":[]}"#);
+        assert_eq!(v.get("bytes_len").and_then(Value::as_u64), Some(15));
+        assert_eq!(
+            v.get("text").and_then(Value::as_str),
+            Some(r#"{"projects":[]}"#)
+        );
         assert!(v.get("base64").and_then(Value::as_str).is_some());
     }
 

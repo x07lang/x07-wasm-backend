@@ -1,0 +1,91 @@
+{
+  "decls": [
+    {
+      "kind": "export",
+      "names": [
+        "std.web_ui.trace.step_v1",
+        "std.web_ui.trace.trace_v1"
+      ]
+    },
+    {
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          [
+            "bytes.concat",
+            [
+              "bytes.concat",
+              [
+                "bytes.lit",
+                "{\"env\":"
+              ],
+              [
+                "view.to_bytes",
+                "env_json"
+              ]
+            ],
+            [
+              "bytes.lit",
+              ",\"frame\":"
+            ]
+          ],
+          [
+            "view.to_bytes",
+            "frame_json"
+          ]
+        ],
+        [
+          "bytes.lit",
+          "}"
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.trace.step_v1",
+      "params": [
+        {
+          "name": "env_json",
+          "ty": "bytes_view"
+        },
+        {
+          "name": "frame_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          [
+            "bytes.lit",
+            "{\"v\":1,\"kind\":\"x07.web_ui.trace\",\"steps\":"
+          ],
+          [
+            "view.to_bytes",
+            "steps_json"
+          ]
+        ],
+        [
+          "bytes.lit",
+          "}\n"
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.trace.trace_v1",
+      "params": [
+        {
+          "name": "steps_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    }
+  ],
+  "imports": [],
+  "kind": "module",
+  "module_id": "std.web_ui.trace",
+  "schema_version": "x07.x07ast@0.5.0"
+}
