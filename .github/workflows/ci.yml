@@ -90,13 +90,11 @@ jobs:
             libsqlite3-dev \
             xz-utils
 
-      - name: Install x07 (pinned tag)
+      - name: Install x07 tools (repo toolchain)
         shell: bash
         run: |
           set -euo pipefail
-          cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.53 x07
-          cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.53 x07-host-runner
-          x07 --version
+          bash scripts/ci/install_x07_tools.sh
 
       - name: Install x07-wasm (repo)
         shell: bash
@@ -221,13 +219,11 @@ jobs:
             libsqlite3-dev \
             xz-utils
 
-      - name: Install x07 (pinned tag)
+      - name: Install x07 tools (repo toolchain)
         shell: bash
         run: |
           set -euo pipefail
-          cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.53 x07
-          cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.53 x07-host-runner
-          x07 --version
+          bash scripts/ci/install_x07_tools.sh
 
       - name: Install x07-wasm (repo)
         shell: bash
@@ -357,13 +353,11 @@ jobs:
             libsqlite3-dev \
             xz-utils
 
-      - name: Install x07 (pinned tag)
+      - name: Install x07 tools (repo toolchain)
         shell: bash
         run: |
           set -euo pipefail
-          cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.53 x07
-          cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.53 x07-host-runner
-          x07 --version
+          bash scripts/ci/install_x07_tools.sh
 
       - name: Install x07-wasm (repo)
         shell: bash
@@ -505,13 +499,11 @@ jobs:
             libsqlite3-dev \
             xz-utils
 
-      - name: Install x07 (pinned tag)
+      - name: Install x07 tools (repo toolchain)
         shell: bash
         run: |
           set -euo pipefail
-          cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.53 x07
-          cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.53 x07-host-runner
-          x07 --version
+          bash scripts/ci/install_x07_tools.sh
 
       - name: Install x07-wasm (repo)
         shell: bash
@@ -641,13 +633,11 @@ jobs:
             libsqlite3-dev \
             xz-utils
 
-      - name: Install x07 (pinned tag)
+      - name: Install x07 tools (repo toolchain)
         shell: bash
         run: |
           set -euo pipefail
-          cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.53 x07
-          cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.53 x07-host-runner
-          x07 --version
+          bash scripts/ci/install_x07_tools.sh
 
       - name: Install x07-wasm (repo)
         shell: bash
@@ -777,13 +767,11 @@ jobs:
             libsqlite3-dev \
             xz-utils
 
-      - name: Install x07 (pinned tag)
+      - name: Install x07 tools (repo toolchain)
         shell: bash
         run: |
           set -euo pipefail
-          cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.53 x07
-          cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.53 x07-host-runner
-          x07 --version
+          bash scripts/ci/install_x07_tools.sh
 
       - name: Install x07-wasm (repo)
         shell: bash
@@ -924,13 +912,11 @@ jobs:
             libsqlite3-dev \
             xz-utils
 
-      - name: Install x07 (pinned tag)
+      - name: Install x07 tools (repo toolchain)
         shell: bash
         run: |
           set -euo pipefail
-          cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.53 x07
-          cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.53 x07-host-runner
-          x07 --version
+          bash scripts/ci/install_x07_tools.sh
 
       - name: Install x07-wasm (repo)
         shell: bash
@@ -1045,13 +1031,11 @@ jobs:
             libsqlite3-dev \
             xz-utils
 
-      - name: Install x07 (pinned tag)
+      - name: Install x07 tools (repo toolchain)
         shell: bash
         run: |
           set -euo pipefail
-          cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.53 x07
-          cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.53 x07-host-runner
-          x07 --version
+          bash scripts/ci/install_x07_tools.sh
 
       - name: Install x07-wasm (repo)
         shell: bash

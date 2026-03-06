@@ -31,8 +31,9 @@ impl AppBackendHost {
         runtime_limits: crate::arch::WasmRuntimeLimits,
         max_concurrency: usize,
     ) -> Result<Self> {
-        let host = HttpComponentHost::from_component_file(component, runtime_limits, max_concurrency)
-            .with_context(|| format!("load backend component {}", component.display()))?;
+        let host =
+            HttpComponentHost::from_component_file(component, runtime_limits, max_concurrency)
+                .with_context(|| format!("load backend component {}", component.display()))?;
         Ok(Self {
             adapter: backend.adapter,
             host,
@@ -96,16 +97,14 @@ impl AppBackendHost {
 }
 
 fn inject_state_doc_header<B>(req: Request<B>, state_doc: &Value) -> Result<Request<B>> {
-    let encoded = base64::engine::general_purpose::STANDARD.encode(
-        report::canon::canonical_json_bytes(state_doc)?,
-    );
+    let encoded = base64::engine::general_purpose::STANDARD
+        .encode(report::canon::canonical_json_bytes(state_doc)?);
     let value = HeaderValue::from_str(&encoded).context("build state-doc header value")?;
 
     let (mut parts, body) = req.into_parts();
-    parts.headers.insert(
-        HeaderName::from_static(X07_STATE_DOC_REQUEST_HEADER),
-        value,
-    );
+    parts
+        .headers
+        .insert(HeaderName::from_static(X07_STATE_DOC_REQUEST_HEADER), value);
     Ok(Request::from_parts(parts, body))
 }
 

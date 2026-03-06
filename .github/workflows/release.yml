@@ -71,13 +71,11 @@ jobs:
             zlib1g-dev \
             libsqlite3-dev \
             xz-utils
-      - name: Install x07 (pinned tag)
+      - name: Install x07 tools (repo toolchain)
         shell: bash
         run: |
           set -euo pipefail
-          cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.53 x07
-          cargo install --locked --git https://github.com/x07lang/x07.git --tag v0.1.53 x07-host-runner
-          x07 --version
+          bash scripts/ci/install_x07_tools.sh
       - name: Install wasmtime (pinned)
         shell: bash
         run: |
@@ -227,8 +225,17 @@ jobs:
           print(doc['host_abi_hash'])
           PY
           )"
+          STD_WEB_UI_VERSION="$(python3 - "${VERSION}" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          compat = json.loads(Path(f"releases/compat/{sys.argv[1]}.json").read_text(encoding='utf-8'))
+          print(compat['std_web_ui'])
+          PY
+          )"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "host_abi_hash=${HOST_ABI_HASH}" >> "$GITHUB_OUTPUT"
+          echo "std_web_ui_version=${STD_WEB_UI_VERSION}" >> "$GITHUB_OUTPUT"
           echo "checksums=dist/release/x07-wasm-${VERSION}-checksums.txt" >> "$GITHUB_OUTPUT"
           echo "component_manifest=dist/release/x07-wasm-${VERSION}-release.json" >> "$GITHUB_OUTPUT"
           echo "attestations_jsonl=dist/release/x07-wasm-${VERSION}-attestations.jsonl" >> "$GITHUB_OUTPUT"
@@ -257,7 +264,7 @@ jobs:
             --compat-file "releases/compat/${{ steps.meta.outputs.version }}.json" \
             --metadata "host_abi_hash=sha256:${{ steps.meta.outputs.host_abi_hash }}" \
             --metadata "package_name=std-web-ui" \
-            --metadata "package_version=0.1.6" \
+            --metadata "package_version=${{ steps.meta.outputs.std_web_ui_version }}" \
             --out "${{ steps.meta.outputs.component_manifest }}"
       - name: Validate component release manifest
         shell: bash

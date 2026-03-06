@@ -202,17 +202,17 @@ pub fn cmd_app_test(
         backend_runtime,
         1,
     ) {
-            Ok(v) => Some(v),
-            Err(err) => {
-                diagnostics.push(Diagnostic::new(
-                    "X07WASM_APP_TEST_BACKEND_HOST_INIT_FAILED",
-                    Severity::Error,
-                    Stage::Run,
-                    format!("{err:#}"),
-                ));
-                None
-            }
-        };
+        Ok(v) => Some(v),
+        Err(err) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_APP_TEST_BACKEND_HOST_INIT_FAILED",
+                Severity::Error,
+                Stage::Run,
+                format!("{err:#}"),
+            ));
+            None
+        }
+    };
 
     if core.is_none() || host.is_none() {
         return emit_report(
@@ -1363,15 +1363,9 @@ fn write_app_test_incident(
       "meta": trace_meta.unwrap_or_else(|| json!({ "tool": { "name": "x07-wasm", "version": env!("CARGO_PKG_VERSION") } })),
       "steps": observed_steps,
     });
-    let trace_bytes = report::canon::canonical_pretty_json_bytes(&trace_doc)
-        .unwrap_or_else(|_| b"{}\n".to_vec());
-    let dir = create_app_test_incident_dir(
-        bundle_dir,
-        &seed,
-        &trace_bytes,
-        meta,
-        diagnostics,
-    )?;
+    let trace_bytes =
+        report::canon::canonical_pretty_json_bytes(&trace_doc).unwrap_or_else(|_| b"{}\n".to_vec());
+    let dir = create_app_test_incident_dir(bundle_dir, &seed, &trace_bytes, meta, diagnostics)?;
 
     let _ = std::fs::write(
         dir.join("frontend.frame.expected.json"),
@@ -1427,8 +1421,8 @@ fn write_app_test_runtime_incident(
 ) -> Option<PathBuf> {
     let trace_sha = trace_digest.map(|d| d.sha256.as_str()).unwrap_or("");
     let seed = format!("app-test-runtime:{trace_sha}:{failed_step}");
-    let trace_bytes = report::canon::canonical_pretty_json_bytes(trace_doc)
-        .unwrap_or_else(|_| b"{}\n".to_vec());
+    let trace_bytes =
+        report::canon::canonical_pretty_json_bytes(trace_doc).unwrap_or_else(|_| b"{}\n".to_vec());
     create_app_test_incident_dir(bundle_dir, &seed, &trace_bytes, meta, diagnostics)
 }
 
@@ -1468,7 +1462,7 @@ fn create_app_test_incident_dir(
         report::canon::canonical_pretty_json_bytes(
             &serde_json::to_value(&*diagnostics).unwrap_or_else(|_| json!([])),
         )
-            .unwrap_or_else(|_| b"[]\n".to_vec()),
+        .unwrap_or_else(|_| b"[]\n".to_vec()),
     );
     let _ = std::fs::write(dir.join("stderr.txt"), b"");
 

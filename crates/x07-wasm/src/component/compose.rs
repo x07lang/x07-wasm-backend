@@ -120,9 +120,7 @@ pub fn cmd_component_compose(
 
             let (wit_package, wit_world, kind) = match adapter_kind {
                 ComponentComposeAdapterKind::Http => ("wasi:http@0.2.8", "proxy", "http"),
-                ComponentComposeAdapterKind::HttpStateDoc => {
-                    ("wasi:http@0.2.8", "proxy", "http")
-                }
+                ComponentComposeAdapterKind::HttpStateDoc => ("wasi:http@0.2.8", "proxy", "http"),
                 ComponentComposeAdapterKind::Cli => ("wasi:cli@0.2.8", "command", "cli"),
             };
 
