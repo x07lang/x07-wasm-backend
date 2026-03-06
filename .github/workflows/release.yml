@@ -50,6 +50,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.RELEASE_TAG }}
+      - uses: actions/checkout@v4
+        with:
+          repository: x07lang/x07-wasm-backend
+          ref: ${{ github.ref_name }}
+          path: .workflow-tools
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -75,7 +80,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          bash scripts/ci/install_x07_tools.sh
+          bash .workflow-tools/scripts/ci/install_x07_tools.sh
       - name: Install wasmtime (pinned)
         shell: bash
         run: |
