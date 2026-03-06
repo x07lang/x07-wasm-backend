@@ -1,0 +1,14 @@
+[package]
+name = "x07-wasm-http-state-doc-adapter"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+base64 = { version = "0.22", default-features = false, features = ["alloc"] }
+rlibc = "1"
+wee_alloc = "0.4"
+wit-bindgen = { version = "0.53.1", default-features = false, features = ["bitflags", "macros", "realloc"] }

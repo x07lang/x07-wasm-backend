@@ -120,6 +120,9 @@ pub fn cmd_component_compose(
 
             let (wit_package, wit_world, kind) = match adapter_kind {
                 ComponentComposeAdapterKind::Http => ("wasi:http@0.2.8", "proxy", "http"),
+                ComponentComposeAdapterKind::HttpStateDoc => {
+                    ("wasi:http@0.2.8", "proxy", "http")
+                }
                 ComponentComposeAdapterKind::Cli => ("wasi:cli@0.2.8", "command", "cli"),
             };
 
@@ -177,6 +180,10 @@ pub fn cmd_component_compose(
             if targets_check {
                 let (wit_path, world) = match adapter_kind {
                     ComponentComposeAdapterKind::Http => (
+                        Path::new("wit/deps/wasi/http/0.2.8/proxy.wit").to_path_buf(),
+                        "proxy".to_string(),
+                    ),
+                    ComponentComposeAdapterKind::HttpStateDoc => (
                         Path::new("wit/deps/wasi/http/0.2.8/proxy.wit").to_path_buf(),
                         "proxy".to_string(),
                     ),
@@ -261,6 +268,7 @@ pub fn cmd_component_compose(
 
     let (kind, wit_package, wit_world) = match adapter_kind {
         ComponentComposeAdapterKind::Http => ("http", "wasi:http@0.2.8", "proxy"),
+        ComponentComposeAdapterKind::HttpStateDoc => ("http", "wasi:http@0.2.8", "proxy"),
         ComponentComposeAdapterKind::Cli => ("cli", "wasi:cli@0.2.8", "command"),
     };
 
@@ -323,6 +331,10 @@ fn default_adapter_component_path(kind: ComponentComposeAdapterKind) -> PathBuf 
     match kind {
         ComponentComposeAdapterKind::Http => {
             Path::new("target/x07-wasm/component/http-adapter.component.wasm").to_path_buf()
+        }
+        ComponentComposeAdapterKind::HttpStateDoc => {
+            Path::new("target/x07-wasm/component/http-state-doc-adapter.component.wasm")
+                .to_path_buf()
         }
         ComponentComposeAdapterKind::Cli => {
             Path::new("target/x07-wasm/component/cli-adapter.component.wasm").to_path_buf()

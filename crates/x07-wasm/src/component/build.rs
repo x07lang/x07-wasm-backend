@@ -30,6 +30,10 @@ const HTTP_ADAPTER_MANIFEST: &str = "guest/http-adapter/Cargo.toml";
 const HTTP_ADAPTER_LOCK: &str = "guest/http-adapter/Cargo.lock";
 const HTTP_ADAPTER_COMPONENT_WASM: &str =
     "guest/http-adapter/target/wasm32-wasip2/release/x07_wasm_http_adapter.wasm";
+const HTTP_STATE_DOC_ADAPTER_MANIFEST: &str = "guest/http-state-doc-adapter/Cargo.toml";
+const HTTP_STATE_DOC_ADAPTER_LOCK: &str = "guest/http-state-doc-adapter/Cargo.lock";
+const HTTP_STATE_DOC_ADAPTER_COMPONENT_WASM: &str =
+    "guest/http-state-doc-adapter/target/wasm32-wasip2/release/x07_wasm_http_state_doc_adapter.wasm";
 
 const CLI_ADAPTER_MANIFEST: &str = "guest/cli-adapter/Cargo.toml";
 const CLI_ADAPTER_LOCK: &str = "guest/cli-adapter/Cargo.lock";
@@ -366,6 +370,31 @@ pub fn cmd_component_build(
                     ));
                 }
             }
+            ComponentBuildEmit::HttpStateDoc => {
+                if let Err(err) = build_composed_component(
+                    &store,
+                    &loaded_component_profile.doc,
+                    &loaded_wasm_profile.doc,
+                    &args.wasm_index,
+                    args.wasm_profile_file.as_deref(),
+                    &args.project,
+                    &args.out_dir,
+                    &component_profile_ref,
+                    &wasm_profile_ref,
+                    crate::cli::ComponentComposeAdapterKind::HttpStateDoc,
+                    &mut meta,
+                    &mut diagnostics,
+                    &mut solve_core_wasm_digest,
+                    &mut artifacts,
+                ) {
+                    diagnostics.push(Diagnostic::new(
+                        "X07WASM_INTERNAL_COMPONENT_BUILD_FAILED",
+                        Severity::Error,
+                        Stage::Run,
+                        format!("{err:#}"),
+                    ));
+                }
+            }
             ComponentBuildEmit::Cli => {
                 if let Err(err) = build_composed_component(
                     &store,
@@ -649,6 +678,16 @@ fn build_composed_component(
             meta,
             diagnostics,
         )?,
+        crate::cli::ComponentComposeAdapterKind::HttpStateDoc => {
+            build_http_state_doc_adapter_component(
+                store,
+                component_profile,
+                out_dir,
+                component_profile_ref,
+                meta,
+                diagnostics,
+            )?
+        }
         crate::cli::ComponentComposeAdapterKind::Cli => build_cli_adapter_component(
             store,
             component_profile,
@@ -667,10 +706,16 @@ fn build_composed_component(
         crate::cli::ComponentComposeAdapterKind::Http => {
             out_dir.join("http-adapter.component.wasm")
         }
+        crate::cli::ComponentComposeAdapterKind::HttpStateDoc => {
+            out_dir.join("http-state-doc-adapter.component.wasm")
+        }
         crate::cli::ComponentComposeAdapterKind::Cli => out_dir.join("cli-adapter.component.wasm"),
     };
     let out_component = match adapter_kind {
-        crate::cli::ComponentComposeAdapterKind::Http => out_dir.join("http.component.wasm"),
+        crate::cli::ComponentComposeAdapterKind::Http
+        | crate::cli::ComponentComposeAdapterKind::HttpStateDoc => {
+            out_dir.join("http.component.wasm")
+        }
         crate::cli::ComponentComposeAdapterKind::Cli => out_dir.join("cli.component.wasm"),
     };
     let out_manifest = out_dir.join(
@@ -709,6 +754,9 @@ fn build_composed_component(
 
     let compose_report_out = match adapter_kind {
         crate::cli::ComponentComposeAdapterKind::Http => {
+            out_dir.join("http.component.compose.report.json")
+        }
+        crate::cli::ComponentComposeAdapterKind::HttpStateDoc => {
             out_dir.join("http.component.compose.report.json")
         }
         crate::cli::ComponentComposeAdapterKind::Cli => {
@@ -2793,6 +2841,30 @@ fn build_http_adapter_component(
     )
 }
 
+fn build_http_state_doc_adapter_component(
+    store: &SchemaStore,
+    component_profile: &ComponentProfileDoc,
+    out_dir: &Path,
+    component_profile_ref: &Value,
+    meta: &mut report::meta::ReportMeta,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> Result<Option<Value>> {
+    build_adapter_component(
+        store,
+        component_profile,
+        out_dir,
+        component_profile_ref,
+        "http-state-doc-adapter",
+        HTTP_STATE_DOC_ADAPTER_MANIFEST,
+        HTTP_STATE_DOC_ADAPTER_LOCK,
+        HTTP_STATE_DOC_ADAPTER_COMPONENT_WASM,
+        "x07:http-state-doc-adapter@0.1.0",
+        "proxy-with-solve",
+        meta,
+        diagnostics,
+    )
+}
+
 fn build_cli_adapter_component(
     store: &SchemaStore,
     component_profile: &ComponentProfileDoc,
@@ -2860,6 +2932,7 @@ fn build_adapter_component(
     } else {
         let embedded = match kind {
             "http-adapter" => adapters::EMBEDDED_HTTP_ADAPTER_COMPONENT_WASM,
+            "http-state-doc-adapter" => adapters::EMBEDDED_HTTP_STATE_DOC_ADAPTER_COMPONENT_WASM,
             "cli-adapter" => adapters::EMBEDDED_CLI_ADAPTER_COMPONENT_WASM,
             other => {
                 diagnostics.push(Diagnostic::new(
@@ -3205,6 +3278,7 @@ fn component_build_report_doc(
         "emit": match emit {
           ComponentBuildEmit::Solve => "solve",
           ComponentBuildEmit::Http => "http",
+          ComponentBuildEmit::HttpStateDoc => "http-state-doc",
           ComponentBuildEmit::Cli => "cli",
           ComponentBuildEmit::HttpNative => "http-native",
           ComponentBuildEmit::CliNative => "cli-native",

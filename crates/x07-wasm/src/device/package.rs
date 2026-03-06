@@ -1255,6 +1255,25 @@ fn check_host_tool_abi_hash(
                 format!("failed to run host tool --host-abi-hash: {err}"),
             ))
         })?;
+    if !out.status.success() {
+        let stderr = String::from_utf8_lossy(&out.stderr).trim().to_string();
+        return Err(Box::new(Diagnostic::new(
+            "X07WASM_DEVICE_PACKAGE_FAILED",
+            Severity::Error,
+            Stage::Run,
+            if stderr.is_empty() {
+                format!(
+                    "host tool --host-abi-hash exited with status {}",
+                    out.status
+                )
+            } else {
+                format!(
+                    "host tool --host-abi-hash exited with status {}: {}",
+                    out.status, stderr
+                )
+            },
+        )));
+    }
     let got = String::from_utf8_lossy(&out.stdout).trim().to_string();
     if got != expected {
         let mut d = Diagnostic::new(

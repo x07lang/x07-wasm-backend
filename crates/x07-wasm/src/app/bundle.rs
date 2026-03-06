@@ -4,6 +4,7 @@ use anyhow::Result;
 use serde::Deserialize;
 use serde_json::Value;
 
+use crate::app::backend::AppBackendAdapter;
 use crate::diag::{Diagnostic, Severity, Stage};
 use crate::report;
 use crate::schema::SchemaStore;
@@ -25,7 +26,7 @@ pub struct AppBundleFrontend {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct AppBundleBackend {
-    pub adapter: String,
+    pub adapter: AppBackendAdapter,
     pub artifact: BundleFileDigest,
 }
 
@@ -119,15 +120,6 @@ pub fn load_app_bundle(
     };
 
     let mut ok = true;
-    if doc.backend.adapter.trim() != "wasi_http_proxy_v1" {
-        ok = false;
-        diagnostics.push(Diagnostic::new(
-            "X07WASM_APP_BUNDLE_BACKEND_ADAPTER_UNSUPPORTED",
-            Severity::Error,
-            Stage::Parse,
-            format!("unsupported backend.adapter: {:?}", doc.backend.adapter),
-        ));
-    }
     match doc.frontend.format.as_str() {
         "core_wasm_v1" | "component_jco_v1" => {}
         other => {

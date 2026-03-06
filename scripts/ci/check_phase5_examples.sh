@@ -4,6 +4,8 @@ set -euo pipefail
 # Phase-5 examples-only gate:
 # - examples/solve_pure_spin (fuel budget exceeded + golden IO)
 # - examples/app_min         (app build -> app pack -> app verify + negative verify tests)
+# - examples/app_state_doc_min (state-doc app replay)
+# - examples/app_min spin runtime incident emission
 #
 # This script intentionally avoids any dependency on other examples, contracts,
 # or toolchain checks. It assumes Phase-5 commands/flags exist:
@@ -97,6 +99,20 @@ pm = doc.get("result", {}).get("stdout_json", {}).get("pack_manifest", {})
 path = pm.get("path")
 if not isinstance(path, str) or not path:
     print("missing result.stdout_json.pack_manifest.path", file=sys.stderr)
+    sys.exit(1)
+print(path)
+PY
+}
+
+get_app_test_incident_dir() {
+  local report_path="$1"
+  "$PYTHON" - "$report_path" <<'PY'
+import json, pathlib, sys
+p = pathlib.Path(sys.argv[1])
+doc = json.loads(p.read_text(encoding="utf-8"))
+path = doc.get("result", {}).get("stdout_json", {}).get("incident_dir")
+if not isinstance(path, str) or not path:
+    print("missing result.stdout_json.incident_dir", file=sys.stderr)
     sys.exit(1)
 print(path)
 PY
@@ -247,6 +263,37 @@ echo "==> phase5_examples: app_min verify (success)"
 x07-wasm app verify --pack-manifest "$PACK_MANIFEST" \
   --json --report-out build/phase5_examples/app.verify.app_min.json --quiet-json
 require_report_ok build/phase5_examples/app.verify.app_min.json
+
+echo "==> phase5_examples: app_state_doc_min build + replay"
+rm -rf dist/phase5_examples/app_state_doc_min
+x07-wasm app build --profile-file examples/app_state_doc_min/app_release.json --out-dir dist/phase5_examples/app_state_doc_min --clean \
+  --json --report-out build/phase5_examples/app.build.app_state_doc_min.json --quiet-json
+require_report_ok build/phase5_examples/app.build.app_state_doc_min.json
+
+x07-wasm app test --dir dist/phase5_examples/app_state_doc_min --trace examples/app_state_doc_min/tests/trace_0001.json \
+  --json --report-out build/phase5_examples/app.test.app_state_doc_min.json --quiet-json
+require_report_ok build/phase5_examples/app.test.app_state_doc_min.json
+
+echo "==> phase5_examples: app_min spin emits runtime incident bundle"
+rm -rf dist/phase5_examples/app_min_spin
+x07-wasm app build --profile-file examples/app_min/app_release_spin.json --out-dir dist/phase5_examples/app_min_spin --clean \
+  --json --report-out build/phase5_examples/app.build.app_min_spin.json --quiet-json
+require_report_ok build/phase5_examples/app.build.app_min_spin.json
+
+set +e
+x07-wasm app test --dir dist/phase5_examples/app_min_spin --trace examples/app_min/tests/trace_0001.json \
+  --json --report-out build/phase5_examples/app.test.app_min_spin.runtime_incident.json --quiet-json
+code=$?
+set -e
+if [ "$code" -ne 4 ]; then
+  echo "expected exit code 4 for app_min spin runtime failure, got $code" >&2
+  exit 1
+fi
+check_report_exit_code_and_has_code build/phase5_examples/app.test.app_min_spin.runtime_incident.json 4 X07WASM_BUDGET_EXCEEDED_CPU_FUEL
+
+APP_MIN_SPIN_INCIDENT_DIR="$(get_app_test_incident_dir build/phase5_examples/app.test.app_min_spin.runtime_incident.json)"
+test -f "${APP_MIN_SPIN_INCIDENT_DIR}/trace.json"
+test -f "${APP_MIN_SPIN_INCIDENT_DIR}/diagnostics.json"
 
 PACK_DIR="$(dirname "$PACK_MANIFEST")"
 PACK_MANIFEST_NAME="$(basename "$PACK_MANIFEST")"

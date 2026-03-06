@@ -1,0 +1,14 @@
+{
+  "schema_version": "x07.app.backend.request@0.1.0",
+  "request": {
+    "schema_version": "x07.http.request.envelope@0.1.0",
+    "id": "req0",
+    "method": "GET",
+    "path": "/api/ping",
+    "headers": [],
+    "body": {
+      "bytes_len": 0
+    }
+  },
+  "state": null
+}

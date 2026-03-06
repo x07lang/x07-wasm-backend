@@ -298,7 +298,7 @@ pub fn cmd_app_pack(
       "bundle_manifest": bundled_digest_obj(&packaged_bundle),
       "frontend": { "index_path": "/index.html" },
       "backend": {
-        "adapter": bundle_doc.backend.adapter,
+        "adapter": bundle_doc.backend.adapter.as_str(),
         "component": bundled_digest_obj(&packaged_backend),
       },
       "assets": assets,

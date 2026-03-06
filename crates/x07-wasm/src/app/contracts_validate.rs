@@ -30,6 +30,8 @@ pub fn cmd_app_contracts_validate(
         "https://x07.io/spec/x07-arch.app.index.schema.json",
         "https://x07.io/spec/x07-app.profile.schema.json",
         "https://x07.io/spec/x07-app.bundle.schema.json",
+        "https://x07.io/spec/x07-app.backend.request.schema.json",
+        "https://x07.io/spec/x07-app.backend.response.schema.json",
         "https://x07.io/spec/x07-http.request.envelope.schema.json",
         "https://x07.io/spec/x07-http.response.envelope.schema.json",
         "https://x07.io/spec/x07-app.trace.schema.json",
@@ -110,6 +112,8 @@ fn discover_default_fixtures() -> Vec<PathBuf> {
         PathBuf::from("arch/app/profiles/app_dev.json"),
         PathBuf::from("arch/app/profiles/app_release.json"),
         PathBuf::from("arch/app/contracts/bundle.example.json"),
+        PathBuf::from("arch/app/contracts/backend.request.example.json"),
+        PathBuf::from("arch/app/contracts/backend.response.example.json"),
         PathBuf::from("arch/app/contracts/trace.example.json"),
     ]
 }
@@ -122,6 +126,12 @@ fn fixture_schema_id(doc: &Value) -> Option<&'static str> {
             }
             "x07.app.profile@0.2.0" => Some("https://x07.io/spec/x07-app.profile.schema.json"),
             "x07.app.bundle@0.1.0" => Some("https://x07.io/spec/x07-app.bundle.schema.json"),
+            "x07.app.backend.request@0.1.0" => {
+                Some("https://x07.io/spec/x07-app.backend.request.schema.json")
+            }
+            "x07.app.backend.response@0.1.0" => {
+                Some("https://x07.io/spec/x07-app.backend.response.schema.json")
+            }
             "x07.app.trace@0.1.0" => Some("https://x07.io/spec/x07-app.trace.schema.json"),
             "x07.http.request.envelope@0.1.0" => {
                 Some("https://x07.io/spec/x07-http.request.envelope.schema.json")

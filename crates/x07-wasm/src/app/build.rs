@@ -4,9 +4,10 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use serde_json::json;
 
+use crate::app::backend::AppBackendAdapter;
 use crate::cli::{
-    AppBuildArgs, AppBuildEmit, ComponentBuildArgs, ComponentBuildEmit, MachineArgs, Scope,
-    WebUiBuildArgs, WebUiBuildFormat,
+    AppBuildArgs, AppBuildEmit, ComponentBuildArgs, MachineArgs, Scope, WebUiBuildArgs,
+    WebUiBuildFormat,
 };
 use crate::diag::{Diagnostic, Severity, Stage};
 use crate::report;
@@ -214,7 +215,7 @@ struct AppProfileFrontendForBuild {
 }
 
 struct AppProfileBackendForBuild {
-    adapter: String,
+    adapter: AppBackendAdapter,
     project: PathBuf,
     component_profile_id: String,
     out_rel: PathBuf,
@@ -340,15 +341,6 @@ fn build_backend(
     diagnostics: &mut Vec<Diagnostic>,
     _strict: bool,
 ) -> Result<()> {
-    if profile.backend.adapter.trim() != "wasi_http_proxy_v1" {
-        diagnostics.push(Diagnostic::new(
-            "X07WASM_APP_BACKEND_ADAPTER_UNSUPPORTED",
-            Severity::Error,
-            Stage::Parse,
-            format!("unsupported backend.adapter: {:?}", profile.backend.adapter),
-        ));
-        return Ok(());
-    }
     if let Ok(d) = util::file_digest(&profile.backend.project) {
         meta.inputs.push(d);
     }
@@ -380,7 +372,7 @@ fn build_backend(
         wasm_profile_file: None,
         wasm_index: PathBuf::from("arch/wasm/index.x07wasm.json"),
         out_dir: component_out_dir.clone(),
-        emit: ComponentBuildEmit::Http,
+        emit: profile.backend.adapter.component_emit(),
         clean: true,
     };
 
@@ -512,7 +504,7 @@ fn write_app_bundle_manifest(
         "artifacts": frontend_artifacts,
       },
       "backend": {
-        "adapter": profile.backend.adapter,
+        "adapter": profile.backend.adapter.as_str(),
         "artifact": backend_artifact,
       }
     });
@@ -628,7 +620,7 @@ mod tests {
                 out_dir_rel: PathBuf::from("frontend"),
             },
             backend: AppProfileBackendForBuild {
-                adapter: "wasi_http_proxy_v1".to_string(),
+                adapter: AppBackendAdapter::WasiHttpProxyV1,
                 project: PathBuf::from("backend/x07.json"),
                 component_profile_id: "component_release".to_string(),
                 out_rel: PathBuf::from("backend/app.http.component.wasm"),
@@ -685,7 +677,7 @@ mod tests {
                 out_dir_rel: PathBuf::from("frontend"),
             },
             backend: AppProfileBackendForBuild {
-                adapter: "wasi_http_proxy_v1".to_string(),
+                adapter: AppBackendAdapter::WasiHttpProxyV1,
                 project: PathBuf::from("backend/x07.json"),
                 component_profile_id: "component_release".to_string(),
                 out_rel: PathBuf::from("backend/app.http.component.wasm"),

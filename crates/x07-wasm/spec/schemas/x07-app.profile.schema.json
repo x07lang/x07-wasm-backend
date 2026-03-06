@@ -94,7 +94,7 @@
       "properties": {
         "adapter": {
           "type": "string",
-          "enum": ["wasi_http_proxy_v1"]
+          "enum": ["wasi_http_proxy_v1", "wasi_http_proxy_state_doc_v1"]
         },
         "project": {
           "$ref": "#/$defs/rel_path",
@@ -107,6 +107,20 @@
         "out_rel": {
           "$ref": "#/$defs/rel_path",
           "description": "Backend component output path relative to bundle root."
+        },
+        "state_doc": {
+          "$ref": "#/$defs/state_doc",
+          "description": "Optional host-retained state document configuration for state-doc adapters."
+        }
+      }
+    },
+    "state_doc": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["initial_json"],
+      "properties": {
+        "initial_json": {
+          "description": "Initial backend state document injected into the first request of a serve/test session."
         }
       }
     },

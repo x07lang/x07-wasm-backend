@@ -28,6 +28,7 @@
       "enum": [
         "solve",
         "http-adapter",
+        "http-state-doc-adapter",
         "cli-adapter",
         "http",
         "cli"
@@ -182,4 +183,3 @@
     }
   }
 }
-

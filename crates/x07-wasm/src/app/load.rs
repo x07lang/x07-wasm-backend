@@ -4,6 +4,7 @@ use anyhow::{Context, Result};
 use serde::Deserialize;
 use serde_json::Value;
 
+use crate::app::backend::{AppBackendAdapter, AppBackendStateDoc};
 use crate::arch::WasmRuntimeLimits;
 use crate::diag::Severity;
 use crate::report;
@@ -40,10 +41,12 @@ pub struct AppProfileFrontend {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct AppProfileBackend {
-    pub adapter: String,
+    pub adapter: AppBackendAdapter,
     pub project: String,
     pub component_profile_id: String,
     pub out_rel: String,
+    #[serde(default)]
+    pub state_doc: Option<AppBackendStateDoc>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

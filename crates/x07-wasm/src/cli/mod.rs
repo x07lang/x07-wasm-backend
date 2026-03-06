@@ -1118,6 +1118,8 @@ pub struct ComponentProfileValidateArgs {
 pub enum ComponentBuildEmit {
     Solve,
     Http,
+    #[value(name = "http-state-doc")]
+    HttpStateDoc,
     Cli,
     #[value(name = "http-native")]
     HttpNative,
@@ -1184,6 +1186,8 @@ pub struct ComponentBuildArgs {
 #[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum ComponentComposeAdapterKind {
     Http,
+    #[value(name = "http-state-doc")]
+    HttpStateDoc,
     Cli,
 }
 

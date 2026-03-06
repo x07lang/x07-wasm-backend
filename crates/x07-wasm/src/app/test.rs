@@ -8,11 +8,13 @@ use hyper::{Request, Uri};
 use serde_json::{json, Value};
 use tokio::task::LocalSet;
 
+use crate::app::backend::AppBackendRuntimeConfig;
+use crate::app::backend_host::AppBackendHost;
 use crate::app::bundle::LoadedAppBundle;
 use crate::caps::doc::CapabilitiesDoc;
 use crate::cli::{AppTestArgs, MachineArgs, Scope};
 use crate::diag::{Diagnostic, Severity, Stage};
-use crate::http_component_host::{self, HttpComponentBudgets, HttpComponentHost};
+use crate::http_component_host::{self, HttpComponentBudgets};
 use crate::ops::load_ops_profile_with_refs;
 use crate::report;
 use crate::schema::SchemaStore;
@@ -154,7 +156,7 @@ pub fn cmd_app_test(
         }
     }
 
-    let (app_budgets, http_budgets, backend_runtime) =
+    let (app_budgets, http_budgets, backend_runtime, backend_cfg) =
         load_app_test_budgets(&store, &bundle, &frontend_dir, &mut meta, &mut diagnostics);
     let Some(runtime_limits) =
         replay::load_wasm_runtime_limits(&store, &frontend_dir, &mut meta, &mut diagnostics)
@@ -194,8 +196,12 @@ pub fn cmd_app_test(
         }
     };
 
-    let host =
-        match HttpComponentHost::from_component_file(&backend_component_path, backend_runtime, 1) {
+    let host = match AppBackendHost::from_component_file(
+        &backend_component_path,
+        backend_cfg,
+        backend_runtime,
+        1,
+    ) {
             Ok(v) => Some(v),
             Err(err) => {
                 diagnostics.push(Diagnostic::new(
@@ -307,6 +313,7 @@ pub fn cmd_app_test(
     let mut current_state: Value = Value::Null;
     let mut observed_steps: Vec<Value> = Vec::new();
     let mut incident_dir: Option<PathBuf> = None;
+    let mut runtime_failure_step: Option<usize> = None;
     let mut effects_state = AppTestEffectsState {
         storage: BTreeMap::new(),
         nav_href: "http://localhost/".to_string(),
@@ -314,7 +321,6 @@ pub fn cmd_app_test(
     };
 
     let max_steps = args.max_steps as usize;
-    let mut host = host;
     let caps = caps.clone();
     let wasi_base_dir = wasi_base_dir.clone();
     let (final_ok, final_mismatches) = rt.block_on(local.run_until(async {
@@ -335,6 +341,7 @@ pub fn cmd_app_test(
                     Stage::Run,
                     format!("step {idx}: dispatch exceeds max_dispatch_bytes"),
                 ));
+                runtime_failure_step = Some(idx);
                 mismatches = mismatches.saturating_add(1);
                 break;
             }
@@ -357,6 +364,7 @@ pub fn cmd_app_test(
                             format!("step {idx}: {err:#}"),
                         ));
                     }
+                    runtime_failure_step = Some(idx);
                     mismatches = mismatches.saturating_add(1);
                     break;
                 }
@@ -368,6 +376,7 @@ pub fn cmd_app_test(
                     Stage::Run,
                     format!("step {idx}: frame exceeds max_frame_bytes"),
                 ));
+                runtime_failure_step = Some(idx);
                 mismatches = mismatches.saturating_add(1);
                 break;
             }
@@ -380,6 +389,7 @@ pub fn cmd_app_test(
                         Stage::Run,
                         format!("step {idx}: output is not JSON: {err}"),
                     ));
+                    runtime_failure_step = Some(idx);
                     mismatches = mismatches.saturating_add(1);
                     break;
                 }
@@ -389,6 +399,7 @@ pub fn cmd_app_test(
                 store.validate("https://x07.io/spec/x07-web_ui.frame.schema.json", &frame)?,
             );
             if diagnostics.iter().any(|d| d.severity == Severity::Error) {
+                runtime_failure_step = Some(idx);
                 mismatches = mismatches.saturating_add(1);
                 break;
             }
@@ -400,13 +411,14 @@ pub fn cmd_app_test(
                     Stage::Run,
                     format!("step {idx}: {err:#}"),
                 ));
+                runtime_failure_step = Some(idx);
                 mismatches = mismatches.saturating_add(1);
                 break;
             }
 
             let (frame2, exchanges) = match run_effects_loop(
                 &store,
-                &mut host,
+                &host,
                 &http_budgets,
                 &app_budgets,
                 idx,
@@ -418,6 +430,7 @@ pub fn cmd_app_test(
                 caps.clone(),
                 wasi_base_dir.as_path(),
                 &mut effects_state,
+                &mut diagnostics,
             )
             .await
             {
@@ -438,6 +451,7 @@ pub fn cmd_app_test(
                             format!("step {idx}: {err:#}"),
                         ));
                     }
+                    runtime_failure_step = Some(idx);
                     mismatches = mismatches.saturating_add(1);
                     break;
                 }
@@ -520,6 +534,19 @@ pub fn cmd_app_test(
         }
     }
 
+    if incident_dir.is_none() {
+        if let Some(failed_step) = runtime_failure_step {
+            incident_dir = write_app_test_runtime_incident(
+                args.dir.as_path(),
+                trace_digest.as_ref(),
+                &trace_doc,
+                failed_step,
+                &mut meta,
+                &mut diagnostics,
+            );
+        }
+    }
+
     if incident_dir.is_some() {
         meta.nondeterminism.uses_os_time = true;
     }
@@ -575,6 +602,7 @@ fn load_app_test_budgets(
     AppTestBudgets,
     HttpComponentBudgets,
     crate::arch::WasmRuntimeLimits,
+    AppBackendRuntimeConfig,
 ) {
     let index_path = PathBuf::from("arch/app/index.x07app.json");
     let loaded = crate::app::load::load_app_profile(
@@ -617,6 +645,10 @@ fn load_app_test_budgets(
                     cache_config: None,
                     notes: None,
                 },
+                AppBackendRuntimeConfig {
+                    adapter: crate::app::backend::AppBackendAdapter::WasiHttpProxyV1,
+                    initial_state_doc: Value::Null,
+                },
             );
         }
     };
@@ -633,6 +665,10 @@ fn load_app_test_budgets(
     let max_wall_ms = loaded.doc.budgets.max_request_wall_ms.max(1);
     let api_prefix = loaded.doc.routing.api_prefix.clone();
     let backend_runtime = loaded.doc.budgets.backend_runtime.clone();
+    let backend_cfg = AppBackendRuntimeConfig::from_profile(
+        loaded.doc.backend.adapter,
+        loaded.doc.backend.state_doc.as_ref(),
+    );
 
     (
         AppTestBudgets {
@@ -648,6 +684,7 @@ fn load_app_test_budgets(
             max_wall_ms,
         },
         backend_runtime,
+        backend_cfg,
     )
 }
 
@@ -763,7 +800,7 @@ fn normalize_stream_payload(v: Option<&Value>) -> Result<Value> {
 #[allow(clippy::too_many_arguments)]
 async fn run_effects_loop(
     store: &SchemaStore,
-    host: &mut HttpComponentHost,
+    host: &AppBackendHost,
     http_budgets: &HttpComponentBudgets,
     app_budgets: &AppTestBudgets,
     step_index: usize,
@@ -775,6 +812,7 @@ async fn run_effects_loop(
     caps: Option<std::sync::Arc<CapabilitiesDoc>>,
     wasi_base_dir: &Path,
     effects_state: &mut AppTestEffectsState,
+    diagnostics: &mut Vec<Diagnostic>,
 ) -> Result<(Value, Vec<Value>)> {
     let mut frame = first_frame;
     let mut exchanges: Vec<Value> = Vec::new();
@@ -799,9 +837,15 @@ async fn run_effects_loop(
         for eff in effects {
             if let Some(req0) = parse_http_request_effect(&eff)? {
                 let req_env = build_exec_request_envelope(app_budgets.api_prefix.as_str(), &req0)?;
-                let resp_env =
-                    execute_http_request(host, http_budgets, &req_env, caps.clone(), wasi_base_dir)
-                        .await?;
+                let resp_env = execute_http_request(
+                    host,
+                    http_budgets,
+                    &req_env,
+                    caps.clone(),
+                    wasi_base_dir,
+                    diagnostics,
+                )
+                .await?;
                 exchanges.push(json!({ "request": req_env.clone(), "response": resp_env.clone() }));
                 injected_state = inject_http_response_state(injected_state, resp_env);
                 continue;
@@ -1122,11 +1166,12 @@ fn inject_http_response_state(state: Value, resp_env: Value) -> Value {
 }
 
 async fn execute_http_request(
-    host: &mut HttpComponentHost,
+    host: &AppBackendHost,
     budgets: &HttpComponentBudgets,
     req_env: &Value,
     caps: Option<std::sync::Arc<CapabilitiesDoc>>,
     wasi_base_dir: &Path,
+    diagnostics: &mut Vec<Diagnostic>,
 ) -> Result<Value> {
     let method = req_env
         .get("method")
@@ -1171,10 +1216,17 @@ async fn execute_http_request(
         .context("build request")?;
 
     let mut request_diags: Vec<Diagnostic> = Vec::new();
-    let resp = host
+    let resp = match host
         .handle_request(req, budgets, caps, wasi_base_dir, &mut request_diags)
-        .await?;
-    let _ = request_diags;
+        .await
+    {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.append(&mut request_diags);
+            return Err(err);
+        }
+    };
+    diagnostics.append(&mut request_diags);
 
     let mut headers = Vec::new();
     for (k, v) in resp.headers {
@@ -1306,39 +1358,21 @@ fn write_app_test_incident(
 ) -> Option<PathBuf> {
     let trace_sha = trace_digest.map(|d| d.sha256.as_str()).unwrap_or("");
     let seed = format!("app-test:{trace_sha}:{failed_step}");
-    let id = util::sha256_hex(seed.as_bytes());
-    let id = id.chars().take(32).collect::<String>();
-
-    let date = crate::wasm::incident::utc_date_yyyy_mm_dd();
-    let dir = PathBuf::from(".x07-wasm")
-        .join("incidents")
-        .join("app")
-        .join(date)
-        .join(id);
-    if let Err(err) = std::fs::create_dir_all(&dir) {
-        diagnostics.push(Diagnostic::new(
-            "X07WASM_APP_TEST_INCIDENT_DIR_CREATE_FAILED",
-            Severity::Warning,
-            Stage::Run,
-            format!("failed to create incident dir {}: {err}", dir.display()),
-        ));
-        return None;
-    }
-
     let trace_doc = json!({
       "schema_version": "x07.app.trace@0.1.0",
       "meta": trace_meta.unwrap_or_else(|| json!({ "tool": { "name": "x07-wasm", "version": env!("CARGO_PKG_VERSION") } })),
       "steps": observed_steps,
     });
+    let trace_bytes = report::canon::canonical_pretty_json_bytes(&trace_doc)
+        .unwrap_or_else(|_| b"{}\n".to_vec());
+    let dir = create_app_test_incident_dir(
+        bundle_dir,
+        &seed,
+        &trace_bytes,
+        meta,
+        diagnostics,
+    )?;
 
-    let _ = std::fs::write(
-        dir.join("app.bundle.json"),
-        std::fs::read(bundle_dir.join("app.bundle.json")).unwrap_or_else(|_| b"{}\n".to_vec()),
-    );
-    let _ = std::fs::write(
-        dir.join("trace.json"),
-        report::canon::canonical_pretty_json_bytes(&trace_doc).unwrap_or_else(|_| b"{}\n".to_vec()),
-    );
     let _ = std::fs::write(
         dir.join("frontend.frame.expected.json"),
         report::canon::canonical_pretty_json_bytes(expected_frame)
@@ -1380,6 +1414,62 @@ fn write_app_test_incident(
         report::canon::canonical_pretty_json_bytes(&resp_env).unwrap_or_else(|_| b"{}\n".to_vec()),
     );
 
+    Some(dir)
+}
+
+fn write_app_test_runtime_incident(
+    bundle_dir: &Path,
+    trace_digest: Option<&report::meta::FileDigest>,
+    trace_doc: &Value,
+    failed_step: usize,
+    meta: &mut report::meta::ReportMeta,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> Option<PathBuf> {
+    let trace_sha = trace_digest.map(|d| d.sha256.as_str()).unwrap_or("");
+    let seed = format!("app-test-runtime:{trace_sha}:{failed_step}");
+    let trace_bytes = report::canon::canonical_pretty_json_bytes(trace_doc)
+        .unwrap_or_else(|_| b"{}\n".to_vec());
+    create_app_test_incident_dir(bundle_dir, &seed, &trace_bytes, meta, diagnostics)
+}
+
+fn create_app_test_incident_dir(
+    bundle_dir: &Path,
+    seed: &str,
+    trace_bytes: &[u8],
+    meta: &mut report::meta::ReportMeta,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> Option<PathBuf> {
+    let id = util::sha256_hex(seed.as_bytes());
+    let id = id.chars().take(32).collect::<String>();
+
+    let date = crate::wasm::incident::utc_date_yyyy_mm_dd();
+    let dir = PathBuf::from(".x07-wasm")
+        .join("incidents")
+        .join("app")
+        .join(date)
+        .join(id);
+    if let Err(err) = std::fs::create_dir_all(&dir) {
+        diagnostics.push(Diagnostic::new(
+            "X07WASM_APP_TEST_INCIDENT_DIR_CREATE_FAILED",
+            Severity::Warning,
+            Stage::Run,
+            format!("failed to create incident dir {}: {err}", dir.display()),
+        ));
+        return None;
+    }
+
+    let _ = std::fs::write(
+        dir.join("app.bundle.json"),
+        std::fs::read(bundle_dir.join("app.bundle.json")).unwrap_or_else(|_| b"{}\n".to_vec()),
+    );
+    let _ = std::fs::write(dir.join("trace.json"), trace_bytes);
+    let _ = std::fs::write(
+        dir.join("diagnostics.json"),
+        report::canon::canonical_pretty_json_bytes(
+            &serde_json::to_value(&*diagnostics).unwrap_or_else(|_| json!([])),
+        )
+            .unwrap_or_else(|_| b"[]\n".to_vec()),
+    );
     let _ = std::fs::write(dir.join("stderr.txt"), b"");
 
     if let Ok(d) = util::file_digest(&dir.join("trace.json")) {

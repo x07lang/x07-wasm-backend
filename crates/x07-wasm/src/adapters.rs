@@ -11,6 +11,8 @@ pub const ENV_ADAPTERS_FROM_SOURCE: &str = "X07WASM_ADAPTERS_FROM_SOURCE";
 
 pub const EMBEDDED_HTTP_ADAPTER_COMPONENT_WASM: &[u8] =
     include_bytes!("support/adapters/http-adapter.component.wasm");
+pub const EMBEDDED_HTTP_STATE_DOC_ADAPTER_COMPONENT_WASM: &[u8] =
+    include_bytes!("support/adapters/http-state-doc-adapter.component.wasm");
 pub const EMBEDDED_CLI_ADAPTER_COMPONENT_WASM: &[u8] =
     include_bytes!("support/adapters/cli-adapter.component.wasm");
 pub const EMBEDDED_WEB_UI_ADAPTER_COMPONENT_WASM: &[u8] =

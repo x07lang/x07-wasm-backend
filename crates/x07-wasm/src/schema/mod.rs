@@ -89,6 +89,10 @@ const X07_APP_BUNDLE_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../spec/schemas/x07-app.bundle.schema.json");
 const X07_APP_PACK_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../spec/schemas/x07-app.pack.schema.json");
+const X07_APP_BACKEND_REQUEST_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../spec/schemas/x07-app.backend.request.schema.json");
+const X07_APP_BACKEND_RESPONSE_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../spec/schemas/x07-app.backend.response.schema.json");
 const X07_HTTP_REQUEST_ENVELOPE_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../spec/schemas/x07-http.request.envelope.schema.json");
 const X07_HTTP_RESPONSE_ENVELOPE_SCHEMA_BYTES: &[u8] =
@@ -240,6 +244,8 @@ impl SchemaStore {
             X07_APP_PROFILE_SCHEMA_BYTES,
             X07_APP_BUNDLE_SCHEMA_BYTES,
             X07_APP_PACK_SCHEMA_BYTES,
+            X07_APP_BACKEND_REQUEST_SCHEMA_BYTES,
+            X07_APP_BACKEND_RESPONSE_SCHEMA_BYTES,
             X07_HTTP_REQUEST_ENVELOPE_SCHEMA_BYTES,
             X07_HTTP_RESPONSE_ENVELOPE_SCHEMA_BYTES,
             X07_HTTP_EFFECT_SCHEMA_BYTES,
@@ -519,6 +525,8 @@ mod tests {
             "https://x07.io/spec/x07-app.profile.schema.json",
             "https://x07.io/spec/x07-app.bundle.schema.json",
             "https://x07.io/spec/x07-app.pack.schema.json",
+            "https://x07.io/spec/x07-app.backend.request.schema.json",
+            "https://x07.io/spec/x07-app.backend.response.schema.json",
             "https://x07.io/spec/x07-app.ops.profile.schema.json",
             "https://x07.io/spec/x07-app.capabilities.schema.json",
             "https://x07.io/spec/x07-policy.card.schema.json",

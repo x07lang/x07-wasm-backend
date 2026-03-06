@@ -12,11 +12,13 @@ use hyper::{Method, Request, Response, StatusCode};
 use serde_json::{json, Value};
 use tokio::task::LocalSet;
 
+use crate::app::backend::AppBackendRuntimeConfig;
+use crate::app::backend_host::AppBackendHost;
 use crate::app::bundle::LoadedAppBundle;
 use crate::caps::doc::CapabilitiesDoc;
 use crate::cli::{AppServeArgs, AppServeMode, MachineArgs, Scope};
 use crate::diag::{Diagnostic, Severity, Stage};
-use crate::http_component_host::{self, HttpComponentBudgets, HttpComponentHost};
+use crate::http_component_host::{self, HttpComponentBudgets};
 use crate::ops::load_ops_profile_with_refs;
 use crate::report;
 use crate::schema::SchemaStore;
@@ -179,6 +181,7 @@ pub fn cmd_app_serve(
         profile_strict_mime,
         profile_api_prefix,
         profile_addr,
+        backend_cfg,
     ) = load_app_serve_settings(&store, &bundle, &mut meta, &mut diagnostics);
     let effective_strict_mime = args.strict_mime || profile_strict_mime;
     let effective_api_prefix = if args.api_prefix == "/api" {
@@ -192,8 +195,9 @@ pub fn cmd_app_serve(
         args.addr.clone()
     };
 
-    let host = match HttpComponentHost::from_component_file(
+    let host = match AppBackendHost::from_component_file(
         &backend_component_path,
+        backend_cfg,
         backend_runtime,
         max_concurrency,
     ) {
@@ -445,7 +449,7 @@ struct AppServeState {
     bundle_doc_json: Value,
     frontend_dir: PathBuf,
     api_prefix: String,
-    host: Arc<HttpComponentHost>,
+    host: Arc<AppBackendHost>,
     budgets: HttpComponentBudgets,
     caps: Option<Arc<CapabilitiesDoc>>,
     wasi_base_dir: PathBuf,
@@ -928,6 +932,7 @@ fn load_app_serve_settings(
     bool,
     String,
     String,
+    AppBackendRuntimeConfig,
 ) {
     let index_path = PathBuf::from("arch/app/index.x07app.json");
     let loaded = crate::app::load::load_app_profile(
@@ -967,6 +972,10 @@ fn load_app_serve_settings(
                 false,
                 "/api".to_string(),
                 "127.0.0.1:0".to_string(),
+                AppBackendRuntimeConfig {
+                    adapter: crate::app::backend::AppBackendAdapter::WasiHttpProxyV1,
+                    initial_state_doc: Value::Null,
+                },
             );
         }
     };
@@ -983,6 +992,10 @@ fn load_app_serve_settings(
     let strict_wasm_mime = loaded.doc.devserver.strict_wasm_mime;
     let api_prefix = loaded.doc.routing.api_prefix.clone();
     let addr = loaded.doc.devserver.addr.clone();
+    let backend_cfg = AppBackendRuntimeConfig::from_profile(
+        loaded.doc.backend.adapter,
+        loaded.doc.backend.state_doc.as_ref(),
+    );
 
     (
         HttpComponentBudgets {
@@ -995,5 +1008,6 @@ fn load_app_serve_settings(
         strict_wasm_mime,
         api_prefix,
         addr,
+        backend_cfg,
     )
 }

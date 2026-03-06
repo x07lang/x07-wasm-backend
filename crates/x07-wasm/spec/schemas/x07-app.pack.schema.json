@@ -160,7 +160,8 @@
         "adapter": {
           "type": "string",
           "enum": [
-            "wasi_http_proxy_v1"
+            "wasi_http_proxy_v1",
+            "wasi_http_proxy_state_doc_v1"
           ]
         },
         "component": {

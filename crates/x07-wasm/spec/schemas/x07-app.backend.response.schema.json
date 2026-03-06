@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-app.backend.response.schema.json",
+  "title": "x07.app.backend.response@0.1.0",
+  "description": "Backend response contract for state-doc app adapters: HTTP response envelope plus the next host-retained state document.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "response", "state"],
+  "properties": {
+    "schema_version": { "const": "x07.app.backend.response@0.1.0" },
+    "response": { "$ref": "https://x07.io/spec/x07-http.response.envelope.schema.json" },
+    "state": {
+      "description": "Opaque backend state document retained by the host across requests within one app serve/test session."
+    }
+  }
+}

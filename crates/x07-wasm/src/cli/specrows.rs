@@ -108,7 +108,7 @@ pub fn build_specrows_doc() -> Value {
 
         ["component-build","about","Build an x07 project into an x07:solve component (and optional adapters). Alias: `x07-wasm component build`."],
         ["component-build","flag","","--clean","clean","Delete out-dir before building."],
-        ["component-build","opt","","--emit","emit","STR","Artifact set to emit: solve|http|cli|http-native|cli-native|http-adapter|cli-adapter|all (default: all)."],
+        ["component-build","opt","","--emit","emit","STR","Artifact set to emit: solve|http|http-state-doc|cli|http-native|cli-native|http-adapter|cli-adapter|all (default: all)."],
         ["component-build","opt","","--index","index","PATH","Path to the component profile registry (default: arch/wasm/component/index.x07wasm.component.json)."],
         ["component-build","opt","","--out-dir","out.dir","PATH","Output directory for component artifacts (default: target/x07-wasm/component)."],
         ["component-build","opt","","--profile","profile.id","STR","Component profile id (loaded from arch/wasm/component/index.x07wasm.component.json)."],
@@ -120,7 +120,7 @@ pub fn build_specrows_doc() -> Value {
 
             ["component-compose","about","Compose adapter component with solve component (wac plug) to produce runnable standard-world components. Alias: `x07-wasm component compose`."],
             ["component-compose","flag","","--targets-check","targets.check","Also run a targets check on the output component."],
-            ["component-compose","opt","","--adapter","adapter","STR","Adapter kind: http|cli (alias: --target)."],
+            ["component-compose","opt","","--adapter","adapter","STR","Adapter kind: http|http-state-doc|cli (alias: --target)."],
             ["component-compose","opt","","--adapter-component","adapter.component","PATH","Path to adapter component (.wasm)."],
             ["component-compose","opt","","--artifact-out","artifact.out","PATH","Artifact manifest output path."],
             ["component-compose","opt","","--out","out","PATH","Output path for composed component (.wasm)."],

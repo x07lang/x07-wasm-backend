@@ -2,6 +2,7 @@
 members = ["crates/x07-wasm"]
 exclude = [
   "guest/http-adapter",
+  "guest/http-state-doc-adapter",
   "guest/cli-adapter",
   "guest/web-ui-adapter",
   "guest/phase6-caps-fixture",

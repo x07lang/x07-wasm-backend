@@ -1,6 +1,14 @@
 {
   "schemas": [
     {
+      "id": "https://x07.io/spec/x07-app.backend.request.schema.json",
+      "path": "x07-app.backend.request.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-app.backend.response.schema.json",
+      "path": "x07-app.backend.response.schema.json"
+    },
+    {
       "id": "https://x07.io/spec/x07-app.bundle.schema.json",
       "path": "x07-app.bundle.schema.json"
     },
