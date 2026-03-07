@@ -861,72 +861,6 @@ fn emit_host_assets(dist_dir: &Path) -> Result<(Value, Vec<report::meta::FileDig
     Ok((host_snapshot, artifacts))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    use std::path::PathBuf;
-    use std::sync::atomic::{AtomicUsize, Ordering};
-    use std::sync::Mutex;
-
-    static CWD_LOCK: Mutex<()> = Mutex::new(());
-    static TMP_SEQ: AtomicUsize = AtomicUsize::new(0);
-
-    fn tmp_dir(tag: &str) -> PathBuf {
-        let n = TMP_SEQ.fetch_add(1, Ordering::Relaxed);
-        let name = format!("x07-wasm-web-ui-build-{tag}-{}-{n}", std::process::id());
-        std::env::temp_dir().join(name)
-    }
-
-    struct CwdGuard {
-        prev: PathBuf,
-    }
-
-    impl Drop for CwdGuard {
-        fn drop(&mut self) {
-            let _ = std::env::set_current_dir(&self.prev);
-        }
-    }
-
-    fn enter_tmp_cwd(tag: &str) -> (PathBuf, CwdGuard) {
-        let prev = std::env::current_dir().expect("current_dir");
-        let dir = tmp_dir(tag);
-        std::fs::create_dir_all(&dir).expect("create_dir_all tmp");
-        std::env::set_current_dir(&dir).expect("set_current_dir tmp");
-        (dir, CwdGuard { prev })
-    }
-
-    #[test]
-    fn emit_host_assets_uses_embedded_assets_outside_repo_root() {
-        let _guard = CWD_LOCK.lock().expect("cwd lock");
-        let (tmp, cwd) = enter_tmp_cwd("embedded_host_assets");
-
-        let dist = PathBuf::from("dist");
-        std::fs::create_dir_all(&dist).expect("create dist");
-
-        let (host_snapshot, artifacts) = emit_host_assets(&dist).expect("emit_host_assets");
-
-        assert_eq!(artifacts.len(), 4, "expected four emitted host assets");
-        assert!(dist.join(HOST_INDEX_HTML).is_file(), "missing index.html");
-        assert!(
-            dist.join(HOST_BOOTSTRAP_JS).is_file(),
-            "missing bootstrap.js"
-        );
-        assert!(
-            dist.join(HOST_APP_HOST_MJS).is_file(),
-            "missing app-host.mjs"
-        );
-        assert!(dist.join(HOST_MAIN_MJS).is_file(), "missing main.mjs");
-        assert_eq!(
-            host_snapshot.get("source").and_then(Value::as_str),
-            Some("https://github.com/x07lang/x07-web-ui.git")
-        );
-
-        drop(cwd);
-        let _ = std::fs::remove_dir_all(tmp);
-    }
-}
-
 fn build_web_ui_adapter_component(
     out_path: &Path,
     diagnostics: &mut Vec<Diagnostic>,
@@ -959,4 +893,47 @@ fn build_web_ui_adapter_component(
         ));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use std::path::PathBuf;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    static TMP_SEQ: AtomicUsize = AtomicUsize::new(0);
+
+    fn tmp_dir(tag: &str) -> PathBuf {
+        let n = TMP_SEQ.fetch_add(1, Ordering::Relaxed);
+        let name = format!("x07-wasm-web-ui-build-{tag}-{}-{n}", std::process::id());
+        std::env::temp_dir().join(name)
+    }
+
+    #[test]
+    fn emit_host_assets_uses_embedded_assets_outside_repo_root() {
+        let tmp = tmp_dir("embedded_host_assets");
+        let dist = tmp.join("dist");
+        std::fs::create_dir_all(&dist).expect("create dist");
+
+        let (host_snapshot, artifacts) = emit_host_assets(&dist).expect("emit_host_assets");
+
+        assert_eq!(artifacts.len(), 4, "expected four emitted host assets");
+        assert!(dist.join(HOST_INDEX_HTML).is_file(), "missing index.html");
+        assert!(
+            dist.join(HOST_BOOTSTRAP_JS).is_file(),
+            "missing bootstrap.js"
+        );
+        assert!(
+            dist.join(HOST_APP_HOST_MJS).is_file(),
+            "missing app-host.mjs"
+        );
+        assert!(dist.join(HOST_MAIN_MJS).is_file(), "missing main.mjs");
+        assert_eq!(
+            host_snapshot.get("source").and_then(Value::as_str),
+            Some("https://github.com/x07lang/x07-web-ui.git")
+        );
+
+        let _ = std::fs::remove_dir_all(tmp);
+    }
 }

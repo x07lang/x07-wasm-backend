@@ -412,9 +412,7 @@ mod tests {
 
     use std::path::PathBuf;
     use std::sync::atomic::{AtomicUsize, Ordering};
-    use std::sync::Mutex;
 
-    static CWD_LOCK: Mutex<()> = Mutex::new(());
     static TMP_SEQ: AtomicUsize = AtomicUsize::new(0);
 
     fn tmp_dir(tag: &str) -> PathBuf {
@@ -423,30 +421,10 @@ mod tests {
         std::env::temp_dir().join(name)
     }
 
-    struct CwdGuard {
-        prev: PathBuf,
-    }
-
-    impl Drop for CwdGuard {
-        fn drop(&mut self) {
-            let _ = std::env::set_current_dir(&self.prev);
-        }
-    }
-
-    fn enter_tmp_cwd(tag: &str) -> (PathBuf, CwdGuard) {
-        let prev = std::env::current_dir().expect("current_dir");
-        let dir = tmp_dir(tag);
-        std::fs::create_dir_all(&dir).expect("create_dir_all tmp");
-        std::env::set_current_dir(&dir).expect("set_current_dir tmp");
-        (dir, CwdGuard { prev })
-    }
-
     #[test]
     fn device_verify_uses_embedded_host_abi_hash_outside_repo_root() {
-        let _guard = CWD_LOCK.lock().expect("cwd lock");
-        let (tmp, cwd) = enter_tmp_cwd("embedded_host_abi");
-
-        let bundle_dir = PathBuf::from("bundle");
+        let tmp = tmp_dir("embedded_host_abi");
+        let bundle_dir = tmp.join("bundle");
         std::fs::create_dir_all(bundle_dir.join("ui")).expect("create ui dir");
         std::fs::create_dir_all(bundle_dir.join("profile")).expect("create profile dir");
 
@@ -498,7 +476,9 @@ mod tests {
         )
         .expect("write bundle.manifest.json");
 
-        let report_out = PathBuf::from("verify.report.json");
+        let report_out = tmp.join("verify.report.json");
+        let expected_manifest_path = bundle_dir.join("bundle.manifest.json");
+        let expected_manifest_path = expected_manifest_path.display().to_string();
         let machine = MachineArgs {
             json: Some(String::new()),
             report_json: None,
@@ -543,10 +523,9 @@ mod tests {
             report_doc
                 .pointer("/meta/inputs/0/path")
                 .and_then(Value::as_str),
-            Some("bundle/bundle.manifest.json")
+            Some(expected_manifest_path.as_str())
         );
 
-        drop(cwd);
         let _ = std::fs::remove_dir_all(&tmp);
     }
 }
