@@ -77,3 +77,81 @@ test("render() preserves focus and selection for keyed inputs", () => {
   assert.equal(nextInput.selectionDirection, "forward");
   assert.equal(nextInput, input);
 });
+
+test("render() skips replaceChildren when reconciled children are reused in place", () => {
+  const { document } = installFakeDom();
+  const root = document.createElement("div");
+
+  const initialTree = {
+    root: {
+      k: "el",
+      tag: "div",
+      key: "root",
+      props: {},
+      children: [
+        {
+          k: "el",
+          tag: "input",
+          key: "in_text",
+          props: { attrs: { value: "abcdef" } },
+          children: [],
+        },
+        {
+          k: "el",
+          tag: "span",
+          key: "status",
+          props: {},
+          children: [{ k: "text", key: "status_text", text: "idle" }],
+        },
+      ],
+    },
+  };
+
+  const nextTree = {
+    root: {
+      k: "el",
+      tag: "div",
+      key: "root",
+      props: {},
+      children: [
+        {
+          k: "el",
+          tag: "input",
+          key: "in_text",
+          props: { attrs: { value: "abcdef" } },
+          children: [],
+        },
+        {
+          k: "el",
+          tag: "span",
+          key: "status",
+          props: {},
+          children: [{ k: "text", key: "status_text", text: "updated" }],
+        },
+      ],
+    },
+  };
+
+  host.render(root, null, initialTree);
+
+  const container = root.firstChild;
+  let rootReplaceCalls = 0;
+  let containerReplaceCalls = 0;
+
+  const rootReplaceChildren = root.replaceChildren.bind(root);
+  root.replaceChildren = (...nodes) => {
+    rootReplaceCalls += 1;
+    return rootReplaceChildren(...nodes);
+  };
+
+  const containerReplaceChildren = container.replaceChildren.bind(container);
+  container.replaceChildren = (...nodes) => {
+    containerReplaceCalls += 1;
+    return containerReplaceChildren(...nodes);
+  };
+
+  host.render(root, initialTree, nextTree);
+
+  assert.equal(rootReplaceCalls, 0);
+  assert.equal(containerReplaceCalls, 0);
+});

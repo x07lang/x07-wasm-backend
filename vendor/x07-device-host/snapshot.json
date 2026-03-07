@@ -2,10 +2,10 @@
   "digests": {
     "arch/host_abi/host_abi.snapshot.json": {
       "bytes_len": 867,
-      "sha256": "13f36866a05901b04513215a2ca90ed675cb14ba3d1073a542b7895a4f82a6f2"
+      "sha256": "0f7a7262ed856ae7d23b7f92136771153c96a494a26e3a4558fea94bf017a9ad"
     }
   },
-  "git_sha": "075918332f1afa8f5591f4ca04ee7f9017905d5a",
-  "host_abi_hash": "a452096f7aa6d167cc26f9be5374699bd9f9fefaf1c61035196cc2ff6ee27248",
+  "git_sha": "e93a7680e73097fe8494135d2a72ac07c78f3e43",
+  "host_abi_hash": "00714534e0a017577ab39387446a8c92f8b1c5d8b9c7f5dda40ff34176fc9122",
   "source": "https://github.com/x07lang/x07-device-host.git"
 }
