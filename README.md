@@ -45,6 +45,27 @@ x07-wasm run \
   --json
 ```
 
+## Consumer web-ui/device apps
+
+For a consumer repo that ships one reducer across browser and device targets, keep these surfaces together:
+
+- `frontend/` — the X07 reducer project
+- `arch/wasm/` — wasm build profiles
+- `arch/web_ui/` — web-ui profiles
+- `arch/device/` — device profiles and index
+
+The expected validation loop is:
+
+```sh
+x07-wasm web-ui build --project frontend/x07.json --profile web_ui_debug --out-dir dist/web_ui_debug --clean --json
+x07-wasm web-ui test --dist-dir dist/web_ui_debug --case tests/your_case.trace.json --json
+x07-wasm device build --index arch/device/index.x07device.json --profile device_ios_dev --out-dir dist/device_ios_dev_bundle --clean --strict --json
+x07-wasm device verify --dir dist/device_ios_dev_bundle --json
+x07-wasm device package --bundle dist/device_ios_dev_bundle --target ios --out-dir dist/device_ios_dev_package --json
+```
+
+Start from [`examples/device_min`](examples/device_min) for the device bundle/profile layout and pair it with the reducer patterns in [`x07-web-ui/examples/web_ui_form`](../x07-web-ui/examples/web_ui_form). That combination is the current reference path for a consumer-owned web-ui/device app.
+
 ## Command surface
 
 ### Phase 0 — solve-pure WASM modules
