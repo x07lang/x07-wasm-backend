@@ -25,7 +25,7 @@ python3 scripts/vendor_x07_device_host_abi.py update --src ../x07-device-host
 python3 scripts/vendor_x07_device_host_abi.py check
 ```
 
-`x07-wasm device verify` enforces that `bundle.manifest.json` `host.host_abi_hash` matches the vendored snapshot and emits `X07WASM_DEVICE_BUNDLE_HOST_ABI_HASH_MISMATCH` (exit code 3) on mismatch.
+`x07-wasm device verify` enforces that `bundle.manifest.json` `host.host_abi_hash` matches the embedded pinned host ABI constant in `crates/x07-wasm/src/device/host_abi.rs` and emits `X07WASM_DEVICE_BUNDLE_HOST_ABI_HASH_MISMATCH` (exit code 3) on mismatch.
 
 ## Contracts-as-data
 
