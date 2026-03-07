@@ -21,4 +21,13 @@ fi
 "${PYTHON}" scripts/vendor_x07_web_ui.py update --src "${SRC_ROOT}"
 "${PYTHON}" scripts/vendor_x07_web_ui.py check --src "${SRC_ROOT}"
 
+HOST_DIR="vendor/x07-web-ui/host"
+IOS_HOST_DIR="crates/x07-wasm/src/support/mobile/ios/template/X07DeviceApp/x07"
+ANDROID_HOST_DIR="crates/x07-wasm/src/support/mobile/android/template/app/src/main/assets/x07"
+
+for host_file in index.html bootstrap.js main.mjs app-host.mjs; do
+  cp "${HOST_DIR}/${host_file}" "${IOS_HOST_DIR}/${host_file}"
+  cp "${HOST_DIR}/${host_file}" "${ANDROID_HOST_DIR}/${host_file}"
+done
+
 echo "ok: synced vendored x07-web-ui snapshot"

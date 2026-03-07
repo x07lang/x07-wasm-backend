@@ -41,8 +41,8 @@
       "sha256": "3381e3077b949a91303e2553042cb35ed7bd76fcbc613b9ae039f1bc93b4da24"
     },
     "host/app-host.mjs": {
-      "bytes_len": 36377,
-      "sha256": "0197f76d10e631df2048ecf5d034970ca2a980cd2794eebf6f6cf49b4321a2da"
+      "bytes_len": 38800,
+      "sha256": "e4753020fa92469b4d41f0b705528a0c42c27120dca089ba303f944ceb910d23"
     },
     "host/bootstrap.js": {
       "bytes_len": 2327,
@@ -50,7 +50,7 @@
     },
     "host/host.snapshot.json": {
       "bytes_len": 867,
-      "sha256": "c891fe88394fafa4338fb2eec60ac399496b340b6a7d5cae4daeb840dc1a2e5f"
+      "sha256": "7233b1278685f2c5be3b0d517e44a469fb41c4f3cd51bde5e96fd8e5060e84ea"
     },
     "host/index.html": {
       "bytes_len": 894,
@@ -59,6 +59,18 @@
     "host/main.mjs": {
       "bytes_len": 100,
       "sha256": "254f54e73c2c3afea1b7b29aabded8fcd64fbe5f4f9f7fc07757b0d62a1272f0"
+    },
+    "host/tests/fake-dom.mjs": {
+      "bytes_len": 3330,
+      "sha256": "dc49bfd179ee162513fd65ed323519ac2d1625efa171a8dfcaf2e6af278b8765"
+    },
+    "host/tests/focus_retention.test.mjs": {
+      "bytes_len": 1911,
+      "sha256": "fd4831afdaf6604480e53f58b2611bd9b2ed4a553314f1ecd8ef960d549a5998"
+    },
+    "host/tests/sanitize.test.mjs": {
+      "bytes_len": 1063,
+      "sha256": "6511f7da5ec7e0fad08ccf56858e76a137e758f686cafaa8d5aeadd814a42b32"
     },
     "packages/std-web-ui/0.1.2/modules/std/web_ui/effects/http.x07.json": {
       "bytes_len": 3174,

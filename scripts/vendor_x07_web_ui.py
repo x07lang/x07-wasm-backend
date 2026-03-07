@@ -35,6 +35,10 @@ WIT_FILES = [
 
 TREE_DIRS = [
     (
+        "host/tests",
+        VENDORED_REPO_DIR / "host" / "tests",
+    ),
+    (
         "packages/std-web-ui/0.1.2/modules",
         VENDORED_REPO_DIR / "packages" / "std-web-ui" / "0.1.2" / "modules",
     ),

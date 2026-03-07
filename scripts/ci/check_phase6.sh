@@ -41,3 +41,6 @@ bash scripts/ci/check_phase6_profile_defaults.sh
 
 echo "==> phase6: web-ui host safety"
 bash scripts/ci/check_phase6_web_ui_host_safety.sh
+
+echo "==> phase6: web-ui focus retention"
+bash scripts/ci/check_phase6_web_ui_focus.sh

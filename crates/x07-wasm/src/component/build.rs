@@ -914,6 +914,26 @@ fn build_solve_component(
         x07_h.display().to_string(),
         "--freestanding".to_string(),
     ];
+    match cmdutil::ensure_x07_project_deps_hydrated(project_path) {
+        Ok(hydrated) => {
+            if hydrated {
+                meta.nondeterminism.uses_network = true;
+            }
+        }
+        Err(err) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_X07_PKG_LOCK_FAILED",
+                Severity::Error,
+                Stage::Codegen,
+                format!("{err:#}"),
+            ));
+            return Ok(SolveBuildOutput {
+                solve_core_wasm: None,
+                solve_artifact: None,
+            });
+        }
+    }
+
     let x07_out = match cmdutil::run_cmd_capture("x07", &x07_build_args) {
         Ok(v) => v,
         Err(err) => {
@@ -2141,6 +2161,23 @@ fn build_http_native_component(
         x07_h.display().to_string(),
         "--freestanding".to_string(),
     ];
+    match cmdutil::ensure_x07_project_deps_hydrated(project_path) {
+        Ok(hydrated) => {
+            if hydrated {
+                meta.nondeterminism.uses_network = true;
+            }
+        }
+        Err(err) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_X07_PKG_LOCK_FAILED",
+                Severity::Error,
+                Stage::Codegen,
+                format!("{err:#}"),
+            ));
+            return Ok(None);
+        }
+    }
+
     let x07_out = match cmdutil::run_cmd_capture("x07", &x07_build_args) {
         Ok(v) => v,
         Err(err) => {
@@ -2516,6 +2553,23 @@ fn build_cli_native_component(
         x07_h.display().to_string(),
         "--freestanding".to_string(),
     ];
+    match cmdutil::ensure_x07_project_deps_hydrated(project_path) {
+        Ok(hydrated) => {
+            if hydrated {
+                meta.nondeterminism.uses_network = true;
+            }
+        }
+        Err(err) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_X07_PKG_LOCK_FAILED",
+                Severity::Error,
+                Stage::Codegen,
+                format!("{err:#}"),
+            ));
+            return Ok(None);
+        }
+    }
+
     let x07_out = match cmdutil::run_cmd_capture("x07", &x07_build_args) {
         Ok(v) => v,
         Err(err) => {

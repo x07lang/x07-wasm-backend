@@ -307,6 +307,35 @@ pub fn cmd_build(
         }
     }
 
+    match cmdutil::ensure_x07_project_deps_hydrated(project_path) {
+        Ok(hydrated) => {
+            if hydrated {
+                meta.nondeterminism.uses_network = true;
+            }
+        }
+        Err(err) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_X07_PKG_LOCK_FAILED",
+                Severity::Error,
+                Stage::Codegen,
+                format!("{err:#}"),
+            ));
+            let result = build_result_from_state(
+                &profile_ref,
+                &paths,
+                &profile,
+                &x07_build_args,
+                &[],
+                &[],
+                codegen_backend,
+                None,
+                None,
+            )?;
+            let report_doc = build_report_doc(meta, diagnostics, result);
+            return emit_build_report(&store, scope, machine, json_mode, report_doc);
+        }
+    }
+
     let x07_out = match cmdutil::run_cmd_capture("x07", &x07_build_args) {
         Ok(v) => v,
         Err(err) => {
