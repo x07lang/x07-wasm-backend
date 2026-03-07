@@ -1,0 +1,789 @@
+{
+  "decls": [
+    {
+      "kind": "export",
+      "names": [
+        "std.web_ui.effects.http.dispatch_response_present_v1",
+        "std.web_ui.effects.http.dispatch_response_body_base64_canon_or_err_v1",
+        "std.web_ui.effects.http.dispatch_response_body_text_canon_or_err_v1",
+        "std.web_ui.effects.http.dispatch_response_status_canon_or_err_v1",
+        "std.web_ui.effects.http.effects1_v1",
+        "std.web_ui.effects.http.request_get_v1",
+        "std.web_ui.effects.http.request_post_json_v1"
+      ]
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "out",
+          [
+            "std.vec.with_capacity",
+            [
+              "+",
+              [
+                "+",
+                [
+                  "+",
+                  [
+                    "+",
+                    [
+                      "+",
+                      [
+                        "view.len",
+                        "id_json"
+                      ],
+                      [
+                        "view.len",
+                        "method_json"
+                      ]
+                    ],
+                    [
+                      "view.len",
+                      "path_json"
+                    ]
+                  ],
+                  [
+                    "view.len",
+                    "headers_json"
+                  ]
+                ],
+                [
+                  "view.len",
+                  "body_json"
+                ]
+              ],
+              128
+            ]
+          ]
+        ],
+        [
+          "set",
+          "out",
+          [
+            "std.vec.extend_bytes",
+            "out",
+            [
+              "bytes.view_lit",
+              "{\"v\":1,\"kind\":\"x07.web_ui.effect.http.request\",\"request\":{\"schema_version\":\"x07.http.request.envelope@0.1.0\",\"id\":"
+            ]
+          ]
+        ],
+        [
+          "set",
+          "out",
+          [
+            "std.vec.extend_bytes",
+            "out",
+            "id_json"
+          ]
+        ],
+        [
+          "set",
+          "out",
+          [
+            "std.vec.extend_bytes",
+            "out",
+            [
+              "bytes.view_lit",
+              ",\"method\":"
+            ]
+          ]
+        ],
+        [
+          "set",
+          "out",
+          [
+            "std.vec.extend_bytes",
+            "out",
+            "method_json"
+          ]
+        ],
+        [
+          "set",
+          "out",
+          [
+            "std.vec.extend_bytes",
+            "out",
+            [
+              "bytes.view_lit",
+              ",\"path\":"
+            ]
+          ]
+        ],
+        [
+          "set",
+          "out",
+          [
+            "std.vec.extend_bytes",
+            "out",
+            "path_json"
+          ]
+        ],
+        [
+          "set",
+          "out",
+          [
+            "std.vec.extend_bytes",
+            "out",
+            [
+              "bytes.view_lit",
+              ",\"headers\":"
+            ]
+          ]
+        ],
+        [
+          "set",
+          "out",
+          [
+            "std.vec.extend_bytes",
+            "out",
+            "headers_json"
+          ]
+        ],
+        [
+          "set",
+          "out",
+          [
+            "std.vec.extend_bytes",
+            "out",
+            [
+              "bytes.view_lit",
+              ",\"body\":"
+            ]
+          ]
+        ],
+        [
+          "set",
+          "out",
+          [
+            "std.vec.extend_bytes",
+            "out",
+            "body_json"
+          ]
+        ],
+        [
+          "set",
+          "out",
+          [
+            "std.vec.extend_bytes",
+            "out",
+            [
+              "bytes.view_lit",
+              "}}"
+            ]
+          ]
+        ],
+        [
+          "std.vec.as_bytes",
+          "out"
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.http._request_v1",
+      "params": [
+        {
+          "name": "id_json",
+          "ty": "bytes_view"
+        },
+        {
+          "name": "method_json",
+          "ty": "bytes_view"
+        },
+        {
+          "name": "path_json",
+          "ty": "bytes_view"
+        },
+        {
+          "name": "headers_json",
+          "ty": "bytes_view"
+        },
+        {
+          "name": "body_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "out",
+          [
+            "std.vec.with_capacity",
+            [
+              "+",
+              [
+                "view.len",
+                "raw_json"
+              ],
+              16
+            ]
+          ]
+        ],
+        [
+          "set",
+          "out",
+          [
+            "std.vec.push",
+            "out",
+            34
+          ]
+        ],
+        [
+          "for",
+          "i",
+          0,
+          [
+            "view.len",
+            "raw_json"
+          ],
+          [
+            "begin",
+            [
+              "let",
+              "ch",
+              [
+                "view.get_u8",
+                "raw_json",
+                "i"
+              ]
+            ],
+            [
+              "if",
+              [
+                "=",
+                "ch",
+                34
+              ],
+              [
+                "begin",
+                [
+                  "set",
+                  "out",
+                  [
+                    "std.vec.push",
+                    "out",
+                    92
+                  ]
+                ],
+                [
+                  "set",
+                  "out",
+                  [
+                    "std.vec.push",
+                    "out",
+                    34
+                  ]
+                ],
+                0
+              ],
+              [
+                "if",
+                [
+                  "=",
+                  "ch",
+                  92
+                ],
+                [
+                  "begin",
+                  [
+                    "set",
+                    "out",
+                    [
+                      "std.vec.push",
+                      "out",
+                      92
+                    ]
+                  ],
+                  [
+                    "set",
+                    "out",
+                    [
+                      "std.vec.push",
+                      "out",
+                      92
+                    ]
+                  ],
+                  0
+                ],
+                [
+                  "if",
+                  [
+                    "=",
+                    "ch",
+                    10
+                  ],
+                  [
+                    "begin",
+                    [
+                      "set",
+                      "out",
+                      [
+                        "std.vec.push",
+                        "out",
+                        92
+                      ]
+                    ],
+                    [
+                      "set",
+                      "out",
+                      [
+                        "std.vec.push",
+                        "out",
+                        110
+                      ]
+                    ],
+                    0
+                  ],
+                  [
+                    "if",
+                    [
+                      "=",
+                      "ch",
+                      13
+                    ],
+                    [
+                      "begin",
+                      [
+                        "set",
+                        "out",
+                        [
+                          "std.vec.push",
+                          "out",
+                          92
+                        ]
+                      ],
+                      [
+                        "set",
+                        "out",
+                        [
+                          "std.vec.push",
+                          "out",
+                          114
+                        ]
+                      ],
+                      0
+                    ],
+                    [
+                      "if",
+                      [
+                        "=",
+                        "ch",
+                        9
+                      ],
+                      [
+                        "begin",
+                        [
+                          "set",
+                          "out",
+                          [
+                            "std.vec.push",
+                            "out",
+                            92
+                          ]
+                        ],
+                        [
+                          "set",
+                          "out",
+                          [
+                            "std.vec.push",
+                            "out",
+                            116
+                          ]
+                        ],
+                        0
+                      ],
+                      [
+                        "begin",
+                        [
+                          "set",
+                          "out",
+                          [
+                            "std.vec.push",
+                            "out",
+                            "ch"
+                          ]
+                        ],
+                        0
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ],
+            0
+          ]
+        ],
+        [
+          "set",
+          "out",
+          [
+            "std.vec.push",
+            "out",
+            34
+          ]
+        ],
+        [
+          "std.vec.as_bytes",
+          "out"
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.http._json_string_v1",
+      "params": [
+        {
+          "name": "raw_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "state.__x07_http.response"
+          ]
+        ],
+        [
+          "std.web_ui.runtime.dispatch_has_path_v1",
+          "dispatch_json",
+          [
+            "bytes.view",
+            "path"
+          ]
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.http.dispatch_response_present_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "i32"
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "state.__x07_http.response.body.base64"
+          ]
+        ],
+        [
+          "std.web_ui.runtime.dispatch_extract_canon_or_err_v1",
+          "dispatch_json",
+          [
+            "bytes.view",
+            "path"
+          ]
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.http.dispatch_response_body_base64_canon_or_err_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "state.__x07_http.response.body.text"
+          ]
+        ],
+        [
+          "std.web_ui.runtime.dispatch_extract_canon_or_err_v1",
+          "dispatch_json",
+          [
+            "bytes.view",
+            "path"
+          ]
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.http.dispatch_response_body_text_canon_or_err_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "state.__x07_http.response.status"
+          ]
+        ],
+        [
+          "std.web_ui.runtime.dispatch_extract_canon_or_err_v1",
+          "dispatch_json",
+          [
+            "bytes.view",
+            "path"
+          ]
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.http.dispatch_response_status_canon_or_err_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          [
+            "bytes.lit",
+            "["
+          ],
+          [
+            "view.to_bytes",
+            "effect_json"
+          ]
+        ],
+        [
+          "bytes.lit",
+          "]"
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.http.effects1_v1",
+      "params": [
+        {
+          "name": "effect_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "std.web_ui.effects.http._request_v1",
+        "id_json",
+        [
+          "bytes.view_lit",
+          "\"GET\""
+        ],
+        "path_json",
+        [
+          "bytes.view_lit",
+          "[]"
+        ],
+        [
+          "bytes.view_lit",
+          "{\"bytes_len\":0}"
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.http.request_get_v1",
+      "params": [
+        {
+          "name": "id_json",
+          "ty": "bytes_view"
+        },
+        {
+          "name": "path_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "body_len_json",
+          [
+            "std.fmt.u32_to_dec",
+            [
+              "view.len",
+              "body_json"
+            ]
+          ]
+        ],
+        [
+          "let",
+          "body_text_json",
+          [
+            "std.web_ui.effects.http._json_string_v1",
+            "body_json"
+          ]
+        ],
+        [
+          "let",
+          "body_doc",
+          [
+            "std.vec.with_capacity",
+            [
+              "+",
+              [
+                "+",
+                [
+                  "view.len",
+                  [
+                    "bytes.view",
+                    "body_len_json"
+                  ]
+                ],
+                [
+                  "view.len",
+                  [
+                    "bytes.view",
+                    "body_text_json"
+                  ]
+                ]
+              ],
+              32
+            ]
+          ]
+        ],
+        [
+          "set",
+          "body_doc",
+          [
+            "std.vec.extend_bytes",
+            "body_doc",
+            [
+              "bytes.view_lit",
+              "{\"bytes_len\":"
+            ]
+          ]
+        ],
+        [
+          "set",
+          "body_doc",
+          [
+            "std.vec.extend_bytes",
+            "body_doc",
+            [
+              "bytes.view",
+              "body_len_json"
+            ]
+          ]
+        ],
+        [
+          "set",
+          "body_doc",
+          [
+            "std.vec.extend_bytes",
+            "body_doc",
+            [
+              "bytes.view_lit",
+              ",\"text\":"
+            ]
+          ]
+        ],
+        [
+          "set",
+          "body_doc",
+          [
+            "std.vec.extend_bytes",
+            "body_doc",
+            [
+              "bytes.view",
+              "body_text_json"
+            ]
+          ]
+        ],
+        [
+          "set",
+          "body_doc",
+          [
+            "std.vec.extend_bytes",
+            "body_doc",
+            [
+              "bytes.view_lit",
+              "}"
+            ]
+          ]
+        ],
+        [
+          "let",
+          "body_doc_json",
+          [
+            "std.vec.as_bytes",
+            "body_doc"
+          ]
+        ],
+        [
+          "std.web_ui.effects.http._request_v1",
+          "id_json",
+          [
+            "bytes.view_lit",
+            "\"POST\""
+          ],
+          "path_json",
+          [
+            "bytes.view_lit",
+            "[{\"k\":\"Content-Type\",\"v\":\"application/json\"}]"
+          ],
+          [
+            "bytes.view",
+            "body_doc_json"
+          ]
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.http.request_post_json_v1",
+      "params": [
+        {
+          "name": "id_json",
+          "ty": "bytes_view"
+        },
+        {
+          "name": "path_json",
+          "ty": "bytes_view"
+        },
+        {
+          "name": "body_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    }
+  ],
+  "imports": [
+    "std.fmt",
+    "std.vec",
+    "std.web_ui.runtime"
+  ],
+  "kind": "module",
+  "module_id": "std.web_ui.effects.http",
+  "schema_version": "x07.x07ast@0.5.0"
+}

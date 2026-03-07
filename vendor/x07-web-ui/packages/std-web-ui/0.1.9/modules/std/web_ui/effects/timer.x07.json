@@ -1,0 +1,155 @@
+{
+  "decls": [
+    {
+      "kind": "export",
+      "names": [
+        "std.web_ui.effects.timer.clear_v1",
+        "std.web_ui.effects.timer.dispatch_clear_ok_canon_or_err_v1",
+        "std.web_ui.effects.timer.dispatch_set_ok_canon_or_err_v1",
+        "std.web_ui.effects.timer.set_v1"
+      ]
+    },
+    {
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          [
+            "bytes.lit",
+            "{\"v\":1,\"kind\":\"x07.web_ui.effect.timer.clear\",\"id\":"
+          ],
+          [
+            "view.to_bytes",
+            "id_json"
+          ]
+        ],
+        [
+          "bytes.lit",
+          "}"
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.timer.clear_v1",
+      "params": [
+        {
+          "name": "id_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "state.__x07_timer.clear.ok"
+          ]
+        ],
+        [
+          "std.web_ui.runtime.dispatch_extract_canon_or_err_v1",
+          "dispatch_json",
+          [
+            "bytes.view",
+            "path"
+          ]
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.timer.dispatch_clear_ok_canon_or_err_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "state.__x07_timer.set.ok"
+          ]
+        ],
+        [
+          "std.web_ui.runtime.dispatch_extract_canon_or_err_v1",
+          "dispatch_json",
+          [
+            "bytes.view",
+            "path"
+          ]
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.timer.dispatch_set_ok_canon_or_err_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          [
+            "bytes.concat",
+            [
+              "bytes.lit",
+              "{\"v\":1,\"kind\":\"x07.web_ui.effect.timer.set\",\"id\":"
+            ],
+            [
+              "view.to_bytes",
+              "id_json"
+            ]
+          ],
+          [
+            "bytes.lit",
+            ",\"delay_ms\":"
+          ]
+        ],
+        [
+          "bytes.concat",
+          [
+            "view.to_bytes",
+            "delay_ms_json"
+          ],
+          [
+            "bytes.lit",
+            "}"
+          ]
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.timer.set_v1",
+      "params": [
+        {
+          "name": "id_json",
+          "ty": "bytes_view"
+        },
+        {
+          "name": "delay_ms_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    }
+  ],
+  "imports": [
+    "std.web_ui.runtime"
+  ],
+  "kind": "module",
+  "module_id": "std.web_ui.effects.timer",
+  "schema_version": "x07.x07ast@0.5.0"
+}

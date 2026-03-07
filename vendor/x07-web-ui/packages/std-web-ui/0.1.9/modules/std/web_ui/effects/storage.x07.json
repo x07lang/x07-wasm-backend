@@ -1,0 +1,186 @@
+{
+  "decls": [
+    {
+      "kind": "export",
+      "names": [
+        "std.web_ui.effects.storage.dispatch_get_present_v1",
+        "std.web_ui.effects.storage.dispatch_get_value_canon_or_err_v1",
+        "std.web_ui.effects.storage.dispatch_set_ok_canon_or_err_v1",
+        "std.web_ui.effects.storage.get_v1",
+        "std.web_ui.effects.storage.set_v1"
+      ]
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "state.__x07_storage.get.value"
+          ]
+        ],
+        [
+          "std.web_ui.runtime.dispatch_has_path_v1",
+          "dispatch_json",
+          [
+            "bytes.view",
+            "path"
+          ]
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.storage.dispatch_get_present_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "i32"
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "state.__x07_storage.get.value"
+          ]
+        ],
+        [
+          "std.web_ui.runtime.dispatch_extract_canon_or_err_v1",
+          "dispatch_json",
+          [
+            "bytes.view",
+            "path"
+          ]
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.storage.dispatch_get_value_canon_or_err_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "state.__x07_storage.set.ok"
+          ]
+        ],
+        [
+          "std.web_ui.runtime.dispatch_extract_canon_or_err_v1",
+          "dispatch_json",
+          [
+            "bytes.view",
+            "path"
+          ]
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.storage.dispatch_set_ok_canon_or_err_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          [
+            "bytes.lit",
+            "{\"v\":1,\"kind\":\"x07.web_ui.effect.storage.get\",\"key\":"
+          ],
+          [
+            "view.to_bytes",
+            "key_json"
+          ]
+        ],
+        [
+          "bytes.lit",
+          "}"
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.storage.get_v1",
+      "params": [
+        {
+          "name": "key_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          [
+            "bytes.concat",
+            [
+              "bytes.lit",
+              "{\"v\":1,\"kind\":\"x07.web_ui.effect.storage.set\",\"key\":"
+            ],
+            [
+              "view.to_bytes",
+              "key_json"
+            ]
+          ],
+          [
+            "bytes.lit",
+            ",\"value\":"
+          ]
+        ],
+        [
+          "bytes.concat",
+          [
+            "view.to_bytes",
+            "value_json"
+          ],
+          [
+            "bytes.lit",
+            "}"
+          ]
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.storage.set_v1",
+      "params": [
+        {
+          "name": "key_json",
+          "ty": "bytes_view"
+        },
+        {
+          "name": "value_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    }
+  ],
+  "imports": [
+    "std.web_ui.runtime"
+  ],
+  "kind": "module",
+  "module_id": "std.web_ui.effects.storage",
+  "schema_version": "x07.x07ast@0.5.0"
+}
