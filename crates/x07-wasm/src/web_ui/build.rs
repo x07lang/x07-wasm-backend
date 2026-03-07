@@ -17,13 +17,18 @@ const DEFAULT_WEB_UI_PROFILE_ID: &str = "web_ui_release";
 
 const DEFAULT_COMPONENT_PROFILE_INDEX: &str = "arch/wasm/component/index.x07wasm.component.json";
 
-const VENDORED_HOST_SNAPSHOT: &str = "vendor/x07-web-ui/snapshot.json";
-const VENDORED_HOST_DIR: &str = "vendor/x07-web-ui/host";
-
 const HOST_INDEX_HTML: &str = "index.html";
 const HOST_BOOTSTRAP_JS: &str = "bootstrap.js";
 const HOST_APP_HOST_MJS: &str = "app-host.mjs";
 const HOST_MAIN_MJS: &str = "main.mjs";
+const HOST_SNAPSHOT_JSON: &[u8] = include_bytes!("../../../../vendor/x07-web-ui/snapshot.json");
+const HOST_INDEX_HTML_BYTES: &[u8] =
+    include_bytes!("../../../../vendor/x07-web-ui/host/index.html");
+const HOST_BOOTSTRAP_JS_BYTES: &[u8] =
+    include_bytes!("../../../../vendor/x07-web-ui/host/bootstrap.js");
+const HOST_APP_HOST_MJS_BYTES: &[u8] =
+    include_bytes!("../../../../vendor/x07-web-ui/host/app-host.mjs");
+const HOST_MAIN_MJS_BYTES: &[u8] = include_bytes!("../../../../vendor/x07-web-ui/host/main.mjs");
 
 const WIT_WEB_UI_APP_DIR: &str = "wit/x07/web_ui/0.2.0";
 const WIT_WEB_UI_APP_WORLD: &str = "web-ui-app";
@@ -820,58 +825,31 @@ fn project_name_for_manifest(project: &Path) -> String {
 }
 
 fn emit_host_assets(dist_dir: &Path) -> Result<(Value, Vec<report::meta::FileDigest>)> {
-    let snapshot_bytes = std::fs::read(Path::new(VENDORED_HOST_SNAPSHOT))
-        .with_context(|| format!("read: {VENDORED_HOST_SNAPSHOT}"))?;
-    let snapshot_doc: Value = serde_json::from_slice(&snapshot_bytes)
-        .with_context(|| format!("parse JSON: {VENDORED_HOST_SNAPSHOT}"))?;
+    let snapshot_doc: Value =
+        serde_json::from_slice(HOST_SNAPSHOT_JSON).context("parse embedded host snapshot JSON")?;
     let snapshot: VendoredSnapshotDoc =
         serde_json::from_value(snapshot_doc).context("parse vendored snapshot doc")?;
 
-    let host_dir = Path::new(VENDORED_HOST_DIR);
     let mut artifacts: Vec<report::meta::FileDigest> = Vec::new();
 
-    let src_index = host_dir.join(HOST_INDEX_HTML);
     let dst_index = dist_dir.join(HOST_INDEX_HTML);
-    std::fs::copy(&src_index, &dst_index).with_context(|| {
-        format!(
-            "copy host asset {} -> {}",
-            src_index.display(),
-            dst_index.display()
-        )
-    })?;
+    std::fs::write(&dst_index, HOST_INDEX_HTML_BYTES)
+        .with_context(|| format!("write host asset {}", dst_index.display()))?;
     artifacts.push(util::file_digest(&dst_index)?);
 
-    let src_bootstrap = host_dir.join(HOST_BOOTSTRAP_JS);
     let dst_bootstrap = dist_dir.join(HOST_BOOTSTRAP_JS);
-    std::fs::copy(&src_bootstrap, &dst_bootstrap).with_context(|| {
-        format!(
-            "copy host asset {} -> {}",
-            src_bootstrap.display(),
-            dst_bootstrap.display()
-        )
-    })?;
+    std::fs::write(&dst_bootstrap, HOST_BOOTSTRAP_JS_BYTES)
+        .with_context(|| format!("write host asset {}", dst_bootstrap.display()))?;
     artifacts.push(util::file_digest(&dst_bootstrap)?);
 
-    let src_host = host_dir.join(HOST_APP_HOST_MJS);
     let dst_host = dist_dir.join(HOST_APP_HOST_MJS);
-    std::fs::copy(&src_host, &dst_host).with_context(|| {
-        format!(
-            "copy host asset {} -> {}",
-            src_host.display(),
-            dst_host.display()
-        )
-    })?;
+    std::fs::write(&dst_host, HOST_APP_HOST_MJS_BYTES)
+        .with_context(|| format!("write host asset {}", dst_host.display()))?;
     artifacts.push(util::file_digest(&dst_host)?);
 
-    let src_main = host_dir.join(HOST_MAIN_MJS);
     let dst_main = dist_dir.join(HOST_MAIN_MJS);
-    std::fs::copy(&src_main, &dst_main).with_context(|| {
-        format!(
-            "copy host asset {} -> {}",
-            src_main.display(),
-            dst_main.display()
-        )
-    })?;
+    std::fs::write(&dst_main, HOST_MAIN_MJS_BYTES)
+        .with_context(|| format!("write host asset {}", dst_main.display()))?;
     artifacts.push(util::file_digest(&dst_main)?);
 
     let files = artifacts.clone();
@@ -881,6 +859,72 @@ fn emit_host_assets(dist_dir: &Path) -> Result<(Value, Vec<report::meta::FileDig
       "files": files,
     });
     Ok((host_snapshot, artifacts))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use std::path::PathBuf;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Mutex;
+
+    static CWD_LOCK: Mutex<()> = Mutex::new(());
+    static TMP_SEQ: AtomicUsize = AtomicUsize::new(0);
+
+    fn tmp_dir(tag: &str) -> PathBuf {
+        let n = TMP_SEQ.fetch_add(1, Ordering::Relaxed);
+        let name = format!("x07-wasm-web-ui-build-{tag}-{}-{n}", std::process::id());
+        std::env::temp_dir().join(name)
+    }
+
+    struct CwdGuard {
+        prev: PathBuf,
+    }
+
+    impl Drop for CwdGuard {
+        fn drop(&mut self) {
+            let _ = std::env::set_current_dir(&self.prev);
+        }
+    }
+
+    fn enter_tmp_cwd(tag: &str) -> (PathBuf, CwdGuard) {
+        let prev = std::env::current_dir().expect("current_dir");
+        let dir = tmp_dir(tag);
+        std::fs::create_dir_all(&dir).expect("create_dir_all tmp");
+        std::env::set_current_dir(&dir).expect("set_current_dir tmp");
+        (dir, CwdGuard { prev })
+    }
+
+    #[test]
+    fn emit_host_assets_uses_embedded_assets_outside_repo_root() {
+        let _guard = CWD_LOCK.lock().expect("cwd lock");
+        let (tmp, cwd) = enter_tmp_cwd("embedded_host_assets");
+
+        let dist = PathBuf::from("dist");
+        std::fs::create_dir_all(&dist).expect("create dist");
+
+        let (host_snapshot, artifacts) = emit_host_assets(&dist).expect("emit_host_assets");
+
+        assert_eq!(artifacts.len(), 4, "expected four emitted host assets");
+        assert!(dist.join(HOST_INDEX_HTML).is_file(), "missing index.html");
+        assert!(
+            dist.join(HOST_BOOTSTRAP_JS).is_file(),
+            "missing bootstrap.js"
+        );
+        assert!(
+            dist.join(HOST_APP_HOST_MJS).is_file(),
+            "missing app-host.mjs"
+        );
+        assert!(dist.join(HOST_MAIN_MJS).is_file(), "missing main.mjs");
+        assert_eq!(
+            host_snapshot.get("source").and_then(Value::as_str),
+            Some("https://github.com/x07lang/x07-web-ui.git")
+        );
+
+        drop(cwd);
+        let _ = std::fs::remove_dir_all(tmp);
+    }
 }
 
 fn build_web_ui_adapter_component(

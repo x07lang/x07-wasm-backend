@@ -25,6 +25,8 @@ python3 scripts/vendor_x07_device_host_abi.py update --src ../x07-device-host
 python3 scripts/vendor_x07_device_host_abi.py check
 ```
 
+Consumer repos do not need to vendor either the device host ABI snapshot or the web-ui host assets. `x07-wasm` embeds the pinned host ABI hash and the vendored web-ui host files into the binary at build time.
+
 `x07-wasm device verify` enforces that `bundle.manifest.json` `host.host_abi_hash` matches the embedded pinned host ABI constant in `crates/x07-wasm/src/device/host_abi.rs` and emits `X07WASM_DEVICE_BUNDLE_HOST_ABI_HASH_MISMATCH` (exit code 3) on mismatch.
 
 ## Contracts-as-data
@@ -47,6 +49,8 @@ Build a device bundle (web-ui reducer wasm + pinned host ABI):
 ```sh
 x07-wasm device build --profile device_dev --out-dir dist/device --clean --json
 ```
+
+`x07-wasm web-ui build` and `x07-wasm device build` emit the canonical host assets from the embedded vendored snapshot; end-user projects should not copy `vendor/x07-web-ui/*` into their own repos.
 
 Bundle layout notes:
 
