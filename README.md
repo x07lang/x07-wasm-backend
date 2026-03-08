@@ -20,7 +20,7 @@ x07 wasm doctor --json
 Fallbacks:
 
 ```sh
-cargo install --locked x07-wasm --version 0.1.7
+cargo install --locked x07-wasm --version 0.1.8
 ```
 
 Use `cargo install --locked --git https://github.com/x07lang/x07-wasm-backend.git x07-wasm` only when you need unreleased development state from this repo.
@@ -116,6 +116,14 @@ The examples index lives in [`examples/README.md`](examples/README.md).
 - `x07-wasm slo validate` / `slo eval`
 - `x07-wasm deploy plan`
 - `x07-wasm provenance attest` / `provenance verify`
+
+Supported D-OSS command surface:
+
+- `x07-wasm app pack`
+- `x07-wasm app verify`
+- `x07-wasm deploy plan`
+- `x07-wasm slo eval`
+- `x07-wasm app regress from-incident`
 
 ### Phase 7 — native x07 → wasm backend
 

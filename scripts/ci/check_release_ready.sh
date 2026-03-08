@@ -11,4 +11,5 @@ cd "$root"
 cargo build --locked --release -p x07-wasm
 export PATH="${root}/target/release:${PATH}"
 bash scripts/ci/check_phase10.sh
+./scripts/ci/check_doss_ga_surface.sh
 ./target/release/x07-wasm doctor --json
