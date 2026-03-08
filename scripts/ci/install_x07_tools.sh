@@ -13,7 +13,7 @@ fi
 
 tools=("$@")
 if [[ ${#tools[@]} -eq 0 ]]; then
-  tools=(x07 x07-host-runner)
+  tools=(x07 x07-host-runner x07-os-runner)
 fi
 
 for tool in "${tools[@]}"; do
