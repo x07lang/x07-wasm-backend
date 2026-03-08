@@ -75,12 +75,18 @@ jobs:
             liblzma-dev \
             zlib1g-dev \
             libsqlite3-dev \
-            xz-utils
+            xz-utils \
+            libwebkit2gtk-4.1-dev
       - name: Install x07 tools (repo toolchain)
         shell: bash
         run: |
           set -euo pipefail
           bash .workflow-tools/scripts/ci/install_x07_tools.sh
+      - name: Install x07 device host (release gate)
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash .workflow-tools/scripts/ci/install_x07_tools.sh x07-device-host-desktop
       - name: Install wasmtime (pinned)
         shell: bash
         run: |

@@ -48,7 +48,7 @@ PY
 
 tools=("$@")
 if [[ ${#tools[@]} -eq 0 ]]; then
-  tools=(x07 x07-host-runner x07-os-runner x07-device-host-desktop)
+  tools=(x07 x07-host-runner x07-os-runner)
 fi
 
 for tool in "${tools[@]}"; do
