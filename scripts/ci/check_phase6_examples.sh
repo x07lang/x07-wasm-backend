@@ -196,6 +196,13 @@ print("ok: deploy plan outputs absent")
 PY
 }
 
+has_fullstack_showcase_toolchain() {
+  command -v clang >/dev/null 2>&1 || return 1
+  command -v wasm-ld >/dev/null 2>&1 || return 1
+  clang --version >/dev/null 2>&1 || return 1
+  wasm-ld --version >/dev/null 2>&1 || return 1
+}
+
 get_first_response_body_sha256() {
   local report_path="$1"
   "$PYTHON" - "$report_path" <<'PY'
@@ -1034,7 +1041,11 @@ if [ "$code" -ne 3 ]; then
 fi
 require_report_exit_and_has_code build/phase6_examples/cli.parse.bad_flag.json 3 X07WASM_CLI_ARGS_INVALID
 
-echo "==> phase6_examples: official full-stack showcase"
-bash examples/x07_atlas/scripts/ci/check_showcase_fullstack.sh
+if has_fullstack_showcase_toolchain; then
+  echo "==> phase6_examples: official full-stack showcase"
+  bash examples/x07_atlas/scripts/ci/check_showcase_fullstack.sh
+else
+  echo "==> phase6_examples: skipping official full-stack showcase (usable clang/wasm-ld not available)"
+fi
 
 echo "phase6_examples: PASS"
