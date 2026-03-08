@@ -64,12 +64,15 @@ echo "==> release_ready: slo eval"
 require_report_ok build/release_ready/slo.eval.json
 
 echo "==> release_ready: app regress from-incident"
+incident_dir="build/release_ready/app_incident_fixture"
 rm -rf build/release_ready/regress
-"$X07_WASM_BIN" app regress from-incident build/wasm/app_incident_fixture \
+rm -rf "${incident_dir}"
+mkdir -p "${incident_dir}"
+cp examples/app_fullstack_hello/tests/trace_0001.json "${incident_dir}/trace.json"
+"$X07_WASM_BIN" app regress from-incident "${incident_dir}" \
   --out-dir build/release_ready/regress \
   --name app_fullstack_hello \
   --json --report-out build/release_ready/app.regress.from_incident.json --quiet-json
 require_report_ok build/release_ready/app.regress.from_incident.json
 test -f build/release_ready/regress/app_fullstack_hello.trace.json
 test -f build/release_ready/regress/app_fullstack_hello.final.ui.json
-
