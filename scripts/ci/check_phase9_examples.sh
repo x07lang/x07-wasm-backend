@@ -275,6 +275,10 @@ else
 fi
 
 echo "==> phase9_examples: official desktop showcase"
-bash examples/x07_studio/scripts/ci/check_showcase_desktop.sh
+if [ "${X07WASM_DEVICE_RUN_SMOKE:-1}" = "0" ]; then
+  echo "desktop showcase skipped (X07WASM_DEVICE_RUN_SMOKE=0)"
+else
+  bash examples/x07_studio/scripts/ci/check_showcase_desktop.sh
+fi
 
 echo "phase9_examples: PASS"
