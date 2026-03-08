@@ -36,6 +36,25 @@ run_json() {
   "$@" --json --report-out "${report_path}" --quiet-json
 }
 
+resolve_stdlib_lock() {
+  local x07_path
+  x07_path="$(command -v x07)"
+  local candidates=(
+    "${ROOT_DIR}/stdlib.lock"
+    "$(dirname "${x07_path}")/stdlib.lock"
+    "$(cd "$(dirname "${x07_path}")/.." && pwd)/stdlib.lock"
+  )
+  local cand
+  for cand in "${candidates[@]}"; do
+    if [[ -f "${cand}" ]]; then
+      printf '%s\n' "${cand}"
+      return 0
+    fi
+  done
+  echo "could not resolve stdlib.lock for x07 test" >&2
+  return 1
+}
+
 check_device_package_manifest() {
   local package_dir="$1"
   local bundle_manifest_path="$2"
@@ -166,7 +185,7 @@ run_web_ui_checks() {
   echo "==> validate frontend"
   x07 pkg lock --project frontend/x07.json
   x07 check --project frontend/x07.json
-  x07 test --manifest frontend/tests/tests.json
+  x07 test --manifest frontend/tests/tests.json --stdlib-lock "$(resolve_stdlib_lock)"
 
   echo "==> validate web-ui/device scaffolding"
   run_json "${REPORT_DIR}/web_ui.profile.validate.json" \

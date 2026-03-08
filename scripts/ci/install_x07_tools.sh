@@ -22,3 +22,13 @@ for tool in "${tools[@]}"; do
     "${tool}" --help >/dev/null
   fi
 done
+
+if command -v x07 >/dev/null 2>&1; then
+  x07_bin_dir="$(dirname "$(command -v x07)")"
+  base_url="https://raw.githubusercontent.com/x07lang/x07/${x07_tag}"
+  for lock_name in stdlib.lock stdlib.os.lock; do
+    curl -fsSL --retry 10 --retry-all-errors --retry-delay 2 \
+      "${base_url}/${lock_name}" \
+      -o "${x07_bin_dir}/${lock_name}"
+  done
+fi
