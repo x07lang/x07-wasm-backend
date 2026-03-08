@@ -274,4 +274,7 @@ else
   check_device_run_smoke_report build/phase9_examples/device.run.smoke.json
 fi
 
+echo "==> phase9_examples: official desktop showcase"
+bash examples/x07_studio/scripts/ci/check_showcase_desktop.sh
+
 echo "phase9_examples: PASS"

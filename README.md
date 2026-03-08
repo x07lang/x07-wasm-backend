@@ -1,6 +1,6 @@
 # x07-wasm-backend
 
-WASM build pipeline, host runners, and full-stack app tooling for [X07](https://github.com/x07lang/x07) — covering Phases 0–10 of the [WASM roadmap](https://github.com/x07lang/x07/blob/main/dev-docs/phases/x07-wasm-plan.md).
+WASM build pipeline, host runners, and full-stack app tooling for [X07](https://github.com/x07lang/x07) — covering the full `x07-wasm` surface from solve-pure modules through desktop and mobile packaging.
 
 x07-wasm-backend is designed for **100% agentic coding** — an AI coding agent builds, tests, packages, deploys, and verifies WASM artifacts entirely on its own using structured contracts, deterministic runners, and machine-readable outputs. No human needs to write X07 by hand.
 
@@ -65,6 +65,16 @@ x07-wasm device package --bundle dist/device_ios_dev_bundle --target ios --out-d
 ```
 
 Start from [`examples/device_min`](examples/device_min) for the device bundle/profile layout and pair it with the reducer patterns in [`x07-web-ui/examples/web_ui_form`](../x07-web-ui/examples/web_ui_form). That combination is the current reference path for a consumer-owned web-ui/device app.
+
+## Official showcase apps
+
+For richer end-to-end references, start with:
+
+- [`examples/x07_atlas`](examples/x07_atlas): full-stack app bundle with offline-first UI, API traces, incident regression generation, pack verification, provenance, deploy planning, and SLO checks
+- [`examples/x07_studio`](examples/x07_studio): desktop device bundle with persistent project notes, import/export flows, provenance, packaging, and desktop host smoke
+- [`examples/x07_field_notes`](examples/x07_field_notes): one reducer packaged across desktop, iOS, and Android with replay traces and embedded-assets-only mobile outputs
+
+The examples index lives in [`examples/README.md`](examples/README.md).
 
 ## Command surface
 

@@ -96,7 +96,7 @@ x07-wasm policy validate --card path/to/card.json --json
 SLO profiles (`x07.slo.profile@0.1.0`) can be evaluated against offline metrics snapshots (`x07.metrics.snapshot@0.1.0`):
 
 ```sh
-x07-wasm slo eval --profile arch/slo/slo_min.json --metrics examples/app_min/tests/metrics_canary_ok.json --json
+x07-wasm slo eval --profile examples/x07_atlas/arch/slo/slo_min.json --metrics examples/x07_atlas/tests/fixtures/metrics/atlas_canary_ok.json --json
 ```
 
 Canary integration:
@@ -162,3 +162,5 @@ Run the Phase 6 gate locally:
 export PATH="${WASI_SDK_DIR}/bin:${PATH}"
 bash scripts/ci/check_phase6.sh
 ```
+
+The official full-stack showcase for this surface is [`examples/x07_atlas`](../examples/x07_atlas/README.md).

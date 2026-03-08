@@ -231,5 +231,7 @@ check_device_package_manifest "${android_package_dir}" "${android_bundle_dir}/bu
 check_android_project_bundle_embed "${android_bundle_dir}" "${android_package_dir}/android_project"
 check_dir_has_no_x07_tokens "${android_package_dir}/android_project"
 
-echo "phase10_examples: PASS"
+echo "==> phase10_examples: official mobile showcase"
+bash examples/x07_field_notes/scripts/ci/check_showcase_mobile.sh
 
+echo "phase10_examples: PASS"

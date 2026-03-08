@@ -39,3 +39,5 @@ x07-wasm device package --bundle dist/device --target desktop --out-dir dist/dev
 ```sh
 bash scripts/ci/check_phase9.sh
 ```
+
+The official desktop showcase for this surface is [`examples/x07_studio`](../examples/x07_studio/README.md).

@@ -1034,4 +1034,7 @@ if [ "$code" -ne 3 ]; then
 fi
 require_report_exit_and_has_code build/phase6_examples/cli.parse.bad_flag.json 3 X07WASM_CLI_ARGS_INVALID
 
+echo "==> phase6_examples: official full-stack showcase"
+bash examples/x07_atlas/scripts/ci/check_showcase_fullstack.sh
+
 echo "phase6_examples: PASS"

@@ -27,3 +27,4 @@ x07-wasm device package --bundle dist/device --target android --out-dir dist/dev
 bash scripts/ci/check_phase10.sh
 ```
 
+The official mobile showcase for this surface is [`examples/x07_field_notes`](../examples/x07_field_notes/README.md).

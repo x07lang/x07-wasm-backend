@@ -1,0 +1,3 @@
+[toolchain]
+channel = "v0.1.65"
+components = ["docs", "skills", "wasm", "device-host"]
