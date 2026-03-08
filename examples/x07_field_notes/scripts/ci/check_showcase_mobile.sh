@@ -275,7 +275,11 @@ package_mobile_target() {
 }
 
 run_web_ui_checks
-run_desktop_smoke
+if [ "${X07WASM_DEVICE_RUN_SMOKE:-1}" = "0" ]; then
+  echo "desktop smoke skipped (X07WASM_DEVICE_RUN_SMOKE=0)"
+else
+  run_desktop_smoke
+fi
 package_mobile_target \
   device_ios_dev \
   ios \
