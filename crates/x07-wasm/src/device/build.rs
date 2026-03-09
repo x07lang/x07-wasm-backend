@@ -131,7 +131,8 @@ pub fn cmd_device_build(
     };
 
     if let Some(profile) = loaded_profile.as_ref() {
-        let loaded_sidecars = load_profile_sidecars(&store, &profile.doc, &mut meta, &mut diagnostics);
+        let loaded_sidecars =
+            load_profile_sidecars(&store, &profile.doc, &mut meta, &mut diagnostics);
 
         if diagnostics.iter().all(|d| d.severity != Severity::Error) {
             let target = profile.doc.target.as_str();

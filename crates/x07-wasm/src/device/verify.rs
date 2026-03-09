@@ -129,9 +129,11 @@ pub fn cmd_device_verify(
         }
     }
 
-    let mut files_checked: u64 = 0;
-    let mut missing_files: u64 = 0;
-    let mut digest_mismatches: u64 = 0;
+    let mut stats = BundleVerifyStats {
+        files_checked: 0,
+        missing_files: 0,
+        digest_mismatches: 0,
+    };
     let mut bundle_digest_ok = false;
     let mut host_abi_hash_ok = false;
 
@@ -147,43 +149,43 @@ pub fn cmd_device_verify(
 
         verify_bundle_file(
             &bundle_dir,
-            "ui_wasm.path",
-            "ui_wasm",
+            BundleFileRef {
+                field: "ui_wasm.path",
+                role: "ui_wasm",
+            },
             &doc.ui_wasm,
             &mut diagnostics,
-            &mut files_checked,
-            &mut missing_files,
-            &mut digest_mismatches,
+            &mut stats,
         );
         verify_bundle_file(
             &bundle_dir,
-            "profile.file.path",
-            "profile",
+            BundleFileRef {
+                field: "profile.file.path",
+                role: "profile",
+            },
             &doc.profile.file,
             &mut diagnostics,
-            &mut files_checked,
-            &mut missing_files,
-            &mut digest_mismatches,
+            &mut stats,
         );
         verify_bundle_file(
             &bundle_dir,
-            "capabilities.path",
-            "capabilities",
+            BundleFileRef {
+                field: "capabilities.path",
+                role: "capabilities",
+            },
             &doc.capabilities,
             &mut diagnostics,
-            &mut files_checked,
-            &mut missing_files,
-            &mut digest_mismatches,
+            &mut stats,
         );
         verify_bundle_file(
             &bundle_dir,
-            "telemetry_profile.path",
-            "telemetry_profile",
+            BundleFileRef {
+                field: "telemetry_profile.path",
+                role: "telemetry_profile",
+            },
             &doc.telemetry_profile,
             &mut diagnostics,
-            &mut files_checked,
-            &mut missing_files,
-            &mut digest_mismatches,
+            &mut stats,
         );
 
         // Check host ABI hash matches the pinned host ABI.
@@ -223,7 +225,7 @@ pub fn cmd_device_verify(
         let got_bundle_digest = util::sha256_hex(&bytes);
         bundle_digest_ok = got_bundle_digest == doc.bundle_digest;
         if !bundle_digest_ok {
-            digest_mismatches += 1;
+            stats.digest_mismatches += 1;
             let mut d = Diagnostic::new(
                 "X07WASM_DEVICE_BUNDLE_DIGEST_MISMATCH",
                 Severity::Error,
@@ -250,12 +252,12 @@ pub fn cmd_device_verify(
       "exit_code": exit_code,
       "diagnostics": diagnostics,
       "meta": meta,
-      "result": {
+        "result": {
         "bundle_dir": bundle_dir.display().to_string(),
         "bundle_manifest": manifest_digest,
-        "files_checked": files_checked,
-        "missing_files": missing_files,
-        "digest_mismatches": digest_mismatches,
+        "files_checked": stats.files_checked,
+        "missing_files": stats.missing_files,
+        "digest_mismatches": stats.digest_mismatches,
         "bundle_digest_ok": bundle_digest_ok,
         "host_abi_hash_ok": host_abi_hash_ok,
       }
@@ -267,25 +269,22 @@ pub fn cmd_device_verify(
 
 fn verify_bundle_file(
     bundle_dir: &std::path::Path,
-    field: &str,
-    role: &str,
+    file_ref: BundleFileRef<'_>,
     file: &DeviceBundleFileDigest,
     diagnostics: &mut Vec<Diagnostic>,
-    files_checked: &mut u64,
-    missing_files: &mut u64,
-    digest_mismatches: &mut u64,
+    stats: &mut BundleVerifyStats,
 ) {
     let full_path = match util::safe_join_under_dir(bundle_dir, &file.path) {
         Ok(v) => Some(v),
         Err(err) => {
-            *missing_files += 1;
+            stats.missing_files += 1;
             let mut d = Diagnostic::new(
                 "X07WASM_DEVICE_BUNDLE_PATH_UNSAFE",
                 Severity::Error,
                 Stage::Run,
                 "unsafe bundle path".to_string(),
             );
-            d.data.insert("field".to_string(), json!(field));
+            d.data.insert("field".to_string(), json!(file_ref.field));
             d.data.insert("path".to_string(), json!(err.rel));
             d.data.insert("kind".to_string(), json!(err.kind));
             d.data.insert("detail".to_string(), json!(err.detail));
@@ -295,7 +294,7 @@ fn verify_bundle_file(
     };
     if let Some(full_path) = full_path.as_ref() {
         if !full_path.is_file() {
-            *missing_files += 1;
+            stats.missing_files += 1;
             let mut d = Diagnostic::new(
                 "X07WASM_DEVICE_BUNDLE_FILE_MISSING",
                 Severity::Error,
@@ -309,9 +308,9 @@ fn verify_bundle_file(
 
         match util::sha256_file_hex_capped(full_path, MAX_BUNDLE_FILE_BYTES) {
             Ok((got_sha, got_len)) => {
-                *files_checked += 1;
+                stats.files_checked += 1;
                 if got_sha != file.sha256 || got_len != file.bytes_len {
-                    *digest_mismatches += 1;
+                    stats.digest_mismatches += 1;
                     let mut d = Diagnostic::new(
                         "X07WASM_DEVICE_BUNDLE_SHA256_MISMATCH",
                         Severity::Error,
@@ -329,7 +328,7 @@ fn verify_bundle_file(
                 }
             }
             Err(err) => {
-                *missing_files += 1;
+                stats.missing_files += 1;
                 if err.kind == "too_large" {
                     let mut d = Diagnostic::new(
                         "X07WASM_DEVICE_BUNDLE_FILE_TOO_LARGE",
@@ -341,7 +340,7 @@ fn verify_bundle_file(
                     d.data.insert("bytes_len".to_string(), json!(err.bytes_len));
                     d.data
                         .insert("max_bytes_len".to_string(), json!(err.max_bytes));
-                    d.data.insert("role".to_string(), json!(role));
+                    d.data.insert("role".to_string(), json!(file_ref.role));
                     diagnostics.push(d);
                 } else {
                     let mut d = Diagnostic::new(
@@ -357,6 +356,18 @@ fn verify_bundle_file(
             }
         }
     }
+}
+
+#[derive(Clone, Copy)]
+struct BundleFileRef<'a> {
+    field: &'a str,
+    role: &'a str,
+}
+
+struct BundleVerifyStats {
+    files_checked: u64,
+    missing_files: u64,
+    digest_mismatches: u64,
 }
 
 #[cfg(test)]

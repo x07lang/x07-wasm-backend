@@ -8,7 +8,8 @@ use crate::report;
 use crate::schema::SchemaStore;
 use crate::util;
 
-const DEVICE_CAPABILITIES_SCHEMA_ID: &str = "https://x07.io/spec/x07-device.capabilities.schema.json";
+const DEVICE_CAPABILITIES_SCHEMA_ID: &str =
+    "https://x07.io/spec/x07-device.capabilities.schema.json";
 const DEVICE_TELEMETRY_PROFILE_SCHEMA_ID: &str =
     "https://x07.io/spec/x07-device.telemetry.profile.schema.json";
 
@@ -23,31 +24,45 @@ pub(crate) struct ValidatedJsonFile {
     pub(crate) path: PathBuf,
 }
 
+struct JsonContractSpec<'a> {
+    schema_id: &'a str,
+    read_failed_code: &'a str,
+    json_invalid_code: &'a str,
+    schema_invalid_code: &'a str,
+    label: &'a str,
+}
+
 pub(crate) fn load_profile_sidecars(
     store: &SchemaStore,
     profile_doc: &DeviceProfileDoc,
     meta: &mut report::meta::ReportMeta,
     diagnostics: &mut Vec<Diagnostic>,
 ) -> Option<DeviceProfileSidecars> {
+    let capabilities_spec = JsonContractSpec {
+        schema_id: DEVICE_CAPABILITIES_SCHEMA_ID,
+        read_failed_code: "X07WASM_DEVICE_CAPABILITIES_READ_FAILED",
+        json_invalid_code: "X07WASM_DEVICE_CAPABILITIES_JSON_INVALID",
+        schema_invalid_code: "X07WASM_DEVICE_CAPABILITIES_SCHEMA_INVALID",
+        label: "device capabilities",
+    };
     let capabilities = load_json_contract_file(
         store,
         &profile_doc.capabilities.path,
-        DEVICE_CAPABILITIES_SCHEMA_ID,
-        "X07WASM_DEVICE_CAPABILITIES_READ_FAILED",
-        "X07WASM_DEVICE_CAPABILITIES_JSON_INVALID",
-        "X07WASM_DEVICE_CAPABILITIES_SCHEMA_INVALID",
-        "device capabilities",
+        &capabilities_spec,
         meta,
         diagnostics,
     )?;
+    let telemetry_spec = JsonContractSpec {
+        schema_id: DEVICE_TELEMETRY_PROFILE_SCHEMA_ID,
+        read_failed_code: "X07WASM_DEVICE_TELEMETRY_PROFILE_READ_FAILED",
+        json_invalid_code: "X07WASM_DEVICE_TELEMETRY_PROFILE_JSON_INVALID",
+        schema_invalid_code: "X07WASM_DEVICE_TELEMETRY_PROFILE_SCHEMA_INVALID",
+        label: "device telemetry profile",
+    };
     let telemetry_profile = load_json_contract_file(
         store,
         &profile_doc.telemetry_profile.path,
-        DEVICE_TELEMETRY_PROFILE_SCHEMA_ID,
-        "X07WASM_DEVICE_TELEMETRY_PROFILE_READ_FAILED",
-        "X07WASM_DEVICE_TELEMETRY_PROFILE_JSON_INVALID",
-        "X07WASM_DEVICE_TELEMETRY_PROFILE_SCHEMA_INVALID",
-        "device telemetry profile",
+        &telemetry_spec,
         meta,
         diagnostics,
     )?;
@@ -60,11 +75,7 @@ pub(crate) fn load_profile_sidecars(
 fn load_json_contract_file(
     store: &SchemaStore,
     path: &Path,
-    schema_id: &str,
-    read_failed_code: &str,
-    json_invalid_code: &str,
-    schema_invalid_code: &str,
-    label: &str,
+    spec: &JsonContractSpec<'_>,
     meta: &mut report::meta::ReportMeta,
     diagnostics: &mut Vec<Diagnostic>,
 ) -> Option<ValidatedJsonFile> {
@@ -74,10 +85,10 @@ fn load_json_contract_file(
         }
         Err(err) => {
             diagnostics.push(Diagnostic::new(
-                read_failed_code,
+                spec.read_failed_code,
                 Severity::Error,
                 Stage::Parse,
-                format!("failed to read {label} {}: {err:#}", path.display()),
+                format!("failed to read {} {}: {err:#}", spec.label, path.display()),
             ));
             return None;
         }
@@ -87,10 +98,10 @@ fn load_json_contract_file(
         Ok(v) => v,
         Err(err) => {
             diagnostics.push(Diagnostic::new(
-                read_failed_code,
+                spec.read_failed_code,
                 Severity::Error,
                 Stage::Parse,
-                format!("failed to read {label} {}: {err}", path.display()),
+                format!("failed to read {} {}: {err}", spec.label, path.display()),
             ));
             return None;
         }
@@ -100,16 +111,20 @@ fn load_json_contract_file(
         Ok(v) => v,
         Err(err) => {
             diagnostics.push(Diagnostic::new(
-                json_invalid_code,
+                spec.json_invalid_code,
                 Severity::Error,
                 Stage::Parse,
-                format!("failed to parse {label} JSON {}: {err}", path.display()),
+                format!(
+                    "failed to parse {} JSON {}: {err}",
+                    spec.label,
+                    path.display()
+                ),
             ));
             return None;
         }
     };
 
-    let schema_diags = match store.validate(schema_id, &doc_json) {
+    let schema_diags = match store.validate(spec.schema_id, &doc_json) {
         Ok(v) => v,
         Err(err) => {
             diagnostics.push(Diagnostic::new(
@@ -124,10 +139,10 @@ fn load_json_contract_file(
 
     if schema_diags.iter().any(|d| d.severity == Severity::Error) {
         let mut d = Diagnostic::new(
-            schema_invalid_code,
+            spec.schema_invalid_code,
             Severity::Error,
             Stage::Parse,
-            format!("{label} schema invalid"),
+            format!("{} schema invalid", spec.label),
         );
         d.data.insert("errors".to_string(), json!(schema_diags));
         diagnostics.push(d);
