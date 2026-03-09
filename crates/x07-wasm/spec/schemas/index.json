@@ -73,12 +73,20 @@
       "path": "x07-device.bundle.manifest.schema.json"
     },
     {
+      "id": "https://x07.io/spec/x07-device.capabilities.schema.json",
+      "path": "x07-device.capabilities.schema.json"
+    },
+    {
       "id": "https://x07.io/spec/x07-device.package.manifest.schema.json",
       "path": "x07-device.package.manifest.schema.json"
     },
     {
       "id": "https://x07.io/spec/x07-device.profile.schema.json",
       "path": "x07-device.profile.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-device.telemetry.profile.schema.json",
+      "path": "x07-device.telemetry.profile.schema.json"
     },
     {
       "id": "https://x07.io/spec/x07-http.dispatch.schema.json",

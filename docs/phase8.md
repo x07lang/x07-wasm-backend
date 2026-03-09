@@ -33,6 +33,8 @@ Consumer repos do not need to vendor either the device host ABI snapshot or the 
 
 - Device profile registry: `arch/device/index.x07device.json`
 - Device profiles: `arch/device/profiles/*.json`
+- Device capabilities: `arch/device/profiles/*.capabilities.json`
+- Device telemetry profiles: `arch/device/profiles/*.telemetry.profile.json`
 - Bundle manifest: `bundle.manifest.json` (`x07.device.bundle.manifest@0.1.0`)
 
 ## CLI
@@ -54,7 +56,9 @@ x07-wasm device build --profile device_dev --out-dir dist/device --clean --json
 
 Bundle layout notes:
 
-- The resolved device profile is embedded into the bundle under `profile/device.profile.json` and is digest-verified by `x07-wasm device verify`.
+- The resolved device profile is embedded into the bundle under `profile/device.profile.json`.
+- The resolved capabilities and telemetry sidecars are embedded under `profile/device.capabilities.json` and `profile/device.telemetry.profile.json`.
+- `x07-wasm device verify` digest-verifies all three profile-sidecar files from `bundle.manifest.json`.
 
 Verify a device bundle:
 
@@ -66,7 +70,7 @@ Notes:
 
 - `x07-wasm device verify` streams digests and enforces hard size caps to avoid unbounded reads:
   - bundle manifest: 8 MiB (`X07WASM_DEVICE_BUNDLE_MANIFEST_TOO_LARGE`)
-  - bundle files: 256 MiB (`X07WASM_DEVICE_BUNDLE_FILE_TOO_LARGE` with `role=ui_wasm|profile`)
+  - bundle files: 256 MiB (`X07WASM_DEVICE_BUNDLE_FILE_TOO_LARGE` with `role=ui_wasm|profile|capabilities|telemetry_profile`)
 
 Create and verify a signed provenance attestation for a device bundle:
 

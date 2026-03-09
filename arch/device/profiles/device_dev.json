@@ -24,15 +24,10 @@
     "allowed_hosts": ["127.0.0.1", "localhost"]
   },
   "capabilities": {
-    "network": {
-      "mode": "deny_by_default",
-      "allow_hosts": ["127.0.0.1", "localhost"]
-    },
-    "device": {
-      "clipboard": true,
-      "local_kv": true,
-      "notifications": false
-    }
+    "path": "arch/device/profiles/device_dev.capabilities.json"
+  },
+  "telemetry_profile": {
+    "path": "arch/device/profiles/device_dev.telemetry.profile.json"
   },
   "desktop": {
     "window": {

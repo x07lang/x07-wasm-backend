@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-device.capabilities.schema.json",
+  "title": "x07.device.capabilities@0.1.0",
+  "description": "Pinned device runtime capability allowlist consumed by x07-wasm device tooling and device hosts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "network", "device"],
+  "properties": {
+    "schema_version": { "const": "x07.device.capabilities@0.1.0" },
+    "network": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "allow_hosts"],
+      "properties": {
+        "mode": { "const": "deny_by_default" },
+        "allow_hosts": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9.-]*[A-Za-z0-9]$|^localhost$|^127\\.0\\.0\\.1$"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "device": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["clipboard", "local_kv", "notifications"],
+      "properties": {
+        "clipboard": { "type": "boolean" },
+        "local_kv": { "type": "boolean" },
+        "notifications": { "type": "boolean" }
+      }
+    }
+  }
+}

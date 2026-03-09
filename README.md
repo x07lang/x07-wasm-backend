@@ -20,7 +20,7 @@ x07 wasm doctor --json
 Fallbacks:
 
 ```sh
-cargo install --locked x07-wasm --version 0.1.8
+cargo install --locked x07-wasm --version 0.1.9
 ```
 
 Use `cargo install --locked --git https://github.com/x07lang/x07-wasm-backend.git x07-wasm` only when you need unreleased development state from this repo.
@@ -65,6 +65,12 @@ x07-wasm device package --bundle dist/device_ios_dev_bundle --target ios --out-d
 ```
 
 Start from [`examples/device_min`](examples/device_min) for the device bundle/profile layout and pair it with the reducer patterns in [`x07-web-ui/examples/web_ui_form`](../x07-web-ui/examples/web_ui_form). That combination is the current reference path for a consumer-owned web-ui/device app.
+
+Device profiles now keep runtime capabilities and telemetry transport settings in standalone sidecar contracts. A validated bundle embeds:
+
+- `profile/device.profile.json`
+- `profile/device.capabilities.json`
+- `profile/device.telemetry.profile.json`
 
 ## Official showcase apps
 
@@ -163,6 +169,8 @@ Supported D-OSS command surface:
 | 8 | `scripts/ci/check_phase8.sh` |
 | 9 | `scripts/ci/check_phase9.sh` |
 | 10 | `scripts/ci/check_phase10.sh` |
+
+Release-ready also enforces `scripts/ci/check_schema_index.sh` so newly added public schemas stay indexed.
 
 Example freestanding smoke: `examples/solve_pure_echo/ci/freestanding_smoke.sh`
 

@@ -4,7 +4,7 @@ use anyhow::Result;
 use serde_json::{json, Value};
 
 use crate::cli::{DeviceVerifyArgs, MachineArgs, Scope};
-use crate::device::contracts::DeviceBundleManifestDoc;
+use crate::device::contracts::{DeviceBundleFileDigest, DeviceBundleManifestDoc};
 use crate::device::host_abi;
 use crate::diag::{Diagnostic, Severity, Stage};
 use crate::report;
@@ -145,187 +145,46 @@ pub fn cmd_device_verify(
         );
         let _ = (&doc.host.kind, &doc.host.abi_name, &doc.host.abi_version);
 
-        // Check reducer wasm digest.
-        let ui_path = match util::safe_join_under_dir(&bundle_dir, &doc.ui_wasm.path) {
-            Ok(v) => Some(v),
-            Err(err) => {
-                missing_files += 1;
-                let mut d = Diagnostic::new(
-                    "X07WASM_DEVICE_BUNDLE_PATH_UNSAFE",
-                    Severity::Error,
-                    Stage::Run,
-                    "unsafe bundle path".to_string(),
-                );
-                d.data.insert("field".to_string(), json!("ui_wasm.path"));
-                d.data.insert("path".to_string(), json!(err.rel));
-                d.data.insert("kind".to_string(), json!(err.kind));
-                d.data.insert("detail".to_string(), json!(err.detail));
-                diagnostics.push(d);
-                None
-            }
-        };
-        if let Some(ui_path) = ui_path.as_ref() {
-            if !ui_path.is_file() {
-                missing_files += 1;
-                let mut d = Diagnostic::new(
-                    "X07WASM_DEVICE_BUNDLE_FILE_MISSING",
-                    Severity::Error,
-                    Stage::Run,
-                    "bundle file missing".to_string(),
-                );
-                d.data.insert("path".to_string(), json!(doc.ui_wasm.path));
-                diagnostics.push(d);
-            } else {
-                match util::sha256_file_hex_capped(ui_path, MAX_BUNDLE_FILE_BYTES) {
-                    Ok((got_sha, got_len)) => {
-                        files_checked += 1;
-                        if got_sha != doc.ui_wasm.sha256 || got_len != doc.ui_wasm.bytes_len {
-                            digest_mismatches += 1;
-                            let mut d = Diagnostic::new(
-                                "X07WASM_DEVICE_BUNDLE_SHA256_MISMATCH",
-                                Severity::Error,
-                                Stage::Run,
-                                "bundle file digest mismatch".to_string(),
-                            );
-                            d.data
-                                .insert("path".to_string(), json!(doc.ui_wasm.path.clone()));
-                            d.data.insert(
-                                "want_sha256".to_string(),
-                                json!(doc.ui_wasm.sha256.clone()),
-                            );
-                            d.data.insert("got_sha256".to_string(), json!(got_sha));
-                            d.data
-                                .insert("want_bytes_len".to_string(), json!(doc.ui_wasm.bytes_len));
-                            d.data.insert("got_bytes_len".to_string(), json!(got_len));
-                            diagnostics.push(d);
-                        }
-                    }
-                    Err(err) => {
-                        missing_files += 1;
-                        if err.kind == "too_large" {
-                            let mut d = Diagnostic::new(
-                                "X07WASM_DEVICE_BUNDLE_FILE_TOO_LARGE",
-                                Severity::Error,
-                                Stage::Run,
-                                format!("bundle file exceeds size cap: {}", ui_path.display()),
-                            );
-                            d.data
-                                .insert("path".to_string(), json!(doc.ui_wasm.path.clone()));
-                            d.data.insert("bytes_len".to_string(), json!(err.bytes_len));
-                            d.data
-                                .insert("max_bytes_len".to_string(), json!(err.max_bytes));
-                            d.data.insert("role".to_string(), json!("ui_wasm"));
-                            diagnostics.push(d);
-                        } else {
-                            let mut d = Diagnostic::new(
-                                "X07WASM_DEVICE_BUNDLE_FILE_MISSING",
-                                Severity::Error,
-                                Stage::Run,
-                                "failed to read bundle file".to_string(),
-                            );
-                            d.data
-                                .insert("path".to_string(), json!(doc.ui_wasm.path.clone()));
-                            d.data.insert("error".to_string(), json!(err.detail));
-                            diagnostics.push(d);
-                        }
-                    }
-                }
-            }
-        }
-
-        // Check embedded device profile digest (bundle must be self-contained).
-        let profile_path = match util::safe_join_under_dir(&bundle_dir, &doc.profile.file.path) {
-            Ok(v) => Some(v),
-            Err(err) => {
-                missing_files += 1;
-                let mut d = Diagnostic::new(
-                    "X07WASM_DEVICE_BUNDLE_PATH_UNSAFE",
-                    Severity::Error,
-                    Stage::Run,
-                    "unsafe bundle path".to_string(),
-                );
-                d.data
-                    .insert("field".to_string(), json!("profile.file.path"));
-                d.data.insert("path".to_string(), json!(err.rel));
-                d.data.insert("kind".to_string(), json!(err.kind));
-                d.data.insert("detail".to_string(), json!(err.detail));
-                diagnostics.push(d);
-                None
-            }
-        };
-        if let Some(profile_path) = profile_path.as_ref() {
-            if !profile_path.is_file() {
-                missing_files += 1;
-                let mut d = Diagnostic::new(
-                    "X07WASM_DEVICE_BUNDLE_FILE_MISSING",
-                    Severity::Error,
-                    Stage::Run,
-                    "bundle file missing".to_string(),
-                );
-                d.data
-                    .insert("path".to_string(), json!(doc.profile.file.path.clone()));
-                diagnostics.push(d);
-            } else {
-                match util::sha256_file_hex_capped(profile_path, MAX_BUNDLE_FILE_BYTES) {
-                    Ok((got_sha, got_len)) => {
-                        files_checked += 1;
-                        if got_sha != doc.profile.file.sha256
-                            || got_len != doc.profile.file.bytes_len
-                        {
-                            digest_mismatches += 1;
-                            let mut d = Diagnostic::new(
-                                "X07WASM_DEVICE_BUNDLE_SHA256_MISMATCH",
-                                Severity::Error,
-                                Stage::Run,
-                                "bundle file digest mismatch".to_string(),
-                            );
-                            d.data
-                                .insert("path".to_string(), json!(doc.profile.file.path.clone()));
-                            d.data.insert(
-                                "want_sha256".to_string(),
-                                json!(doc.profile.file.sha256.clone()),
-                            );
-                            d.data.insert("got_sha256".to_string(), json!(got_sha));
-                            d.data.insert(
-                                "want_bytes_len".to_string(),
-                                json!(doc.profile.file.bytes_len),
-                            );
-                            d.data.insert("got_bytes_len".to_string(), json!(got_len));
-                            diagnostics.push(d);
-                        }
-                    }
-                    Err(err) => {
-                        missing_files += 1;
-                        if err.kind == "too_large" {
-                            let mut d = Diagnostic::new(
-                                "X07WASM_DEVICE_BUNDLE_FILE_TOO_LARGE",
-                                Severity::Error,
-                                Stage::Run,
-                                format!("bundle file exceeds size cap: {}", profile_path.display()),
-                            );
-                            d.data
-                                .insert("path".to_string(), json!(doc.profile.file.path.clone()));
-                            d.data.insert("bytes_len".to_string(), json!(err.bytes_len));
-                            d.data
-                                .insert("max_bytes_len".to_string(), json!(err.max_bytes));
-                            d.data.insert("role".to_string(), json!("profile"));
-                            diagnostics.push(d);
-                        } else {
-                            let mut d = Diagnostic::new(
-                                "X07WASM_DEVICE_BUNDLE_FILE_MISSING",
-                                Severity::Error,
-                                Stage::Run,
-                                "failed to read bundle file".to_string(),
-                            );
-                            d.data
-                                .insert("path".to_string(), json!(doc.profile.file.path.clone()));
-                            d.data.insert("error".to_string(), json!(err.detail));
-                            diagnostics.push(d);
-                        }
-                    }
-                }
-            }
-        }
+        verify_bundle_file(
+            &bundle_dir,
+            "ui_wasm.path",
+            "ui_wasm",
+            &doc.ui_wasm,
+            &mut diagnostics,
+            &mut files_checked,
+            &mut missing_files,
+            &mut digest_mismatches,
+        );
+        verify_bundle_file(
+            &bundle_dir,
+            "profile.file.path",
+            "profile",
+            &doc.profile.file,
+            &mut diagnostics,
+            &mut files_checked,
+            &mut missing_files,
+            &mut digest_mismatches,
+        );
+        verify_bundle_file(
+            &bundle_dir,
+            "capabilities.path",
+            "capabilities",
+            &doc.capabilities,
+            &mut diagnostics,
+            &mut files_checked,
+            &mut missing_files,
+            &mut digest_mismatches,
+        );
+        verify_bundle_file(
+            &bundle_dir,
+            "telemetry_profile.path",
+            "telemetry_profile",
+            &doc.telemetry_profile,
+            &mut diagnostics,
+            &mut files_checked,
+            &mut missing_files,
+            &mut digest_mismatches,
+        );
 
         // Check host ABI hash matches the pinned host ABI.
         let want_host_hash = host_abi::HOST_ABI_HASH_HEX;
@@ -406,6 +265,100 @@ pub fn cmd_device_verify(
     Ok(exit_code)
 }
 
+fn verify_bundle_file(
+    bundle_dir: &std::path::Path,
+    field: &str,
+    role: &str,
+    file: &DeviceBundleFileDigest,
+    diagnostics: &mut Vec<Diagnostic>,
+    files_checked: &mut u64,
+    missing_files: &mut u64,
+    digest_mismatches: &mut u64,
+) {
+    let full_path = match util::safe_join_under_dir(bundle_dir, &file.path) {
+        Ok(v) => Some(v),
+        Err(err) => {
+            *missing_files += 1;
+            let mut d = Diagnostic::new(
+                "X07WASM_DEVICE_BUNDLE_PATH_UNSAFE",
+                Severity::Error,
+                Stage::Run,
+                "unsafe bundle path".to_string(),
+            );
+            d.data.insert("field".to_string(), json!(field));
+            d.data.insert("path".to_string(), json!(err.rel));
+            d.data.insert("kind".to_string(), json!(err.kind));
+            d.data.insert("detail".to_string(), json!(err.detail));
+            diagnostics.push(d);
+            None
+        }
+    };
+    if let Some(full_path) = full_path.as_ref() {
+        if !full_path.is_file() {
+            *missing_files += 1;
+            let mut d = Diagnostic::new(
+                "X07WASM_DEVICE_BUNDLE_FILE_MISSING",
+                Severity::Error,
+                Stage::Run,
+                "bundle file missing".to_string(),
+            );
+            d.data.insert("path".to_string(), json!(file.path.clone()));
+            diagnostics.push(d);
+            return;
+        }
+
+        match util::sha256_file_hex_capped(full_path, MAX_BUNDLE_FILE_BYTES) {
+            Ok((got_sha, got_len)) => {
+                *files_checked += 1;
+                if got_sha != file.sha256 || got_len != file.bytes_len {
+                    *digest_mismatches += 1;
+                    let mut d = Diagnostic::new(
+                        "X07WASM_DEVICE_BUNDLE_SHA256_MISMATCH",
+                        Severity::Error,
+                        Stage::Run,
+                        "bundle file digest mismatch".to_string(),
+                    );
+                    d.data.insert("path".to_string(), json!(file.path.clone()));
+                    d.data
+                        .insert("want_sha256".to_string(), json!(file.sha256.clone()));
+                    d.data.insert("got_sha256".to_string(), json!(got_sha));
+                    d.data
+                        .insert("want_bytes_len".to_string(), json!(file.bytes_len));
+                    d.data.insert("got_bytes_len".to_string(), json!(got_len));
+                    diagnostics.push(d);
+                }
+            }
+            Err(err) => {
+                *missing_files += 1;
+                if err.kind == "too_large" {
+                    let mut d = Diagnostic::new(
+                        "X07WASM_DEVICE_BUNDLE_FILE_TOO_LARGE",
+                        Severity::Error,
+                        Stage::Run,
+                        format!("bundle file exceeds size cap: {}", full_path.display()),
+                    );
+                    d.data.insert("path".to_string(), json!(file.path.clone()));
+                    d.data.insert("bytes_len".to_string(), json!(err.bytes_len));
+                    d.data
+                        .insert("max_bytes_len".to_string(), json!(err.max_bytes));
+                    d.data.insert("role".to_string(), json!(role));
+                    diagnostics.push(d);
+                } else {
+                    let mut d = Diagnostic::new(
+                        "X07WASM_DEVICE_BUNDLE_FILE_MISSING",
+                        Severity::Error,
+                        Stage::Run,
+                        "failed to read bundle file".to_string(),
+                    );
+                    d.data.insert("path".to_string(), json!(file.path.clone()));
+                    d.data.insert("error".to_string(), json!(err.detail));
+                    diagnostics.push(d);
+                }
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -430,12 +383,26 @@ mod tests {
 
         let ui_bytes = b"not-a-real-wasm-module";
         let profile_bytes = br#"{"id":"device_dev","v":1}"#;
+        let capabilities_bytes =
+            br#"{"schema_version":"x07.device.capabilities@0.1.0","network":{"mode":"deny_by_default","allow_hosts":[]},"device":{"clipboard":false,"local_kv":true,"notifications":false}}"#;
+        let telemetry_profile_bytes =
+            br#"{"schema_version":"x07.device.telemetry.profile@0.1.0","transport":{"protocol":"http/protobuf","endpoint":"http://127.0.0.1:4318"},"event_classes":["app.lifecycle"]}"#;
         std::fs::write(bundle_dir.join("ui/reducer.wasm"), ui_bytes).expect("write reducer.wasm");
         std::fs::write(
             bundle_dir.join("profile/device.profile.json"),
             profile_bytes,
         )
         .expect("write device.profile.json");
+        std::fs::write(
+            bundle_dir.join("profile/device.capabilities.json"),
+            capabilities_bytes,
+        )
+        .expect("write device.capabilities.json");
+        std::fs::write(
+            bundle_dir.join("profile/device.telemetry.profile.json"),
+            telemetry_profile_bytes,
+        )
+        .expect("write device.telemetry.profile.json");
 
         let mut manifest = json!({
           "schema_version": "x07.device.bundle.manifest@0.1.0",
@@ -449,6 +416,16 @@ mod tests {
               "sha256": util::sha256_hex(profile_bytes),
               "bytes_len": profile_bytes.len(),
             },
+          },
+          "capabilities": {
+            "path": "profile/device.capabilities.json",
+            "sha256": util::sha256_hex(capabilities_bytes),
+            "bytes_len": capabilities_bytes.len(),
+          },
+          "telemetry_profile": {
+            "path": "profile/device.telemetry.profile.json",
+            "sha256": util::sha256_hex(telemetry_profile_bytes),
+            "bytes_len": telemetry_profile_bytes.len(),
           },
           "ui_wasm": {
             "path": "ui/reducer.wasm",

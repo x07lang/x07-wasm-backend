@@ -171,6 +171,20 @@ pub fn cmd_device_provenance_attest(
             doc.profile.file.bytes_len,
             "application/json",
         ),
+        (
+            "capabilities.path",
+            doc.capabilities.path,
+            doc.capabilities.sha256,
+            doc.capabilities.bytes_len,
+            "application/json",
+        ),
+        (
+            "telemetry_profile.path",
+            doc.telemetry_profile.path,
+            doc.telemetry_profile.sha256,
+            doc.telemetry_profile.bytes_len,
+            "application/json",
+        ),
     ];
 
     for (field, rel, want_sha, want_len, media_type) in subject_specs {

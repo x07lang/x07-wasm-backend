@@ -7,6 +7,7 @@ use serde_json::{json, Value};
 use crate::cli::{DeviceBuildArgs, MachineArgs, Scope, WebUiBuildArgs, WebUiBuildFormat};
 use crate::device::contracts::{DeviceIndexDoc, DeviceProfileDoc};
 use crate::device::host_abi;
+use crate::device::sidecars::load_profile_sidecars;
 use crate::diag::{Diagnostic, Severity, Stage};
 use crate::report;
 use crate::schema::SchemaStore;
@@ -110,8 +111,28 @@ pub fn cmd_device_build(
         sha256: "0".repeat(64),
         bytes_len: 0,
     };
+    let mut capabilities_file_digest = report::meta::FileDigest {
+        path: out_dir
+            .join("profile")
+            .join("device.capabilities.json")
+            .display()
+            .to_string(),
+        sha256: "0".repeat(64),
+        bytes_len: 0,
+    };
+    let mut telemetry_profile_file_digest = report::meta::FileDigest {
+        path: out_dir
+            .join("profile")
+            .join("device.telemetry.profile.json")
+            .display()
+            .to_string(),
+        sha256: "0".repeat(64),
+        bytes_len: 0,
+    };
 
     if let Some(profile) = loaded_profile.as_ref() {
+        let loaded_sidecars = load_profile_sidecars(&store, &profile.doc, &mut meta, &mut diagnostics);
+
         if diagnostics.iter().all(|d| d.severity != Severity::Error) {
             let target = profile.doc.target.as_str();
             let target_ok = matches!(target, "desktop" | "ios" | "android");
@@ -280,6 +301,72 @@ pub fn cmd_device_build(
                 }
             }
 
+            if let Some(sidecars) = loaded_sidecars.as_ref() {
+                let dst_capabilities = dst_profile_dir.join("device.capabilities.json");
+                if let Err(err) = std::fs::copy(&sidecars.capabilities.path, &dst_capabilities) {
+                    diagnostics.push(Diagnostic::new(
+                        "X07WASM_DEVICE_BUILD_COPY_FAILED",
+                        Severity::Error,
+                        Stage::Run,
+                        format!(
+                            "failed to copy device capabilities {} -> {}: {err}",
+                            sidecars.capabilities.path.display(),
+                            dst_capabilities.display()
+                        ),
+                    ));
+                } else if dst_capabilities.is_file() {
+                    match file_digest_rel(&out_dir, &dst_capabilities) {
+                        Ok(d) => {
+                            capabilities_file_digest = d.clone();
+                            meta.outputs.push(d.clone());
+                            artifacts.push(d);
+                        }
+                        Err(err) => diagnostics.push(Diagnostic::new(
+                            "X07WASM_DEVICE_BUILD_DIGEST_FAILED",
+                            Severity::Error,
+                            Stage::Run,
+                            format!(
+                                "failed to digest device capabilities copy {}: {err:#}",
+                                dst_capabilities.display()
+                            ),
+                        )),
+                    }
+                }
+
+                let dst_telemetry_profile = dst_profile_dir.join("device.telemetry.profile.json");
+                if let Err(err) =
+                    std::fs::copy(&sidecars.telemetry_profile.path, &dst_telemetry_profile)
+                {
+                    diagnostics.push(Diagnostic::new(
+                        "X07WASM_DEVICE_BUILD_COPY_FAILED",
+                        Severity::Error,
+                        Stage::Run,
+                        format!(
+                            "failed to copy device telemetry profile {} -> {}: {err}",
+                            sidecars.telemetry_profile.path.display(),
+                            dst_telemetry_profile.display()
+                        ),
+                    ));
+                } else if dst_telemetry_profile.is_file() {
+                    match file_digest_rel(&out_dir, &dst_telemetry_profile) {
+                        Ok(d) => {
+                            telemetry_profile_file_digest = d.clone();
+                            meta.outputs.push(d.clone());
+                            artifacts.push(d);
+                        }
+                        Err(err) => diagnostics.push(Diagnostic::new(
+                            "X07WASM_DEVICE_BUILD_DIGEST_FAILED",
+                            Severity::Error,
+                            Stage::Run,
+                            format!(
+                                "failed to digest device telemetry profile copy {}: {err:#}",
+                                dst_telemetry_profile.display()
+                            ),
+                        )),
+                    }
+                }
+            }
+
             let host_abi_hash = host_abi::HOST_ABI_HASH_HEX;
             if host_abi_hash.len() != 64 {
                 diagnostics.push(Diagnostic::new(
@@ -300,6 +387,8 @@ pub fn cmd_device_build(
                     "v": profile.doc.v,
                     "file": profile_file_digest,
                   },
+                  "capabilities": capabilities_file_digest,
+                  "telemetry_profile": telemetry_profile_file_digest,
                   "ui_wasm": ui_wasm_digest,
                   "host": {
                     "kind": host_abi::HOST_KIND,

@@ -22,15 +22,10 @@
     "mode": "none"
   },
   "capabilities": {
-    "network": {
-      "mode": "deny_by_default",
-      "allow_hosts": []
-    },
-    "device": {
-      "clipboard": false,
-      "local_kv": true,
-      "notifications": false
-    }
+    "path": "arch/device/profiles/device.capabilities.json"
+  },
+  "telemetry_profile": {
+    "path": "arch/device/profiles/device_release.telemetry.profile.json"
   },
   "desktop": {
     "window": {

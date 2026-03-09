@@ -5,12 +5,24 @@
   "description": "Machine-readable manifest describing a built device UI bundle (UI wasm + pinned host ABI).",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "kind", "target", "profile", "ui_wasm", "host", "bundle_digest"],
+  "required": [
+    "schema_version",
+    "kind",
+    "target",
+    "profile",
+    "capabilities",
+    "telemetry_profile",
+    "ui_wasm",
+    "host",
+    "bundle_digest"
+  ],
   "properties": {
     "schema_version": { "const": "x07.device.bundle.manifest@0.1.0" },
     "kind": { "const": "device_bundle" },
     "target": { "type": "string", "enum": ["desktop", "ios", "android"] },
     "profile": { "$ref": "#/$defs/profile_ref" },
+    "capabilities": { "$ref": "#/$defs/file_digest" },
+    "telemetry_profile": { "$ref": "#/$defs/file_digest" },
     "ui_wasm": { "$ref": "#/$defs/file_digest" },
     "host": { "$ref": "#/$defs/host" },
     "bundle_digest": { "$ref": "#/$defs/sha256" }
@@ -62,4 +74,3 @@
     }
   }
 }
-

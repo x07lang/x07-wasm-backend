@@ -9,5 +9,6 @@ pub(crate) mod package_ios;
 pub mod profile_validate;
 pub mod provenance;
 pub mod run;
+pub(crate) mod sidecars;
 pub(crate) mod template_render;
 pub mod verify;

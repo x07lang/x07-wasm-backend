@@ -8,7 +8,7 @@ use serde_json::{json, Value};
 use zip::write::FileOptions;
 
 use crate::cli::{DevicePackageArgs, MachineArgs, Scope};
-use crate::device::contracts::{DeviceBundleManifestDoc, DeviceProfileDoc};
+use crate::device::contracts::{DeviceBundleFileDigest, DeviceBundleManifestDoc, DeviceProfileDoc};
 use crate::device::{package_android, package_ios};
 use crate::diag::{Diagnostic, Severity, Stage};
 use crate::report;
@@ -249,16 +249,15 @@ pub fn cmd_device_package(
         );
     }
 
-    let profile_rel = bundle_doc.profile.file.path.clone();
-    let profile_path = match util::safe_join_under_dir(&bundle_dir, &profile_rel) {
-        Ok(v) => v,
-        Err(err) => {
-            diagnostics.push(Diagnostic::new(
-                "X07WASM_DEVICE_BUNDLE_PATH_UNSAFE",
-                Severity::Error,
-                Stage::Parse,
-                format!("unsafe bundle path: {profile_rel:?} ({})", err.detail),
-            ));
+    let profile_bytes = match read_bundle_file(
+        &bundle_dir,
+        "profile.file.path",
+        &bundle_doc.profile.file,
+        &mut meta,
+        &mut diagnostics,
+    ) {
+        Some(v) => v,
+        None => {
             return emit_report(
                 &store,
                 scope,
@@ -276,78 +275,6 @@ pub fn cmd_device_package(
             );
         }
     };
-
-    let profile_bytes = match std::fs::read(&profile_path) {
-        Ok(v) => v,
-        Err(err) => {
-            let mut d = Diagnostic::new(
-                "X07WASM_DEVICE_BUNDLE_FILE_MISSING",
-                Severity::Error,
-                Stage::Parse,
-                format!("missing bundle file {}: {err}", profile_path.display()),
-            );
-            d.data.insert("path".to_string(), json!(profile_rel));
-            diagnostics.push(d);
-            return emit_report(
-                &store,
-                scope,
-                machine,
-                started,
-                raw_argv,
-                target,
-                meta,
-                diagnostics,
-                profile_ref,
-                &bundle_dir,
-                &out_dir,
-                package_manifest_digest,
-                package_info,
-            );
-        }
-    };
-
-    let got_sha = util::sha256_hex(&profile_bytes);
-    let got_len = profile_bytes.len() as u64;
-    meta.inputs.push(report::meta::FileDigest {
-        path: profile_path.display().to_string(),
-        sha256: got_sha.clone(),
-        bytes_len: got_len,
-    });
-    if got_sha != bundle_doc.profile.file.sha256 || got_len != bundle_doc.profile.file.bytes_len {
-        let mut d = Diagnostic::new(
-            "X07WASM_DEVICE_BUNDLE_SHA256_MISMATCH",
-            Severity::Error,
-            Stage::Parse,
-            "bundle file digest mismatch".to_string(),
-        );
-        d.data.insert("path".to_string(), json!(profile_rel));
-        d.data.insert(
-            "want_sha256".to_string(),
-            json!(bundle_doc.profile.file.sha256.clone()),
-        );
-        d.data.insert("got_sha256".to_string(), json!(got_sha));
-        d.data.insert(
-            "want_bytes_len".to_string(),
-            json!(bundle_doc.profile.file.bytes_len),
-        );
-        d.data.insert("got_bytes_len".to_string(), json!(got_len));
-        diagnostics.push(d);
-        return emit_report(
-            &store,
-            scope,
-            machine,
-            started,
-            raw_argv,
-            target,
-            meta,
-            diagnostics,
-            profile_ref,
-            &bundle_dir,
-            &out_dir,
-            package_manifest_digest,
-            package_info,
-        );
-    }
 
     let profile_json: Value = match serde_json::from_slice(&profile_bytes) {
         Ok(v) => v,
@@ -480,6 +407,64 @@ pub fn cmd_device_package(
             package_info,
         );
     };
+
+    if !validate_bundle_json_file(
+        &store,
+        &bundle_dir,
+        "capabilities.path",
+        &bundle_doc.capabilities,
+        "https://x07.io/spec/x07-device.capabilities.schema.json",
+        "X07WASM_DEVICE_CAPABILITIES_JSON_INVALID",
+        "X07WASM_DEVICE_CAPABILITIES_SCHEMA_INVALID",
+        "device capabilities",
+        &mut meta,
+        &mut diagnostics,
+    ) {
+        return emit_report(
+            &store,
+            scope,
+            machine,
+            started,
+            raw_argv,
+            target,
+            meta,
+            diagnostics,
+            profile_ref,
+            &bundle_dir,
+            &out_dir,
+            package_manifest_digest,
+            package_info,
+        );
+    }
+
+    if !validate_bundle_json_file(
+        &store,
+        &bundle_dir,
+        "telemetry_profile.path",
+        &bundle_doc.telemetry_profile,
+        "https://x07.io/spec/x07-device.telemetry.profile.schema.json",
+        "X07WASM_DEVICE_TELEMETRY_PROFILE_JSON_INVALID",
+        "X07WASM_DEVICE_TELEMETRY_PROFILE_SCHEMA_INVALID",
+        "device telemetry profile",
+        &mut meta,
+        &mut diagnostics,
+    ) {
+        return emit_report(
+            &store,
+            scope,
+            machine,
+            started,
+            raw_argv,
+            target,
+            meta,
+            diagnostics,
+            profile_ref,
+            &bundle_dir,
+            &out_dir,
+            package_manifest_digest,
+            package_info,
+        );
+    }
 
     if let Err(err) = std::fs::create_dir_all(&out_dir)
         .with_context(|| format!("create dir: {}", out_dir.display()))
@@ -1024,6 +1009,9 @@ pub fn cmd_device_package(
       "kind": "device_package",
       "target": target,
       "bundle_manifest_sha256": bundle_manifest_sha256,
+      "profile": bundle_doc.profile,
+      "capabilities": bundle_doc.capabilities,
+      "telemetry_profile": bundle_doc.telemetry_profile,
       "package": package_info,
     });
 
@@ -1107,6 +1095,134 @@ pub fn cmd_device_package(
         package_manifest_digest,
         package_info,
     )
+}
+
+fn read_bundle_file(
+    bundle_dir: &Path,
+    field: &str,
+    file: &DeviceBundleFileDigest,
+    meta: &mut report::meta::ReportMeta,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> Option<Vec<u8>> {
+    let full_path = match util::safe_join_under_dir(bundle_dir, &file.path) {
+        Ok(v) => v,
+        Err(err) => {
+            let mut d = Diagnostic::new(
+                "X07WASM_DEVICE_BUNDLE_PATH_UNSAFE",
+                Severity::Error,
+                Stage::Parse,
+                "unsafe bundle path".to_string(),
+            );
+            d.data.insert("field".to_string(), json!(field));
+            d.data.insert("path".to_string(), json!(err.rel));
+            d.data.insert("kind".to_string(), json!(err.kind));
+            d.data.insert("detail".to_string(), json!(err.detail));
+            diagnostics.push(d);
+            return None;
+        }
+    };
+
+    let bytes = match std::fs::read(&full_path) {
+        Ok(v) => v,
+        Err(err) => {
+            let mut d = Diagnostic::new(
+                "X07WASM_DEVICE_BUNDLE_FILE_MISSING",
+                Severity::Error,
+                Stage::Parse,
+                format!("missing bundle file {}: {err}", full_path.display()),
+            );
+            d.data.insert("path".to_string(), json!(file.path.clone()));
+            diagnostics.push(d);
+            return None;
+        }
+    };
+
+    let got_sha = util::sha256_hex(&bytes);
+    let got_len = bytes.len() as u64;
+    meta.inputs.push(report::meta::FileDigest {
+        path: full_path.display().to_string(),
+        sha256: got_sha.clone(),
+        bytes_len: got_len,
+    });
+
+    if got_sha != file.sha256 || got_len != file.bytes_len {
+        let mut d = Diagnostic::new(
+            "X07WASM_DEVICE_BUNDLE_SHA256_MISMATCH",
+            Severity::Error,
+            Stage::Parse,
+            "bundle file digest mismatch".to_string(),
+        );
+        d.data.insert("path".to_string(), json!(file.path.clone()));
+        d.data
+            .insert("want_sha256".to_string(), json!(file.sha256.clone()));
+        d.data.insert("got_sha256".to_string(), json!(got_sha));
+        d.data
+            .insert("want_bytes_len".to_string(), json!(file.bytes_len));
+        d.data.insert("got_bytes_len".to_string(), json!(got_len));
+        diagnostics.push(d);
+        return None;
+    }
+
+    Some(bytes)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn validate_bundle_json_file(
+    store: &SchemaStore,
+    bundle_dir: &Path,
+    field: &str,
+    file: &DeviceBundleFileDigest,
+    schema_id: &str,
+    json_invalid_code: &str,
+    schema_invalid_code: &str,
+    label: &str,
+    meta: &mut report::meta::ReportMeta,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> bool {
+    let bytes = match read_bundle_file(bundle_dir, field, file, meta, diagnostics) {
+        Some(v) => v,
+        None => return false,
+    };
+
+    let doc_json: Value = match serde_json::from_slice(&bytes) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(Diagnostic::new(
+                json_invalid_code,
+                Severity::Error,
+                Stage::Parse,
+                format!("{label} is not JSON: {err}"),
+            ));
+            return false;
+        }
+    };
+
+    let schema_diags = match store.validate(schema_id, &doc_json) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(Diagnostic::new(
+                "X07WASM_INTERNAL_SCHEMA_VALIDATE_FAILED",
+                Severity::Error,
+                Stage::Run,
+                format!("{err:#}"),
+            ));
+            return false;
+        }
+    };
+
+    if schema_diags.iter().any(|d| d.severity == Severity::Error) {
+        let mut d = Diagnostic::new(
+            schema_invalid_code,
+            Severity::Error,
+            Stage::Parse,
+            format!("{label} schema invalid"),
+        );
+        d.data.insert("errors".to_string(), json!(schema_diags));
+        diagnostics.push(d);
+        return false;
+    }
+
+    true
 }
 
 #[allow(clippy::too_many_arguments)]

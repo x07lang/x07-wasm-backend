@@ -3,7 +3,7 @@
 Phase 9 introduces a single desktop host runner (`x07-device-host-desktop`) and wires it into `x07-wasm`:
 
 - `x07-wasm device run`: delegates to the host to execute `ui/reducer.wasm` in a system WebView.
-- `x07-wasm device package`: packages a device bundle into a desktop payload and emits `package.manifest.json`.
+- `x07-wasm device package`: packages a device bundle into a desktop payload and emits `package.manifest.json`, carrying the sealed profile/capabilities/telemetry sidecar digests from the bundle manifest.
 
 ## Toolchain
 

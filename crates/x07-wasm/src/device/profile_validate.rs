@@ -7,6 +7,7 @@ use serde_json::{json, Value};
 
 use crate::cli::{DeviceProfileValidateArgs, MachineArgs, Scope};
 use crate::device::contracts::{DeviceIndexDoc, DeviceIndexProfileRef, DeviceProfileDoc};
+use crate::device::sidecars::load_profile_sidecars;
 use crate::diag::{Diagnostic, Severity, Stage};
 use crate::report;
 use crate::schema::SchemaStore;
@@ -413,6 +414,10 @@ fn validate_profile_file(
                     }
 
                     let _ = doc.target;
+
+                    if load_profile_sidecars(store, &doc, meta, diagnostics).is_none() {
+                        ok = false;
+                    }
                 }
                 Err(err) => {
                     ok = false;

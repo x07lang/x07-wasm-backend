@@ -78,6 +78,10 @@ const X07_WEB_UI_TRACE_SCHEMA_BYTES: &[u8] =
 
 const X07_DEVICE_PROFILE_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../spec/schemas/x07-device.profile.schema.json");
+const X07_DEVICE_CAPABILITIES_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../spec/schemas/x07-device.capabilities.schema.json");
+const X07_DEVICE_TELEMETRY_PROFILE_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../spec/schemas/x07-device.telemetry.profile.schema.json");
 const X07_DEVICE_BUNDLE_MANIFEST_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../spec/schemas/x07-device.bundle.manifest.schema.json");
 const X07_DEVICE_PACKAGE_MANIFEST_SCHEMA_BYTES: &[u8] =
@@ -239,6 +243,8 @@ impl SchemaStore {
             X07_WEB_UI_EFFECT_SCHEMA_BYTES,
             X07_WEB_UI_TRACE_SCHEMA_BYTES,
             X07_DEVICE_PROFILE_SCHEMA_BYTES,
+            X07_DEVICE_CAPABILITIES_SCHEMA_BYTES,
+            X07_DEVICE_TELEMETRY_PROFILE_SCHEMA_BYTES,
             X07_DEVICE_BUNDLE_MANIFEST_SCHEMA_BYTES,
             X07_DEVICE_PACKAGE_MANIFEST_SCHEMA_BYTES,
             X07_APP_PROFILE_SCHEMA_BYTES,
@@ -520,6 +526,8 @@ mod tests {
             "https://x07.io/spec/x07-web_ui.effect.schema.json",
             "https://x07.io/spec/x07-web_ui.trace.schema.json",
             "https://x07.io/spec/x07-device.profile.schema.json",
+            "https://x07.io/spec/x07-device.capabilities.schema.json",
+            "https://x07.io/spec/x07-device.telemetry.profile.schema.json",
             "https://x07.io/spec/x07-device.bundle.manifest.schema.json",
             "https://x07.io/spec/x07-device.package.manifest.schema.json",
             "https://x07.io/spec/x07-app.profile.schema.json",

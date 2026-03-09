@@ -37,6 +37,7 @@ want_payload_path = sys.argv[4]
 
 manifest_path = package_dir / "package.manifest.json"
 doc = json.loads(manifest_path.read_text(encoding="utf-8"))
+bundle_doc = json.loads(bundle_manifest.read_text(encoding="utf-8"))
 
 if doc.get("schema_version") != "x07.device.package.manifest@0.1.0":
     raise SystemExit(f"{manifest_path}: bad schema_version: {doc.get('schema_version')!r}")
@@ -51,6 +52,12 @@ if got_bundle_sha != want_bundle_sha:
     raise SystemExit(
         f"{manifest_path}: bundle_manifest_sha256 mismatch: want={want_bundle_sha}, got={got_bundle_sha}"
     )
+
+for key in ("profile", "capabilities", "telemetry_profile"):
+    if doc.get(key) != bundle_doc.get(key):
+        raise SystemExit(
+            f"{manifest_path}: {key} mismatch: want={bundle_doc.get(key)!r}, got={doc.get(key)!r}"
+        )
 
 pkg = doc.get("package")
 if not isinstance(pkg, dict):
@@ -116,11 +123,15 @@ project_dir = pathlib.Path(sys.argv[2])
 dst_root = project_dir / "X07DeviceApp" / "x07"
 want_manifest = bundle_dir / "bundle.manifest.json"
 want_wasm = bundle_dir / "ui" / "reducer.wasm"
+want_capabilities = bundle_dir / "profile" / "device.capabilities.json"
+want_telemetry_profile = bundle_dir / "profile" / "device.telemetry.profile.json"
 
 got_manifest = dst_root / "bundle.manifest.json"
 got_wasm = dst_root / "ui" / "reducer.wasm"
+got_capabilities = dst_root / "profile" / "device.capabilities.json"
+got_telemetry_profile = dst_root / "profile" / "device.telemetry.profile.json"
 
-for p in [got_manifest, got_wasm]:
+for p in [got_manifest, got_wasm, got_capabilities, got_telemetry_profile]:
     if not p.is_file():
         raise SystemExit(f"missing embedded file: {p}")
 
@@ -131,6 +142,10 @@ if sha(want_manifest) != sha(got_manifest):
     raise SystemExit("embedded bundle.manifest.json sha256 mismatch")
 if sha(want_wasm) != sha(got_wasm):
     raise SystemExit("embedded reducer.wasm sha256 mismatch")
+if sha(want_capabilities) != sha(got_capabilities):
+    raise SystemExit("embedded device.capabilities.json sha256 mismatch")
+if sha(want_telemetry_profile) != sha(got_telemetry_profile):
+    raise SystemExit("embedded device.telemetry.profile.json sha256 mismatch")
 
 print("ok: iOS embedded bundle files")
 PY
@@ -151,11 +166,15 @@ project_dir = pathlib.Path(sys.argv[2])
 dst_root = project_dir / "app" / "src" / "main" / "assets" / "x07"
 want_manifest = bundle_dir / "bundle.manifest.json"
 want_wasm = bundle_dir / "ui" / "reducer.wasm"
+want_capabilities = bundle_dir / "profile" / "device.capabilities.json"
+want_telemetry_profile = bundle_dir / "profile" / "device.telemetry.profile.json"
 
 got_manifest = dst_root / "bundle.manifest.json"
 got_wasm = dst_root / "ui" / "reducer.wasm"
+got_capabilities = dst_root / "profile" / "device.capabilities.json"
+got_telemetry_profile = dst_root / "profile" / "device.telemetry.profile.json"
 
-for p in [got_manifest, got_wasm]:
+for p in [got_manifest, got_wasm, got_capabilities, got_telemetry_profile]:
     if not p.is_file():
         raise SystemExit(f"missing embedded file: {p}")
 
@@ -166,6 +185,10 @@ if sha(want_manifest) != sha(got_manifest):
     raise SystemExit("embedded bundle.manifest.json sha256 mismatch")
 if sha(want_wasm) != sha(got_wasm):
     raise SystemExit("embedded reducer.wasm sha256 mismatch")
+if sha(want_capabilities) != sha(got_capabilities):
+    raise SystemExit("embedded device.capabilities.json sha256 mismatch")
+if sha(want_telemetry_profile) != sha(got_telemetry_profile):
+    raise SystemExit("embedded device.telemetry.profile.json sha256 mismatch")
 
 print("ok: Android embedded bundle files")
 PY
@@ -182,6 +205,8 @@ x07-wasm device build \
   --json --report-out build/phase10_examples/device.build.device_ios_dev.json --quiet-json
 test -f "${ios_bundle_dir}/bundle.manifest.json"
 test -f "${ios_bundle_dir}/ui/reducer.wasm"
+test -f "${ios_bundle_dir}/profile/device.capabilities.json"
+test -f "${ios_bundle_dir}/profile/device.telemetry.profile.json"
 
 echo "==> phase10_examples: verify bundle (device_ios_dev)"
 x07-wasm device verify \
@@ -212,6 +237,8 @@ x07-wasm device build \
   --json --report-out build/phase10_examples/device.build.device_android_dev.json --quiet-json
 test -f "${android_bundle_dir}/bundle.manifest.json"
 test -f "${android_bundle_dir}/ui/reducer.wasm"
+test -f "${android_bundle_dir}/profile/device.capabilities.json"
+test -f "${android_bundle_dir}/profile/device.telemetry.profile.json"
 
 echo "==> phase10_examples: verify bundle (device_android_dev)"
 x07-wasm device verify \

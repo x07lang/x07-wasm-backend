@@ -92,6 +92,8 @@ check_ok_report "${BUILD_DIR}/device.build.device_dev.json"
 test -f "${dev_bundle}/bundle.manifest.json"
 test -f "${dev_bundle}/ui/reducer.wasm"
 test -f "${dev_bundle}/profile/device.profile.json"
+test -f "${dev_bundle}/profile/device.capabilities.json"
+test -f "${dev_bundle}/profile/device.telemetry.profile.json"
 
 x07-wasm device verify \
   --dir "${dev_bundle}" \
@@ -139,6 +141,8 @@ check_ok_report "${BUILD_DIR}/device.build.device_release.json"
 test -f "${release_bundle}/bundle.manifest.json"
 test -f "${release_bundle}/ui/reducer.wasm"
 test -f "${release_bundle}/profile/device.profile.json"
+test -f "${release_bundle}/profile/device.capabilities.json"
+test -f "${release_bundle}/profile/device.telemetry.profile.json"
 
 x07-wasm device verify \
   --dir "${release_bundle}" \

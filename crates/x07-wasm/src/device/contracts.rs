@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct DeviceIndexDoc {
@@ -28,6 +28,8 @@ pub(crate) struct DeviceProfileDoc {
     pub(crate) identity: DeviceProfileIdentity,
     pub(crate) version: DeviceProfileVersion,
     pub(crate) ui: DeviceProfileUi,
+    pub(crate) capabilities: DeviceProfileFileRef,
+    pub(crate) telemetry_profile: DeviceProfileFileRef,
 
     #[serde(default)]
     pub(crate) desktop: Option<DeviceProfileDesktop>,
@@ -55,6 +57,11 @@ pub(crate) struct DeviceProfileVersion {
 pub(crate) struct DeviceProfileUi {
     pub(crate) project: PathBuf,
     pub(crate) web_ui_profile_id: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub(crate) struct DeviceProfileFileRef {
+    pub(crate) path: PathBuf,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -90,26 +97,28 @@ pub(crate) struct DeviceBundleManifestDoc {
     pub(crate) kind: String,
     pub(crate) target: String,
     pub(crate) profile: DeviceBundleProfileRef,
+    pub(crate) capabilities: DeviceBundleFileDigest,
+    pub(crate) telemetry_profile: DeviceBundleFileDigest,
     pub(crate) ui_wasm: DeviceBundleFileDigest,
     pub(crate) host: DeviceBundleHost,
     pub(crate) bundle_digest: String,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub(crate) struct DeviceBundleProfileRef {
     pub(crate) id: String,
     pub(crate) v: u64,
     pub(crate) file: DeviceBundleFileDigest,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub(crate) struct DeviceBundleFileDigest {
     pub(crate) path: String,
     pub(crate) sha256: String,
     pub(crate) bytes_len: u64,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub(crate) struct DeviceBundleHost {
     pub(crate) kind: String,
     pub(crate) abi_name: String,

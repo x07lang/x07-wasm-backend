@@ -47,6 +47,7 @@ PATH="<workspace>/x07/target/debug:<workspace>/x07-wasm-backend/target/debug:<wo
 ## Files To Start With
 
 - Device profiles: [`arch/device/profiles/device_dev.json`](arch/device/profiles/device_dev.json), [`arch/device/profiles/device_release.json`](arch/device/profiles/device_release.json)
+- Device sidecars: [`arch/device/profiles/device.capabilities.json`](arch/device/profiles/device.capabilities.json), [`arch/device/profiles/device_dev.telemetry.profile.json`](arch/device/profiles/device_dev.telemetry.profile.json), [`arch/device/profiles/device_release.telemetry.profile.json`](arch/device/profiles/device_release.telemetry.profile.json)
 - Reducer source: [`frontend/src/app.x07.json`](frontend/src/app.x07.json)
 - Reducer tests: [`frontend/tests/studio_tests.x07.json`](frontend/tests/studio_tests.x07.json)
 - Verification notes: [`tests/README.md`](tests/README.md)

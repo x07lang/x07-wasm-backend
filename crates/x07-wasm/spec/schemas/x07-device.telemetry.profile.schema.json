@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-device.telemetry.profile.schema.json",
+  "title": "x07.device.telemetry.profile@0.1.0",
+  "description": "Pinned device telemetry transport profile consumed by x07-wasm device tooling and device hosts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "transport", "event_classes"],
+  "properties": {
+    "schema_version": { "const": "x07.device.telemetry.profile@0.1.0" },
+    "transport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "endpoint"],
+      "properties": {
+        "protocol": { "type": "string", "enum": ["http/protobuf", "http/json"] },
+        "endpoint": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300,
+          "pattern": "^https?://"
+        }
+      }
+    },
+    "event_classes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128,
+        "pattern": "^[a-z][a-z0-9._-]*$"
+      }
+    }
+  }
+}

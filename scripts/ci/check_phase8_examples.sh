@@ -47,6 +47,8 @@ x07-wasm device build \
 test -f "${bundle_dir}/bundle.manifest.json"
 test -f "${bundle_dir}/ui/reducer.wasm"
 test -f "${bundle_dir}/profile/device.profile.json"
+test -f "${bundle_dir}/profile/device.capabilities.json"
+test -f "${bundle_dir}/profile/device.telemetry.profile.json"
 
 x07-wasm device verify \
   --dir "${bundle_dir}" \

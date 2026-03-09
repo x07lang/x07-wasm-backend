@@ -15,7 +15,8 @@
     "security",
     "ui",
     "backend",
-    "capabilities"
+    "capabilities",
+    "telemetry_profile"
   ],
   "properties": {
     "schema_version": { "const": "x07.device.profile@0.1.0" },
@@ -27,7 +28,8 @@
     "security": { "$ref": "#/$defs/security" },
     "ui": { "$ref": "#/$defs/ui" },
     "backend": { "$ref": "#/$defs/backend" },
-    "capabilities": { "$ref": "#/$defs/capabilities" },
+    "capabilities": { "$ref": "#/$defs/file_ref" },
+    "telemetry_profile": { "$ref": "#/$defs/file_ref" },
     "desktop": { "$ref": "#/$defs/desktop" },
     "ios": { "$ref": "#/$defs/ios" },
     "android": { "$ref": "#/$defs/android" },
@@ -124,41 +126,12 @@
       "properties": { "mode": { "const": "none" } }
     },
     "backend": { "oneOf": [{ "$ref": "#/$defs/backend_remote_http" }, { "$ref": "#/$defs/backend_none" }] },
-    "capabilities": {
+    "file_ref": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["network", "device"],
+      "required": ["path"],
       "properties": {
-        "network": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["mode", "allow_hosts"],
-          "properties": {
-            "mode": { "const": "deny_by_default" },
-            "allow_hosts": {
-              "type": "array",
-              "minItems": 0,
-              "maxItems": 64,
-              "items": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 255,
-                "pattern": "^[A-Za-z0-9][A-Za-z0-9.-]*[A-Za-z0-9]$|^localhost$|^127\\.0\\.0\\.1$"
-              },
-              "uniqueItems": true
-            }
-          }
-        },
-        "device": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["clipboard", "local_kv", "notifications"],
-          "properties": {
-            "clipboard": { "type": "boolean" },
-            "local_kv": { "type": "boolean" },
-            "notifications": { "type": "boolean" }
-          }
-        }
+        "path": { "$ref": "#/$defs/rel_path" }
       }
     },
     "desktop": {
@@ -245,4 +218,3 @@
     }
   ]
 }
-

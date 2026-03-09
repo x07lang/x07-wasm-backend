@@ -67,6 +67,7 @@ want_kind = sys.argv[3]
 
 manifest_path = package_dir / "package.manifest.json"
 doc = json.loads(manifest_path.read_text(encoding="utf-8"))
+bundle_doc = json.loads(bundle_manifest.read_text(encoding="utf-8"))
 
 if doc.get("schema_version") != "x07.device.package.manifest@0.1.0":
     raise SystemExit(f"{manifest_path}: bad schema_version: {doc.get('schema_version')!r}")
@@ -81,6 +82,12 @@ if got_bundle_sha != want_bundle_sha:
     raise SystemExit(
         f"{manifest_path}: bundle_manifest_sha256 mismatch: want={want_bundle_sha}, got={got_bundle_sha}"
     )
+
+for key in ("profile", "capabilities", "telemetry_profile"):
+    if doc.get(key) != bundle_doc.get(key):
+        raise SystemExit(
+            f"{manifest_path}: {key} mismatch: want={bundle_doc.get(key)!r}, got={doc.get(key)!r}"
+        )
 
 pkg = doc.get("package")
 if not isinstance(pkg, dict):
@@ -175,6 +182,8 @@ x07-wasm device build \
   --json --report-out build/phase9_examples/device.build.device_dev.json --quiet-json
 test -f "${dev_bundle_dir}/bundle.manifest.json"
 test -f "${dev_bundle_dir}/ui/reducer.wasm"
+test -f "${dev_bundle_dir}/profile/device.capabilities.json"
+test -f "${dev_bundle_dir}/profile/device.telemetry.profile.json"
 
 echo "==> phase9_examples: verify bundle (device_dev)"
 x07-wasm device verify \
@@ -197,6 +206,8 @@ x07-wasm device build \
   --json --report-out build/phase9_examples/device.build.device_release.json --quiet-json
 test -f "${release_bundle_dir}/bundle.manifest.json"
 test -f "${release_bundle_dir}/ui/reducer.wasm"
+test -f "${release_bundle_dir}/profile/device.capabilities.json"
+test -f "${release_bundle_dir}/profile/device.telemetry.profile.json"
 
 echo "==> phase9_examples: verify bundle (device_release)"
 x07-wasm device verify \

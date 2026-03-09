@@ -24,15 +24,10 @@
     "allowed_hosts": ["example.invalid"]
   },
   "capabilities": {
-    "network": {
-      "mode": "deny_by_default",
-      "allow_hosts": ["example.invalid"]
-    },
-    "device": {
-      "clipboard": true,
-      "local_kv": true,
-      "notifications": true
-    }
+    "path": "arch/device/profiles/device_release.capabilities.json"
+  },
+  "telemetry_profile": {
+    "path": "arch/device/profiles/device_release.telemetry.profile.json"
   },
   "desktop": {
     "window": {

@@ -13,6 +13,7 @@ Mobile and desktop packaging showcase for a single `std.web_ui` reducer. The app
 - Deterministic web-ui trace replay before packaging
 - Desktop smoke plus iOS and Android project generation from the same reducer
 - Store-safe packaging with embedded `ui/reducer.wasm` and local host assets only
+- Standalone device capabilities + telemetry contracts embedded with the bundle
 
 ## Run With Released Tools
 
@@ -48,6 +49,7 @@ PATH="<workspace>/x07/target/debug:<workspace>/x07-wasm-backend/target/debug:<wo
 ## Files To Start With
 
 - Device profiles: [`arch/device/profiles/device_desktop_dev.json`](arch/device/profiles/device_desktop_dev.json), [`arch/device/profiles/device_ios_dev.json`](arch/device/profiles/device_ios_dev.json), [`arch/device/profiles/device_android_dev.json`](arch/device/profiles/device_android_dev.json)
+- Device sidecars: [`arch/device/profiles/device_dev.capabilities.json`](arch/device/profiles/device_dev.capabilities.json), [`arch/device/profiles/device_dev.telemetry.profile.json`](arch/device/profiles/device_dev.telemetry.profile.json)
 - Reducer source: [`frontend/src/app.x07.json`](frontend/src/app.x07.json)
 - Trace fixtures: [`tests/web_ui/notes_edit.trace.json`](tests/web_ui/notes_edit.trace.json), [`tests/web_ui/storage_reload.trace.json`](tests/web_ui/storage_reload.trace.json), [`tests/web_ui/sync_success.trace.json`](tests/web_ui/sync_success.trace.json)
 - Validation notes: [`tests/README.md`](tests/README.md)

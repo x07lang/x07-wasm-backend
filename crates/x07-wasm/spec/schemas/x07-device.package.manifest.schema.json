@@ -2,24 +2,62 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-device.package.manifest.schema.json",
   "title": "x07.device.package.manifest@0.1.0",
-  "description": "Machine-readable manifest describing a packaged device app payload (Phase 9+).",
+  "description": "Machine-readable manifest describing a packaged device app payload.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "kind", "target", "bundle_manifest_sha256", "package"],
+  "required": [
+    "schema_version",
+    "kind",
+    "target",
+    "bundle_manifest_sha256",
+    "profile",
+    "capabilities",
+    "telemetry_profile",
+    "package"
+  ],
   "properties": {
     "schema_version": { "const": "x07.device.package.manifest@0.1.0" },
     "kind": { "const": "device_package" },
     "target": { "type": "string", "enum": ["desktop", "ios", "android"] },
     "bundle_manifest_sha256": { "$ref": "#/$defs/sha256" },
+    "profile": { "$ref": "#/$defs/profile_ref" },
+    "capabilities": { "$ref": "#/$defs/file_digest" },
+    "telemetry_profile": { "$ref": "#/$defs/file_digest" },
     "package": { "$ref": "#/$defs/package" }
   },
   "$defs": {
     "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
     "rel_path": {
       "type": "string",
       "minLength": 1,
       "maxLength": 1024,
       "pattern": "^(?![\\\\/])(?![A-Za-z]:)(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)).+"
+    },
+    "file_digest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes_len"],
+      "properties": {
+        "path": { "$ref": "#/$defs/rel_path" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "bytes_len": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "profile_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "v", "file"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "v": { "type": "integer", "minimum": 1 },
+        "file": { "$ref": "#/$defs/file_digest" }
+      }
     },
     "package": {
       "type": "object",
@@ -39,4 +77,3 @@
     }
   }
 }
-
