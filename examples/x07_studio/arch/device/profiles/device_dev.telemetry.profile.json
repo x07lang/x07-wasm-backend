@@ -4,5 +4,23 @@
     "protocol": "http/protobuf",
     "endpoint": "http://127.0.0.1:4318"
   },
-  "event_classes": ["app.lifecycle", "device.storage", "runtime.error"]
+  "resource": {
+    "app_id": "x07.studio.dev",
+    "target": "ios",
+    "release_exec_id": null,
+    "release_plan_id": null,
+    "package_sha256": null,
+    "provider_kind": null,
+    "provider_lane": null,
+    "rollout_percent": null
+  },
+  "event_classes": [
+    "app.lifecycle",
+    "app.http",
+    "runtime.error",
+    "bridge.timing",
+    "reducer.timing",
+    "policy.violation",
+    "host.webview_crash"
+  ]
 }

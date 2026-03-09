@@ -7,6 +7,8 @@ Phase 10 extends `x07-wasm device package` with store-safe mobile project genera
 
 This phase does not require Xcode/Gradle in CI; it only generates projects.
 
+The generated project skeletons come from the vendored `x07-device-host` mobile templates, including the native OTLP telemetry bridge used by device release observability.
+
 ## CLI
 
 Generate an iOS project:
@@ -19,6 +21,12 @@ Generate an Android project:
 
 ```sh
 x07-wasm device package --bundle dist/device --target android --out-dir dist/device_package_android --json
+```
+
+Generate a deterministic regression fixture set from a captured device incident:
+
+```sh
+x07-wasm device regress from-incident .x07-wasm/incidents/device/<YYYY-MM-DD>/<id> --out-dir tests/regress --name device_incident --json
 ```
 
 ## CI gate

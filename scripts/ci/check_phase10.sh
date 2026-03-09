@@ -6,13 +6,11 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # Re-run Phase0..9 gates first.
 bash "${ROOT_DIR}/scripts/ci/check_phase9.sh"
 
-IOS_TEMPLATE_DIR="${ROOT_DIR}/crates/x07-wasm/src/support/mobile/ios/template"
-ANDROID_TEMPLATE_DIR="${ROOT_DIR}/crates/x07-wasm/src/support/mobile/android/template"
-VENDORED_HOST_DIR="${ROOT_DIR}/vendor/x07-web-ui/host"
+IOS_TEMPLATE_DIR="${ROOT_DIR}/vendor/x07-device-host/mobile/ios/template"
+ANDROID_TEMPLATE_DIR="${ROOT_DIR}/vendor/x07-device-host/mobile/android/template"
 
 test -d "${IOS_TEMPLATE_DIR}"
 test -d "${ANDROID_TEMPLATE_DIR}"
-test -d "${VENDORED_HOST_DIR}"
 
 PYTHON=""
 if command -v python3 >/dev/null 2>&1; then
@@ -24,13 +22,12 @@ else
   exit 1
 fi
 
-"$PYTHON" - "${IOS_TEMPLATE_DIR}" "${ANDROID_TEMPLATE_DIR}" "${VENDORED_HOST_DIR}" <<'PY'
+"$PYTHON" - "${IOS_TEMPLATE_DIR}" "${ANDROID_TEMPLATE_DIR}" <<'PY'
 import pathlib
 import sys
 
 ios_root = pathlib.Path(sys.argv[1])
 android_root = pathlib.Path(sys.argv[2])
-vendored_host = pathlib.Path(sys.argv[3])
 
 host_files = ["index.html", "bootstrap.js", "main.mjs", "app-host.mjs"]
 
@@ -48,9 +45,7 @@ ios_host = ios_root / "X07DeviceApp" / "x07"
 android_host = android_root / "app" / "src" / "main" / "assets" / "x07"
 
 for f in host_files:
-    ref = vendored_host / f
-    require_bytes_equal(ref, ios_host / f)
-    require_bytes_equal(ref, android_host / f)
+    require_bytes_equal(ios_host / f, android_host / f)
 
 token_targets = [
     (
@@ -90,6 +85,34 @@ for platform, dir_path, tokens in token_targets:
         if tok.encode("utf-8") not in hay:
             print(f"missing token {tok} under {dir_path}", file=sys.stderr)
             sys.exit(1)
+
+android_main = android_root / "app" / "src" / "main" / "java" / "org" / "x07" / "deviceapp" / "MainActivity.kt"
+android_main_src = android_main.read_text(encoding="utf-8")
+for needle in [
+    "x07.device.telemetry.configure",
+    "x07.device.telemetry.event",
+    "host.webview_crash",
+    "application/x-protobuf",
+    "application/json",
+]:
+    if needle not in android_main_src:
+        print(f"android vendored template missing telemetry hook: {needle}", file=sys.stderr)
+        print(android_main, file=sys.stderr)
+        sys.exit(1)
+
+ios_webview = ios_root / "X07DeviceApp" / "X07WebView.swift"
+ios_webview_src = ios_webview.read_text(encoding="utf-8")
+for needle in [
+    "x07.device.telemetry.configure",
+    "x07.device.telemetry.event",
+    "host.webview_crash",
+    "application/x-protobuf",
+    "application/json",
+]:
+    if needle not in ios_webview_src:
+        print(f"ios vendored template missing telemetry hook: {needle}", file=sys.stderr)
+        print(ios_webview, file=sys.stderr)
+        sys.exit(1)
 
 print("ok: phase10 templates")
 PY

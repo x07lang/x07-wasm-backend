@@ -12,6 +12,15 @@ const DEVICE_CAPABILITIES_SCHEMA_ID: &str =
     "https://x07.io/spec/x07-device.capabilities.schema.json";
 const DEVICE_TELEMETRY_PROFILE_SCHEMA_ID: &str =
     "https://x07.io/spec/x07-device.telemetry.profile.schema.json";
+const REQUIRED_TELEMETRY_EVENT_CLASSES: &[&str] = &[
+    "app.lifecycle",
+    "app.http",
+    "runtime.error",
+    "bridge.timing",
+    "reducer.timing",
+    "policy.violation",
+    "host.webview_crash",
+];
 
 #[derive(Debug, Clone)]
 pub(crate) struct DeviceProfileSidecars {
@@ -149,7 +158,47 @@ fn load_json_contract_file(
         return None;
     }
 
+    if spec.schema_id == DEVICE_TELEMETRY_PROFILE_SCHEMA_ID
+        && !validate_telemetry_profile_contract(&doc_json, diagnostics)
+    {
+        return None;
+    }
+
     Some(ValidatedJsonFile {
         path: path.to_path_buf(),
     })
+}
+
+fn validate_telemetry_profile_contract(
+    doc_json: &Value,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> bool {
+    let classes = doc_json
+        .get("event_classes")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    let have = classes
+        .iter()
+        .filter_map(Value::as_str)
+        .map(str::to_string)
+        .collect::<std::collections::BTreeSet<_>>();
+    let missing = REQUIRED_TELEMETRY_EVENT_CLASSES
+        .iter()
+        .filter(|name| !have.contains(**name))
+        .copied()
+        .collect::<Vec<_>>();
+    if !missing.is_empty() {
+        let mut d = Diagnostic::new(
+            "X07WASM_DEVICE_TELEMETRY_EVENT_CLASSES_INCOMPLETE",
+            Severity::Error,
+            Stage::Parse,
+            "device telemetry profile must declare the full required event-class set".to_string(),
+        );
+        d.data.insert("missing".to_string(), json!(missing));
+        diagnostics.push(d);
+        return false;
+    }
+
+    true
 }

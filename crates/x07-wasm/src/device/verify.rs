@@ -397,7 +397,7 @@ mod tests {
         let capabilities_bytes =
             br#"{"schema_version":"x07.device.capabilities@0.1.0","network":{"mode":"deny_by_default","allow_hosts":[]},"device":{"clipboard":false,"local_kv":true,"notifications":false}}"#;
         let telemetry_profile_bytes =
-            br#"{"schema_version":"x07.device.telemetry.profile@0.1.0","transport":{"protocol":"http/protobuf","endpoint":"http://127.0.0.1:4318"},"event_classes":["app.lifecycle"]}"#;
+            br#"{"schema_version":"x07.device.telemetry.profile@0.1.0","transport":{"protocol":"http/protobuf","endpoint":"http://127.0.0.1:4318"},"event_classes":["app.lifecycle","app.http","runtime.error","bridge.timing","reducer.timing","policy.violation","host.webview_crash"]}"#;
         std::fs::write(bundle_dir.join("ui/reducer.wasm"), ui_bytes).expect("write reducer.wasm");
         std::fs::write(
             bundle_dir.join("profile/device.profile.json"),

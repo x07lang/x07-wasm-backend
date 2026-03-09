@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-device.telemetry.profile.schema.json",
   "title": "x07.device.telemetry.profile@0.1.0",
-  "description": "Pinned device telemetry transport profile consumed by x07-wasm device tooling and device hosts.",
+  "description": "Pinned OTLP transport + correlation profile consumed by x07-wasm device tooling and device hosts.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "transport", "event_classes"],
@@ -22,16 +22,80 @@
         }
       }
     },
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "app_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "target": {
+          "type": "string",
+          "enum": ["desktop", "ios", "android"]
+        },
+        "release_exec_id": {
+          "oneOf": [
+            { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$" },
+            { "type": "null" }
+          ],
+          "default": null
+        },
+        "release_plan_id": {
+          "oneOf": [
+            { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$" },
+            { "type": "null" }
+          ],
+          "default": null
+        },
+        "package_sha256": {
+          "oneOf": [
+            { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+            { "type": "null" }
+          ],
+          "default": null
+        },
+        "provider_kind": {
+          "oneOf": [
+            { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[a-z][a-z0-9._-]*$" },
+            { "type": "null" }
+          ],
+          "default": null
+        },
+        "provider_lane": {
+          "oneOf": [
+            { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[a-z][a-z0-9._-]*$" },
+            { "type": "null" }
+          ],
+          "default": null
+        },
+        "rollout_percent": {
+          "oneOf": [
+            { "type": "number", "minimum": 0, "maximum": 100 },
+            { "type": "null" }
+          ],
+          "default": null
+        }
+      }
+    },
     "event_classes": {
       "type": "array",
-      "minItems": 1,
-      "maxItems": 32,
+      "description": "Pinned host-obligation set for device observability. Current releases require the full standard class set.",
+      "minItems": 7,
+      "maxItems": 7,
       "uniqueItems": true,
       "items": {
         "type": "string",
-        "minLength": 1,
-        "maxLength": 128,
-        "pattern": "^[a-z][a-z0-9._-]*$"
+        "enum": [
+          "app.lifecycle",
+          "app.http",
+          "runtime.error",
+          "bridge.timing",
+          "reducer.timing",
+          "policy.violation",
+          "host.webview_crash"
+        ]
       }
     }
   }

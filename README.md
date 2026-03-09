@@ -20,7 +20,7 @@ x07 wasm doctor --json
 Fallbacks:
 
 ```sh
-cargo install --locked x07-wasm --version 0.1.9
+cargo install --locked x07-wasm --version 0.1.10
 ```
 
 Use `cargo install --locked --git https://github.com/x07lang/x07-wasm-backend.git x07-wasm` only when you need unreleased development state from this repo.
@@ -71,6 +71,16 @@ Device profiles now keep runtime capabilities and telemetry transport settings i
 - `profile/device.profile.json`
 - `profile/device.capabilities.json`
 - `profile/device.telemetry.profile.json`
+
+The telemetry sidecar must now declare the standard device-observability event classes and OTLP transport profile used by the platform release loop:
+
+- `app.lifecycle`
+- `app.http`
+- `runtime.error`
+- `bridge.timing`
+- `reducer.timing`
+- `policy.violation`
+- `host.webview_crash`
 
 ## Official showcase apps
 
@@ -141,7 +151,10 @@ Supported D-OSS command surface:
 - `x07-wasm device index validate` / `device profile validate`
 - `x07-wasm device build` / `device verify`
 - `x07-wasm device run` / `device package`
+- `x07-wasm device regress from-incident`
 - `x07-wasm device package --target ios` / `--target android`
+
+The packaged mobile templates are vendored from `x07-device-host/mobile/*` and refreshed through `scripts/vendor_x07_device_host_abi.py`; this repo no longer maintains a second editable copy of those templates.
 
 ## Contracts-as-data
 

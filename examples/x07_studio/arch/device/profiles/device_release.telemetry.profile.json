@@ -4,5 +4,23 @@
     "protocol": "http/protobuf",
     "endpoint": "https://otel.example.invalid:4318"
   },
-  "event_classes": ["app.lifecycle", "device.storage", "runtime.error"]
+  "resource": {
+    "app_id": "x07.studio.release",
+    "target": "ios",
+    "release_exec_id": null,
+    "release_plan_id": null,
+    "package_sha256": null,
+    "provider_kind": "appstoreconnect_v1",
+    "provider_lane": "production",
+    "rollout_percent": null
+  },
+  "event_classes": [
+    "app.lifecycle",
+    "app.http",
+    "runtime.error",
+    "bridge.timing",
+    "reducer.timing",
+    "policy.violation",
+    "host.webview_crash"
+  ]
 }

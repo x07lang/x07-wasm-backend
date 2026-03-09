@@ -4,6 +4,9 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 OUT_DIR="${ROOT_DIR}/dist/phase9_examples"
 
+# Reuse the same host-tool resolution rules as later device showcase checks.
+source "${ROOT_DIR}/scripts/ci/device_host_common.sh"
+
 rm -rf "${OUT_DIR}"
 mkdir -p "${OUT_DIR}" build/phase9_examples .x07-wasm/incidents
 
@@ -148,29 +151,6 @@ print("ok:", report)
 PY
 }
 
-resolve_host_tool() {
-  local candidate="${X07_DEVICE_HOST_DESKTOP:-}"
-  if [ -z "${candidate}" ] && command -v x07-device-host-desktop >/dev/null 2>&1; then
-    candidate="$(command -v x07-device-host-desktop)"
-  fi
-  if [ -z "${candidate}" ]; then
-    return 1
-  fi
-  local abi_hash
-  if ! abi_hash="$("${candidate}" --host-abi-hash 2>/dev/null)"; then
-    return 1
-  fi
-  case "${abi_hash}" in
-    [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]*)
-      if [ "${#abi_hash}" -eq 64 ]; then
-        printf '%s\n' "${candidate}"
-        return 0
-      fi
-      ;;
-  esac
-  return 1
-}
-
 echo "==> phase9_examples: build bundle (device_dev)"
 dev_bundle_dir="${OUT_DIR}/device_dev_bundle"
 x07-wasm device build \
@@ -244,7 +224,7 @@ fi
 check_report_exit_code_and_has_code build/phase9_examples/device.package.unsupported_target.json 3 X07WASM_DEVICE_PACKAGE_FAILED
 
 host_tool=""
-if host_tool="$(resolve_host_tool)"; then
+if host_tool="$(resolve_x07_device_host_desktop "${ROOT_DIR}")"; then
   :
 else
   echo "==> phase9_examples: runnable host tool missing; skipping device package/run smoke"

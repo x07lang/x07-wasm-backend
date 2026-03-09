@@ -7,8 +7,8 @@ fn main() {
     let manifest_dir =
         PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR"));
 
-    let ios_root = manifest_dir.join("src/support/mobile/ios/template");
-    let android_root = manifest_dir.join("src/support/mobile/android/template");
+    let ios_root = manifest_dir.join("../../vendor/x07-device-host/mobile/ios/template");
+    let android_root = manifest_dir.join("../../vendor/x07-device-host/mobile/android/template");
 
     let ios_files = collect_files(&ios_root).expect("collect iOS template files");
     let android_files = collect_files(&android_root).expect("collect Android template files");
@@ -30,14 +30,14 @@ fn main() {
     write_template_module(
         &mut f,
         "IOS_TEMPLATE_FILES",
-        "/src/support/mobile/ios/template/",
+        "/../../vendor/x07-device-host/mobile/ios/template/",
         &ios_files,
     )
     .expect("write iOS template module");
     write_template_module(
         &mut f,
         "ANDROID_TEMPLATE_FILES",
-        "/src/support/mobile/android/template/",
+        "/../../vendor/x07-device-host/mobile/android/template/",
         &android_files,
     )
     .expect("write Android template module");

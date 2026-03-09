@@ -245,6 +245,10 @@
       "path": "x07-wasm.device.provenance.verify.report.schema.json"
     },
     {
+      "id": "https://x07.io/spec/x07-wasm.device.regress.from_incident.report.schema.json",
+      "path": "x07-wasm.device.regress.from_incident.report.schema.json"
+    },
+    {
       "id": "https://x07.io/spec/x07-wasm.device.run.report.schema.json",
       "path": "x07-wasm.device.run.report.schema.json"
     },

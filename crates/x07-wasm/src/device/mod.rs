@@ -8,6 +8,7 @@ pub(crate) mod package_android;
 pub(crate) mod package_ios;
 pub mod profile_validate;
 pub mod provenance;
+pub mod regress_from_incident;
 pub mod run;
 pub(crate) mod sidecars;
 pub(crate) mod template_render;

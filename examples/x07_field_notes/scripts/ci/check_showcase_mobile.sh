@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+WASM_ROOT="$(cd "${ROOT_DIR}/../.." && pwd)"
 OUT_DIR="${ROOT_DIR}/dist/showcase_mobile"
 REPORT_DIR="${ROOT_DIR}/build/showcase_mobile"
 INCIDENTS_DIR="${ROOT_DIR}/.x07-wasm/incidents"
@@ -9,6 +10,8 @@ WEB_UI_DIST_DIR="${OUT_DIR}/web_ui_debug"
 TRACE_DIR="${ROOT_DIR}/tests/web_ui"
 
 cd "${ROOT_DIR}"
+
+source "${WASM_ROOT}/scripts/ci/device_host_common.sh"
 
 WEB_UI_CASES=(
   "${TRACE_DIR}/notes_edit.trace.json"
@@ -294,6 +297,11 @@ run_web_ui_checks
 if [ "${X07WASM_DEVICE_RUN_SMOKE:-1}" = "0" ]; then
   echo "desktop smoke skipped (X07WASM_DEVICE_RUN_SMOKE=0)"
 else
+  host_tool="$(resolve_x07_device_host_desktop "${WASM_ROOT}")" || {
+    echo "compatible x07-device-host-desktop not found; build ../x07-device-host or set X07_DEVICE_HOST_DESKTOP" >&2
+    exit 1
+  }
+  export X07_DEVICE_HOST_DESKTOP="${host_tool}"
   run_desktop_smoke
 fi
 package_mobile_target \

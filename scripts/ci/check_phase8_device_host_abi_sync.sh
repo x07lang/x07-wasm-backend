@@ -2,11 +2,11 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-SNAPSHOT="$ROOT_DIR/vendor/x07-web-ui/host/host.snapshot.json"
+SNAPSHOT="$ROOT_DIR/vendor/x07-device-host/host_abi.snapshot.json"
 HOST_ABI_RS="$ROOT_DIR/crates/x07-wasm/src/device/host_abi.rs"
 
 if [[ ! -f "$SNAPSHOT" ]]; then
-  echo "missing vendored web-ui host snapshot: $SNAPSHOT" >&2
+  echo "missing vendored device-host ABI snapshot: $SNAPSHOT" >&2
   exit 1
 fi
 if [[ ! -f "$HOST_ABI_RS" ]]; then
@@ -25,8 +25,9 @@ rs_path = pathlib.Path(sys.argv[2])
 
 snap = json.loads(snapshot_path.read_text(encoding="utf-8"))
 expected_hash = snap.get("host_abi_hash")
-expected_abi_name = snap.get("abi_name")
-expected_abi_version = snap.get("abi_version")
+abi = snap.get("abi") if isinstance(snap, dict) else None
+expected_abi_name = abi.get("abi_name") if isinstance(abi, dict) else None
+expected_abi_version = abi.get("abi_version") if isinstance(abi, dict) else None
 
 if not isinstance(expected_hash, str) or not re.fullmatch(r"[0-9a-f]{64}", expected_hash):
     print(f"invalid host_abi_hash in snapshot: {expected_hash!r}", file=sys.stderr)

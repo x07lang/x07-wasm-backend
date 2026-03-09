@@ -170,6 +170,13 @@ pub fn build_specrows_doc() -> Value {
         ["device-package","opt","","--out-dir","out.dir","PATH","Output directory for the packaged payload + package.manifest.json.",{ "default": "dist/device_package" }],
         ["device-package","opt","","--target","target","STR","Device target (`desktop`, `ios`, `android`).",{ "default": "desktop" }],
 
+        ["device-regress-from-incident","about","Alias for `x07-wasm device regress from-incident`. Convert a captured device incident into deterministic regression fixtures and emit x07.wasm.device.regress.from_incident.report@0.1.0."],
+        ["device-regress-from-incident","flag","","--dry-run","dry.run","Do not write files; validate and emit report only."],
+        ["device-regress-from-incident","flag","","--strict","strict","Treat warnings as errors (nonzero exit on any warning)."],
+        ["device-regress-from-incident","opt","","--name","name","STR","Base name for generated case files.",{ "default": "device_incident" }],
+        ["device-regress-from-incident","opt","","--out-dir","out.dir","PATH","Output directory for generated regression assets.",{ "default": "tests/regress" }],
+        ["device-regress-from-incident","arg","INCIDENT_DIR","incident.dir","Path to a device incident bundle directory.",{ "required": true }],
+
         ["device-provenance-attest","about","Alias for `x07-wasm device provenance attest`. Create SLSA provenance attestation for a device bundle and emit x07.wasm.device.provenance.attest.report@0.1.0."],
         ["device-provenance-attest","opt","","--bundle-dir","bundle.dir","PATH","Directory containing the device bundle.",{ "default": "dist/device" }],
         ["device-provenance-attest","opt","","--out","out","PATH","Output attestation file."],

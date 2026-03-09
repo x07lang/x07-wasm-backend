@@ -13,10 +13,10 @@ This repo vendors the device host ABI snapshot:
 - Source of truth: `../x07-device-host/arch/host_abi/host_abi.snapshot.json`
 - Vendored copy: `vendor/x07-device-host/host_abi.snapshot.json`
 
-The web WebView host assets are also pinned via the canonical snapshot from `x07-web-ui`:
+The mobile project templates are vendored from `x07-device-host` together with the ABI snapshot:
 
-- Source of truth: `../x07-web-ui/host/host.snapshot.json`
-- Vendored copy: `vendor/x07-web-ui/host/host.snapshot.json`
+- Source of truth: `../x07-device-host/mobile/{ios,android}/template`
+- Vendored copy: `vendor/x07-device-host/mobile/{ios,android}/template`
 
 Update/check vendoring:
 
@@ -25,7 +25,7 @@ python3 scripts/vendor_x07_device_host_abi.py update --src ../x07-device-host
 python3 scripts/vendor_x07_device_host_abi.py check
 ```
 
-Consumer repos do not need to vendor either the device host ABI snapshot or the web-ui host assets. `x07-wasm` embeds the pinned host ABI hash and the vendored web-ui host files into the binary at build time.
+Consumer repos do not need to vendor either the device host ABI snapshot or the mobile templates. `x07-wasm` embeds the pinned host ABI hash and packages the vendored `x07-device-host` templates into generated iOS/Android projects at build time.
 
 `x07-wasm device verify` enforces that `bundle.manifest.json` `host.host_abi_hash` matches the embedded pinned host ABI constant in `crates/x07-wasm/src/device/host_abi.rs` and emits `X07WASM_DEVICE_BUNDLE_HOST_ABI_HASH_MISMATCH` (exit code 3) on mismatch.
 
@@ -36,6 +36,8 @@ Consumer repos do not need to vendor either the device host ABI snapshot or the 
 - Device capabilities: `arch/device/profiles/*.capabilities.json`
 - Device telemetry profiles: `arch/device/profiles/*.telemetry.profile.json`
 - Bundle manifest: `bundle.manifest.json` (`x07.device.bundle.manifest@0.1.0`)
+
+Telemetry profiles must advertise the standard event-class set used by the platform device-release loop and may target either `http/json` or `http/protobuf` OTLP transport.
 
 ## CLI
 

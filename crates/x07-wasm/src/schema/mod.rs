@@ -162,6 +162,8 @@ const X07_WASM_DEVICE_RUN_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../spec/schemas/x07-wasm.device.run.report.schema.json");
 const X07_WASM_DEVICE_PACKAGE_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../spec/schemas/x07-wasm.device.package.report.schema.json");
+const X07_WASM_DEVICE_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../spec/schemas/x07-wasm.device.regress.from_incident.report.schema.json");
 const X07_WASM_WEB_UI_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../spec/schemas/x07-wasm.web_ui.contracts.validate.report.schema.json");
 const X07_WASM_WEB_UI_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
@@ -293,6 +295,7 @@ impl SchemaStore {
             X07_WASM_DEVICE_PROVENANCE_VERIFY_REPORT_SCHEMA_BYTES,
             X07_WASM_DEVICE_RUN_REPORT_SCHEMA_BYTES,
             X07_WASM_DEVICE_PACKAGE_REPORT_SCHEMA_BYTES,
+            X07_WASM_DEVICE_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES,
             X07_WASM_WEB_UI_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES,
             X07_WASM_WEB_UI_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES,
             X07_WASM_WEB_UI_BUILD_REPORT_SCHEMA_BYTES,
@@ -476,6 +479,9 @@ fn report_schema_id_for_scope(scope: Scope) -> &'static str {
         }
         Scope::DeviceRun => "https://x07.io/spec/x07-wasm.device.run.report.schema.json",
         Scope::DevicePackage => "https://x07.io/spec/x07-wasm.device.package.report.schema.json",
+        Scope::DeviceRegressFromIncident => {
+            "https://x07.io/spec/x07-wasm.device.regress.from_incident.report.schema.json"
+        }
         Scope::CliSpecrowsCheck => {
             "https://x07.io/spec/x07-wasm.cli.specrows.check.report.schema.json"
         }
@@ -575,6 +581,7 @@ mod tests {
             "https://x07.io/spec/x07-wasm.device.provenance.verify.report.schema.json",
             "https://x07.io/spec/x07-wasm.device.run.report.schema.json",
             "https://x07.io/spec/x07-wasm.device.package.report.schema.json",
+            "https://x07.io/spec/x07-wasm.device.regress.from_incident.report.schema.json",
             "https://x07.io/spec/x07-wasm.web_ui.contracts.validate.report.schema.json",
             "https://x07.io/spec/x07-wasm.web_ui.profile.validate.report.schema.json",
             "https://x07.io/spec/x07-wasm.web_ui.build.report.schema.json",

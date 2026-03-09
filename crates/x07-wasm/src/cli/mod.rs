@@ -559,6 +559,13 @@ impl Command {
                 DeviceCommand::Package(v) => {
                     crate::device::package::cmd_device_package(raw_argv, scope, machine, v)
                 }
+                DeviceCommand::Regress(r) => match r.cmd {
+                    DeviceRegressCommand::FromIncident(v) => {
+                        crate::device::regress_from_incident::cmd_device_regress_from_incident(
+                            raw_argv, scope, machine, v,
+                        )
+                    }
+                },
             },
             Command::DeviceIndexValidate(v) => {
                 crate::device::index_validate::cmd_device_index_validate(
@@ -1895,6 +1902,7 @@ pub enum DeviceCommand {
     Provenance(DeviceProvenanceArgs),
     Run(DeviceRunArgs),
     Package(DevicePackageArgs),
+    Regress(DeviceRegressArgs),
 }
 
 #[derive(Debug, Clone, Args)]
@@ -2021,6 +2029,42 @@ pub struct DevicePackageArgs {
     /// Output directory for the packaged payload + package.manifest.json.
     #[arg(long, value_name = "DIR", default_value = "dist/device_package")]
     pub out_dir: PathBuf,
+}
+
+#[derive(Debug, Clone, Args)]
+#[command(subcommand_required = true)]
+pub struct DeviceRegressArgs {
+    #[command(subcommand)]
+    pub cmd: DeviceRegressCommand,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum DeviceRegressCommand {
+    #[command(name = "from-incident")]
+    FromIncident(DeviceRegressFromIncidentArgs),
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct DeviceRegressFromIncidentArgs {
+    /// Path to a captured device incident bundle directory.
+    #[arg(value_name = "INCIDENT_DIR")]
+    pub incident_dir: PathBuf,
+
+    /// Output directory for generated regression assets.
+    #[arg(long, value_name = "DIR", default_value = "tests/regress")]
+    pub out_dir: PathBuf,
+
+    /// Base name for generated case files.
+    #[arg(long, value_name = "STR", default_value = "incident")]
+    pub name: String,
+
+    /// Do not write files; validate and emit report only.
+    #[arg(long)]
+    pub dry_run: bool,
+
+    /// Treat warnings as errors.
+    #[arg(long)]
+    pub strict: bool,
 }
 
 #[derive(Debug, Clone, Args)]
@@ -2194,6 +2238,7 @@ pub enum Scope {
     DeviceProvenanceVerify,
     DeviceRun,
     DevicePackage,
+    DeviceRegressFromIncident,
     ProfileValidate,
     CliSpecrowsCheck,
 }
@@ -2302,6 +2347,7 @@ pub fn scope_for_command(cmd: Option<&Command>) -> Scope {
             },
             DeviceCommand::Run(_) => Scope::DeviceRun,
             DeviceCommand::Package(_) => Scope::DevicePackage,
+            DeviceCommand::Regress(_) => Scope::DeviceRegressFromIncident,
         },
         Some(Command::DeviceIndexValidate(_)) => Scope::DeviceIndexValidate,
         Some(Command::DeviceProfileValidate(_)) => Scope::DeviceProfileValidate,
