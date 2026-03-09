@@ -117,12 +117,18 @@ pub fn cmd_device_regress_from_incident(
             "device incident is missing trace".to_string(),
         ));
     } else {
-        diagnostics.extend(store.validate("https://x07.io/spec/x07-web_ui.trace.schema.json", &trace_doc)?);
+        diagnostics.extend(store.validate(
+            "https://x07.io/spec/x07-web_ui.trace.schema.json",
+            &trace_doc,
+        )?);
     }
 
     let app_trace_doc = incident_doc.get("appTrace").cloned().unwrap_or(Value::Null);
     if app_trace_doc != Value::Null {
-        diagnostics.extend(store.validate("https://x07.io/spec/x07-app.trace.schema.json", &app_trace_doc)?);
+        diagnostics.extend(store.validate(
+            "https://x07.io/spec/x07-app.trace.schema.json",
+            &app_trace_doc,
+        )?);
     }
 
     if diagnostics.iter().any(|d| d.severity == Severity::Error) {
@@ -151,15 +157,21 @@ pub fn cmd_device_regress_from_incident(
             .with_context(|| format!("create dir: {}", args.out_dir.display()))?;
 
         let incident_out = args.out_dir.join(format!("{}.incident.json", args.name));
-        std::fs::write(&incident_out, report::canon::canonical_pretty_json_bytes(&incident_doc)?)
-            .with_context(|| format!("write: {}", incident_out.display()))?;
+        std::fs::write(
+            &incident_out,
+            report::canon::canonical_pretty_json_bytes(&incident_doc)?,
+        )
+        .with_context(|| format!("write: {}", incident_out.display()))?;
         let incident_digest = util::file_digest(&incident_out)?;
         meta.outputs.push(incident_digest.clone());
         generated.push(incident_digest);
 
         let trace_out = args.out_dir.join(format!("{}.trace.json", args.name));
-        std::fs::write(&trace_out, report::canon::canonical_pretty_json_bytes(&trace_doc)?)
-            .with_context(|| format!("write: {}", trace_out.display()))?;
+        std::fs::write(
+            &trace_out,
+            report::canon::canonical_pretty_json_bytes(&trace_doc)?,
+        )
+        .with_context(|| format!("write: {}", trace_out.display()))?;
         let trace_digest = util::file_digest(&trace_out)?;
         meta.outputs.push(trace_digest.clone());
         generated.push(trace_digest);

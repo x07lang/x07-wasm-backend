@@ -197,6 +197,8 @@ cargo test
 cargo clippy --all-targets -- -D warnings
 ```
 
+If you touch `crates/x07-wasm/src/device/*`, run `cargo fmt --all` even when the change looks trivial. The device incident regression generator regularly trips the rustfmt gate because long schema-validation and file-write calls wrap differently than they read in review.
+
 Then run the phase gate(s) that match what you changed:
 - Phase 0–1: WASM / components toolchain changes.
 - Phase 2–3: web-ui and app pipeline changes.
