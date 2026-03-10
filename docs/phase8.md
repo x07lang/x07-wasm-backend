@@ -37,7 +37,7 @@ Consumer repos do not need to vendor either the device host ABI snapshot or the 
 - Device telemetry profiles: `arch/device/profiles/*.telemetry.profile.json`
 - Bundle manifest: `bundle.manifest.json` (`x07.device.bundle.manifest@0.1.0`)
 
-Telemetry profiles must advertise the standard event-class set used by the platform device-release loop and may target either `http/json` or `http/protobuf` OTLP transport. M0 device bundles also carry `x07.device.capabilities@0.2.0`, which separates build-time capability allowlisting from runtime permission outcomes for camera, files, blob storage, foreground location, and local notifications.
+Telemetry profiles must advertise the standard event-class set used by the platform device-release loop and may target either `http/json` or `http/protobuf` OTLP transport. M0 device bundles also carry `x07.device.capabilities@0.2.0`, which separates build-time capability allowlisting from runtime permission outcomes for camera, files, blob storage, foreground location, and local notifications. The `@0.2.0` schema is intentionally strict-M0 only; legacy booleans such as `clipboard` and `local_kv` are not preserved in this contract line.
 
 ## CLI
 

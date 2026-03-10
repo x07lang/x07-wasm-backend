@@ -10,3 +10,10 @@ bash scripts/ci/check_capture_min.sh
 ```
 
 Use `--update-golden` after changing the reducer shape and keep the env sequence stable so native-effect replay remains explicit.
+
+Current proving traces:
+
+- `tests/web_ui/m0_success.trace.json`: schedule success plus `notification.opened`
+- `tests/web_ui/m0_negative.trace.json`: denied, cancelled, timeout, unsupported, and connectivity offline outcomes
+- `tests/web_ui/m0_blob_quota.trace.json`: deterministic `blob_item_too_large` and `blob_total_too_large` import failures
+- `tests/web_ui/m0_notification_cancel.trace.json`: schedule followed by `notifications.cancel`

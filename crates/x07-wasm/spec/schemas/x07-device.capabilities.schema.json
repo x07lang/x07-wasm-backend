@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-device.capabilities.schema.json",
   "title": "x07.device.capabilities@0.2.0",
-  "description": "Pinned device runtime capability allowlist consumed by x07-wasm device tooling and device hosts.",
+  "description": "Pinned strict-M0 device runtime capability allowlist consumed by x07-wasm device tooling and device hosts. Legacy v0.1 booleans such as clipboard and local_kv are intentionally omitted from @0.2.0.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "network", "device"],

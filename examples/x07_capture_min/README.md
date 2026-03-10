@@ -7,11 +7,13 @@ This example keeps the reducer intentionally small while proving the same `std.w
 - permission query and request
 - camera capture and file import
 - blob-manifest follow-up via `blobs.stat`
+- deterministic blob quota failures for `blob_item_too_large` and `blob_total_too_large`
 - foreground location reads
-- local notification schedule plus `notification.opened`
+- local notification schedule, cancel, and `notification.opened`
 - target-specific device capabilities and telemetry sidecars
 
 - CI gate: `bash scripts/ci/check_capture_min.sh`
+- Alias gate: `bash scripts/ci/check_m0_native_surface.sh`
 - Trace notes: [`tests/README.md`](tests/README.md)
 
 ## What It Demonstrates
@@ -20,6 +22,7 @@ This example keeps the reducer intentionally small while proving the same `std.w
 - One reducer packaged for desktop, iOS, and Android
 - Target-specific capability contracts instead of fake feature parity
 - Deterministic replay of both positive and negative native outcomes
+- Deterministic replay of blob quota and notification cancel outcomes
 
 ## Run With Released Tools
 
@@ -62,3 +65,5 @@ PATH="<workspace>/x07/target/debug:<workspace>/x07-wasm-backend/target/debug:<wo
 - Android profile: [`arch/device/profiles/device_android_dev.json`](arch/device/profiles/device_android_dev.json)
 - Success replay: [`tests/web_ui/m0_success.trace.json`](tests/web_ui/m0_success.trace.json)
 - Negative replay: [`tests/web_ui/m0_negative.trace.json`](tests/web_ui/m0_negative.trace.json)
+- Blob quota replay: [`tests/web_ui/m0_blob_quota.trace.json`](tests/web_ui/m0_blob_quota.trace.json)
+- Notification cancel replay: [`tests/web_ui/m0_notification_cancel.trace.json`](tests/web_ui/m0_notification_cancel.trace.json)

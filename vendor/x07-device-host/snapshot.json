@@ -57,8 +57,8 @@
       "sha256": "fb68debc1b1acf8ec55dc0d5e5495e1dedd0bd6b61f304bee61613eeb2bd9b92"
     },
     "mobile/android/template/gradlew.bat": {
-      "bytes_len": 2896,
-      "sha256": "fedad02c18e266ec094995a5751b7fe1eb6e74f66bf75db64fae2e50eb22c234"
+      "bytes_len": 2803,
+      "sha256": "9ca26d733ada3a45f27b2151288f54e75c9f95b287d1f82ef942ec5cc2d4f006"
     },
     "mobile/android/template/settings.gradle.kts": {
       "bytes_len": 303,
@@ -105,7 +105,7 @@
       "sha256": "254f54e73c2c3afea1b7b29aabded8fcd64fbe5f4f9f7fc07757b0d62a1272f0"
     }
   },
-  "git_sha": "a14e31b43bff0a7a80e7094bd15e80cba831f8fb",
+  "git_sha": "bccc24762b6b18cbab496a344e55eacca45518be",
   "host_abi_hash": "73b1e059957cf792c174defe655141ce39ca8978f84cad3088ce7bdc148e3061",
-  "source": "workspace"
+  "source": "https://github.com/x07lang/x07-device-host.git"
 }

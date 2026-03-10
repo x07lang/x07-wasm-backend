@@ -22,6 +22,8 @@ rm -rf "${OUT_DIR}" "${REPORT_DIR}"
 mkdir -p "${OUT_DIR}" "${REPORT_DIR}"
 
 WEB_UI_CASES=(
+  "${TRACE_DIR}/m0_blob_quota.trace.json"
+  "${TRACE_DIR}/m0_notification_cancel.trace.json"
   "${TRACE_DIR}/m0_success.trace.json"
   "${TRACE_DIR}/m0_negative.trace.json"
 )
