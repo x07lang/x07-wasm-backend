@@ -36,6 +36,15 @@ Run the proving gate:
 bash scripts/ci/check_capture_min.sh
 ```
 
+Compile the generated Android project:
+
+```sh
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+./dist/m0_capture/device_android_dev_package/android_project/gradlew \
+  -p ./dist/m0_capture/device_android_dev_package/android_project \
+  assembleDebug
+```
+
 ## Run From The Workspace
 
 ```sh

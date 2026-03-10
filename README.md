@@ -66,6 +66,13 @@ x07-wasm device package --bundle dist/device_ios_dev_bundle --target ios --out-d
 
 Start from [`examples/x07_capture_min`](examples/x07_capture_min) for the M0 device bundle/profile layout and pair it with the reducer patterns in [`x07-web-ui/examples/web_ui_form`](../x07-web-ui/examples/web_ui_form). That combination is the current reference path for a consumer-owned web-ui/device app.
 
+Generated Android projects now include a pinned Gradle wrapper (`./gradlew`). Build them with a supported JDK (17 or 21); on a machine with Android Studio installed, the bundled JBR is a valid `JAVA_HOME`:
+
+```sh
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+./gradlew assembleDebug
+```
+
 Device profiles now keep runtime capabilities and telemetry transport settings in standalone sidecar contracts. A validated bundle embeds:
 
 - `profile/device.profile.json`

@@ -82,6 +82,17 @@ pub(crate) fn write_android_project(
             ))
         })?;
 
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt as _;
+
+        let gradlew_path = dst_project_dir.join("gradlew");
+        if let Ok(mut perms) = std::fs::metadata(&gradlew_path).map(|m| m.permissions()) {
+            perms.set_mode(0o755);
+            let _ = std::fs::set_permissions(&gradlew_path, perms);
+        }
+    }
+
     let x07_dir = dst_project_dir
         .join("app")
         .join("src")

@@ -13,6 +13,9 @@ fn main() {
     let ios_files = collect_files(&ios_root).expect("collect iOS template files");
     let android_files = collect_files(&android_root).expect("collect Android template files");
 
+    println!("cargo:rerun-if-changed={}", ios_root.display());
+    println!("cargo:rerun-if-changed={}", android_root.display());
+
     for rel in ios_files.iter() {
         println!("cargo:rerun-if-changed={}", ios_root.join(rel).display());
     }

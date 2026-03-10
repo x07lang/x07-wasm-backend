@@ -23,6 +23,8 @@ Generate an Android project:
 x07-wasm device package --bundle dist/device --target android --out-dir dist/device_package_android --json
 ```
 
+Generated Android projects include a pinned Gradle wrapper. Compile them with `./gradlew` on a supported JDK (17 or 21).
+
 Generate a deterministic regression fixture set from a captured device incident:
 
 ```sh
