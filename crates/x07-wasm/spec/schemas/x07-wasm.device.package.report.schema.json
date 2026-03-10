@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-wasm.device.package.report.schema.json",
-  "title": "x07.wasm.device.package.report@0.1.0",
+  "title": "x07.wasm.device.package.report@0.2.0",
   "description": "Machine-readable report emitted by `x07-wasm device package`.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "command", "ok", "exit_code", "diagnostics", "meta", "result"],
   "properties": {
-    "schema_version": { "const": "x07.wasm.device.package.report@0.1.0" },
+    "schema_version": { "const": "x07.wasm.device.package.report@0.2.0" },
     "command": { "const": "x07-wasm.device.package" },
     "ok": { "type": "boolean" },
     "exit_code": { "type": "integer", "minimum": 0, "maximum": 255 },
@@ -98,19 +98,135 @@
         }
       ]
     },
+    "readiness_issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "field"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Z][A-Z0-9_]+$" },
+        "message": { "type": "string", "minLength": 1, "maxLength": 4096 },
+        "field": {
+          "oneOf": [
+            { "type": "string", "minLength": 1, "maxLength": 512 },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "release_readiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "warnings", "errors"],
+      "properties": {
+        "status": { "type": "string", "enum": ["ok", "warning", "error"] },
+        "warnings": { "type": "array", "items": { "$ref": "#/$defs/readiness_issue" }, "default": [] },
+        "errors": { "type": "array", "items": { "$ref": "#/$defs/readiness_issue" }, "default": [] }
+      }
+    },
+    "blob_store_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "max_total_bytes", "max_item_bytes"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "max_total_bytes": { "type": "integer", "minimum": 0 },
+        "max_item_bytes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "capabilities_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "camera_photo",
+        "files_pick",
+        "files_accept_defaults",
+        "blob_store",
+        "location_foreground",
+        "notifications_local",
+        "notifications_push",
+        "network_allow_hosts"
+      ],
+      "properties": {
+        "camera_photo": { "type": "boolean" },
+        "files_pick": { "type": "boolean" },
+        "files_accept_defaults": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "blob_store": { "$ref": "#/$defs/blob_store_summary" },
+        "location_foreground": { "type": "boolean" },
+        "notifications_local": { "type": "boolean" },
+        "notifications_push": { "type": "boolean" },
+        "network_allow_hosts": { "type": "array", "items": { "type": "string" }, "default": [] }
+      }
+    },
+    "native_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_kind",
+        "provider_kind",
+        "bundle_manifest_sha256",
+        "package_manifest_sha256",
+        "capabilities",
+        "permission_declarations",
+        "telemetry_classes"
+      ],
+      "properties": {
+        "target_kind": { "type": "string", "enum": ["desktop", "ios", "android"] },
+        "provider_kind": {
+          "oneOf": [
+            { "type": "string", "minLength": 1, "maxLength": 128 },
+            { "type": "null" }
+          ]
+        },
+        "bundle_manifest_sha256": {
+          "oneOf": [
+            { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+            { "type": "null" }
+          ]
+        },
+        "package_manifest_sha256": {
+          "oneOf": [
+            { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+            { "type": "null" }
+          ]
+        },
+        "capabilities": { "$ref": "#/$defs/capabilities_summary" },
+        "permission_declarations": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "telemetry_classes": { "type": "array", "items": { "type": "string" }, "default": [] }
+      }
+    },
     "result": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["profile", "target", "bundle_dir", "out_dir", "package_manifest", "package"],
+      "required": [
+        "profile",
+        "target",
+        "bundle_dir",
+        "out_dir",
+        "package_manifest",
+        "package",
+        "native_summary",
+        "release_readiness"
+      ],
       "properties": {
         "profile": { "$ref": "#/$defs/profile_ref" },
         "target": { "type": "string", "enum": ["desktop", "ios", "android"] },
         "bundle_dir": { "type": "string", "minLength": 1, "maxLength": 4096 },
         "out_dir": { "type": "string", "minLength": 1, "maxLength": 4096 },
         "package_manifest": { "$ref": "#/$defs/file_digest" },
-        "package": { "$ref": "#/$defs/package" }
+        "package": { "$ref": "#/$defs/package" },
+        "native_summary": {
+          "oneOf": [
+            { "$ref": "#/$defs/native_summary" },
+            { "type": "null" }
+          ]
+        },
+        "release_readiness": {
+          "oneOf": [
+            { "$ref": "#/$defs/release_readiness" },
+            { "type": "null" }
+          ]
+        }
       }
     }
   }
 }
-

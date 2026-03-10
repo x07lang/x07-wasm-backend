@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-wasm.device.regress.from_incident.report.schema.json",
-  "title": "x07.wasm.device.regress.from_incident.report@0.1.0",
+  "title": "x07.wasm.device.regress.from_incident.report@0.2.0",
   "description": "Machine-readable report for x07-wasm device regress from-incident.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "command", "ok", "exit_code", "diagnostics", "meta", "result"],
   "properties": {
-    "schema_version": { "const": "x07.wasm.device.regress.from_incident.report@0.1.0" },
+    "schema_version": { "const": "x07.wasm.device.regress.from_incident.report@0.2.0" },
     "command": { "const": "x07-wasm.device.regress.from-incident" },
     "ok": { "type": "boolean" },
     "exit_code": { "type": "integer", "minimum": 0, "maximum": 255 },
@@ -65,19 +65,103 @@
         "uses_process": { "type": "boolean" }
       }
     },
+    "native_replay_prelude_step": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["kind"],
+      "properties": {
+        "kind": { "type": "string", "minLength": 1, "maxLength": 128 }
+      }
+    },
+    "native_replay_sequence_step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["request_id", "op", "result"],
+      "properties": {
+        "request_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "op": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "event_class": {
+          "oneOf": [
+            { "type": "string", "minLength": 1, "maxLength": 128 },
+            { "type": "null" }
+          ]
+        },
+        "result": { "type": "object", "additionalProperties": true }
+      }
+    },
+    "native_replay_hints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["host_target", "prelude", "native_sequence"],
+      "properties": {
+        "host_target": { "type": "string", "enum": ["desktop", "ios", "android"] },
+        "prelude": { "type": "array", "items": { "$ref": "#/$defs/native_replay_prelude_step" }, "default": [] },
+        "native_sequence": { "type": "array", "items": { "$ref": "#/$defs/native_replay_sequence_step" }, "default": [] }
+      }
+    },
+    "invariant_evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requested", "status"],
+      "properties": {
+        "requested": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "status": { "type": "string", "enum": ["ok", "not_requested"] }
+      }
+    },
     "result": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["incident_dir", "out_dir", "name", "dry_run", "generated"],
+      "required": [
+        "incident_dir",
+        "out_dir",
+        "name",
+        "dry_run",
+        "generated",
+        "generated_trace_artifact_refs",
+        "generated_report_artifact_refs",
+        "replay_target_kind",
+        "replay_mode",
+        "replay_synthesis_status",
+        "native_replay_hints",
+        "invariant_evaluation"
+      ],
       "properties": {
         "incident_dir": { "type": "string", "minLength": 1, "maxLength": 4096 },
         "out_dir": { "type": "string", "minLength": 1, "maxLength": 4096 },
         "name": { "type": "string", "minLength": 1, "maxLength": 128 },
         "dry_run": { "type": "boolean" },
-        "generated": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/file_digest" },
-          "default": []
+        "generated": { "type": "array", "items": { "$ref": "#/$defs/file_digest" }, "default": [] },
+        "generated_trace_artifact_refs": { "type": "array", "items": { "$ref": "#/$defs/file_digest" }, "default": [] },
+        "generated_report_artifact_refs": { "type": "array", "items": { "$ref": "#/$defs/file_digest" }, "default": [] },
+        "replay_target_kind": {
+          "oneOf": [
+            { "type": "string", "enum": ["desktop", "ios", "android"] },
+            { "type": "null" }
+          ]
+        },
+        "replay_mode": {
+          "oneOf": [
+            { "type": "string", "minLength": 1, "maxLength": 128 },
+            { "type": "null" }
+          ]
+        },
+        "replay_synthesis_status": {
+          "oneOf": [
+            { "type": "string", "enum": ["validated", "generated"] },
+            { "type": "null" }
+          ]
+        },
+        "native_replay_hints": {
+          "oneOf": [
+            { "$ref": "#/$defs/native_replay_hints" },
+            { "type": "null" }
+          ]
+        },
+        "invariant_evaluation": {
+          "oneOf": [
+            { "$ref": "#/$defs/invariant_evaluation" },
+            { "type": "null" }
+          ]
         }
       }
     }

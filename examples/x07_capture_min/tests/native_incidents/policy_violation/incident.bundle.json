@@ -1,0 +1,22 @@
+{
+  "schema_version": "lp.incident.bundle@0.2.0",
+  "incident_id": "lpinc_policy_violation_1",
+  "meta": {
+    "native_classification": "native_policy_violation",
+    "native_context": {
+      "platform": "ios",
+      "lifecycle_state": "foreground",
+      "connectivity_state": "online",
+      "breadcrumbs": [
+        {
+          "ord": 0,
+          "event_class": "policy.violation",
+          "op": "files.pick",
+          "status": "denied",
+          "request_id": "files_1",
+          "reason": "unsupported_accept_type"
+        }
+      ]
+    }
+  }
+}

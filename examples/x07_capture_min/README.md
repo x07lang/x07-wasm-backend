@@ -11,10 +11,12 @@ This example keeps the reducer intentionally small while proving the same `std.w
 - foreground location reads
 - local notification schedule, cancel, and `notification.opened`
 - target-specific device capabilities and telemetry sidecars
+- strict-M1 native incident bundle -> replay synthesis fixtures
 
 - CI gate: `bash scripts/ci/check_capture_min.sh`
 - Alias gate: `bash scripts/ci/check_m0_native_surface.sh`
 - Trace notes: [`tests/README.md`](tests/README.md)
+- Native incident fixtures: [`tests/native_incidents/README.md`](tests/native_incidents/README.md)
 
 ## What It Demonstrates
 
@@ -23,6 +25,7 @@ This example keeps the reducer intentionally small while proving the same `std.w
 - Target-specific capability contracts instead of fake feature parity
 - Deterministic replay of both positive and negative native outcomes
 - Deterministic replay of blob quota and notification cancel outcomes
+- Deterministic synthesis of strict-M1 native replay fixtures from platform incident bundles
 
 ## Run With Released Tools
 
@@ -67,3 +70,4 @@ PATH="<workspace>/x07/target/debug:<workspace>/x07-wasm-backend/target/debug:<wo
 - Negative replay: [`tests/web_ui/m0_negative.trace.json`](tests/web_ui/m0_negative.trace.json)
 - Blob quota replay: [`tests/web_ui/m0_blob_quota.trace.json`](tests/web_ui/m0_blob_quota.trace.json)
 - Notification cancel replay: [`tests/web_ui/m0_notification_cancel.trace.json`](tests/web_ui/m0_notification_cancel.trace.json)
+- Native incident fixtures: [`tests/native_incidents/`](tests/native_incidents/)

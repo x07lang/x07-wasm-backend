@@ -6,6 +6,10 @@ use serde_json::{json, Value};
 use crate::cli::{DeviceVerifyArgs, MachineArgs, Scope};
 use crate::device::contracts::{DeviceBundleFileDigest, DeviceBundleManifestDoc};
 use crate::device::host_abi;
+use crate::device::native_surface::{
+    derive_native_surface, DeriveNativeSurfaceArgs, ReadinessIssue,
+};
+use crate::device::sidecars::load_bundle_sidecars;
 use crate::diag::{Diagnostic, Severity, Stage};
 use crate::report;
 use crate::schema::SchemaStore;
@@ -136,6 +140,8 @@ pub fn cmd_device_verify(
     };
     let mut bundle_digest_ok = false;
     let mut host_abi_hash_ok = false;
+    let mut native_summary = Value::Null;
+    let mut release_readiness = Value::Null;
 
     if let Some(doc) = doc.as_ref() {
         let _ = (
@@ -240,13 +246,46 @@ pub fn cmd_device_verify(
                 .insert("got_bundle_digest".to_string(), json!(got_bundle_digest));
             diagnostics.push(d);
         }
+
+        if stats.missing_files == 0 {
+            if let Some(bundle_sidecars) =
+                load_bundle_sidecars(&store, &bundle_dir, doc, &mut meta, &mut diagnostics)
+            {
+                let mut extra_errors = Vec::new();
+                if !bundle_digest_ok {
+                    extra_errors.push(ReadinessIssue::new(
+                        "X07WASM_DEVICE_NATIVE_BUNDLE_DIGEST_MISMATCH",
+                        "bundle manifest digest does not match the sealed bundle contents",
+                        Some("/bundle_digest"),
+                    ));
+                }
+                if !host_abi_hash_ok {
+                    extra_errors.push(ReadinessIssue::new(
+                        "X07WASM_DEVICE_NATIVE_HOST_ABI_HASH_MISMATCH",
+                        "bundle host ABI hash does not match the pinned host ABI",
+                        Some("/host/host_abi_hash"),
+                    ));
+                }
+                let derived = derive_native_surface(DeriveNativeSurfaceArgs {
+                    target_kind: &doc.target,
+                    bundle_manifest_sha256: Some(&manifest_digest.sha256),
+                    package_manifest_sha256: None,
+                    capabilities_doc: &bundle_sidecars.capabilities.doc,
+                    telemetry_profile_doc: &bundle_sidecars.telemetry_profile.doc,
+                    extra_warnings: Vec::new(),
+                    extra_errors,
+                });
+                native_summary = json!(derived.native_summary);
+                release_readiness = json!(derived.release_readiness);
+            }
+        }
     }
 
     let ok = diagnostics.iter().all(|d| d.severity != Severity::Error);
     let exit_code = report::exit_code::exit_code_for_diagnostics(&diagnostics);
 
     let report_doc = json!({
-      "schema_version": "x07.wasm.device.verify.report@0.1.0",
+      "schema_version": "x07.wasm.device.verify.report@0.2.0",
       "command": "x07-wasm.device.verify",
       "ok": ok,
       "exit_code": exit_code,
@@ -260,6 +299,8 @@ pub fn cmd_device_verify(
         "digest_mismatches": stats.digest_mismatches,
         "bundle_digest_ok": bundle_digest_ok,
         "host_abi_hash_ok": host_abi_hash_ok,
+        "native_summary": native_summary,
+        "release_readiness": release_readiness,
       }
     });
 
@@ -505,13 +546,25 @@ mod tests {
                 .pointer("/meta/inputs")
                 .and_then(Value::as_array)
                 .map(Vec::len),
-            Some(1)
+            Some(3)
         );
         assert_eq!(
             report_doc
                 .pointer("/meta/inputs/0/path")
                 .and_then(Value::as_str),
             Some(expected_manifest_path.as_str())
+        );
+        assert_eq!(
+            report_doc
+                .pointer("/result/native_summary/target_kind")
+                .and_then(Value::as_str),
+            Some("desktop")
+        );
+        assert_eq!(
+            report_doc
+                .pointer("/result/release_readiness/status")
+                .and_then(Value::as_str),
+            Some("ok")
         );
 
         let _ = std::fs::remove_dir_all(&tmp);

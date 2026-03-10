@@ -1,0 +1,22 @@
+{
+  "kind": "x07.device.native_replay_fixture",
+  "incident_id": "lpinc_host_webview_crash_1",
+  "regression_id": "lprgr_host_webview_crash_1",
+  "classification": "native_host_crash",
+  "host_target": "android",
+  "prelude": [
+    { "kind": "lifecycle.foreground" },
+    { "kind": "connectivity.online" }
+  ],
+  "native_sequence": [
+    {
+      "request_id": "host_1",
+      "op": "webview.load",
+      "result": {
+        "status": "crashed"
+      },
+      "event_class": "host.webview_crash"
+    }
+  ],
+  "requested_invariants": ["device.trace.replay"]
+}

@@ -165,12 +165,12 @@ pub fn build_specrows_doc() -> Value {
         ["device-index-validate","about","Alias for `x07-wasm device index validate`. Validate device profile registry and emit x07.wasm.device.index.validate.report@0.1.0."],
         ["device-index-validate","opt","","--index","index","PATH","Path to arch/device/index.x07device.json.",{ "default": "arch/device/index.x07device.json" }],
 
-        ["device-package","about","Alias for `x07-wasm device package`. Package a device bundle into a target payload (desktop app bundle or iOS/Android project) and emit x07.wasm.device.package.report@0.1.0."],
+        ["device-package","about","Alias for `x07-wasm device package`. Package a device bundle into a target payload (desktop app bundle or iOS/Android project) and emit x07.wasm.device.package.report@0.2.0."],
         ["device-package","opt","","--bundle","bundle.dir","PATH","Directory containing the device bundle.",{ "default": "dist/device" }],
         ["device-package","opt","","--out-dir","out.dir","PATH","Output directory for the packaged payload + package.manifest.json.",{ "default": "dist/device_package" }],
         ["device-package","opt","","--target","target","STR","Device target (`desktop`, `ios`, `android`).",{ "default": "desktop" }],
 
-        ["device-regress-from-incident","about","Alias for `x07-wasm device regress from-incident`. Convert a captured device incident into deterministic regression fixtures and emit x07.wasm.device.regress.from_incident.report@0.1.0."],
+        ["device-regress-from-incident","about","Alias for `x07-wasm device regress from-incident`. Convert a captured device incident into deterministic regression fixtures and emit x07.wasm.device.regress.from_incident.report@0.2.0."],
         ["device-regress-from-incident","flag","","--dry-run","dry.run","Do not write files; validate and emit report only."],
         ["device-regress-from-incident","flag","","--strict","strict","Treat warnings as errors (nonzero exit on any warning)."],
         ["device-regress-from-incident","opt","","--name","name","STR","Base name for generated case files.",{ "default": "device_incident" }],
@@ -199,7 +199,7 @@ pub fn build_specrows_doc() -> Value {
         ["device-run","opt","","--bundle","bundle.dir","PATH","Directory containing the device bundle.",{ "default": "dist/device" }],
         ["device-run","opt","","--target","target","STR","Device target (currently only `desktop` is supported).",{ "default": "desktop" }],
 
-        ["device-verify","about","Alias for `x07-wasm device verify`. Verify a device bundle against its manifest + pinned host ABI and emit x07.wasm.device.verify.report@0.1.0."],
+        ["device-verify","about","Alias for `x07-wasm device verify`. Verify a device bundle against its manifest + pinned host ABI and emit x07.wasm.device.verify.report@0.2.0."],
         ["device-verify","opt","","--dir","dir","PATH","Directory containing the device bundle.",{ "default": "dist/device" }],
 
         ["doctor","about","Check wasm toolchain prerequisites and emit a machine report."],

@@ -3,6 +3,7 @@ pub(crate) mod contracts;
 pub(crate) mod host_abi;
 pub mod index_validate;
 pub(crate) mod mobile_templates;
+pub(crate) mod native_surface;
 pub mod package;
 pub(crate) mod package_android;
 pub(crate) mod package_ios;

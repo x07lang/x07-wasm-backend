@@ -108,6 +108,92 @@ print("ok: no template tokens under", root)
 PY
 }
 
+check_device_verify_report() {
+  local report_path="$1"
+  local want_target="$2"
+
+  "$PYTHON" - "$report_path" "$want_target" <<'PY'
+import json
+import pathlib
+import sys
+
+report_path = pathlib.Path(sys.argv[1])
+want_target = sys.argv[2]
+doc = json.loads(report_path.read_text(encoding="utf-8"))
+
+if doc.get("schema_version") != "x07.wasm.device.verify.report@0.2.0":
+    raise SystemExit(f"{report_path}: bad schema_version {doc.get('schema_version')!r}")
+
+summary = doc.get("result", {}).get("native_summary")
+if not isinstance(summary, dict):
+    raise SystemExit(f"{report_path}: missing native_summary")
+if summary.get("target_kind") != want_target:
+    raise SystemExit(f"{report_path}: bad target_kind {summary.get('target_kind')!r}")
+if summary.get("package_manifest_sha256") is not None:
+    raise SystemExit(f"{report_path}: verify report should not carry package_manifest_sha256 yet")
+
+want_permissions = ["camera", "files_pick", "location_foreground", "notifications_local"]
+if summary.get("permission_declarations") != want_permissions:
+    raise SystemExit(
+        f"{report_path}: bad permission_declarations: want={want_permissions!r}, got={summary.get('permission_declarations')!r}"
+    )
+
+classes = summary.get("telemetry_classes")
+if not isinstance(classes, list) or len(classes) != 7:
+    raise SystemExit(f"{report_path}: bad telemetry_classes {classes!r}")
+
+readiness = doc.get("result", {}).get("release_readiness")
+if readiness != {"status": "ok", "warnings": [], "errors": []}:
+    raise SystemExit(f"{report_path}: unexpected release_readiness {readiness!r}")
+
+print("ok:", report_path)
+PY
+}
+
+check_device_package_report() {
+  local report_path="$1"
+  local want_target="$2"
+
+  "$PYTHON" - "$report_path" "$want_target" <<'PY'
+import json
+import pathlib
+import sys
+
+report_path = pathlib.Path(sys.argv[1])
+want_target = sys.argv[2]
+doc = json.loads(report_path.read_text(encoding="utf-8"))
+
+if doc.get("schema_version") != "x07.wasm.device.package.report@0.2.0":
+    raise SystemExit(f"{report_path}: bad schema_version {doc.get('schema_version')!r}")
+
+result = doc.get("result", {})
+summary = result.get("native_summary")
+if not isinstance(summary, dict):
+    raise SystemExit(f"{report_path}: missing native_summary")
+if summary.get("target_kind") != want_target:
+    raise SystemExit(f"{report_path}: bad target_kind {summary.get('target_kind')!r}")
+
+package_manifest = result.get("package_manifest", {})
+package_sha = package_manifest.get("sha256")
+if summary.get("package_manifest_sha256") != package_sha:
+    raise SystemExit(
+        f"{report_path}: package manifest sha mismatch: want={package_sha!r}, got={summary.get('package_manifest_sha256')!r}"
+    )
+
+want_permissions = ["camera", "files_pick", "location_foreground", "notifications_local"]
+if summary.get("permission_declarations") != want_permissions:
+    raise SystemExit(
+        f"{report_path}: bad permission_declarations: want={want_permissions!r}, got={summary.get('permission_declarations')!r}"
+    )
+
+readiness = result.get("release_readiness")
+if readiness != {"status": "ok", "warnings": [], "errors": []}:
+    raise SystemExit(f"{report_path}: unexpected release_readiness {readiness!r}")
+
+print("ok:", report_path)
+PY
+}
+
 check_ios_project_bundle_embed() {
   local bundle_dir="$1"
   local project_dir="$2"
@@ -215,6 +301,10 @@ for key in required_keys:
     value = doc.get(key)
     if not isinstance(value, str) or not value.strip():
         raise SystemExit(f"{plist_path}: missing generated usage string for {key}")
+    if "CrewOps" in value:
+        raise SystemExit(f"{plist_path}: unexpected hard-coded CrewOps usage string for {key}")
+    if " uses " not in value and " imports " not in value:
+        raise SystemExit(f"{plist_path}: usage string for {key} did not look app-specific")
 
 print("ok: iOS native capability projection")
 PY
@@ -262,6 +352,7 @@ echo "==> phase10_examples: verify bundle (device_ios_dev)"
 x07-wasm device verify \
   --dir "${ios_bundle_dir}" \
   --json --report-out build/phase10_examples/device.verify.device_ios_dev.json --quiet-json
+check_device_verify_report build/phase10_examples/device.verify.device_ios_dev.json ios
 
 echo "==> phase10_examples: device package (ios)"
 ios_package_dir="${OUT_DIR}/device_ios_dev_package"
@@ -272,6 +363,7 @@ x07-wasm device package \
   --json --report-out build/phase10_examples/device.package.device_ios_dev.json --quiet-json
 test -f "${ios_package_dir}/package.manifest.json"
 test -d "${ios_package_dir}/ios_project"
+check_device_package_report build/phase10_examples/device.package.device_ios_dev.json ios
 check_device_package_manifest "${ios_package_dir}" "${ios_bundle_dir}/bundle.manifest.json" ios ios_project
 check_ios_project_bundle_embed "${ios_bundle_dir}" "${ios_package_dir}/ios_project"
 check_ios_native_projection "${ios_package_dir}/ios_project"
@@ -295,6 +387,7 @@ echo "==> phase10_examples: verify bundle (device_android_dev)"
 x07-wasm device verify \
   --dir "${android_bundle_dir}" \
   --json --report-out build/phase10_examples/device.verify.device_android_dev.json --quiet-json
+check_device_verify_report build/phase10_examples/device.verify.device_android_dev.json android
 
 echo "==> phase10_examples: device package (android)"
 android_package_dir="${OUT_DIR}/device_android_dev_package"
@@ -305,6 +398,7 @@ x07-wasm device package \
   --json --report-out build/phase10_examples/device.package.device_android_dev.json --quiet-json
 test -f "${android_package_dir}/package.manifest.json"
 test -d "${android_package_dir}/android_project"
+check_device_package_report build/phase10_examples/device.package.device_android_dev.json android
 check_device_package_manifest "${android_package_dir}" "${android_bundle_dir}/bundle.manifest.json" android android_project
 check_android_project_bundle_embed "${android_bundle_dir}" "${android_package_dir}/android_project"
 check_android_native_projection "${android_package_dir}/android_project"

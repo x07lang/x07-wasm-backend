@@ -1,0 +1,31 @@
+{
+  "kind": "x07.device.native_replay_fixture",
+  "incident_id": "lpinc_permission_blocked_1",
+  "regression_id": "lprgr_permission_blocked_1",
+  "classification": "native_permission_blocked",
+  "host_target": "ios",
+  "prelude": [
+    { "kind": "lifecycle.foreground" },
+    { "kind": "connectivity.offline" }
+  ],
+  "native_sequence": [
+    {
+      "request_id": "perm_1",
+      "op": "permissions.request",
+      "result": {
+        "status": "denied",
+        "permission": "location_foreground"
+      },
+      "event_class": "policy.violation"
+    },
+    {
+      "request_id": "loc_1",
+      "op": "location.get_current",
+      "result": {
+        "status": "denied"
+      },
+      "event_class": "policy.violation"
+    }
+  ],
+  "requested_invariants": ["device.trace.replay"]
+}

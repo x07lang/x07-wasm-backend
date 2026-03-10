@@ -1,0 +1,7 @@
+{
+  "schema_version": "lp.incident.bundle.meta.local@0.2.0",
+  "native_classification": "native_bridge_timeout",
+  "device_release": {
+    "target": "android"
+  }
+}

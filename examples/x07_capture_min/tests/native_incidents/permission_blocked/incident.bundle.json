@@ -1,0 +1,32 @@
+{
+  "schema_version": "lp.incident.bundle@0.2.0",
+  "incident_id": "lpinc_permission_blocked_1",
+  "meta": {
+    "native_classification": "native_permission_blocked",
+    "native_context": {
+      "platform": "ios",
+      "permission_state_snapshot": {
+        "location_foreground": "denied"
+      },
+      "lifecycle_state": "foreground",
+      "connectivity_state": "offline",
+      "breadcrumbs": [
+        {
+          "ord": 0,
+          "event_class": "policy.violation",
+          "op": "permissions.request",
+          "status": "denied",
+          "request_id": "perm_1",
+          "permission": "location_foreground"
+        },
+        {
+          "ord": 1,
+          "event_class": "policy.violation",
+          "op": "location.get_current",
+          "status": "denied",
+          "request_id": "loc_1"
+        }
+      ]
+    }
+  }
+}

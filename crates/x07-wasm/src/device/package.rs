@@ -9,6 +9,11 @@ use zip::write::FileOptions;
 
 use crate::cli::{DevicePackageArgs, MachineArgs, Scope};
 use crate::device::contracts::{DeviceBundleFileDigest, DeviceBundleManifestDoc, DeviceProfileDoc};
+use crate::device::native_surface::{
+    android_runtime_permissions, derive_native_surface, ios_usage_descriptions,
+    DeriveNativeSurfaceArgs,
+};
+use crate::device::sidecars::load_bundle_sidecars;
 use crate::device::{package_android, package_ios};
 use crate::diag::{Diagnostic, Severity, Stage};
 use crate::report;
@@ -408,15 +413,10 @@ pub fn cmd_device_package(
         );
     };
 
-    let capabilities_doc = match load_validated_bundle_json_file(
+    let bundle_sidecars = match load_bundle_sidecars(
         &store,
         &bundle_dir,
-        "capabilities.path",
-        &bundle_doc.capabilities,
-        "https://x07.io/spec/x07-device.capabilities.schema.json",
-        "X07WASM_DEVICE_CAPABILITIES_JSON_INVALID",
-        "X07WASM_DEVICE_CAPABILITIES_SCHEMA_INVALID",
-        "device capabilities",
+        &bundle_doc,
         &mut meta,
         &mut diagnostics,
     ) {
@@ -439,21 +439,9 @@ pub fn cmd_device_package(
             );
         }
     };
+    let capabilities_doc = bundle_sidecars.capabilities.doc.clone();
 
-    if load_validated_bundle_json_file(
-        &store,
-        &bundle_dir,
-        "telemetry_profile.path",
-        &bundle_doc.telemetry_profile,
-        "https://x07.io/spec/x07-device.telemetry.profile.schema.json",
-        "X07WASM_DEVICE_TELEMETRY_PROFILE_JSON_INVALID",
-        "X07WASM_DEVICE_TELEMETRY_PROFILE_SCHEMA_INVALID",
-        "device telemetry profile",
-        &mut meta,
-        &mut diagnostics,
-    )
-    .is_none()
-    {
+    if diagnostics.iter().any(|d| d.severity == Severity::Error) {
         return emit_report(
             &store,
             scope,
@@ -1090,7 +1078,17 @@ pub fn cmd_device_package(
     package_manifest_digest = file_digest_rel(&out_dir, &package_manifest_path)?;
     meta.outputs.push(package_manifest_digest.clone());
 
-    emit_report(
+    let native_surface = derive_native_surface(DeriveNativeSurfaceArgs {
+        target_kind: target,
+        bundle_manifest_sha256: Some(&bundle_manifest_sha256),
+        package_manifest_sha256: Some(&package_manifest_digest.sha256),
+        capabilities_doc: &capabilities_doc,
+        telemetry_profile_doc: &bundle_sidecars.telemetry_profile.doc,
+        extra_warnings: Vec::new(),
+        extra_errors: Vec::new(),
+    });
+
+    emit_report_with_native(
         &store,
         scope,
         machine,
@@ -1104,6 +1102,8 @@ pub fn cmd_device_package(
         &out_dir,
         package_manifest_digest,
         package_info,
+        json!(native_surface.native_summary),
+        json!(native_surface.release_readiness),
     )
 }
 
@@ -1176,86 +1176,6 @@ fn read_bundle_file(
     Some(bytes)
 }
 
-#[allow(clippy::too_many_arguments)]
-fn load_validated_bundle_json_file(
-    store: &SchemaStore,
-    bundle_dir: &Path,
-    field: &str,
-    file: &DeviceBundleFileDigest,
-    schema_id: &str,
-    json_invalid_code: &str,
-    schema_invalid_code: &str,
-    label: &str,
-    meta: &mut report::meta::ReportMeta,
-    diagnostics: &mut Vec<Diagnostic>,
-) -> Option<Value> {
-    let bytes = read_bundle_file(bundle_dir, field, file, meta, diagnostics)?;
-
-    let doc_json: Value = match serde_json::from_slice(&bytes) {
-        Ok(v) => v,
-        Err(err) => {
-            diagnostics.push(Diagnostic::new(
-                json_invalid_code,
-                Severity::Error,
-                Stage::Parse,
-                format!("{label} is not JSON: {err}"),
-            ));
-            return None;
-        }
-    };
-
-    let schema_diags = match store.validate(schema_id, &doc_json) {
-        Ok(v) => v,
-        Err(err) => {
-            diagnostics.push(Diagnostic::new(
-                "X07WASM_INTERNAL_SCHEMA_VALIDATE_FAILED",
-                Severity::Error,
-                Stage::Run,
-                format!("{err:#}"),
-            ));
-            return None;
-        }
-    };
-
-    if schema_diags.iter().any(|d| d.severity == Severity::Error) {
-        let mut d = Diagnostic::new(
-            schema_invalid_code,
-            Severity::Error,
-            Stage::Parse,
-            format!("{label} schema invalid"),
-        );
-        d.data.insert("errors".to_string(), json!(schema_diags));
-        diagnostics.push(d);
-        return None;
-    }
-
-    Some(doc_json)
-}
-
-fn capability_flag(doc: &Value, path: &[&str]) -> bool {
-    let mut current = doc;
-    for key in path {
-        let Some(next) = current.get(*key) else {
-            return false;
-        };
-        current = next;
-    }
-    current.as_bool().unwrap_or(false)
-}
-
-fn capability_accept_defaults(doc: &Value) -> Vec<String> {
-    doc.pointer("/device/files/accept_defaults")
-        .and_then(Value::as_array)
-        .map(|items| {
-            items
-                .iter()
-                .filter_map(Value::as_str)
-                .map(str::to_string)
-                .collect::<Vec<_>>()
-        })
-        .unwrap_or_default()
-}
-
 fn escape_xml_text(text: &str) -> String {
     text.replace('&', "&amp;")
         .replace('<', "&lt;")
@@ -1263,64 +1183,26 @@ fn escape_xml_text(text: &str) -> String {
 }
 
 fn ios_usage_strings_xml(display_name: &str, capabilities: &Value) -> String {
-    let mut entries: Vec<(&str, String)> = Vec::new();
-    let escaped_display_name = escape_xml_text(display_name);
-
-    if capability_flag(capabilities, &["device", "camera", "photo"]) {
-        entries.push((
-            "NSCameraUsageDescription",
-            format!("{escaped_display_name} uses the camera to capture CrewOps photos."),
-        ));
-    }
-    if capability_flag(capabilities, &["device", "files", "pick"]) {
-        entries.push((
-            "NSPhotoLibraryUsageDescription",
-            format!("{escaped_display_name} imports photos and documents into CrewOps records."),
-        ));
-    }
-    if capability_flag(capabilities, &["device", "location", "foreground"]) {
-        entries.push((
-            "NSLocationWhenInUseUsageDescription",
-            format!(
-                "{escaped_display_name} attaches your current site location to CrewOps activity."
-            ),
-        ));
-    }
-
+    let entries = ios_usage_descriptions(display_name, capabilities);
     if entries.is_empty() {
         return String::new();
     }
 
     entries
         .into_iter()
-        .map(|(key, value)| format!("  <key>{key}</key>\n  <string>{value}</string>"))
+        .map(|(key, value)| {
+            format!(
+                "  <key>{}</key>\n  <string>{}</string>",
+                escape_xml_text(&key),
+                escape_xml_text(&value)
+            )
+        })
         .collect::<Vec<_>>()
         .join("\n")
 }
 
 fn android_runtime_permissions_xml(capabilities: &Value) -> String {
-    let mut permissions: Vec<&str> = Vec::new();
-
-    if capability_flag(capabilities, &["device", "camera", "photo"]) {
-        permissions.push("android.permission.CAMERA");
-    }
-    if capability_flag(capabilities, &["device", "location", "foreground"]) {
-        permissions.push("android.permission.ACCESS_COARSE_LOCATION");
-        permissions.push("android.permission.ACCESS_FINE_LOCATION");
-    }
-    if capability_flag(capabilities, &["device", "notifications", "local"]) {
-        permissions.push("android.permission.POST_NOTIFICATIONS");
-    }
-    if capability_flag(capabilities, &["device", "files", "pick"]) {
-        let accept_defaults = capability_accept_defaults(capabilities);
-        if accept_defaults.iter().any(|value| value == "image/*") {
-            permissions.push("android.permission.READ_MEDIA_IMAGES");
-        }
-    }
-
-    permissions.sort_unstable();
-    permissions.dedup();
-    permissions
+    android_runtime_permissions(capabilities)
         .into_iter()
         .map(|name| format!("  <uses-permission android:name=\"{name}\" />"))
         .collect::<Vec<_>>()
@@ -1343,11 +1225,48 @@ fn emit_report(
     package_manifest: report::meta::FileDigest,
     package: Value,
 ) -> Result<u8> {
+    emit_report_with_native(
+        store,
+        scope,
+        machine,
+        started,
+        raw_argv,
+        target,
+        meta,
+        diagnostics,
+        profile,
+        bundle_dir,
+        out_dir,
+        package_manifest,
+        package,
+        Value::Null,
+        Value::Null,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn emit_report_with_native(
+    store: &SchemaStore,
+    scope: Scope,
+    machine: &MachineArgs,
+    started: std::time::Instant,
+    raw_argv: &[OsString],
+    target: &str,
+    meta: report::meta::ReportMeta,
+    diagnostics: Vec<Diagnostic>,
+    profile: Value,
+    bundle_dir: &Path,
+    out_dir: &Path,
+    package_manifest: report::meta::FileDigest,
+    package: Value,
+    native_summary: Value,
+    release_readiness: Value,
+) -> Result<u8> {
     let ok = diagnostics.iter().all(|d| d.severity != Severity::Error);
     let exit_code = report::exit_code::exit_code_for_diagnostics(&diagnostics);
 
     let report_doc = json!({
-      "schema_version": "x07.wasm.device.package.report@0.1.0",
+      "schema_version": "x07.wasm.device.package.report@0.2.0",
       "command": "x07-wasm.device.package",
       "ok": ok,
       "exit_code": exit_code,
@@ -1360,6 +1279,8 @@ fn emit_report(
         "out_dir": out_dir.display().to_string(),
         "package_manifest": package_manifest,
         "package": package,
+        "native_summary": native_summary,
+        "release_readiness": release_readiness,
       }
     });
 

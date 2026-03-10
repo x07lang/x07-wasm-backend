@@ -9,6 +9,12 @@ This phase does not require Xcode/Gradle in CI; it only generates projects.
 
 The generated project skeletons come from the vendored `x07-device-host` mobile templates, including the native OTLP telemetry bridge used by device release observability.
 
+Strict M1 extends the machine-readable side of this phase:
+
+- `x07-wasm device verify --json` emits `x07.wasm.device.verify.report@0.2.0` with `result.native_summary` and `result.release_readiness`
+- `x07-wasm device package --json` emits `x07.wasm.device.package.report@0.2.0` with the same normalized summary plus the sealed `package.manifest.json` digest
+- `x07-wasm device regress from-incident` emits `x07.wasm.device.regress.from_incident.report@0.2.0` and consumes platform incident directories (`incident.bundle.json`, optional incident meta files, and `regression.request.json`) to synthesize deterministic native replay fixtures
+
 ## CLI
 
 Generate an iOS project:
@@ -31,10 +37,18 @@ Generate a deterministic regression fixture set from a captured device incident:
 x07-wasm device regress from-incident .x07-wasm/incidents/device/<YYYY-MM-DD>/<id> --out-dir tests/regress --name device_incident --json
 ```
 
+For the strict-M1 platform loop, point the command at a platform incident directory containing `incident.bundle.json` and `regression.request.json`; the generated replay fixture is written as `<name>.native.replay.json`.
+
 ## CI gate
 
 ```sh
 bash scripts/ci/check_phase10.sh
+```
+
+Focused strict-M1 replay gate:
+
+```sh
+bash scripts/ci/check_phase10_native_regressions.sh
 ```
 
 The official M0 native-surface reference for this phase is [`examples/x07_capture_min`](../examples/x07_capture_min/README.md). [`examples/x07_field_notes`](../examples/x07_field_notes/README.md) remains the richer offline/mobile showcase.

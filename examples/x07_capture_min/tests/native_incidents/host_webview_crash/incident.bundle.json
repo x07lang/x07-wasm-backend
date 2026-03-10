@@ -1,0 +1,21 @@
+{
+  "schema_version": "lp.incident.bundle@0.2.0",
+  "incident_id": "lpinc_host_webview_crash_1",
+  "meta": {
+    "native_classification": "native_host_crash",
+    "native_context": {
+      "platform": "android",
+      "lifecycle_state": "foreground",
+      "connectivity_state": "online",
+      "breadcrumbs": [
+        {
+          "ord": 0,
+          "event_class": "host.webview_crash",
+          "op": "webview.load",
+          "status": "crashed",
+          "request_id": "host_1"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "schema_version": "lp.incident.bundle@0.2.0",
+  "incident_id": "lpinc_location_timeout_1",
+  "meta": {
+    "native_classification": "native_bridge_timeout",
+    "native_context": {
+      "platform": "android",
+      "lifecycle_state": "foreground",
+      "connectivity_state": "online",
+      "breadcrumbs": [
+        {
+          "ord": 0,
+          "event_class": "bridge.timing",
+          "op": "location.get_current",
+          "status": "timeout",
+          "request_id": "loc_timeout_1",
+          "timeout_ms": 5000
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "kind": "x07.device.native_replay_fixture",
+  "incident_id": "lpinc_location_timeout_1",
+  "regression_id": "lprgr_location_timeout_1",
+  "classification": "native_bridge_timeout",
+  "host_target": "android",
+  "prelude": [
+    { "kind": "lifecycle.foreground" },
+    { "kind": "connectivity.online" }
+  ],
+  "native_sequence": [
+    {
+      "request_id": "loc_timeout_1",
+      "op": "location.get_current",
+      "result": {
+        "status": "timeout",
+        "timeout_ms": 5000
+      },
+      "event_class": "bridge.timing"
+    }
+  ],
+  "requested_invariants": ["device.trace.replay"]
+}

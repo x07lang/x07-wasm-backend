@@ -1,0 +1,22 @@
+{
+  "schema_version": "lp.regression.request@0.2.0",
+  "regression_id": "lprgr_policy_violation_1",
+  "invariants": ["device.trace.replay"],
+  "native_replay_hints": {
+    "host_target": "ios",
+    "prelude": [
+      { "kind": "lifecycle.foreground" }
+    ],
+    "native_sequence": [
+      {
+        "request_id": "files_1",
+        "op": "files.pick",
+        "event_class": "policy.violation",
+        "result": {
+          "status": "denied",
+          "reason": "unsupported_accept_type"
+        }
+      }
+    ]
+  }
+}

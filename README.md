@@ -20,7 +20,7 @@ x07 wasm doctor --json
 Fallbacks:
 
 ```sh
-cargo install --locked x07-wasm --version 0.2.0
+cargo install --locked x07-wasm --version 0.2.1
 ```
 
 Use `cargo install --locked --git https://github.com/x07lang/x07-wasm-backend.git x07-wasm` only when you need unreleased development state from this repo.
@@ -88,6 +88,10 @@ The telemetry sidecar must now declare the standard device-observability event c
 - `reducer.timing`
 - `policy.violation`
 - `host.webview_crash`
+
+`x07-wasm device verify --json` and `x07-wasm device package --json` now emit the `@0.2.0` report line with a deterministic `result.native_summary` plus machine-readable `result.release_readiness` diagnostics.
+
+`x07-wasm device regress from-incident` now prefers platform incident directories containing `incident.bundle.json`, optional incident meta files, and `regression.request.json`; legacy `incident.json` inputs are still accepted when that is the only available incident format.
 
 ## Official showcase apps
 
@@ -160,6 +164,8 @@ Supported D-OSS command surface:
 - `x07-wasm device run` / `device package`
 - `x07-wasm device regress from-incident`
 - `x07-wasm device package --target ios` / `--target android`
+
+Strict-M1 native incident replay gate: `bash scripts/ci/check_phase10_native_regressions.sh`
 
 The packaged mobile templates are vendored from `x07-device-host/mobile/*` and refreshed through `scripts/vendor_x07_device_host_abi.py`; this repo no longer maintains a second editable copy of those templates.
 

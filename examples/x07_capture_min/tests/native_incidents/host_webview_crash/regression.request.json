@@ -1,0 +1,5 @@
+{
+  "schema_version": "lp.regression.request@0.2.0",
+  "regression_id": "lprgr_host_webview_crash_1",
+  "invariants": ["device.trace.replay"]
+}

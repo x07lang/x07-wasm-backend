@@ -1,0 +1,22 @@
+{
+  "kind": "x07.device.native_replay_fixture",
+  "incident_id": "lpinc_policy_violation_1",
+  "regression_id": "lprgr_policy_violation_1",
+  "classification": "native_policy_violation",
+  "host_target": "ios",
+  "prelude": [
+    { "kind": "lifecycle.foreground" }
+  ],
+  "native_sequence": [
+    {
+      "request_id": "files_1",
+      "op": "files.pick",
+      "result": {
+        "status": "denied",
+        "reason": "unsupported_accept_type"
+      },
+      "event_class": "policy.violation"
+    }
+  ],
+  "requested_invariants": ["device.trace.replay"]
+}

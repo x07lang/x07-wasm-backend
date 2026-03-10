@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use serde_json::{json, Value};
 
-use crate::device::contracts::DeviceProfileDoc;
+use crate::device::contracts::{DeviceBundleFileDigest, DeviceBundleManifestDoc, DeviceProfileDoc};
 use crate::diag::{Diagnostic, Severity, Stage};
 use crate::report;
 use crate::schema::SchemaStore;
@@ -29,8 +29,15 @@ pub(crate) struct DeviceProfileSidecars {
 }
 
 #[derive(Debug, Clone)]
+pub(crate) struct DeviceBundleSidecars {
+    pub(crate) capabilities: ValidatedJsonFile,
+    pub(crate) telemetry_profile: ValidatedJsonFile,
+}
+
+#[derive(Debug, Clone)]
 pub(crate) struct ValidatedJsonFile {
     pub(crate) path: PathBuf,
+    pub(crate) doc: Value,
 }
 
 struct JsonContractSpec<'a> {
@@ -81,6 +88,51 @@ pub(crate) fn load_profile_sidecars(
     })
 }
 
+pub(crate) fn load_bundle_sidecars(
+    store: &SchemaStore,
+    bundle_dir: &Path,
+    bundle_doc: &DeviceBundleManifestDoc,
+    meta: &mut report::meta::ReportMeta,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> Option<DeviceBundleSidecars> {
+    let capabilities_spec = JsonContractSpec {
+        schema_id: DEVICE_CAPABILITIES_SCHEMA_ID,
+        read_failed_code: "X07WASM_DEVICE_CAPABILITIES_READ_FAILED",
+        json_invalid_code: "X07WASM_DEVICE_CAPABILITIES_JSON_INVALID",
+        schema_invalid_code: "X07WASM_DEVICE_CAPABILITIES_SCHEMA_INVALID",
+        label: "device capabilities",
+    };
+    let capabilities = load_bundle_json_contract_file(
+        store,
+        bundle_dir,
+        "capabilities.path",
+        &bundle_doc.capabilities,
+        &capabilities_spec,
+        meta,
+        diagnostics,
+    )?;
+    let telemetry_spec = JsonContractSpec {
+        schema_id: DEVICE_TELEMETRY_PROFILE_SCHEMA_ID,
+        read_failed_code: "X07WASM_DEVICE_TELEMETRY_PROFILE_READ_FAILED",
+        json_invalid_code: "X07WASM_DEVICE_TELEMETRY_PROFILE_JSON_INVALID",
+        schema_invalid_code: "X07WASM_DEVICE_TELEMETRY_PROFILE_SCHEMA_INVALID",
+        label: "device telemetry profile",
+    };
+    let telemetry_profile = load_bundle_json_contract_file(
+        store,
+        bundle_dir,
+        "telemetry_profile.path",
+        &bundle_doc.telemetry_profile,
+        &telemetry_spec,
+        meta,
+        diagnostics,
+    )?;
+    Some(DeviceBundleSidecars {
+        capabilities,
+        telemetry_profile,
+    })
+}
+
 fn load_json_contract_file(
     store: &SchemaStore,
     path: &Path,
@@ -88,6 +140,57 @@ fn load_json_contract_file(
     meta: &mut report::meta::ReportMeta,
     diagnostics: &mut Vec<Diagnostic>,
 ) -> Option<ValidatedJsonFile> {
+    let bytes = read_and_track_json_file(path, spec, meta, diagnostics)?;
+    let doc_json = validate_json_contract_bytes(store, &bytes, spec, diagnostics, path)?;
+
+    Some(ValidatedJsonFile {
+        path: path.to_path_buf(),
+        doc: doc_json,
+    })
+}
+
+fn load_bundle_json_contract_file(
+    store: &SchemaStore,
+    bundle_dir: &Path,
+    field: &str,
+    file: &DeviceBundleFileDigest,
+    spec: &JsonContractSpec<'_>,
+    meta: &mut report::meta::ReportMeta,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> Option<ValidatedJsonFile> {
+    let full_path = match util::safe_join_under_dir(bundle_dir, &file.path) {
+        Ok(path) => path,
+        Err(err) => {
+            let mut d = Diagnostic::new(
+                "X07WASM_DEVICE_BUNDLE_PATH_UNSAFE",
+                Severity::Error,
+                Stage::Parse,
+                "unsafe bundle path".to_string(),
+            );
+            d.data.insert("field".to_string(), json!(field));
+            d.data.insert("path".to_string(), json!(err.rel));
+            d.data.insert("kind".to_string(), json!(err.kind));
+            d.data.insert("detail".to_string(), json!(err.detail));
+            diagnostics.push(d);
+            return None;
+        }
+    };
+
+    let bytes = read_and_track_bundle_file(&full_path, file, spec, meta, diagnostics)?;
+    let doc_json = validate_json_contract_bytes(store, &bytes, spec, diagnostics, &full_path)?;
+
+    Some(ValidatedJsonFile {
+        path: full_path,
+        doc: doc_json,
+    })
+}
+
+fn read_and_track_json_file(
+    path: &Path,
+    spec: &JsonContractSpec<'_>,
+    meta: &mut report::meta::ReportMeta,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> Option<Vec<u8>> {
     match util::file_digest(path) {
         Ok(d) => {
             meta.inputs.push(d);
@@ -103,8 +206,8 @@ fn load_json_contract_file(
         }
     }
 
-    let bytes = match std::fs::read(path) {
-        Ok(v) => v,
+    match std::fs::read(path) {
+        Ok(v) => Some(v),
         Err(err) => {
             diagnostics.push(Diagnostic::new(
                 spec.read_failed_code,
@@ -112,11 +215,72 @@ fn load_json_contract_file(
                 Stage::Parse,
                 format!("failed to read {} {}: {err}", spec.label, path.display()),
             ));
+            None
+        }
+    }
+}
+
+fn read_and_track_bundle_file(
+    full_path: &Path,
+    file: &DeviceBundleFileDigest,
+    spec: &JsonContractSpec<'_>,
+    meta: &mut report::meta::ReportMeta,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> Option<Vec<u8>> {
+    let bytes = match std::fs::read(full_path) {
+        Ok(v) => v,
+        Err(err) => {
+            diagnostics.push(Diagnostic::new(
+                spec.read_failed_code,
+                Severity::Error,
+                Stage::Parse,
+                format!(
+                    "failed to read {} {}: {err}",
+                    spec.label,
+                    full_path.display()
+                ),
+            ));
             return None;
         }
     };
 
-    let doc_json: Value = match serde_json::from_slice(&bytes) {
+    let got_sha = util::sha256_hex(&bytes);
+    let got_len = bytes.len() as u64;
+    meta.inputs.push(report::meta::FileDigest {
+        path: full_path.display().to_string(),
+        sha256: got_sha.clone(),
+        bytes_len: got_len,
+    });
+
+    if got_sha != file.sha256 || got_len != file.bytes_len {
+        let mut d = Diagnostic::new(
+            "X07WASM_DEVICE_BUNDLE_SHA256_MISMATCH",
+            Severity::Error,
+            Stage::Parse,
+            "bundle file digest mismatch".to_string(),
+        );
+        d.data.insert("path".to_string(), json!(file.path.clone()));
+        d.data
+            .insert("want_sha256".to_string(), json!(file.sha256.clone()));
+        d.data.insert("got_sha256".to_string(), json!(got_sha));
+        d.data
+            .insert("want_bytes_len".to_string(), json!(file.bytes_len));
+        d.data.insert("got_bytes_len".to_string(), json!(got_len));
+        diagnostics.push(d);
+        return None;
+    }
+
+    Some(bytes)
+}
+
+fn validate_json_contract_bytes(
+    store: &SchemaStore,
+    bytes: &[u8],
+    spec: &JsonContractSpec<'_>,
+    diagnostics: &mut Vec<Diagnostic>,
+    path: &Path,
+) -> Option<Value> {
+    let doc_json: Value = match serde_json::from_slice(bytes) {
         Ok(v) => v,
         Err(err) => {
             diagnostics.push(Diagnostic::new(
@@ -164,9 +328,7 @@ fn load_json_contract_file(
         return None;
     }
 
-    Some(ValidatedJsonFile {
-        path: path.to_path_buf(),
-    })
+    Some(doc_json)
 }
 
 fn validate_telemetry_profile_contract(

@@ -127,5 +127,8 @@ PY
 # Phase10 examples: iOS/Android project generation.
 bash "${ROOT_DIR}/scripts/ci/check_phase10_examples.sh"
 
+# Strict-M1 native incident -> replay fixtures.
+bash "${ROOT_DIR}/scripts/ci/check_phase10_native_regressions.sh"
+
 # Phase10 diagcode allowlist (Phase5..10).
 bash "${ROOT_DIR}/scripts/ci/check_phase10_diagcodes.sh"

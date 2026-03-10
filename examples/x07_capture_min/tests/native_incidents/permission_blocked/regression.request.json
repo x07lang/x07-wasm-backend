@@ -1,0 +1,31 @@
+{
+  "schema_version": "lp.regression.request@0.2.0",
+  "regression_id": "lprgr_permission_blocked_1",
+  "invariants": ["device.trace.replay"],
+  "native_replay_hints": {
+    "host_target": "ios",
+    "prelude": [
+      { "kind": "lifecycle.foreground" },
+      { "kind": "connectivity.offline" }
+    ],
+    "native_sequence": [
+      {
+        "request_id": "perm_1",
+        "op": "permissions.request",
+        "event_class": "policy.violation",
+        "result": {
+          "status": "denied",
+          "permission": "location_foreground"
+        }
+      },
+      {
+        "request_id": "loc_1",
+        "op": "location.get_current",
+        "event_class": "policy.violation",
+        "result": {
+          "status": "denied"
+        }
+      }
+    ]
+  }
+}
