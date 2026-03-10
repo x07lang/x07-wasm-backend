@@ -35,4 +35,4 @@ x07-wasm device regress from-incident .x07-wasm/incidents/device/<YYYY-MM-DD>/<i
 bash scripts/ci/check_phase10.sh
 ```
 
-The official mobile showcase for this surface is [`examples/x07_field_notes`](../examples/x07_field_notes/README.md).
+The official M0 native-surface reference for this phase is [`examples/x07_capture_min`](../examples/x07_capture_min/README.md). [`examples/x07_field_notes`](../examples/x07_field_notes/README.md) remains the richer offline/mobile showcase.

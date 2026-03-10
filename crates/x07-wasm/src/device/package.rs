@@ -408,7 +408,7 @@ pub fn cmd_device_package(
         );
     };
 
-    if !validate_bundle_json_file(
+    let capabilities_doc = match load_validated_bundle_json_file(
         &store,
         &bundle_dir,
         "capabilities.path",
@@ -420,24 +420,27 @@ pub fn cmd_device_package(
         &mut meta,
         &mut diagnostics,
     ) {
-        return emit_report(
-            &store,
-            scope,
-            machine,
-            started,
-            raw_argv,
-            target,
-            meta,
-            diagnostics,
-            profile_ref,
-            &bundle_dir,
-            &out_dir,
-            package_manifest_digest,
-            package_info,
-        );
-    }
+        Some(v) => v,
+        None => {
+            return emit_report(
+                &store,
+                scope,
+                machine,
+                started,
+                raw_argv,
+                target,
+                meta,
+                diagnostics,
+                profile_ref,
+                &bundle_dir,
+                &out_dir,
+                package_manifest_digest,
+                package_info,
+            );
+        }
+    };
 
-    if !validate_bundle_json_file(
+    if load_validated_bundle_json_file(
         &store,
         &bundle_dir,
         "telemetry_profile.path",
@@ -448,7 +451,9 @@ pub fn cmd_device_package(
         "device telemetry profile",
         &mut meta,
         &mut diagnostics,
-    ) {
+    )
+    .is_none()
+    {
         return emit_report(
             &store,
             scope,
@@ -893,6 +898,10 @@ pub fn cmd_device_package(
                 bundle_id: ios.bundle_id.clone(),
                 version: profile_doc.version.version.clone(),
                 build: profile_doc.version.build,
+                usage_strings_xml: ios_usage_strings_xml(
+                    &profile_doc.identity.display_name,
+                    &capabilities_doc,
+                ),
             };
             if let Err(d) = package_ios::write_ios_project(&bundle_dir, &payload_dir, tokens) {
                 diagnostics.push(*d);
@@ -977,6 +986,7 @@ pub fn cmd_device_package(
                 min_sdk: android.min_sdk,
                 version: profile_doc.version.version.clone(),
                 build: profile_doc.version.build,
+                runtime_permissions_xml: android_runtime_permissions_xml(&capabilities_doc),
             };
             if let Err(d) =
                 package_android::write_android_project(&bundle_dir, &payload_dir, tokens)
@@ -1167,7 +1177,7 @@ fn read_bundle_file(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn validate_bundle_json_file(
+fn load_validated_bundle_json_file(
     store: &SchemaStore,
     bundle_dir: &Path,
     field: &str,
@@ -1178,11 +1188,8 @@ fn validate_bundle_json_file(
     label: &str,
     meta: &mut report::meta::ReportMeta,
     diagnostics: &mut Vec<Diagnostic>,
-) -> bool {
-    let bytes = match read_bundle_file(bundle_dir, field, file, meta, diagnostics) {
-        Some(v) => v,
-        None => return false,
-    };
+) -> Option<Value> {
+    let bytes = read_bundle_file(bundle_dir, field, file, meta, diagnostics)?;
 
     let doc_json: Value = match serde_json::from_slice(&bytes) {
         Ok(v) => v,
@@ -1193,7 +1200,7 @@ fn validate_bundle_json_file(
                 Stage::Parse,
                 format!("{label} is not JSON: {err}"),
             ));
-            return false;
+            return None;
         }
     };
 
@@ -1206,7 +1213,7 @@ fn validate_bundle_json_file(
                 Stage::Run,
                 format!("{err:#}"),
             ));
-            return false;
+            return None;
         }
     };
 
@@ -1219,10 +1226,105 @@ fn validate_bundle_json_file(
         );
         d.data.insert("errors".to_string(), json!(schema_diags));
         diagnostics.push(d);
-        return false;
+        return None;
     }
 
-    true
+    Some(doc_json)
+}
+
+fn capability_flag(doc: &Value, path: &[&str]) -> bool {
+    let mut current = doc;
+    for key in path {
+        let Some(next) = current.get(*key) else {
+            return false;
+        };
+        current = next;
+    }
+    current.as_bool().unwrap_or(false)
+}
+
+fn capability_accept_defaults(doc: &Value) -> Vec<String> {
+    doc.pointer("/device/files/accept_defaults")
+        .and_then(Value::as_array)
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(Value::as_str)
+                .map(str::to_string)
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default()
+}
+
+fn escape_xml_text(text: &str) -> String {
+    text.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+}
+
+fn ios_usage_strings_xml(display_name: &str, capabilities: &Value) -> String {
+    let mut entries: Vec<(&str, String)> = Vec::new();
+    let escaped_display_name = escape_xml_text(display_name);
+
+    if capability_flag(capabilities, &["device", "camera", "photo"]) {
+        entries.push((
+            "NSCameraUsageDescription",
+            format!("{escaped_display_name} uses the camera to capture CrewOps photos."),
+        ));
+    }
+    if capability_flag(capabilities, &["device", "files", "pick"]) {
+        entries.push((
+            "NSPhotoLibraryUsageDescription",
+            format!("{escaped_display_name} imports photos and documents into CrewOps records."),
+        ));
+    }
+    if capability_flag(capabilities, &["device", "location", "foreground"]) {
+        entries.push((
+            "NSLocationWhenInUseUsageDescription",
+            format!(
+                "{escaped_display_name} attaches your current site location to CrewOps activity."
+            ),
+        ));
+    }
+
+    if entries.is_empty() {
+        return String::new();
+    }
+
+    entries
+        .into_iter()
+        .map(|(key, value)| format!("  <key>{key}</key>\n  <string>{value}</string>"))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn android_runtime_permissions_xml(capabilities: &Value) -> String {
+    let mut permissions: Vec<&str> = Vec::new();
+
+    if capability_flag(capabilities, &["device", "camera", "photo"]) {
+        permissions.push("android.permission.CAMERA");
+    }
+    if capability_flag(capabilities, &["device", "location", "foreground"]) {
+        permissions.push("android.permission.ACCESS_COARSE_LOCATION");
+        permissions.push("android.permission.ACCESS_FINE_LOCATION");
+    }
+    if capability_flag(capabilities, &["device", "notifications", "local"]) {
+        permissions.push("android.permission.POST_NOTIFICATIONS");
+    }
+    if capability_flag(capabilities, &["device", "files", "pick"]) {
+        let accept_defaults = capability_accept_defaults(capabilities);
+        if accept_defaults.iter().any(|value| value == "image/*") {
+            permissions.push("android.permission.READ_MEDIA_IMAGES");
+        }
+    }
+
+    permissions.sort_unstable();
+    permissions.dedup();
+    permissions
+        .into_iter()
+        .map(|name| format!("  <uses-permission android:name=\"{name}\" />"))
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 #[allow(clippy::too_many_arguments)]

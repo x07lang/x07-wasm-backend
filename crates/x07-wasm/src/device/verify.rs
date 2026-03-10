@@ -395,7 +395,7 @@ mod tests {
         let ui_bytes = b"not-a-real-wasm-module";
         let profile_bytes = br#"{"id":"device_dev","v":1}"#;
         let capabilities_bytes =
-            br#"{"schema_version":"x07.device.capabilities@0.1.0","network":{"mode":"deny_by_default","allow_hosts":[]},"device":{"clipboard":false,"local_kv":true,"notifications":false}}"#;
+            br#"{"schema_version":"x07.device.capabilities@0.2.0","network":{"mode":"deny_by_default","allow_hosts":[]},"device":{"camera":{"photo":true},"files":{"pick":true,"accept_defaults":["image/*"]},"blob_store":{"enabled":true,"max_total_bytes":67108864,"max_item_bytes":16777216},"location":{"foreground":true},"notifications":{"local":true,"push":false}}}"#;
         let telemetry_profile_bytes =
             br#"{"schema_version":"x07.device.telemetry.profile@0.1.0","transport":{"protocol":"http/protobuf","endpoint":"http://127.0.0.1:4318"},"event_classes":["app.lifecycle","app.http","runtime.error","bridge.timing","reducer.timing","policy.violation","host.webview_crash"]}"#;
         std::fs::write(bundle_dir.join("ui/reducer.wasm"), ui_bytes).expect("write reducer.wasm");

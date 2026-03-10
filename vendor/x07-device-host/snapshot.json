@@ -2,23 +2,23 @@
   "digests": {
     "arch/host_abi/host_abi.snapshot.json": {
       "bytes_len": 867,
-      "sha256": "e1a3b12fcc4b4e0eb4c00361a243bf91cd109df04599d65a326e300ae3a31ec0"
+      "sha256": "e756a6b676b8a90dd01d43501b206cb1d4b1062cb86642239254bd2da014649d"
     },
     "mobile/android/template/app/build.gradle.kts": {
       "bytes_len": 704,
       "sha256": "fec4a4f4fcb7059b4ac8adffe8663963f43e5e60da3ad8e80b63bfedf6b41b7d"
     },
     "mobile/android/template/app/src/main/AndroidManifest.xml": {
-      "bytes_len": 639,
-      "sha256": "9401ceba42abda9423b0708687fb78b88315984e7a8c7f947c9e9c7e5e4bcfb4"
+      "bytes_len": 677,
+      "sha256": "3dab8dfbd52362c868f2493ccee51272ed71ffd48c3aa13430c2a55bbfa6d228"
     },
     "mobile/android/template/app/src/main/assets/x07/app-host.mjs": {
-      "bytes_len": 52009,
-      "sha256": "da604345a59f2de0f6bd5d9377b25c3f1180c0e194696015bf4829fb4ede10c1"
+      "bytes_len": 79105,
+      "sha256": "7450be7c56cbd0e50cd7b6d97ba75d4275a7a6ac61abd56b8b95581cc9c49c87"
     },
     "mobile/android/template/app/src/main/assets/x07/bootstrap.js": {
-      "bytes_len": 5054,
-      "sha256": "61d067cfe77b98b63ec794b1520120504e5bb94b2aca156e8fc03646fcc9b805"
+      "bytes_len": 5123,
+      "sha256": "87291ea2577e6e0010e5de5ff100df7448518bab1c91e0661027eafb544e1248"
     },
     "mobile/android/template/app/src/main/assets/x07/index.html": {
       "bytes_len": 894,
@@ -29,8 +29,8 @@
       "sha256": "254f54e73c2c3afea1b7b29aabded8fcd64fbe5f4f9f7fc07757b0d62a1272f0"
     },
     "mobile/android/template/app/src/main/java/org/x07/deviceapp/MainActivity.kt": {
-      "bytes_len": 18145,
-      "sha256": "01040c0142c439249237a5473510bb205fe9ff4fefb43de84eeded6a607af74d"
+      "bytes_len": 53286,
+      "sha256": "8358125106edab7d85105b2af01427d71f308f6c09f231888e640b6629a18821"
     },
     "mobile/android/template/app/src/main/res/values/strings.xml": {
       "bytes_len": 121,
@@ -57,8 +57,8 @@
       "sha256": "041bfb524d0d56633458a92b58234928f93a690537e3afec2f98a12c1ec1f4f1"
     },
     "mobile/ios/template/X07DeviceApp/Info.plist": {
-      "bytes_len": 639,
-      "sha256": "d743d979c9a56fffd875a9ddff23c0c6d5e51fc97014dda294637b135808eaee"
+      "bytes_len": 667,
+      "sha256": "e41ad41851eca4e78ffd86362f0e853bdfcf1cdb8442fa99ac160b8f3262a3fa"
     },
     "mobile/ios/template/X07DeviceApp/X07DeviceAppApp.swift": {
       "bytes_len": 154,
@@ -69,16 +69,16 @@
       "sha256": "759e43560d27a0757f681eb660c30b83925c25d852fc5111a148bd91f7dfbc09"
     },
     "mobile/ios/template/X07DeviceApp/X07WebView.swift": {
-      "bytes_len": 17343,
-      "sha256": "b1b8e53de3ae8cf09e2631ad349c29dd4a6a0a08bf453a2ed50414e2c36305cd"
+      "bytes_len": 53106,
+      "sha256": "d59915f30ed7b0ead3e706baf4f1d628d86530e6f8066e09db50ea872ddc54cb"
     },
     "mobile/ios/template/X07DeviceApp/x07/app-host.mjs": {
-      "bytes_len": 52009,
-      "sha256": "da604345a59f2de0f6bd5d9377b25c3f1180c0e194696015bf4829fb4ede10c1"
+      "bytes_len": 79105,
+      "sha256": "7450be7c56cbd0e50cd7b6d97ba75d4275a7a6ac61abd56b8b95581cc9c49c87"
     },
     "mobile/ios/template/X07DeviceApp/x07/bootstrap.js": {
-      "bytes_len": 5054,
-      "sha256": "61d067cfe77b98b63ec794b1520120504e5bb94b2aca156e8fc03646fcc9b805"
+      "bytes_len": 5123,
+      "sha256": "87291ea2577e6e0010e5de5ff100df7448518bab1c91e0661027eafb544e1248"
     },
     "mobile/ios/template/X07DeviceApp/x07/index.html": {
       "bytes_len": 894,
@@ -89,7 +89,7 @@
       "sha256": "254f54e73c2c3afea1b7b29aabded8fcd64fbe5f4f9f7fc07757b0d62a1272f0"
     }
   },
-  "git_sha": "5917e74a6a90b4d596a1367130d0bb14ce714101",
-  "host_abi_hash": "38ccf49044a9c66a92500e69da3e04698756bd9792d0331feeaddb1649672c1f",
-  "source": "https://github.com/x07lang/x07-device-host.git"
+  "git_sha": "a832d9da93efe3b26c6af7a8fe6b154c6a58f8a0",
+  "host_abi_hash": "73b1e059957cf792c174defe655141ce39ca8978f84cad3088ce7bdc148e3061",
+  "source": "workspace"
 }

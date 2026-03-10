@@ -37,7 +37,7 @@ Consumer repos do not need to vendor either the device host ABI snapshot or the 
 - Device telemetry profiles: `arch/device/profiles/*.telemetry.profile.json`
 - Bundle manifest: `bundle.manifest.json` (`x07.device.bundle.manifest@0.1.0`)
 
-Telemetry profiles must advertise the standard event-class set used by the platform device-release loop and may target either `http/json` or `http/protobuf` OTLP transport.
+Telemetry profiles must advertise the standard event-class set used by the platform device-release loop and may target either `http/json` or `http/protobuf` OTLP transport. M0 device bundles also carry `x07.device.capabilities@0.2.0`, which separates build-time capability allowlisting from runtime permission outcomes for camera, files, blob storage, foreground location, and local notifications.
 
 ## CLI
 
@@ -61,6 +61,7 @@ Bundle layout notes:
 - The resolved device profile is embedded into the bundle under `profile/device.profile.json`.
 - The resolved capabilities and telemetry sidecars are embedded under `profile/device.capabilities.json` and `profile/device.telemetry.profile.json`.
 - `x07-wasm device verify` digest-verifies all three profile-sidecar files from `bundle.manifest.json`.
+- `x07-wasm device package` projects the enabled M0 capabilities into generated iOS and Android templates so packaged apps include the required usage-description and runtime-permission declarations.
 
 Verify a device bundle:
 

@@ -194,6 +194,56 @@ print("ok: Android embedded bundle files")
 PY
 }
 
+check_ios_native_projection() {
+  local project_dir="$1"
+
+  "$PYTHON" - "$project_dir" <<'PY'
+import pathlib
+import plistlib
+import sys
+
+project_dir = pathlib.Path(sys.argv[1])
+plist_path = project_dir / "X07DeviceApp" / "Info.plist"
+doc = plistlib.loads(plist_path.read_bytes())
+
+required_keys = [
+    "NSCameraUsageDescription",
+    "NSPhotoLibraryUsageDescription",
+    "NSLocationWhenInUseUsageDescription",
+]
+for key in required_keys:
+    value = doc.get(key)
+    if not isinstance(value, str) or not value.strip():
+        raise SystemExit(f"{plist_path}: missing generated usage string for {key}")
+
+print("ok: iOS native capability projection")
+PY
+}
+
+check_android_native_projection() {
+  local project_dir="$1"
+
+  "$PYTHON" - "$project_dir" <<'PY'
+import pathlib
+import sys
+
+manifest_path = pathlib.Path(sys.argv[1]) / "app" / "src" / "main" / "AndroidManifest.xml"
+src = manifest_path.read_text(encoding="utf-8")
+
+for needle in [
+    "android.permission.CAMERA",
+    "android.permission.ACCESS_COARSE_LOCATION",
+    "android.permission.ACCESS_FINE_LOCATION",
+    "android.permission.POST_NOTIFICATIONS",
+    "android.permission.READ_MEDIA_IMAGES",
+]:
+    if needle not in src:
+        raise SystemExit(f"{manifest_path}: missing generated runtime permission {needle}")
+
+print("ok: Android native capability projection")
+PY
+}
+
 echo "==> phase10_examples: build bundle (device_ios_dev)"
 ios_bundle_dir="${OUT_DIR}/device_ios_dev_bundle"
 x07-wasm device build \
@@ -224,6 +274,7 @@ test -f "${ios_package_dir}/package.manifest.json"
 test -d "${ios_package_dir}/ios_project"
 check_device_package_manifest "${ios_package_dir}" "${ios_bundle_dir}/bundle.manifest.json" ios ios_project
 check_ios_project_bundle_embed "${ios_bundle_dir}" "${ios_package_dir}/ios_project"
+check_ios_native_projection "${ios_package_dir}/ios_project"
 check_dir_has_no_x07_tokens "${ios_package_dir}/ios_project"
 
 echo "==> phase10_examples: build bundle (device_android_dev)"
@@ -256,9 +307,13 @@ test -f "${android_package_dir}/package.manifest.json"
 test -d "${android_package_dir}/android_project"
 check_device_package_manifest "${android_package_dir}" "${android_bundle_dir}/bundle.manifest.json" android android_project
 check_android_project_bundle_embed "${android_bundle_dir}" "${android_package_dir}/android_project"
+check_android_native_projection "${android_package_dir}/android_project"
 check_dir_has_no_x07_tokens "${android_package_dir}/android_project"
 
-echo "==> phase10_examples: official mobile showcase"
+echo "==> phase10_examples: M0 proving app"
+bash examples/x07_capture_min/scripts/ci/check_capture_min.sh
+
+echo "==> phase10_examples: richer mobile showcase"
 bash examples/x07_field_notes/scripts/ci/check_showcase_mobile.sh
 
 echo "phase10_examples: PASS"

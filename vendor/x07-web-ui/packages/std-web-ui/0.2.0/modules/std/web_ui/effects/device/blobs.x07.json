@@ -1,0 +1,204 @@
+{
+  "decls": [
+    {
+      "kind": "export",
+      "names": [
+        "std.web_ui.effects.device.blobs.delete_v1",
+        "std.web_ui.effects.device.blobs.dispatch_result_canon_or_err_v1",
+        "std.web_ui.effects.device.blobs.dispatch_result_present_v1",
+        "std.web_ui.effects.device.blobs.dispatch_status_canon_or_err_v1",
+        "std.web_ui.effects.device.blobs.stat_v1"
+      ]
+    },
+    {
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          [
+            "bytes.concat",
+            [
+              "bytes.concat",
+              [
+                "bytes.lit",
+                "{\"v\":1,\"kind\":\"x07.web_ui.effect.device.blobs.delete\",\"request_id\":"
+              ],
+              [
+                "view.to_bytes",
+                "request_id_json"
+              ]
+            ],
+            [
+              "bytes.lit",
+              ",\"op\":\"blobs.delete\",\"capability\":\"blob_store\",\"payload\":"
+            ]
+          ],
+          [
+            "view.to_bytes",
+            "payload_json"
+          ]
+        ],
+        [
+          "bytes.lit",
+          "}"
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.blobs.delete_v1",
+      "params": [
+        {
+          "name": "request_id_json",
+          "ty": "bytes_view"
+        },
+        {
+          "name": "payload_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "state.__x07_device.blobs.result"
+          ]
+        ],
+        [
+          "std.web_ui.runtime.dispatch_extract_canon_or_err_v1",
+          "dispatch_json",
+          [
+            "bytes.view",
+            "path"
+          ]
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.blobs.dispatch_result_canon_or_err_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "state.__x07_device.blobs.result"
+          ]
+        ],
+        [
+          "std.web_ui.runtime.dispatch_has_path_v1",
+          "dispatch_json",
+          [
+            "bytes.view",
+            "path"
+          ]
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.blobs.dispatch_result_present_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "i32"
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "state.__x07_device.blobs.result.status"
+          ]
+        ],
+        [
+          "std.web_ui.runtime.dispatch_extract_canon_or_err_v1",
+          "dispatch_json",
+          [
+            "bytes.view",
+            "path"
+          ]
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.blobs.dispatch_status_canon_or_err_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          [
+            "bytes.concat",
+            [
+              "bytes.concat",
+              [
+                "bytes.lit",
+                "{\"v\":1,\"kind\":\"x07.web_ui.effect.device.blobs.stat\",\"request_id\":"
+              ],
+              [
+                "view.to_bytes",
+                "request_id_json"
+              ]
+            ],
+            [
+              "bytes.lit",
+              ",\"op\":\"blobs.stat\",\"capability\":\"blob_store\",\"payload\":"
+            ]
+          ],
+          [
+            "view.to_bytes",
+            "payload_json"
+          ]
+        ],
+        [
+          "bytes.lit",
+          "}"
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.blobs.stat_v1",
+      "params": [
+        {
+          "name": "request_id_json",
+          "ty": "bytes_view"
+        },
+        {
+          "name": "payload_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    }
+  ],
+  "imports": [
+    "std.web_ui.runtime"
+  ],
+  "kind": "module",
+  "module_id": "std.web_ui.effects.device.blobs",
+  "schema_version": "x07.x07ast@0.5.0"
+}

@@ -14,6 +14,7 @@ pub(crate) struct AndroidPackageTokens {
     pub(crate) min_sdk: u64,
     pub(crate) version: String,
     pub(crate) build: u64,
+    pub(crate) runtime_permissions_xml: String,
 }
 
 const REQUIRED_TEMPLATE_FILES: &[&str] = &[
@@ -64,6 +65,10 @@ pub(crate) fn write_android_project(
         Replacement {
             needle: "__X07_BUILD__",
             value: build_str,
+        },
+        Replacement {
+            needle: "__X07_ANDROID_RUNTIME_PERMISSIONS__",
+            value: tokens.runtime_permissions_xml,
         },
     ];
 

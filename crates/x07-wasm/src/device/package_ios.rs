@@ -13,6 +13,7 @@ pub(crate) struct IosPackageTokens {
     pub(crate) bundle_id: String,
     pub(crate) version: String,
     pub(crate) build: u64,
+    pub(crate) usage_strings_xml: String,
 }
 
 const REQUIRED_TEMPLATE_FILES: &[&str] = &[
@@ -57,6 +58,10 @@ pub(crate) fn write_ios_project(
         Replacement {
             needle: "__X07_BUILD__",
             value: build_str,
+        },
+        Replacement {
+            needle: "__X07_IOS_USAGE_STRINGS__",
+            value: tokens.usage_strings_xml,
         },
     ];
 

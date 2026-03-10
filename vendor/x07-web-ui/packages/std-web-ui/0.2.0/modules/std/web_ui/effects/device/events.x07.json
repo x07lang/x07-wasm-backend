@@ -1,0 +1,270 @@
+{
+  "decls": [
+    {
+      "kind": "export",
+      "names": [
+        "std.web_ui.effects.device.events.connectivity_offline_present_v1",
+        "std.web_ui.effects.device.events.connectivity_online_present_v1",
+        "std.web_ui.effects.device.events.lifecycle_background_present_v1",
+        "std.web_ui.effects.device.events.lifecycle_foreground_present_v1",
+        "std.web_ui.effects.device.events.lifecycle_resume_present_v1"
+      ]
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "event.type"
+          ]
+        ],
+        [
+          "let",
+          "event_type",
+          [
+            "std.web_ui.runtime.dispatch_extract_canon_or_err_v1",
+            "dispatch_json",
+            [
+              "bytes.view",
+              "path"
+            ]
+          ]
+        ],
+        [
+          "if",
+          [
+            "view.eq",
+            [
+              "bytes.view",
+              "event_type"
+            ],
+            [
+              "bytes.view_lit",
+              "\"connectivity.offline\""
+            ]
+          ],
+          1,
+          0
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.events.connectivity_offline_present_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "i32"
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "event.type"
+          ]
+        ],
+        [
+          "let",
+          "event_type",
+          [
+            "std.web_ui.runtime.dispatch_extract_canon_or_err_v1",
+            "dispatch_json",
+            [
+              "bytes.view",
+              "path"
+            ]
+          ]
+        ],
+        [
+          "if",
+          [
+            "view.eq",
+            [
+              "bytes.view",
+              "event_type"
+            ],
+            [
+              "bytes.view_lit",
+              "\"connectivity.online\""
+            ]
+          ],
+          1,
+          0
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.events.connectivity_online_present_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "i32"
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "event.type"
+          ]
+        ],
+        [
+          "let",
+          "event_type",
+          [
+            "std.web_ui.runtime.dispatch_extract_canon_or_err_v1",
+            "dispatch_json",
+            [
+              "bytes.view",
+              "path"
+            ]
+          ]
+        ],
+        [
+          "if",
+          [
+            "view.eq",
+            [
+              "bytes.view",
+              "event_type"
+            ],
+            [
+              "bytes.view_lit",
+              "\"lifecycle.background\""
+            ]
+          ],
+          1,
+          0
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.events.lifecycle_background_present_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "i32"
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "event.type"
+          ]
+        ],
+        [
+          "let",
+          "event_type",
+          [
+            "std.web_ui.runtime.dispatch_extract_canon_or_err_v1",
+            "dispatch_json",
+            [
+              "bytes.view",
+              "path"
+            ]
+          ]
+        ],
+        [
+          "if",
+          [
+            "view.eq",
+            [
+              "bytes.view",
+              "event_type"
+            ],
+            [
+              "bytes.view_lit",
+              "\"lifecycle.foreground\""
+            ]
+          ],
+          1,
+          0
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.events.lifecycle_foreground_present_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "i32"
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "event.type"
+          ]
+        ],
+        [
+          "let",
+          "event_type",
+          [
+            "std.web_ui.runtime.dispatch_extract_canon_or_err_v1",
+            "dispatch_json",
+            [
+              "bytes.view",
+              "path"
+            ]
+          ]
+        ],
+        [
+          "if",
+          [
+            "view.eq",
+            [
+              "bytes.view",
+              "event_type"
+            ],
+            [
+              "bytes.view_lit",
+              "\"lifecycle.resume\""
+            ]
+          ],
+          1,
+          0
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.events.lifecycle_resume_present_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "i32"
+    }
+  ],
+  "imports": [
+    "std.web_ui.runtime"
+  ],
+  "kind": "module",
+  "module_id": "std.web_ui.effects.device.events",
+  "schema_version": "x07.x07ast@0.5.0"
+}

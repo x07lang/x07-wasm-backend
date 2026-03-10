@@ -32,5 +32,5 @@ Hard requirements:
 Important constraint:
 - Do NOT design a system that downloads and executes new WASM code at runtime on iOS; iOS app review rules restrict downloading/executing code to change app behavior. Keep the WASM reducer shipped with the app bundle; updates go through app updates.
 
-Use examples/device_min and x07-wasm-backend mobile templates as references.
+Use examples/x07_capture_min and x07-wasm-backend mobile templates as references.
 ```

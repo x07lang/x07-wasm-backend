@@ -4,6 +4,7 @@ This directory contains both minimal command-surface fixtures and end-to-end sho
 
 ## Official Showcases
 
+- [`x07_capture_min/README.md`](x07_capture_min/README.md): strict M0 native proving app with permission query/request, capture/import, blob-manifest follow-up, location, notifications, and cross-target device packaging
 - [`x07_atlas/README.md`](x07_atlas/README.md): full-stack app bundle with trace replay, incident capture, regression generation, pack verification, provenance, deploy planning, and SLO checks
 - [`x07_studio/README.md`](x07_studio/README.md): desktop device bundle with persistent notes, import/export flows, provenance, packaging, and desktop host smoke
 - [`x07_field_notes/README.md`](x07_field_notes/README.md): shared desktop/mobile reducer with offline storage, HTTP sync, replay traces, and iOS/Android packaging
@@ -12,6 +13,7 @@ This directory contains both minimal command-surface fixtures and end-to-end sho
 
 - `app_fullstack_hello/`
 - `app_min/`
+- `x07_capture_min/`
 - `device_min/`
 - `http_*`
 - `solve_pure_*`

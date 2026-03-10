@@ -20,7 +20,7 @@ x07 wasm doctor --json
 Fallbacks:
 
 ```sh
-cargo install --locked x07-wasm --version 0.1.10
+cargo install --locked x07-wasm --version 0.2.0
 ```
 
 Use `cargo install --locked --git https://github.com/x07lang/x07-wasm-backend.git x07-wasm` only when you need unreleased development state from this repo.
@@ -64,7 +64,7 @@ x07-wasm device verify --dir dist/device_ios_dev_bundle --json
 x07-wasm device package --bundle dist/device_ios_dev_bundle --target ios --out-dir dist/device_ios_dev_package --json
 ```
 
-Start from [`examples/device_min`](examples/device_min) for the device bundle/profile layout and pair it with the reducer patterns in [`x07-web-ui/examples/web_ui_form`](../x07-web-ui/examples/web_ui_form). That combination is the current reference path for a consumer-owned web-ui/device app.
+Start from [`examples/x07_capture_min`](examples/x07_capture_min) for the M0 device bundle/profile layout and pair it with the reducer patterns in [`x07-web-ui/examples/web_ui_form`](../x07-web-ui/examples/web_ui_form). That combination is the current reference path for a consumer-owned web-ui/device app.
 
 Device profiles now keep runtime capabilities and telemetry transport settings in standalone sidecar contracts. A validated bundle embeds:
 

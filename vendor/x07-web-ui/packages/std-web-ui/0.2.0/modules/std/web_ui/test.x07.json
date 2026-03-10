@@ -1,0 +1,99 @@
+{
+  "decls": [
+    {
+      "kind": "export",
+      "names": [
+        "std.web_ui.test.extract_path_canon_or_err_v1"
+      ]
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "qv",
+          [
+            "std.vec.with_capacity",
+            [
+              "+",
+              [
+                "+",
+                [
+                  "view.len",
+                  "json_doc"
+                ],
+                [
+                  "view.len",
+                  "path"
+                ]
+              ],
+              8
+            ]
+          ]
+        ],
+        [
+          "set",
+          "qv",
+          [
+            "std.vec.extend_bytes",
+            "qv",
+            "json_doc"
+          ]
+        ],
+        [
+          "set",
+          "qv",
+          [
+            "std.vec.push",
+            "qv",
+            0
+          ]
+        ],
+        [
+          "set",
+          "qv",
+          [
+            "std.vec.extend_bytes",
+            "qv",
+            "path"
+          ]
+        ],
+        [
+          "let",
+          "query",
+          [
+            "std.vec.as_bytes",
+            "qv"
+          ]
+        ],
+        [
+          "std.json.extract_path_canon_or_err",
+          [
+            "bytes.view",
+            "query"
+          ]
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.test.extract_path_canon_or_err_v1",
+      "params": [
+        {
+          "name": "json_doc",
+          "ty": "bytes_view"
+        },
+        {
+          "name": "path",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    }
+  ],
+  "imports": [
+    "std.json",
+    "std.vec"
+  ],
+  "kind": "module",
+  "module_id": "std.web_ui.test",
+  "schema_version": "x07.x07ast@0.5.0"
+}

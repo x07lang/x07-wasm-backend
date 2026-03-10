@@ -33,5 +33,5 @@ Hard requirements:
 - No external validators; rely on x07-wasm device verify + provenance verify.
 - CI script must be fully deterministic and produce stable outputs.
 
-Use examples/device_min and x07-web-ui examples/web_ui_form as references.
+Use examples/x07_capture_min and x07-web-ui examples/web_ui_form as references.
 ```

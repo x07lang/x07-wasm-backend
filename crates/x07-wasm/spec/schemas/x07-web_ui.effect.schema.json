@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-web_ui.effect.schema.json",
-  "title": "x07.web_ui.effect@0.1.0",
-  "description": "Typed effect surface for x07 web-ui reducers (Phase 5 hardening).",
+  "title": "x07.web_ui.effect@0.2.0",
+  "description": "Typed effect surface for x07 web-ui reducers, including the M0 native device request families.",
   "oneOf": [
     { "$ref": "#/$defs/http_request" },
     { "$ref": "#/$defs/storage_get" },
@@ -10,12 +10,35 @@
     { "$ref": "#/$defs/nav_push" },
     { "$ref": "#/$defs/nav_replace" },
     { "$ref": "#/$defs/timer_set" },
-    { "$ref": "#/$defs/timer_clear" }
+    { "$ref": "#/$defs/timer_clear" },
+    { "$ref": "#/$defs/device_permissions_query" },
+    { "$ref": "#/$defs/device_permissions_request" },
+    { "$ref": "#/$defs/device_camera_capture" },
+    { "$ref": "#/$defs/device_files_pick" },
+    { "$ref": "#/$defs/device_blobs_stat" },
+    { "$ref": "#/$defs/device_blobs_delete" },
+    { "$ref": "#/$defs/device_location_get_current" },
+    { "$ref": "#/$defs/device_notifications_schedule" },
+    { "$ref": "#/$defs/device_notifications_cancel" }
   ],
   "$defs": {
     "v1": { "type": "integer", "const": 1 },
     "json_string": { "type": "string" },
     "delay_ms": { "type": "integer", "minimum": 0 },
+    "bool": { "type": "boolean" },
+    "device_effect_base": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["v", "kind", "request_id", "op", "capability", "payload"],
+      "properties": {
+        "v": { "$ref": "#/$defs/v1" },
+        "kind": { "type": "string" },
+        "request_id": { "$ref": "#/$defs/json_string" },
+        "op": { "type": "string" },
+        "capability": { "$ref": "#/$defs/json_string" },
+        "payload": { "type": "object" }
+      }
+    },
     "http_request": {
       "type": "object",
       "additionalProperties": false,
@@ -87,6 +110,183 @@
         "kind": { "type": "string", "const": "x07.web_ui.effect.timer.clear" },
         "id": { "$ref": "#/$defs/json_string" }
       }
+    },
+    "device_permissions_query": {
+      "allOf": [
+        { "$ref": "#/$defs/device_effect_base" },
+        {
+          "properties": {
+            "kind": { "const": "x07.web_ui.effect.device.permissions.query" },
+            "op": { "const": "permissions.query" },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["permission"],
+              "properties": {
+                "permission": { "$ref": "#/$defs/json_string" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "device_permissions_request": {
+      "allOf": [
+        { "$ref": "#/$defs/device_effect_base" },
+        {
+          "properties": {
+            "kind": { "const": "x07.web_ui.effect.device.permissions.request" },
+            "op": { "const": "permissions.request" },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["permission"],
+              "properties": {
+                "permission": { "$ref": "#/$defs/json_string" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "device_camera_capture": {
+      "allOf": [
+        { "$ref": "#/$defs/device_effect_base" },
+        {
+          "properties": {
+            "kind": { "const": "x07.web_ui.effect.device.camera.capture" },
+            "op": { "const": "camera.capture" },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "quality": { "$ref": "#/$defs/json_string" },
+                "lens": { "$ref": "#/$defs/json_string" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "device_files_pick": {
+      "allOf": [
+        { "$ref": "#/$defs/device_effect_base" },
+        {
+          "properties": {
+            "kind": { "const": "x07.web_ui.effect.device.files.pick" },
+            "op": { "const": "files.pick" },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["accept", "multiple"],
+              "properties": {
+                "accept": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/json_string" }
+                },
+                "multiple": { "$ref": "#/$defs/bool" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "device_blobs_stat": {
+      "allOf": [
+        { "$ref": "#/$defs/device_effect_base" },
+        {
+          "properties": {
+            "kind": { "const": "x07.web_ui.effect.device.blobs.stat" },
+            "op": { "const": "blobs.stat" },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["handle"],
+              "properties": {
+                "handle": { "$ref": "#/$defs/json_string" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "device_blobs_delete": {
+      "allOf": [
+        { "$ref": "#/$defs/device_effect_base" },
+        {
+          "properties": {
+            "kind": { "const": "x07.web_ui.effect.device.blobs.delete" },
+            "op": { "const": "blobs.delete" },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["handle"],
+              "properties": {
+                "handle": { "$ref": "#/$defs/json_string" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "device_location_get_current": {
+      "allOf": [
+        { "$ref": "#/$defs/device_effect_base" },
+        {
+          "properties": {
+            "kind": { "const": "x07.web_ui.effect.device.location.get_current" },
+            "op": { "const": "location.get_current" },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "timeout_ms": { "$ref": "#/$defs/delay_ms" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "device_notifications_schedule": {
+      "allOf": [
+        { "$ref": "#/$defs/device_effect_base" },
+        {
+          "properties": {
+            "kind": { "const": "x07.web_ui.effect.device.notifications.schedule" },
+            "op": { "const": "notifications.schedule" },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["notification_id", "title", "body", "delay_ms"],
+              "properties": {
+                "notification_id": { "$ref": "#/$defs/json_string" },
+                "title": { "$ref": "#/$defs/json_string" },
+                "body": { "$ref": "#/$defs/json_string" },
+                "delay_ms": { "$ref": "#/$defs/delay_ms" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "device_notifications_cancel": {
+      "allOf": [
+        { "$ref": "#/$defs/device_effect_base" },
+        {
+          "properties": {
+            "kind": { "const": "x07.web_ui.effect.device.notifications.cancel" },
+            "op": { "const": "notifications.cancel" },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["notification_id"],
+              "properties": {
+                "notification_id": { "$ref": "#/$defs/json_string" }
+              }
+            }
+          }
+        }
+      ]
     }
   }
 }

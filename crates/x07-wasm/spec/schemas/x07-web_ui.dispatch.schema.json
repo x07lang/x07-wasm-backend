@@ -29,7 +29,13 @@
         { "$ref": "#/$defs/event_click" },
         { "$ref": "#/$defs/event_input" },
         { "$ref": "#/$defs/event_change" },
-        { "$ref": "#/$defs/event_submit" }
+        { "$ref": "#/$defs/event_submit" },
+        { "$ref": "#/$defs/event_notification_opened" },
+        { "$ref": "#/$defs/event_lifecycle_foreground" },
+        { "$ref": "#/$defs/event_lifecycle_background" },
+        { "$ref": "#/$defs/event_lifecycle_resume" },
+        { "$ref": "#/$defs/event_connectivity_online" },
+        { "$ref": "#/$defs/event_connectivity_offline" }
       ]
     },
     "event_init": {
@@ -77,7 +83,55 @@
         "type": { "type": "string", "const": "submit" },
         "target": { "$ref": "#/$defs/node_key" }
       }
+    },
+    "event_notification_opened": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "notification_id"],
+      "properties": {
+        "type": { "type": "string", "const": "notification.opened" },
+        "notification_id": { "type": "string", "minLength": 1, "maxLength": 256 }
+      }
+    },
+    "event_lifecycle_foreground": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "const": "lifecycle.foreground" }
+      }
+    },
+    "event_lifecycle_background": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "const": "lifecycle.background" }
+      }
+    },
+    "event_lifecycle_resume": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "const": "lifecycle.resume" }
+      }
+    },
+    "event_connectivity_online": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "const": "connectivity.online" }
+      }
+    },
+    "event_connectivity_offline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "const": "connectivity.offline" }
+      }
     }
   }
 }
-

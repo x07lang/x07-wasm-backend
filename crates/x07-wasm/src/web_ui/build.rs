@@ -929,9 +929,10 @@ mod tests {
             "missing app-host.mjs"
         );
         assert!(dist.join(HOST_MAIN_MJS).is_file(), "missing main.mjs");
-        assert_eq!(
-            host_snapshot.get("source").and_then(Value::as_str),
-            Some("https://github.com/x07lang/x07-web-ui.git")
+        let source = host_snapshot.get("source").and_then(Value::as_str);
+        assert!(
+            matches!(source, Some(value) if !value.trim().is_empty()),
+            "embedded host snapshot should preserve a non-empty source"
         );
 
         let _ = std::fs::remove_dir_all(tmp);

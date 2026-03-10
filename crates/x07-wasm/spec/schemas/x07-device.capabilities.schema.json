@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-device.capabilities.schema.json",
-  "title": "x07.device.capabilities@0.1.0",
+  "title": "x07.device.capabilities@0.2.0",
   "description": "Pinned device runtime capability allowlist consumed by x07-wasm device tooling and device hosts.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "network", "device"],
   "properties": {
-    "schema_version": { "const": "x07.device.capabilities@0.1.0" },
+    "schema_version": { "const": "x07.device.capabilities@0.2.0" },
     "network": {
       "type": "object",
       "additionalProperties": false,
@@ -31,11 +31,62 @@
     "device": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["clipboard", "local_kv", "notifications"],
+      "required": ["camera", "files", "blob_store", "location", "notifications"],
       "properties": {
-        "clipboard": { "type": "boolean" },
-        "local_kv": { "type": "boolean" },
-        "notifications": { "type": "boolean" }
+        "camera": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["photo"],
+          "properties": {
+            "photo": { "type": "boolean" }
+          }
+        },
+        "files": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["pick", "accept_defaults"],
+          "properties": {
+            "pick": { "type": "boolean" },
+            "accept_defaults": {
+              "type": "array",
+              "minItems": 0,
+              "maxItems": 16,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "uniqueItems": true
+            }
+          }
+        },
+        "blob_store": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enabled", "max_total_bytes", "max_item_bytes"],
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "max_total_bytes": { "type": "integer", "minimum": 1, "maximum": 1073741824 },
+            "max_item_bytes": { "type": "integer", "minimum": 1, "maximum": 268435456 }
+          }
+        },
+        "location": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["foreground"],
+          "properties": {
+            "foreground": { "type": "boolean" }
+          }
+        },
+        "notifications": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["local", "push"],
+          "properties": {
+            "local": { "type": "boolean" },
+            "push": { "type": "boolean" }
+          }
+        }
       }
     }
   }

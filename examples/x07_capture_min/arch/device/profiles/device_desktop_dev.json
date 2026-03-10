@@ -1,0 +1,41 @@
+{
+  "schema_version": "x07.device.profile@0.1.0",
+  "id": "device_desktop_dev",
+  "v": 1,
+  "target": "desktop",
+  "identity": {
+    "display_name": "x07 Capture Min (Desktop Dev)",
+    "app_id": "org.x07.capturemin.desktop.dev"
+  },
+  "version": {
+    "version": "0.1.0",
+    "build": 1
+  },
+  "security": {
+    "allow_dynamic_code_loading": false
+  },
+  "ui": {
+    "project": "frontend/x07.json",
+    "web_ui_profile_id": "web_ui_debug"
+  },
+  "backend": {
+    "mode": "none"
+  },
+  "capabilities": {
+    "path": "arch/device/profiles/device_desktop_dev.capabilities.json"
+  },
+  "telemetry_profile": {
+    "path": "arch/device/profiles/device_desktop_dev.telemetry.profile.json"
+  },
+  "desktop": {
+    "window": {
+      "width": 1180,
+      "height": 760,
+      "resizable": true
+    },
+    "package": {
+      "kind": "dir"
+    }
+  },
+  "notes": "Desktop keeps camera and location denied to prove target-specific capability fencing while still shipping the same reducer."
+}
