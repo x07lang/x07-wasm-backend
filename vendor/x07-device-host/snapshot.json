@@ -29,8 +29,8 @@
       "sha256": "254f54e73c2c3afea1b7b29aabded8fcd64fbe5f4f9f7fc07757b0d62a1272f0"
     },
     "mobile/android/template/app/src/main/java/org/x07/deviceapp/MainActivity.kt": {
-      "bytes_len": 53286,
-      "sha256": "8358125106edab7d85105b2af01427d71f308f6c09f231888e640b6629a18821"
+      "bytes_len": 53292,
+      "sha256": "68f14d0a540cad52339de37a4904aeb220369e66382206c958719efaaa9b49bd"
     },
     "mobile/android/template/app/src/main/res/values/strings.xml": {
       "bytes_len": 121,
@@ -89,7 +89,7 @@
       "sha256": "254f54e73c2c3afea1b7b29aabded8fcd64fbe5f4f9f7fc07757b0d62a1272f0"
     }
   },
-  "git_sha": "a832d9da93efe3b26c6af7a8fe6b154c6a58f8a0",
+  "git_sha": "f1eb1cad1324a9b17aea8850f9fdf2ac5ac0fbcf",
   "host_abi_hash": "73b1e059957cf792c174defe655141ce39ca8978f84cad3088ce7bdc148e3061",
   "source": "workspace"
 }
