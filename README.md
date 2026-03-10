@@ -20,7 +20,7 @@ x07 wasm doctor --json
 Fallbacks:
 
 ```sh
-cargo install --locked x07-wasm --version 0.2.1
+cargo install --locked x07-wasm --version 0.2.2
 ```
 
 Use `cargo install --locked --git https://github.com/x07lang/x07-wasm-backend.git x07-wasm` only when you need unreleased development state from this repo.
@@ -75,9 +75,12 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 
 Device profiles now keep runtime capabilities and telemetry transport settings in standalone sidecar contracts. A validated bundle embeds:
 
+- `app.manifest.json`
 - `profile/device.profile.json`
 - `profile/device.capabilities.json`
 - `profile/device.telemetry.profile.json`
+
+`x07-wasm device build` writes `app.manifest.json` into the bundle root so device hosts can reuse the same `apiPrefix`, component entrypoint, and `webUi` runtime limits that the browser host reads from app builds. `x07-wasm app serve` also answers API `OPTIONS` preflight requests with the canonical CORS headers expected by packaged device hosts calling a local or remote HTTP backend.
 
 The telemetry sidecar must now declare the standard device-observability event classes and OTLP transport profile used by the platform release loop:
 

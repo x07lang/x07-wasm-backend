@@ -554,17 +554,57 @@ fn is_api_path(api_prefix: &str, path: &str) -> bool {
     path.starts_with(&p)
 }
 
+fn apply_api_cors_headers(
+    builder: hyper::http::response::Builder,
+) -> hyper::http::response::Builder {
+    builder
+        .header("access-control-allow-origin", "*")
+        .header(
+            "access-control-allow-methods",
+            "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+        )
+        .header(
+            "access-control-allow-headers",
+            "content-type, authorization",
+        )
+        .header("access-control-max-age", "600")
+        .header(
+            "vary",
+            "origin, access-control-request-method, access-control-request-headers",
+        )
+}
+
+fn api_empty_response(
+    method: &Method,
+    status: StatusCode,
+    body: &'static [u8],
+) -> Result<Response<Full<Bytes>>, hyper::Error> {
+    let bytes = if *method == Method::HEAD || *method == Method::OPTIONS {
+        Bytes::new()
+    } else {
+        Bytes::from_static(body)
+    };
+    Ok(apply_api_cors_headers(Response::builder().status(status))
+        .body(Full::new(bytes))
+        .unwrap())
+}
+
 async fn proxy_api_request(
     req: Request<Incoming>,
     state: Arc<AppServeState>,
 ) -> Result<Response<Full<Bytes>>, hyper::Error> {
+    if req.method() == Method::OPTIONS {
+        return api_empty_response(req.method(), StatusCode::NO_CONTENT, b"");
+    }
+
     let _permit = match state.max_concurrency.acquire().await {
         Ok(p) => p,
         Err(_) => {
-            return Ok(Response::builder()
-                .status(StatusCode::SERVICE_UNAVAILABLE)
-                .body(Full::new(Bytes::from_static(b"server shutting down")))
-                .unwrap());
+            return api_empty_response(
+                req.method(),
+                StatusCode::SERVICE_UNAVAILABLE,
+                b"server shutting down",
+            );
         }
     };
 
@@ -575,14 +615,16 @@ async fn proxy_api_request(
         {
             Ok(v) => v,
             Err(_err) => {
-                return Ok(Response::builder()
-                    .status(StatusCode::PAYLOAD_TOO_LARGE)
-                    .body(Full::new(Bytes::from_static(b"request too large")))
-                    .unwrap());
+                return api_empty_response(
+                    &parts.method,
+                    StatusCode::PAYLOAD_TOO_LARGE,
+                    b"request too large",
+                );
             }
         };
 
     let req2 = Request::from_parts(parts, http_component_host::full_body(body_bytes.clone()));
+    let req_method = req2.method().clone();
     let mut request_diags: Vec<Diagnostic> = Vec::new();
     match state
         .host
@@ -608,17 +650,20 @@ async fn proxy_api_request(
                     resp = resp.header(k, v);
                 }
             }
-            Ok(resp.body(Full::new(Bytes::from(buf.body))).unwrap())
+            Ok(apply_api_cors_headers(resp)
+                .body(Full::new(Bytes::from(buf.body)))
+                .unwrap())
         }
         Err(err) => {
             let _ = err;
             if !request_diags.is_empty() {
                 state.diag_acc.lock().unwrap().extend(request_diags);
             }
-            Ok(Response::builder()
-                .status(StatusCode::INTERNAL_SERVER_ERROR)
-                .body(Full::new(Bytes::from_static(b"internal error")))
-                .unwrap())
+            api_empty_response(
+                &req_method,
+                StatusCode::INTERNAL_SERVER_ERROR,
+                b"internal error",
+            )
         }
     }
 }
@@ -1010,4 +1055,43 @@ fn load_app_serve_settings(
         addr,
         backend_cfg,
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use http_body::Body as _;
+
+    #[test]
+    fn api_empty_response_sets_cors_headers() {
+        let resp = api_empty_response(&Method::POST, StatusCode::SERVICE_UNAVAILABLE, b"down")
+            .expect("api response");
+        assert_eq!(resp.status(), StatusCode::SERVICE_UNAVAILABLE);
+        assert_eq!(
+            resp.headers()
+                .get("access-control-allow-origin")
+                .and_then(|v| v.to_str().ok()),
+            Some("*")
+        );
+        assert_eq!(
+            resp.headers()
+                .get("access-control-allow-methods")
+                .and_then(|v| v.to_str().ok()),
+            Some("GET, POST, PUT, PATCH, DELETE, OPTIONS")
+        );
+        assert_eq!(
+            resp.headers()
+                .get("access-control-allow-headers")
+                .and_then(|v| v.to_str().ok()),
+            Some("content-type, authorization")
+        );
+    }
+
+    #[test]
+    fn api_empty_response_omits_body_for_options() {
+        let resp = api_empty_response(&Method::OPTIONS, StatusCode::NO_CONTENT, b"ignored")
+            .expect("preflight response");
+        assert_eq!(resp.status(), StatusCode::NO_CONTENT);
+        assert!(resp.into_body().is_end_stream());
+    }
 }

@@ -13,6 +13,7 @@ use crate::diag::{Diagnostic, Severity, Stage};
 use crate::report;
 use crate::schema::SchemaStore;
 use crate::util;
+use crate::web_ui::runtime_manifest::load_runtime_manifest_from_profile;
 
 pub fn cmd_app_build(
     raw_argv: &[OsString],
@@ -443,17 +444,20 @@ fn write_frontend_app_manifest(
     profile: &LoadedAppProfileForBuild,
 ) -> Result<()> {
     let wasm_url = "app.wasm".to_string();
+    let runtime = load_runtime_manifest_from_profile(&frontend_dir.join("web-ui.profile.json"))?;
     let component_esm_url = frontend_dir.join("transpiled").join("app.mjs");
     let doc = if component_esm_url.is_file() {
         json!({
           "wasmUrl": wasm_url,
           "componentEsmUrl": "transpiled/app.mjs",
           "apiPrefix": profile.routing_api_prefix,
+          "webUi": runtime,
         })
     } else {
         json!({
           "wasmUrl": wasm_url,
           "apiPrefix": profile.routing_api_prefix,
+          "webUi": runtime,
         })
     };
     let bytes = report::canon::canonical_pretty_json_bytes(&doc)?;

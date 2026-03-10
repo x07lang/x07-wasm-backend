@@ -12,6 +12,7 @@ use crate::diag::{Diagnostic, Severity, Stage};
 use crate::report;
 use crate::schema::SchemaStore;
 use crate::util;
+use crate::web_ui::runtime_manifest::{load_runtime_manifest_from_profile, WebUiRuntimeManifest};
 
 const DEFAULT_DEVICE_PROFILE_ID: &str = "device_dev";
 const DEVICE_BUNDLE_MANIFEST_FILE: &str = "bundle.manifest.json";
@@ -202,6 +203,7 @@ pub fn cmd_device_build(
             }
 
             let src_wasm = internal_dist_dir.join("app.wasm");
+            let src_web_ui_profile = internal_dist_dir.join("web-ui.profile.json");
             if !src_wasm.is_file() {
                 diagnostics.push(Diagnostic::new(
                     "X07WASM_DEVICE_BUILD_WEB_UI_WASM_MISSING",
@@ -252,6 +254,34 @@ pub fn cmd_device_build(
                             "failed to digest reducer wasm {}: {err:#}",
                             dst_wasm.display()
                         ),
+                    )),
+                }
+            }
+
+            if diagnostics.iter().all(|d| d.severity != Severity::Error) {
+                match load_runtime_manifest_from_profile(&src_web_ui_profile)
+                    .and_then(|runtime| write_device_app_manifest(&out_dir, &runtime))
+                {
+                    Ok(()) => match file_digest_rel(&out_dir, &out_dir.join("app.manifest.json")) {
+                        Ok(d) => {
+                            meta.outputs.push(d.clone());
+                            artifacts.push(d);
+                        }
+                        Err(err) => diagnostics.push(Diagnostic::new(
+                            "X07WASM_DEVICE_BUILD_DIGEST_FAILED",
+                            Severity::Error,
+                            Stage::Run,
+                            format!(
+                                "failed to digest device app manifest {}: {err:#}",
+                                out_dir.join("app.manifest.json").display()
+                            ),
+                        )),
+                    },
+                    Err(err) => diagnostics.push(Diagnostic::new(
+                        "X07WASM_DEVICE_BUILD_APP_MANIFEST_WRITE_FAILED",
+                        Severity::Error,
+                        Stage::Run,
+                        format!("{err:#}"),
                     )),
                 }
             }
@@ -582,6 +612,19 @@ fn load_device_profile_file(
         index_digest,
         path: path.clone(),
     })
+}
+
+fn write_device_app_manifest(out_dir: &Path, runtime: &WebUiRuntimeManifest) -> Result<()> {
+    let doc = json!({
+      "wasmUrl": "./ui/reducer.wasm",
+      "webUi": runtime,
+    });
+    let bytes = report::canon::canonical_pretty_json_bytes(&doc)?;
+    std::fs::create_dir_all(out_dir)
+        .with_context(|| format!("create dir: {}", out_dir.display()))?;
+    std::fs::write(out_dir.join("app.manifest.json"), bytes)
+        .with_context(|| format!("write: {}", out_dir.join("app.manifest.json").display()))?;
+    Ok(())
 }
 
 fn file_digest_rel(root: &Path, path: &Path) -> Result<report::meta::FileDigest> {
