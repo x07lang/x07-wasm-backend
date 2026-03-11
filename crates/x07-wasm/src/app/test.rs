@@ -972,12 +972,14 @@ async fn run_effects_loop(
             frame = replay_effect_dispatch(
                 store,
                 app_budgets,
-                step_index,
                 core,
                 prev_ui,
                 current_state,
-                event,
-                injected_state,
+                ReplayDispatchRequest {
+                    step_index,
+                    event,
+                    injected_state,
+                },
             )?;
         }
     }
@@ -990,21 +992,25 @@ async fn run_effects_loop(
     Ok((frame, exchanges))
 }
 
+struct ReplayDispatchRequest<'a> {
+    step_index: usize,
+    event: &'a Value,
+    injected_state: Value,
+}
+
 fn replay_effect_dispatch(
     store: &SchemaStore,
     app_budgets: &AppTestBudgets,
-    step_index: usize,
     core: &mut replay::CoreWasmRunner,
     prev_ui: &mut Option<Value>,
     current_state: &mut Value,
-    event: &Value,
-    injected_state: Value,
+    request: ReplayDispatchRequest<'_>,
 ) -> Result<Value> {
     let env = json!({
       "v": 1,
       "kind": "x07.web_ui.dispatch",
-      "state": injected_state,
-      "event": event,
+      "state": request.injected_state,
+      "event": request.event,
     });
     let input_bytes = replay::canonical_json_bytes_no_newline(&env)?;
     if input_bytes.len() as u64 > app_budgets.max_dispatch_bytes {
@@ -1022,7 +1028,7 @@ fn replay_effect_dispatch(
     if diags.iter().any(|d| d.severity == Severity::Error) {
         anyhow::bail!("frame schema invalid: {diags:?}");
     }
-    commit_frame(step_index, &next_frame, prev_ui, current_state)?;
+    commit_frame(request.step_index, &next_frame, prev_ui, current_state)?;
     Ok(next_frame)
 }
 
