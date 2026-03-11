@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { __x07_host_private as host } from "../app-host.mjs";
 
-test("parseAnyDeviceEffect() parses permissions and camera requests", () => {
+test("parseAnyDeviceEffect() parses the Forge M0 device request families", () => {
   const permissions = host.parseAnyDeviceEffect({
     v: 1,
     kind: "x07.web_ui.effect.device.permissions.query",
@@ -37,54 +37,315 @@ test("parseAnyDeviceEffect() parses permissions and camera requests", () => {
     capability: "camera.photo",
     payload: { quality: "medium" },
   });
+
+  const clipboard = host.parseAnyDeviceEffect({
+    v: 1,
+    kind: "x07.web_ui.effect.device.clipboard.read_text",
+    request_id: "req3",
+    op: "clipboard.read_text",
+    capability: "clipboard.read_text",
+    payload: {},
+  });
+  assert.deepEqual(clipboard, {
+    family: "clipboard",
+    kind: "x07.web_ui.effect.device.clipboard.read_text",
+    request_id: "req3",
+    op: "clipboard.read_text",
+    capability: "clipboard.read_text",
+    payload: {},
+  });
+
+  const filesPick = host.parseAnyDeviceEffect({
+    v: 1,
+    kind: "x07.web_ui.effect.device.files.pick",
+    request_id: "req4",
+    op: "files.pick",
+    capability: "files.pick",
+    payload: { accept: ["image/*"], multiple: true },
+  });
+  assert.deepEqual(filesPick, {
+    family: "files",
+    kind: "x07.web_ui.effect.device.files.pick",
+    request_id: "req4",
+    op: "files.pick",
+    capability: "files.pick_multiple",
+    payload: { accept: ["image/*"], multiple: true },
+  });
+
+  const filesSave = host.parseAnyDeviceEffect({
+    v: 1,
+    kind: "x07.web_ui.effect.device.files.save_text",
+    request_id: "req5",
+    op: "files.save",
+    capability: "files.save",
+    payload: { name: "draft.txt", text: "hello" },
+  });
+  assert.deepEqual(filesSave, {
+    family: "files",
+    kind: "x07.web_ui.effect.device.files.save_text",
+    request_id: "req5",
+    op: "files.save",
+    capability: "files.save",
+    payload: { name: "draft.txt", text: "hello" },
+  });
+
+  const share = host.parseAnyDeviceEffect({
+    v: 1,
+    kind: "x07.web_ui.effect.device.share.share_text",
+    request_id: "req6",
+    op: "share.present",
+    capability: "share.present",
+    payload: { title: "CrewOps", text: "Assigned" },
+  });
+  assert.deepEqual(share, {
+    family: "share",
+    kind: "x07.web_ui.effect.device.share.share_text",
+    request_id: "req6",
+    op: "share.present",
+    capability: "share.present",
+    payload: { title: "CrewOps", text: "Assigned" },
+  });
 });
 
-test("capabilityAllowed() follows the M0 device capability sidecar", () => {
+test("capabilityAllowed() follows the Forge M0 capability names", () => {
   const capabilities = {
     device: {
       camera: { photo: true },
-      files: { pick: true },
+      clipboard: { read_text: true, write_text: true },
+      files: { pick: true, pick_multiple: true, save: true, drop: true },
       blob_store: { enabled: true },
       location: { foreground: false },
       notifications: { local: true },
+      share: { present: true },
     },
   };
 
   assert.equal(host.capabilityAllowed(capabilities, "camera.photo"), true);
+  assert.equal(host.capabilityAllowed(capabilities, "clipboard.read_text"), true);
+  assert.equal(host.capabilityAllowed(capabilities, "clipboard.write_text"), true);
   assert.equal(host.capabilityAllowed(capabilities, "files.pick"), true);
+  assert.equal(host.capabilityAllowed(capabilities, "files.pick_multiple"), true);
+  assert.equal(host.capabilityAllowed(capabilities, "files.save"), true);
+  assert.equal(host.capabilityAllowed(capabilities, "files.drop"), true);
   assert.equal(host.capabilityAllowed(capabilities, "blob_store"), true);
   assert.equal(host.capabilityAllowed(capabilities, "location.foreground"), false);
   assert.equal(host.capabilityAllowed(capabilities, "notifications.local"), true);
+  assert.equal(host.capabilityAllowed(capabilities, "share.present"), true);
 });
 
-test("normalizeDeviceResult() normalizes host metadata and status", () => {
+test("normalizeDeviceResult() normalizes file payload items and host metadata", () => {
   const request = {
-    family: "location",
-    request_id: "req5",
-    op: "location.get_current",
-    capability: "location.foreground",
+    family: "files",
+    request_id: "req7",
+    op: "files.pick",
+    capability: "files.pick_multiple",
   };
   const normalized = host.normalizeDeviceResult(
     request,
     {
       status: "ok",
-      payload: { latitude: 1, longitude: 2, accuracy_m: 3 },
+      payload: {
+        blobs: [
+          {
+            handle: "blob:sha256:abc",
+            sha256: "abc",
+            mime: "application/pdf",
+            byte_size: 42,
+            created_at_ms: 1,
+            source: "files.pick",
+            local_state: "present",
+          },
+        ],
+      },
       host_meta: { provider: "browser" },
     },
-    "location",
+    "files",
     "web",
   );
-  assert.equal(normalized.family, "location");
-  assert.equal(normalized.result.request_id, "req5");
+  assert.equal(normalized.family, "files");
+  assert.equal(normalized.result.request_id, "req7");
   assert.equal(normalized.result.status, "ok");
   assert.equal(normalized.result.host_meta.platform, "web");
   assert.equal(normalized.result.host_meta.provider, "browser");
-  assert.deepEqual(normalized.result.payload, { latitude: 1, longitude: 2, accuracy_m: 3 });
+  assert.deepEqual(normalized.result.payload.items, [
+    {
+      name: "",
+      mime: "application/pdf",
+      byte_size: 42,
+      blob: {
+        handle: "blob:sha256:abc",
+        sha256: "abc",
+        mime: "application/pdf",
+        byte_size: 42,
+        created_at_ms: 1,
+        source: "files.pick",
+        local_state: "present",
+      },
+    },
+  ]);
 });
 
-test("normalizeDeviceHostEvent() requires an event type", () => {
+test("normalizeDeviceHostEvent() normalizes files.drop events", () => {
   assert.throws(() => host.normalizeDeviceHostEvent({}), /missing type/);
   assert.deepEqual(host.normalizeDeviceHostEvent({ type: "connectivity.online" }), {
     type: "connectivity.online",
   });
+  assert.deepEqual(
+    host.normalizeDeviceHostEvent({
+      type: "files.drop",
+      target: "dropzone",
+      items: [
+        {
+          name: "a.txt",
+          mime: "text/plain",
+          byte_size: 5,
+          blob: {
+            handle: "blob:sha256:abc",
+            sha256: "abc",
+            mime: "text/plain",
+            byte_size: 5,
+            created_at_ms: 1,
+            source: "files.drop",
+            local_state: "present",
+          },
+        },
+      ],
+    }),
+    {
+      type: "files.drop",
+      target: "dropzone",
+      items: [
+        {
+          name: "a.txt",
+          mime: "text/plain",
+          byte_size: 5,
+          blob: {
+            handle: "blob:sha256:abc",
+            sha256: "abc",
+            mime: "text/plain",
+            byte_size: 5,
+            created_at_ms: 1,
+            source: "files.drop",
+            local_state: "present",
+          },
+        },
+      ],
+    },
+  );
+});
+
+test("createBrowserNativeHost() executes clipboard, save, and share requests", async () => {
+  const originalNavigator = globalThis.navigator;
+  const originalShowSaveFilePicker = globalThis.showSaveFilePicker;
+  const writes = [];
+  const shares = [];
+  const saves = [];
+
+  Object.defineProperty(globalThis, "navigator", {
+    configurable: true,
+    value: {
+      clipboard: {
+        async writeText(text) {
+          writes.push(text);
+        },
+        async readText() {
+          return "hello from clipboard";
+        },
+      },
+      async share(data) {
+        shares.push(data);
+      },
+      canShare() {
+        return true;
+      },
+    },
+  });
+  Object.defineProperty(globalThis, "showSaveFilePicker", {
+    configurable: true,
+    value: async ({ suggestedName }) => ({
+      async createWritable() {
+        return {
+          async write(bytes) {
+            saves.push({
+              suggestedName,
+              text: new TextDecoder().decode(bytes),
+            });
+          },
+          async close() {},
+        };
+      },
+    }),
+  });
+
+  try {
+    const browserHost = host.createBrowserNativeHost({
+      capabilities: null,
+      dispatchHostEvent: async () => {},
+      platform: "web",
+    });
+
+    const copy = await browserHost.invoke({
+      family: "clipboard",
+      kind: "x07.web_ui.effect.device.clipboard.copy_text",
+      request_id: "req10",
+      op: "clipboard.write_text",
+      capability: "clipboard.write_text",
+      payload: { text: "copied" },
+    });
+    assert.equal(copy.result.status, "ok");
+    assert.deepEqual(writes, ["copied"]);
+
+    const read = await browserHost.invoke({
+      family: "clipboard",
+      kind: "x07.web_ui.effect.device.clipboard.read_text",
+      request_id: "req11",
+      op: "clipboard.read_text",
+      capability: "clipboard.read_text",
+      payload: {},
+    });
+    assert.equal(read.result.status, "ok");
+    assert.equal(read.result.payload.text, "hello from clipboard");
+
+    const save = await browserHost.invoke({
+      family: "files",
+      kind: "x07.web_ui.effect.device.files.save_text",
+      request_id: "req12",
+      op: "files.save",
+      capability: "files.save",
+      payload: { name: "draft.txt", text: "hello save" },
+    });
+    assert.equal(save.result.status, "ok");
+    assert.deepEqual(save.result.payload.items, [
+      { name: "draft.txt", mime: "text/plain;charset=utf-8", byte_size: 10 },
+    ]);
+    assert.deepEqual(saves, [{ suggestedName: "draft.txt", text: "hello save" }]);
+
+    const share = await browserHost.invoke({
+      family: "share",
+      kind: "x07.web_ui.effect.device.share.share_text",
+      request_id: "req13",
+      op: "share.present",
+      capability: "share.present",
+      payload: { title: "CrewOps", text: "Assigned" },
+    });
+    assert.equal(share.result.status, "ok");
+    assert.deepEqual(shares, [{ title: "CrewOps", text: "Assigned", url: undefined }]);
+  } finally {
+    if (originalNavigator === undefined) {
+      delete globalThis.navigator;
+    } else {
+      Object.defineProperty(globalThis, "navigator", {
+        configurable: true,
+        value: originalNavigator,
+      });
+    }
+    if (originalShowSaveFilePicker === undefined) {
+      delete globalThis.showSaveFilePicker;
+    } else {
+      Object.defineProperty(globalThis, "showSaveFilePicker", {
+        configurable: true,
+        value: originalShowSaveFilePicker,
+      });
+    }
+  }
 });

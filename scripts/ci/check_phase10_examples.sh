@@ -404,7 +404,10 @@ check_android_project_bundle_embed "${android_bundle_dir}" "${android_package_di
 check_android_native_projection "${android_package_dir}/android_project"
 check_dir_has_no_x07_tokens "${android_package_dir}/android_project"
 
-echo "==> phase10_examples: M0 proving app"
+echo "==> phase10_examples: builder I/O proving app"
+bash examples/x07_builder_io_min/scripts/ci/check_builder_io_min.sh
+
+echo "==> phase10_examples: native-surface proving app"
 bash examples/x07_capture_min/scripts/ci/check_capture_min.sh
 
 echo "==> phase10_examples: richer mobile showcase"

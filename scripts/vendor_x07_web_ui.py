@@ -39,46 +39,6 @@ TREE_DIRS = [
         VENDORED_REPO_DIR / "host" / "tests",
     ),
     (
-        "packages/std-web-ui/0.1.2/modules",
-        VENDORED_REPO_DIR / "packages" / "std-web-ui" / "0.1.2" / "modules",
-    ),
-    (
-        "packages/std-web-ui/0.1.3/modules",
-        VENDORED_REPO_DIR / "packages" / "std-web-ui" / "0.1.3" / "modules",
-    ),
-    (
-        "packages/std-web-ui/0.1.4/modules",
-        VENDORED_REPO_DIR / "packages" / "std-web-ui" / "0.1.4" / "modules",
-    ),
-    (
-        "packages/std-web-ui/0.1.5/modules",
-        VENDORED_REPO_DIR / "packages" / "std-web-ui" / "0.1.5" / "modules",
-    ),
-    (
-        "packages/std-web-ui/0.1.6/modules",
-        VENDORED_REPO_DIR / "packages" / "std-web-ui" / "0.1.6" / "modules",
-    ),
-    (
-        "packages/std-web-ui/0.1.7/modules",
-        VENDORED_REPO_DIR / "packages" / "std-web-ui" / "0.1.7" / "modules",
-    ),
-    (
-        "packages/std-web-ui/0.1.8/modules",
-        VENDORED_REPO_DIR / "packages" / "std-web-ui" / "0.1.8" / "modules",
-    ),
-    (
-        "packages/std-web-ui/0.1.9/modules",
-        VENDORED_REPO_DIR / "packages" / "std-web-ui" / "0.1.9" / "modules",
-    ),
-    (
-        "packages/std-web-ui/0.2.0/modules",
-        VENDORED_REPO_DIR / "packages" / "std-web-ui" / "0.2.0" / "modules",
-    ),
-    (
-        "packages/std-web-ui/0.2.1/modules",
-        VENDORED_REPO_DIR / "packages" / "std-web-ui" / "0.2.1" / "modules",
-    ),
-    (
         "examples/web_ui_counter",
         VENDORED_REPO_DIR / "examples" / "web_ui_counter",
     ),
@@ -131,6 +91,27 @@ def copy_file(src: pathlib.Path, dst: pathlib.Path) -> None:
     shutil.copy2(src, dst)
 
 
+def package_tree_dirs(
+    scan_root: pathlib.Path, dst_root: pathlib.Path
+) -> list[tuple[str, pathlib.Path]]:
+    pkg_root = scan_root / "packages" / "std-web-ui"
+    if not pkg_root.is_dir():
+        raise RuntimeError(f"missing std-web-ui package root: {pkg_root}")
+
+    out: list[tuple[str, pathlib.Path]] = []
+    for version_dir in sorted(pkg_root.iterdir()):
+        if not version_dir.is_dir():
+            continue
+        modules_dir = version_dir / "modules"
+        if not modules_dir.is_dir():
+            continue
+        rel = f"packages/std-web-ui/{version_dir.name}/modules"
+        out.append((rel, dst_root / rel))
+    if not out:
+        raise RuntimeError(f"no std-web-ui package versions with modules found under {pkg_root}")
+    return out
+
+
 def compute_vendor_files() -> dict[str, pathlib.Path]:
     out: dict[str, pathlib.Path] = {}
 
@@ -144,7 +125,7 @@ def compute_vendor_files() -> dict[str, pathlib.Path]:
             raise RuntimeError(f"missing synced WIT file: {dst}")
         out[rel] = dst
 
-    for src_rel_dir, dst_dir in TREE_DIRS:
+    for src_rel_dir, dst_dir in [*TREE_DIRS, *package_tree_dirs(VENDORED_REPO_DIR, VENDORED_REPO_DIR)]:
         if not dst_dir.is_dir():
             raise RuntimeError(f"missing vendored dir: {dst_dir}")
         paths = sorted([p for p in dst_dir.rglob("*") if p.is_file()])
@@ -190,7 +171,7 @@ def cmd_update(src_repo: pathlib.Path, source: str) -> int:
             raise RuntimeError(f"missing upstream file: {src}")
         copy_file(src, dst)
 
-    for rel, dst in TREE_DIRS:
+    for rel, dst in [*TREE_DIRS, *package_tree_dirs(src_repo, VENDORED_REPO_DIR)]:
         src = src_repo / rel
         if not src.is_dir():
             raise RuntimeError(f"missing upstream dir: {src}")

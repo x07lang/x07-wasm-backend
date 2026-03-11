@@ -14,16 +14,32 @@
     { "$ref": "#/$defs/device_permissions_query" },
     { "$ref": "#/$defs/device_permissions_request" },
     { "$ref": "#/$defs/device_camera_capture" },
+    { "$ref": "#/$defs/device_clipboard_copy_text" },
+    { "$ref": "#/$defs/device_clipboard_read_text" },
     { "$ref": "#/$defs/device_files_pick" },
+    { "$ref": "#/$defs/device_files_save_json" },
+    { "$ref": "#/$defs/device_files_save_text" },
     { "$ref": "#/$defs/device_blobs_stat" },
     { "$ref": "#/$defs/device_blobs_delete" },
     { "$ref": "#/$defs/device_location_get_current" },
     { "$ref": "#/$defs/device_notifications_schedule" },
-    { "$ref": "#/$defs/device_notifications_cancel" }
+    { "$ref": "#/$defs/device_notifications_cancel" },
+    { "$ref": "#/$defs/device_share_share_files" },
+    { "$ref": "#/$defs/device_share_share_text" }
   ],
   "$defs": {
     "v1": { "type": "integer", "const": 1 },
     "json_string": { "type": "string" },
+    "json_value": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "boolean" },
+        { "type": "number" },
+        { "type": "string" },
+        { "type": "array", "items": { "$ref": "#/$defs/json_value" } },
+        { "type": "object", "additionalProperties": { "$ref": "#/$defs/json_value" } }
+      ]
+    },
     "delay_ms": { "type": "integer", "minimum": 0 },
     "bool": { "type": "boolean" },
     "device_effect_base": {
@@ -168,6 +184,40 @@
         }
       ]
     },
+    "device_clipboard_copy_text": {
+      "allOf": [
+        { "$ref": "#/$defs/device_effect_base" },
+        {
+          "properties": {
+            "kind": { "const": "x07.web_ui.effect.device.clipboard.copy_text" },
+            "op": { "const": "clipboard.write_text" },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["text"],
+              "properties": {
+                "text": { "$ref": "#/$defs/json_string" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "device_clipboard_read_text": {
+      "allOf": [
+        { "$ref": "#/$defs/device_effect_base" },
+        {
+          "properties": {
+            "kind": { "const": "x07.web_ui.effect.device.clipboard.read_text" },
+            "op": { "const": "clipboard.read_text" },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false
+            }
+          }
+        }
+      ]
+    },
     "device_files_pick": {
       "allOf": [
         { "$ref": "#/$defs/device_effect_base" },
@@ -185,6 +235,46 @@
                   "items": { "$ref": "#/$defs/json_string" }
                 },
                 "multiple": { "$ref": "#/$defs/bool" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "device_files_save_json": {
+      "allOf": [
+        { "$ref": "#/$defs/device_effect_base" },
+        {
+          "properties": {
+            "kind": { "const": "x07.web_ui.effect.device.files.save_json" },
+            "op": { "const": "files.save" },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["name", "value"],
+              "properties": {
+                "name": { "$ref": "#/$defs/json_string" },
+                "value": { "$ref": "#/$defs/json_value" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "device_files_save_text": {
+      "allOf": [
+        { "$ref": "#/$defs/device_effect_base" },
+        {
+          "properties": {
+            "kind": { "const": "x07.web_ui.effect.device.files.save_text" },
+            "op": { "const": "files.save" },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["name", "text"],
+              "properties": {
+                "name": { "$ref": "#/$defs/json_string" },
+                "text": { "$ref": "#/$defs/json_string" }
               }
             }
           }
@@ -282,6 +372,53 @@
               "required": ["notification_id"],
               "properties": {
                 "notification_id": { "$ref": "#/$defs/json_string" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "device_share_share_files": {
+      "allOf": [
+        { "$ref": "#/$defs/device_effect_base" },
+        {
+          "properties": {
+            "kind": { "const": "x07.web_ui.effect.device.share.share_files" },
+            "op": { "const": "share.present" },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["items"],
+              "properties": {
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                },
+                "title": { "$ref": "#/$defs/json_string" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "device_share_share_text": {
+      "allOf": [
+        { "$ref": "#/$defs/device_effect_base" },
+        {
+          "properties": {
+            "kind": { "const": "x07.web_ui.effect.device.share.share_text" },
+            "op": { "const": "share.present" },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["text"],
+              "properties": {
+                "title": { "$ref": "#/$defs/json_string" },
+                "text": { "$ref": "#/$defs/json_string" },
+                "url": { "$ref": "#/$defs/json_string" }
               }
             }
           }

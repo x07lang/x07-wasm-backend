@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-device.capabilities.schema.json",
   "title": "x07.device.capabilities@0.2.0",
-  "description": "Pinned strict-M0 device runtime capability allowlist consumed by x07-wasm device tooling and device hosts. Legacy v0.1 booleans such as clipboard and local_kv are intentionally omitted from @0.2.0.",
+  "description": "Pinned strict-M0 device runtime capability allowlist consumed by x07-wasm device tooling and device hosts, including the Forge builder-I/O clipboard, file, drop, and share capabilities.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "network", "device"],
@@ -47,6 +47,9 @@
           "required": ["pick", "accept_defaults"],
           "properties": {
             "pick": { "type": "boolean" },
+            "pick_multiple": { "type": "boolean" },
+            "save": { "type": "boolean" },
+            "drop": { "type": "boolean" },
             "accept_defaults": {
               "type": "array",
               "minItems": 0,
@@ -58,6 +61,15 @@
               },
               "uniqueItems": true
             }
+          }
+        },
+        "clipboard": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["read_text", "write_text"],
+          "properties": {
+            "read_text": { "type": "boolean" },
+            "write_text": { "type": "boolean" }
           }
         },
         "blob_store": {
@@ -85,6 +97,14 @@
           "properties": {
             "local": { "type": "boolean" },
             "push": { "type": "boolean" }
+          }
+        },
+        "share": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["present"],
+          "properties": {
+            "present": { "type": "boolean" }
           }
         }
       }

@@ -1,0 +1,295 @@
+{
+  "decls": [
+    {
+      "kind": "export",
+      "names": [
+        "std.web_ui.patch.apply_v1",
+        "std.web_ui.patch.diff_v1",
+        "std.web_ui.patch.empty_v1",
+        "std.web_ui.patch.replace_root_v1"
+      ]
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "empty_b",
+          [
+            "bytes.lit",
+            "[]"
+          ]
+        ],
+        [
+          "let",
+          "empty_v",
+          [
+            "bytes.view",
+            "empty_b"
+          ]
+        ],
+        [
+          "if",
+          [
+            "view.eq",
+            "patchset_json",
+            "empty_v"
+          ],
+          [
+            "return",
+            [
+              "view.to_bytes",
+              "ui_json"
+            ]
+          ],
+          0
+        ],
+        [
+          "let",
+          "pre_b",
+          [
+            "bytes.lit",
+            "[{\"op\":\"replace\",\"path\":\"\",\"value\":"
+          ]
+        ],
+        [
+          "let",
+          "pre_v",
+          [
+            "bytes.view",
+            "pre_b"
+          ]
+        ],
+        [
+          "let",
+          "suf_b",
+          [
+            "bytes.lit",
+            "}]"
+          ]
+        ],
+        [
+          "let",
+          "suf_v",
+          [
+            "bytes.view",
+            "suf_b"
+          ]
+        ],
+        [
+          "let",
+          "n",
+          [
+            "view.len",
+            "patchset_json"
+          ]
+        ],
+        [
+          "let",
+          "pre_len",
+          [
+            "view.len",
+            "pre_v"
+          ]
+        ],
+        [
+          "if",
+          [
+            "<",
+            "n",
+            [
+              "+",
+              "pre_len",
+              2
+            ]
+          ],
+          [
+            "return",
+            [
+              "bytes.lit",
+              "ERR"
+            ]
+          ],
+          0
+        ],
+        [
+          "let",
+          "head",
+          [
+            "view.slice",
+            "patchset_json",
+            0,
+            "pre_len"
+          ]
+        ],
+        [
+          "if",
+          [
+            "=",
+            [
+              "view.eq",
+              "head",
+              "pre_v"
+            ],
+            0
+          ],
+          [
+            "return",
+            [
+              "bytes.lit",
+              "ERR"
+            ]
+          ],
+          0
+        ],
+        [
+          "let",
+          "tail",
+          [
+            "view.slice",
+            "patchset_json",
+            [
+              "-",
+              "n",
+              2
+            ],
+            2
+          ]
+        ],
+        [
+          "if",
+          [
+            "=",
+            [
+              "view.eq",
+              "tail",
+              "suf_v"
+            ],
+            0
+          ],
+          [
+            "return",
+            [
+              "bytes.lit",
+              "ERR"
+            ]
+          ],
+          0
+        ],
+        [
+          "let",
+          "val_len",
+          [
+            "-",
+            [
+              "-",
+              "n",
+              "pre_len"
+            ],
+            2
+          ]
+        ],
+        [
+          "let",
+          "val",
+          [
+            "view.slice",
+            "patchset_json",
+            "pre_len",
+            "val_len"
+          ]
+        ],
+        [
+          "view.to_bytes",
+          "val"
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.patch.apply_v1",
+      "params": [
+        {
+          "name": "ui_json",
+          "ty": "bytes_view"
+        },
+        {
+          "name": "patchset_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "if",
+        [
+          "view.eq",
+          "prev_ui_json",
+          "next_ui_json"
+        ],
+        [
+          "std.web_ui.patch.empty_v1"
+        ],
+        [
+          "std.web_ui.patch.replace_root_v1",
+          "next_ui_json"
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.patch.diff_v1",
+      "params": [
+        {
+          "name": "prev_ui_json",
+          "ty": "bytes_view"
+        },
+        {
+          "name": "next_ui_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "bytes.lit",
+        "[]"
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.patch.empty_v1",
+      "params": [],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          [
+            "bytes.lit",
+            "[{\"op\":\"replace\",\"path\":\"\",\"value\":"
+          ],
+          [
+            "view.to_bytes",
+            "next_ui_json"
+          ]
+        ],
+        [
+          "bytes.lit",
+          "}]"
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.patch.replace_root_v1",
+      "params": [
+        {
+          "name": "next_ui_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    }
+  ],
+  "imports": [],
+  "kind": "module",
+  "module_id": "std.web_ui.patch",
+  "schema_version": "x07.x07ast@0.5.0"
+}

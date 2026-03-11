@@ -1,0 +1,138 @@
+{
+  "schema_version": "x07.x07ast@0.3.0",
+  "kind": "module",
+  "module_id": "std.web_ui.schema",
+  "imports": [],
+  "decls": [
+    {
+      "kind": "export",
+      "names": [
+        "std.web_ui.schema.dispatch_v1",
+        "std.web_ui.schema.event_init_v1",
+        "std.web_ui.schema.event_click_v1",
+        "std.web_ui.schema.event_input_v1",
+        "std.web_ui.schema.event_change_v1",
+        "std.web_ui.schema.event_submit_v1"
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.schema.event_init_v1",
+      "params": [],
+      "result": "bytes",
+      "body": ["bytes.lit", "{\"type\":\"init\"}"]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.schema.event_click_v1",
+      "params": [
+        { "name": "target_json", "ty": "bytes_view" }
+      ],
+      "result": "bytes",
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          ["bytes.lit", "{\"type\":\"click\",\"target\":"],
+          ["view.to_bytes", "target_json"]
+        ],
+        ["bytes.lit", "}"]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.schema.event_input_v1",
+      "params": [
+        { "name": "target_json", "ty": "bytes_view" },
+        { "name": "value_json", "ty": "bytes_view" }
+      ],
+      "result": "bytes",
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          [
+            "bytes.concat",
+            ["bytes.lit", "{\"type\":\"input\",\"target\":"],
+            ["view.to_bytes", "target_json"]
+          ],
+          ["bytes.lit", ",\"value\":"]
+        ],
+        [
+          "bytes.concat",
+          ["view.to_bytes", "value_json"],
+          ["bytes.lit", "}"]
+        ]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.schema.event_change_v1",
+      "params": [
+        { "name": "target_json", "ty": "bytes_view" },
+        { "name": "value_json", "ty": "bytes_view" }
+      ],
+      "result": "bytes",
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          [
+            "bytes.concat",
+            ["bytes.lit", "{\"type\":\"change\",\"target\":"],
+            ["view.to_bytes", "target_json"]
+          ],
+          ["bytes.lit", ",\"value\":"]
+        ],
+        [
+          "bytes.concat",
+          ["view.to_bytes", "value_json"],
+          ["bytes.lit", "}"]
+        ]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.schema.event_submit_v1",
+      "params": [
+        { "name": "target_json", "ty": "bytes_view" }
+      ],
+      "result": "bytes",
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          ["bytes.lit", "{\"type\":\"submit\",\"target\":"],
+          ["view.to_bytes", "target_json"]
+        ],
+        ["bytes.lit", "}"]
+      ]
+    },
+    {
+      "kind": "defn",
+      "name": "std.web_ui.schema.dispatch_v1",
+      "params": [
+        { "name": "state_json", "ty": "bytes_view" },
+        { "name": "event_json", "ty": "bytes_view" }
+      ],
+      "result": "bytes",
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          [
+            "bytes.concat",
+            [
+              "bytes.concat",
+              ["bytes.lit", "{\"v\":1,\"kind\":\"x07.web_ui.dispatch\",\"state\":"],
+              ["view.to_bytes", "state_json"]
+            ],
+            ["bytes.lit", ",\"event\":"]
+          ],
+          ["view.to_bytes", "event_json"]
+        ],
+        ["bytes.lit", "}"]
+      ]
+    }
+  ]
+}

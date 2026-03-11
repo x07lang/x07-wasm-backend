@@ -9,6 +9,11 @@ This phase does not require Xcode/Gradle in CI; it only generates projects.
 
 The generated project skeletons come from the vendored `x07-device-host` mobile templates, including the native OTLP telemetry bridge used by device release observability.
 
+Forge M0 extends the examples and CI for this phase in two directions:
+
+- [`examples/x07_builder_io_min`](../examples/x07_builder_io_min/README.md) is the reference reducer for import/edit/export, clipboard, and share flows backed by the `std-web-ui@0.2.2` builder-I/O helpers.
+- `scripts/ci/check_phase10_mcp_inspect.sh` drives the repo-local `x07lang-mcp` reference server through `x07-mcp inspect --command` and verifies the new machine-readable inspect surface end to end when `../x07-mcp` is available.
+
 Strict M1 extends the machine-readable side of this phase:
 
 - `x07-wasm device verify --json` emits `x07.wasm.device.verify.report@0.2.0` with `result.native_summary` and `result.release_readiness`
@@ -51,4 +56,10 @@ Focused strict-M1 replay gate:
 bash scripts/ci/check_phase10_native_regressions.sh
 ```
 
-The official M0 native-surface reference for this phase is [`examples/x07_capture_min`](../examples/x07_capture_min/README.md). [`examples/x07_field_notes`](../examples/x07_field_notes/README.md) remains the richer offline/mobile showcase.
+Focused repo-local MCP inspect smoke:
+
+```sh
+bash scripts/ci/check_phase10_mcp_inspect.sh
+```
+
+The official M0 proving references for this phase are [`examples/x07_builder_io_min`](../examples/x07_builder_io_min/README.md) for builder I/O and [`examples/x07_capture_min`](../examples/x07_capture_min/README.md) for the broader native surface. [`examples/x07_field_notes`](../examples/x07_field_notes/README.md) remains the richer offline/mobile showcase.

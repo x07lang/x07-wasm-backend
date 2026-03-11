@@ -1,0 +1,34 @@
+{
+  "schema_version": "x07.device.profile@0.1.0",
+  "id": "device_ios_dev",
+  "v": 1,
+  "target": "ios",
+  "identity": {
+    "display_name": "x07 Builder IO Min (iOS Dev)",
+    "app_id": "org.x07.builderiomin.ios.dev"
+  },
+  "version": {
+    "version": "0.1.0",
+    "build": 1
+  },
+  "security": {
+    "allow_dynamic_code_loading": false
+  },
+  "ui": {
+    "project": "frontend/x07.json",
+    "web_ui_profile_id": "web_ui_debug"
+  },
+  "backend": {
+    "mode": "none"
+  },
+  "capabilities": {
+    "path": "arch/device/profiles/device_ios_dev.capabilities.json"
+  },
+  "telemetry_profile": {
+    "path": "arch/device/profiles/device_ios_dev.telemetry.profile.json"
+  },
+  "ios": {
+    "bundle_id": "org.x07.builderiomin.ios.dev",
+    "signing_mode": "dev"
+  }
+}

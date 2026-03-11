@@ -119,11 +119,17 @@
       "properties": {
         "camera_photo": { "type": "boolean" },
         "files_pick": { "type": "boolean" },
+        "files_pick_multiple": { "type": "boolean" },
+        "files_save": { "type": "boolean" },
+        "files_drop": { "type": "boolean" },
         "files_accept_defaults": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "clipboard_read_text": { "type": "boolean" },
+        "clipboard_write_text": { "type": "boolean" },
         "blob_store": { "$ref": "#/$defs/blob_store_summary" },
         "location_foreground": { "type": "boolean" },
         "notifications_local": { "type": "boolean" },
         "notifications_push": { "type": "boolean" },
+        "share_present": { "type": "boolean" },
         "network_allow_hosts": { "type": "array", "items": { "type": "string" }, "default": [] }
       }
     },

@@ -33,11 +33,17 @@ pub(crate) struct NativeSummary {
 pub(crate) struct NativeCapabilitiesSummary {
     pub(crate) camera_photo: bool,
     pub(crate) files_pick: bool,
+    pub(crate) files_pick_multiple: bool,
+    pub(crate) files_save: bool,
+    pub(crate) files_drop: bool,
     pub(crate) files_accept_defaults: Vec<String>,
+    pub(crate) clipboard_read_text: bool,
+    pub(crate) clipboard_write_text: bool,
     pub(crate) blob_store: BlobStoreSummary,
     pub(crate) location_foreground: bool,
     pub(crate) notifications_local: bool,
     pub(crate) notifications_push: bool,
+    pub(crate) share_present: bool,
     pub(crate) network_allow_hosts: Vec<String>,
 }
 
@@ -159,7 +165,7 @@ pub(crate) fn android_runtime_permissions(capabilities: &Value) -> Vec<String> {
     if capability_bool(capabilities, "/device/notifications/local") {
         permissions.push("android.permission.POST_NOTIFICATIONS".to_string());
     }
-    if capability_bool(capabilities, "/device/files/pick")
+    if capability_files_pick_requested(capabilities)
         && capability_accept_defaults(capabilities)
             .iter()
             .any(|value| value == "image/*")
@@ -184,7 +190,7 @@ pub(crate) fn ios_usage_descriptions(
             format!("{display_name} uses the camera to capture photos you choose."),
         ));
     }
-    if capability_bool(capabilities, "/device/files/pick") {
+    if capability_files_pick_requested(capabilities) {
         entries.push((
             "NSPhotoLibraryUsageDescription".to_string(),
             format!("{display_name} imports photos and documents that you choose."),
@@ -204,7 +210,12 @@ fn derive_capabilities_summary(doc: &Value) -> NativeCapabilitiesSummary {
     NativeCapabilitiesSummary {
         camera_photo: capability_bool(doc, "/device/camera/photo"),
         files_pick: capability_bool(doc, "/device/files/pick"),
+        files_pick_multiple: capability_bool(doc, "/device/files/pick_multiple"),
+        files_save: capability_bool(doc, "/device/files/save"),
+        files_drop: capability_bool(doc, "/device/files/drop"),
         files_accept_defaults: capability_accept_defaults(doc),
+        clipboard_read_text: capability_bool(doc, "/device/clipboard/read_text"),
+        clipboard_write_text: capability_bool(doc, "/device/clipboard/write_text"),
         blob_store: BlobStoreSummary {
             enabled: capability_bool(doc, "/device/blob_store/enabled"),
             max_total_bytes: doc
@@ -219,6 +230,7 @@ fn derive_capabilities_summary(doc: &Value) -> NativeCapabilitiesSummary {
         location_foreground: capability_bool(doc, "/device/location/foreground"),
         notifications_local: capability_bool(doc, "/device/notifications/local"),
         notifications_push: capability_bool(doc, "/device/notifications/push"),
+        share_present: capability_bool(doc, "/device/share/present"),
         network_allow_hosts: doc
             .pointer("/network/allow_hosts")
             .and_then(Value::as_array)
@@ -239,7 +251,7 @@ fn permission_declarations(capabilities: &NativeCapabilitiesSummary) -> Vec<Stri
     if capabilities.camera_photo {
         permissions.push("camera".to_string());
     }
-    if capabilities.files_pick {
+    if capabilities.files_pick || capabilities.files_pick_multiple {
         permissions.push("files_pick".to_string());
     }
     if capabilities.location_foreground {
@@ -272,6 +284,11 @@ fn capability_bool(doc: &Value, pointer: &str) -> bool {
     doc.pointer(pointer)
         .and_then(Value::as_bool)
         .unwrap_or(false)
+}
+
+fn capability_files_pick_requested(doc: &Value) -> bool {
+    capability_bool(doc, "/device/files/pick")
+        || capability_bool(doc, "/device/files/pick_multiple")
 }
 
 fn capability_accept_defaults(doc: &Value) -> Vec<String> {
@@ -307,14 +324,25 @@ mod tests {
             },
             "device": {
                 "camera": { "photo": true },
-                "files": { "pick": true, "accept_defaults": ["image/*", "application/pdf"] },
+                "files": {
+                    "pick": true,
+                    "pick_multiple": true,
+                    "save": true,
+                    "drop": true,
+                    "accept_defaults": ["image/*", "application/pdf"]
+                },
+                "clipboard": {
+                    "read_text": true,
+                    "write_text": true
+                },
                 "blob_store": {
                     "enabled": true,
                     "max_total_bytes": 67108864,
                     "max_item_bytes": 16777216
                 },
                 "location": { "foreground": true },
-                "notifications": { "local": true, "push": push }
+                "notifications": { "local": true, "push": push },
+                "share": { "present": true }
             }
         })
     }
@@ -392,5 +420,32 @@ mod tests {
             .warnings
             .iter()
             .any(|issue| issue.code == "X07WASM_DEVICE_NATIVE_TELEMETRY_ENDPOINT_INSECURE"));
+    }
+
+    #[test]
+    fn derive_native_surface_carries_builder_io_capabilities() {
+        let derived = derive_native_surface(DeriveNativeSurfaceArgs {
+            target_kind: "ios",
+            bundle_manifest_sha256: Some("a"),
+            package_manifest_sha256: Some("b"),
+            capabilities_doc: &capability_doc(false),
+            telemetry_profile_doc: &telemetry_doc("https://otel.example.invalid:4318"),
+            extra_warnings: Vec::new(),
+            extra_errors: Vec::new(),
+        });
+
+        let capabilities = &derived.native_summary.capabilities;
+        assert!(capabilities.files_pick);
+        assert!(capabilities.files_pick_multiple);
+        assert!(capabilities.files_save);
+        assert!(capabilities.files_drop);
+        assert!(capabilities.clipboard_read_text);
+        assert!(capabilities.clipboard_write_text);
+        assert!(capabilities.share_present);
+        assert!(derived
+            .native_summary
+            .permission_declarations
+            .iter()
+            .any(|entry| entry == "files_pick"));
     }
 }

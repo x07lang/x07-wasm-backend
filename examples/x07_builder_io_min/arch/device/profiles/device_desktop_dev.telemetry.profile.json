@@ -1,0 +1,26 @@
+{
+  "schema_version": "x07.device.telemetry.profile@0.1.0",
+  "transport": {
+    "protocol": "http/protobuf",
+    "endpoint": "https://otel.example.invalid:4318"
+  },
+  "resource": {
+    "app_id": "x07.builder_io_min.dev",
+    "target": "desktop",
+    "release_exec_id": null,
+    "release_plan_id": null,
+    "package_sha256": null,
+    "provider_kind": null,
+    "provider_lane": null,
+    "rollout_percent": null
+  },
+  "event_classes": [
+    "app.lifecycle",
+    "app.http",
+    "runtime.error",
+    "bridge.timing",
+    "reducer.timing",
+    "policy.violation",
+    "host.webview_crash"
+  ]
+}

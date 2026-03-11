@@ -20,7 +20,7 @@ x07 wasm doctor --json
 Fallbacks:
 
 ```sh
-cargo install --locked x07-wasm --version 0.2.3
+cargo install --locked x07-wasm --version 0.2.4
 ```
 
 Use `cargo install --locked --git https://github.com/x07lang/x07-wasm-backend.git x07-wasm` only when you need unreleased development state from this repo.
@@ -64,7 +64,7 @@ x07-wasm device verify --dir dist/device_ios_dev_bundle --json
 x07-wasm device package --bundle dist/device_ios_dev_bundle --target ios --out-dir dist/device_ios_dev_package --json
 ```
 
-Start from [`examples/x07_capture_min`](examples/x07_capture_min) for the current device bundle/profile layout and pair it with the reducer patterns in [`x07-web-ui/examples/web_ui_form`](../x07-web-ui/examples/web_ui_form). That combination is the current reference path for a consumer-owned web-ui/device app.
+Start from [`examples/x07_builder_io_min`](examples/x07_builder_io_min/README.md) for the current import/edit/export/share reducer path and [`examples/x07_capture_min`](examples/x07_capture_min/README.md) for the camera/location/notification-native surface. Pair either with the reducer patterns in [`x07-web-ui/examples/web_ui_form`](../x07-web-ui/examples/web_ui_form). Together they are the current reference path for a consumer-owned web-ui/device app.
 
 Generated Android projects now include a pinned Gradle wrapper (`./gradlew`). Build them with a supported JDK (17 or 21); on a machine with Android Studio installed, the bundled JBR is a valid `JAVA_HOME`:
 
@@ -79,6 +79,8 @@ Device profiles now keep runtime capabilities and telemetry transport settings i
 - `profile/device.profile.json`
 - `profile/device.capabilities.json`
 - `profile/device.telemetry.profile.json`
+
+The device-capability sidecar now carries the Forge builder-I/O fields consumed by `std-web-ui@0.2.2` and `x07-device-host`: `clipboard.read_text`, `clipboard.write_text`, `files.pick_multiple`, `files.save`, `files.drop`, and `share.present`.
 
 `x07-wasm device build` writes `app.manifest.json` into the bundle root so device hosts can reuse the same `apiPrefix`, component entrypoint, and `webUi` runtime limits that the browser host reads from app builds. `x07-wasm app serve` also answers API `OPTIONS` preflight requests with the canonical CORS headers expected by packaged device hosts calling a local or remote HTTP backend.
 
@@ -102,6 +104,7 @@ The telemetry sidecar must now declare the standard device-observability event c
 
 For richer end-to-end references, start with:
 
+- [`examples/x07_builder_io_min`](examples/x07_builder_io_min): builder-I/O proving app with import/edit/export, clipboard, share, and cross-target device packaging
 - [`examples/x07_atlas`](examples/x07_atlas): full-stack app bundle with offline-first UI, API traces, incident regression generation, pack verification, provenance, deploy planning, and SLO checks
 - [`examples/x07_studio`](examples/x07_studio): desktop device bundle with persistent project notes, import/export flows, provenance, packaging, and desktop host smoke
 - [`examples/x07_field_notes`](examples/x07_field_notes): one reducer packaged across desktop, iOS, and Android with replay traces and embedded-assets-only mobile outputs
@@ -172,6 +175,8 @@ Supported D-OSS command surface:
 
 Native incident replay gate: `bash scripts/ci/check_phase10_native_regressions.sh`
 
+Repo-local MCP inspect smoke: `bash scripts/ci/check_phase10_mcp_inspect.sh` (skips cleanly when `../x07-mcp` is not present and inspects repo-local `x07lang-mcp` through `x07-mcp inspect --command`)
+
 The packaged mobile templates are vendored from `x07-device-host/mobile/*` and refreshed through `scripts/vendor_x07_device_host_abi.py`; this repo no longer maintains a second editable copy of those templates.
 
 ## Contracts-as-data
@@ -199,7 +204,7 @@ The packaged mobile templates are vendored from `x07-device-host/mobile/*` and r
 | Native x07 wasm codegen | `scripts/ci/check_phase7.sh` |
 | Device build and verification | `scripts/ci/check_phase8.sh` |
 | Desktop host integration | `scripts/ci/check_phase9.sh` |
-| Mobile packaging and native regressions | `scripts/ci/check_phase10.sh` |
+| Mobile packaging, builder I/O, MCP inspect smoke, and native regressions | `scripts/ci/check_phase10.sh` |
 
 Release-ready also enforces `scripts/ci/check_schema_index.sh` so newly added public schemas stay indexed.
 
