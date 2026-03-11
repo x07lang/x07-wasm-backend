@@ -471,6 +471,8 @@ mod tests {
     #[test]
     fn android_runtime_permissions_include_haptics_vibrate() {
         let permissions = android_runtime_permissions(&capability_doc(false));
-        assert!(permissions.iter().any(|entry| entry == "android.permission.VIBRATE"));
+        assert!(permissions
+            .iter()
+            .any(|entry| entry == "android.permission.VIBRATE"));
     }
 }
