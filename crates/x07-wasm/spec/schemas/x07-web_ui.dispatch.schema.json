@@ -34,6 +34,7 @@
         { "$ref": "#/$defs/event_lifecycle_foreground" },
         { "$ref": "#/$defs/event_lifecycle_background" },
         { "$ref": "#/$defs/event_lifecycle_resume" },
+        { "$ref": "#/$defs/event_timer" },
         { "$ref": "#/$defs/event_connectivity_online" },
         { "$ref": "#/$defs/event_connectivity_offline" }
       ]
@@ -115,6 +116,15 @@
       "required": ["type"],
       "properties": {
         "type": { "type": "string", "const": "lifecycle.resume" }
+      }
+    },
+    "event_timer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "target"],
+      "properties": {
+        "type": { "type": "string", "const": "timer" },
+        "target": { "$ref": "#/$defs/node_key" }
       }
     },
     "event_connectivity_online": {

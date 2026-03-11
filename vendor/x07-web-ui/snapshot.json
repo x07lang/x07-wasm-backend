@@ -14,7 +14,7 @@
     },
     "examples/web_ui_counter/x07.json": {
       "bytes_len": 218,
-      "sha256": "fef59ffe4a8e9f3cab63f7da0e3876ea6e74b2feaed7c846cf79b8e83c72aa11"
+      "sha256": "a031672ed43fa10fabaec3845329836fcd5899a1d5af7b2be601183d850905bb"
     },
     "examples/web_ui_counter/x07.lock.json": {
       "bytes_len": 64,
@@ -34,23 +34,23 @@
     },
     "examples/web_ui_form/x07.json": {
       "bytes_len": 218,
-      "sha256": "fef59ffe4a8e9f3cab63f7da0e3876ea6e74b2feaed7c846cf79b8e83c72aa11"
+      "sha256": "a031672ed43fa10fabaec3845329836fcd5899a1d5af7b2be601183d850905bb"
     },
     "examples/web_ui_form/x07.lock.json": {
       "bytes_len": 63,
       "sha256": "3381e3077b949a91303e2553042cb35ed7bd76fcbc613b9ae039f1bc93b4da24"
     },
     "host/app-host.mjs": {
-      "bytes_len": 79105,
-      "sha256": "7450be7c56cbd0e50cd7b6d97ba75d4275a7a6ac61abd56b8b95581cc9c49c87"
+      "bytes_len": 80865,
+      "sha256": "c267e980df5b6c770ca1b4b933122151bf55cc77ba0073ef9878dfcb72ad7bc1"
     },
     "host/bootstrap.js": {
-      "bytes_len": 5123,
-      "sha256": "87291ea2577e6e0010e5de5ff100df7448518bab1c91e0661027eafb544e1248"
+      "bytes_len": 8139,
+      "sha256": "105fc98dc3d03b27885e3f484d6f6fa761d9006ba8e91b90bcb0089d6062d4aa"
     },
     "host/host.snapshot.json": {
       "bytes_len": 867,
-      "sha256": "01d98a005206c0331b16df1e99846a7238bd00c72c6012c3515289980a76fd06"
+      "sha256": "806d34f51c0f908ea795cc7103c72675fed25478671545decdbbc44849d32bae"
     },
     "host/index.html": {
       "bytes_len": 894,
@@ -492,11 +492,87 @@
       "bytes_len": 12477,
       "sha256": "2be8650af27d75bac169a79c93350fbf94c2ec09447c943a4b8c572bc0dceaeb"
     },
+    "packages/std-web-ui/0.2.1/modules/std/web_ui/effects/device/blobs.x07.json": {
+      "bytes_len": 4525,
+      "sha256": "0c0a3ddf99ed8161f33281fe3d57d0c7a0662475eb532e6db340a679418ce169"
+    },
+    "packages/std-web-ui/0.2.1/modules/std/web_ui/effects/device/camera.x07.json": {
+      "bytes_len": 3446,
+      "sha256": "e11496d5b579b81528bd119868eda504df5975dc73797f9be0824dee26c30ff8"
+    },
+    "packages/std-web-ui/0.2.1/modules/std/web_ui/effects/device/common.x07.json": {
+      "bytes_len": 7428,
+      "sha256": "1f4c6a1723ee442d9b486e91005659883724b17ef14b24acde44a608b9adb9d7"
+    },
+    "packages/std-web-ui/0.2.1/modules/std/web_ui/effects/device/events.x07.json": {
+      "bytes_len": 5477,
+      "sha256": "90ed9db2b815bdc7b523ead2d6b90bb4d976a24528be341c7de3c3910eae7c3a"
+    },
+    "packages/std-web-ui/0.2.1/modules/std/web_ui/effects/device/files.x07.json": {
+      "bytes_len": 3418,
+      "sha256": "6fb64060c2cd4d69ead5ed684a380c7df512bcfa66d2e21263e85954dab2bc42"
+    },
+    "packages/std-web-ui/0.2.1/modules/std/web_ui/effects/device/location.x07.json": {
+      "bytes_len": 3497,
+      "sha256": "3414751441ee614f787c9a06f19598ae6bdfce06510d92f7dd4c3820b25ddd03"
+    },
+    "packages/std-web-ui/0.2.1/modules/std/web_ui/effects/device/notifications.x07.json": {
+      "bytes_len": 6476,
+      "sha256": "d0a12be94580f0995aaa1250552375ce895ea521e86c1d187c9c012064d53a4d"
+    },
+    "packages/std-web-ui/0.2.1/modules/std/web_ui/effects/device/permissions.x07.json": {
+      "bytes_len": 4703,
+      "sha256": "520b1c845f0f0d8b0ecfb67b096fe0efaad9d0512e4bbb2f0c8e75de568e7413"
+    },
+    "packages/std-web-ui/0.2.1/modules/std/web_ui/effects/http.x07.json": {
+      "bytes_len": 16783,
+      "sha256": "0b3322fd715ceba9863310807dfb03840f9b6f9d33e2e734bcda900083a12064"
+    },
+    "packages/std-web-ui/0.2.1/modules/std/web_ui/effects/nav.x07.json": {
+      "bytes_len": 2782,
+      "sha256": "092676e77a6f1cba9f5250ae4b16903c1b94c7dea5fb9c993f7aabd9affeb085"
+    },
+    "packages/std-web-ui/0.2.1/modules/std/web_ui/effects/storage.x07.json": {
+      "bytes_len": 3857,
+      "sha256": "1dcfea4144bb67e74e60770966b4705127f28fbb185f19ba47f2e7d5e1b22a33"
+    },
+    "packages/std-web-ui/0.2.1/modules/std/web_ui/effects/timer.x07.json": {
+      "bytes_len": 3179,
+      "sha256": "08d5c5b9eb9af6d19eb68d4f1c9a952c4771cffb0ac38eaf5e91ce863b6e6283"
+    },
+    "packages/std-web-ui/0.2.1/modules/std/web_ui/patch.x07.json": {
+      "bytes_len": 5154,
+      "sha256": "194420e5ed2c322c34b597aab09f9938d9dd510dd79be22ccd8017d14da7607e"
+    },
+    "packages/std-web-ui/0.2.1/modules/std/web_ui/runtime.x07.json": {
+      "bytes_len": 5154,
+      "sha256": "7e44981b3697be46dc22d0214683a24c9ac4a0dfa91f6a9f1d0208dadaf3a3fb"
+    },
+    "packages/std-web-ui/0.2.1/modules/std/web_ui/schema.x07.json": {
+      "bytes_len": 4515,
+      "sha256": "786569f4876db2db0414a0fb8e3852affe2db200dd55f6ad77b604d5cdc32ff8"
+    },
+    "packages/std-web-ui/0.2.1/modules/std/web_ui/test.x07.json": {
+      "bytes_len": 1757,
+      "sha256": "23cc23f7e08e49413d10848f273bc48107dc315a2388155f6a37fce41e242cdd"
+    },
+    "packages/std-web-ui/0.2.1/modules/std/web_ui/tests.x07.json": {
+      "bytes_len": 42020,
+      "sha256": "58bffc5064e1e42f438af611111784f5f4ee3b99cbbe894c6670269bb88e171c"
+    },
+    "packages/std-web-ui/0.2.1/modules/std/web_ui/trace.x07.json": {
+      "bytes_len": 1720,
+      "sha256": "c376b1550395cee67327c918ef7039921dcd78682825afe2a2d16eb8c8f617ec"
+    },
+    "packages/std-web-ui/0.2.1/modules/std/web_ui/vdom.x07.json": {
+      "bytes_len": 12477,
+      "sha256": "2be8650af27d75bac169a79c93350fbf94c2ec09447c943a4b8c572bc0dceaeb"
+    },
     "wit/x07/web_ui/0.2.0/web-ui-app.wit": {
       "bytes_len": 417,
       "sha256": "23987f7afcd9bec97a983c4e5f1682373cee253347202cc1da149ad66d90d1f3"
     }
   },
-  "git_sha": "44b60fe46506034f991c93babaf39a79f42d4845",
-  "source": "workspace"
+  "git_sha": "41166c42d3e02d1bbb8db3b6002d262951b2bf19",
+  "source": "https://github.com/x07lang/x07-web-ui.git"
 }

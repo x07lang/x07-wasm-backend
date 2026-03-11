@@ -1,6 +1,6 @@
 # solve_pure_spin
 
-Phase 5 golden: deterministic "budget exceeded" fixture for `x07-wasm run --max-fuel`.
+Deterministic "budget exceeded" fixture for `x07-wasm run --max-fuel`.
 
 This solve-pure program:
 - reads a u32 from input[0..4] as N (little-endian),
@@ -11,7 +11,7 @@ Fixtures:
 - `tests/fixtures/in_small.bin` (N=5)  -> expected output `out_small.bin` (u32=5).
 - `tests/fixtures/in.bin` (N=50_000_000) is intended to exceed fuel when run with a small `--max-fuel`.
 
-Suggested Phase-5 commands:
+Suggested commands:
 
 Build:
   x07-wasm build \

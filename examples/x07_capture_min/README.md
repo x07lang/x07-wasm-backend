@@ -1,8 +1,8 @@
 # `x07 Capture Min`
 
-Strict M0 proving app for the native device surface in `x07-wasm-backend`.
+Native proving app for the device surface in `x07-wasm-backend`.
 
-This example keeps the reducer intentionally small while proving the same `std.web_ui` program across browser replay, desktop bundle smoke, and iOS/Android project generation. It is the canonical M0 reference for:
+This example keeps the reducer intentionally small while proving the same `std.web_ui` program across browser replay, desktop bundle smoke, and iOS/Android project generation. It is the canonical reference for:
 
 - permission query and request
 - camera capture and file import
@@ -11,7 +11,7 @@ This example keeps the reducer intentionally small while proving the same `std.w
 - foreground location reads
 - local notification schedule, cancel, and `notification.opened`
 - target-specific device capabilities and telemetry sidecars
-- strict-M1 native incident bundle -> replay synthesis fixtures
+- native incident bundle -> replay synthesis fixtures
 
 - CI gate: `bash scripts/ci/check_capture_min.sh`
 - Alias gate: `bash scripts/ci/check_m0_native_surface.sh`
@@ -20,12 +20,12 @@ This example keeps the reducer intentionally small while proving the same `std.w
 
 ## What It Demonstrates
 
-- `std-web-ui@0.2.0` device helpers from the vendored package path
+- `std-web-ui@0.2.1` device helpers from the vendored package path
 - One reducer packaged for desktop, iOS, and Android
 - Target-specific capability contracts instead of fake feature parity
 - Deterministic replay of both positive and negative native outcomes
 - Deterministic replay of blob quota and notification cancel outcomes
-- Deterministic synthesis of strict-M1 native replay fixtures from platform incident bundles
+- Deterministic synthesis of native replay fixtures from platform incident bundles
 
 ## Run With Released Tools
 

@@ -20,7 +20,7 @@ x07 wasm doctor --json
 Fallbacks:
 
 ```sh
-cargo install --locked x07-wasm --version 0.2.2
+cargo install --locked x07-wasm --version 0.2.3
 ```
 
 Use `cargo install --locked --git https://github.com/x07lang/x07-wasm-backend.git x07-wasm` only when you need unreleased development state from this repo.
@@ -64,7 +64,7 @@ x07-wasm device verify --dir dist/device_ios_dev_bundle --json
 x07-wasm device package --bundle dist/device_ios_dev_bundle --target ios --out-dir dist/device_ios_dev_package --json
 ```
 
-Start from [`examples/x07_capture_min`](examples/x07_capture_min) for the M0 device bundle/profile layout and pair it with the reducer patterns in [`x07-web-ui/examples/web_ui_form`](../x07-web-ui/examples/web_ui_form). That combination is the current reference path for a consumer-owned web-ui/device app.
+Start from [`examples/x07_capture_min`](examples/x07_capture_min) for the current device bundle/profile layout and pair it with the reducer patterns in [`x07-web-ui/examples/web_ui_form`](../x07-web-ui/examples/web_ui_form). That combination is the current reference path for a consumer-owned web-ui/device app.
 
 Generated Android projects now include a pinned Gradle wrapper (`./gradlew`). Build them with a supported JDK (17 or 21); on a machine with Android Studio installed, the bundled JBR is a valid `JAVA_HOME`:
 
@@ -81,6 +81,8 @@ Device profiles now keep runtime capabilities and telemetry transport settings i
 - `profile/device.telemetry.profile.json`
 
 `x07-wasm device build` writes `app.manifest.json` into the bundle root so device hosts can reuse the same `apiPrefix`, component entrypoint, and `webUi` runtime limits that the browser host reads from app builds. `x07-wasm app serve` also answers API `OPTIONS` preflight requests with the canonical CORS headers expected by packaged device hosts calling a local or remote HTTP backend.
+
+The app/device replay surface now keeps storage-write acknowledgements payload-free: browser/device hosts and `x07-wasm app test` re-dispatch `state.__x07_storage.set.ok` without replaying the stored value blob into reducer state.
 
 The telemetry sidecar must now declare the standard device-observability event classes and OTLP transport profile used by the platform release loop:
 
@@ -108,39 +110,39 @@ The examples index lives in [`examples/README.md`](examples/README.md).
 
 ## Command surface
 
-### Phase 0 — solve-pure WASM modules
+### Solve-Pure WASM Modules
 
-- `x07-wasm build` — build solve-pure wasm modules (Phase 7 defaults to native `x07 build --emit-wasm`; legacy `clang`/`wasm-ld` path available via `--codegen-backend c_toolchain_v1`)
-- `x07-wasm run` — deterministic runner for Phase 0 ABI (`x07_solve_v2` via WASM Basic C ABI sret)
+- `x07-wasm build` — build solve-pure wasm modules (current releases default to native `x07 build --emit-wasm`; legacy `clang`/`wasm-ld` path is available via `--codegen-backend c_toolchain_v1`)
+- `x07-wasm run` — deterministic runner for the solve-pure ABI (`x07_solve_v2` via WASM Basic C ABI sret)
 - `x07-wasm doctor`, `x07-wasm profile validate`, `x07-wasm cli specrows check`
 
-### Phase 1 — WASI 0.2 components
+### WASI 0.2 Components
 
 - `x07-wasm wit validate`
 - `x07-wasm component profile validate` / `build` / `compose` / `targets`
 - `x07-wasm serve` / `x07-wasm component run`
 
-### Phase 2 — web UI
+### Web UI
 
 - `x07-wasm web-ui contracts validate` / `profile validate`
 - `x07-wasm web-ui build` / `serve` / `test` / `regress-from-incident`
 
-### Phase 3 — full-stack app bundle
+### Full-Stack App Bundle
 
 - `x07-wasm app contracts validate` / `profile validate`
 - `x07-wasm app build` / `serve` / `test` / `regress from-incident`
 
-### Phase 4 — native backend targets
+### Native Backend Targets
 
 - `x07-wasm component build --emit http-native` / `--emit cli-native`
 
-### Phase 5 — production hardening
+### Production Hardening
 
 - `x07-wasm toolchain validate`
 - `x07-wasm app pack` / `app verify`
 - `x07-wasm http contracts validate` / `http serve` / `http test` / `http regress from-incident`
 
-### Phase 6 — ops / policy / SLO / deploy / provenance
+### Ops / Policy / SLO / Deploy / Provenance
 
 - `x07-wasm ops validate` / `caps validate` / `policy validate`
 - `x07-wasm slo validate` / `slo eval`
@@ -155,12 +157,12 @@ Supported D-OSS command surface:
 - `x07-wasm slo eval`
 - `x07-wasm app regress from-incident`
 
-### Phase 7 — native x07 → wasm backend
+### Native x07 -> Wasm Backend
 
 - Wasm profiles add `codegen_backend` (default: `native_x07_wasm_v1`)
 - `--codegen-backend native_x07_wasm_v1` (native) or `--codegen-backend c_toolchain_v1` (legacy)
 
-### Phase 8–10 — device apps
+### Device Apps
 
 - `x07-wasm device index validate` / `device profile validate`
 - `x07-wasm device build` / `device verify`
@@ -168,7 +170,7 @@ Supported D-OSS command surface:
 - `x07-wasm device regress from-incident`
 - `x07-wasm device package --target ios` / `--target android`
 
-Strict-M1 native incident replay gate: `bash scripts/ci/check_phase10_native_regressions.sh`
+Native incident replay gate: `bash scripts/ci/check_phase10_native_regressions.sh`
 
 The packaged mobile templates are vendored from `x07-device-host/mobile/*` and refreshed through `scripts/vendor_x07_device_host_abi.py`; this repo no longer maintains a second editable copy of those templates.
 
@@ -185,19 +187,19 @@ The packaged mobile templates are vendored from `x07-device-host/mobile/*` and r
 
 ## CI gates
 
-| Phase | Gate |
-|-------|------|
-| 0 | `scripts/ci/check_phase0.sh` |
-| 1 | `scripts/ci/check_phase1.sh` |
-| 2 | `scripts/ci/check_phase2.sh` |
-| 3 | `scripts/ci/check_phase3.sh` |
-| 4 | `scripts/ci/check_phase4.sh` |
-| 5 | `scripts/ci/check_phase5.sh` |
-| 6 | `scripts/ci/check_phase6.sh` |
-| 7 | `scripts/ci/check_phase7.sh` |
-| 8 | `scripts/ci/check_phase8.sh` |
-| 9 | `scripts/ci/check_phase9.sh` |
-| 10 | `scripts/ci/check_phase10.sh` |
+| Area | Gate |
+|------|------|
+| Solve-pure wasm | `scripts/ci/check_phase0.sh` |
+| Components | `scripts/ci/check_phase1.sh` |
+| Web UI | `scripts/ci/check_phase2.sh` |
+| Full-stack app | `scripts/ci/check_phase3.sh` |
+| Native backend targets | `scripts/ci/check_phase4.sh` |
+| Hardening and HTTP | `scripts/ci/check_phase5.sh` |
+| Ops, policy, and provenance | `scripts/ci/check_phase6.sh` |
+| Native x07 wasm codegen | `scripts/ci/check_phase7.sh` |
+| Device build and verification | `scripts/ci/check_phase8.sh` |
+| Desktop host integration | `scripts/ci/check_phase9.sh` |
+| Mobile packaging and native regressions | `scripts/ci/check_phase10.sh` |
 
 Release-ready also enforces `scripts/ci/check_schema_index.sh` so newly added public schemas stay indexed.
 
@@ -215,15 +217,15 @@ cargo clippy --all-targets -- -D warnings
 
 If you touch `crates/x07-wasm/src/device/*`, run `cargo fmt --all` even when the change looks trivial. The device incident regression generator regularly trips the rustfmt gate because long schema-validation and file-write calls wrap differently than they read in review.
 
-Then run the phase gate(s) that match what you changed:
-- Phase 0–1: WASM / components toolchain changes.
-- Phase 2–3: web-ui and app pipeline changes.
-- Phase 4–7: native backend / hardening / ops / provenance changes.
-- Phase 8–10: device pipeline / templates / host ABI changes.
+Then run the gate(s) that match what you changed:
+- Solve-pure wasm and component toolchain changes: `check_phase0.sh`, `check_phase1.sh`
+- Web UI and app pipeline changes: `check_phase2.sh`, `check_phase3.sh`
+- Native backend, hardening, ops, and provenance changes: `check_phase4.sh` through `check_phase7.sh`
+- Device pipeline, templates, and host ABI changes: `check_phase8.sh` through `check_phase10.sh`
 
-If CI fails in a phase gate, run the corresponding `scripts/ci/check_phase*.sh` locally; they are the same entry points CI uses.
+If CI fails in one of those gates, run the corresponding `scripts/ci/check_phase*.sh` locally; they are the same entry points CI uses.
 
-Some phase gates (notably Phase 1–2) also validate that embedded adapter snapshots under `crates/x07-wasm/src/support/adapters/` match what `guest/*` builds produce. If you change `guest/*` or bump `rust-toolchain.toml`, refresh the snapshots:
+Some gates, notably the component and web-ui checks, also validate that embedded adapter snapshots under `crates/x07-wasm/src/support/adapters/` match what `guest/*` builds produce. If you change `guest/*` or bump `rust-toolchain.toml`, refresh the snapshots:
 
 ```sh
 bash scripts/update_adapter_snapshots.sh
@@ -232,10 +234,6 @@ bash scripts/update_adapter_snapshots.sh
 Notes:
 - Adapter WASM bytes are not stable across build environments. To keep CI deterministic, the snapshot drift check builds adapters inside a pinned `rust:<channel>` container and runs only on Linux (Ubuntu CI, Docker required).
 - `scripts/update_adapter_snapshots.sh` requires Docker; it builds the guest adapters in a linux/amd64 container using the pinned `rust-toolchain.toml` channel, then copies the outputs into `crates/x07-wasm/src/support/adapters/*.component.wasm`.
-
-## Phase docs
-
-- `docs/phase0.md` through `docs/phase10.md`
 
 ## Incidents
 

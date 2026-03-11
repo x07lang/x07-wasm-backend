@@ -1,4 +1,4 @@
-`x07 Capture Min` carries the strict-M1 native incident fixtures used by the device regression generator.
+`x07 Capture Min` carries the native incident fixtures used by the device regression generator.
 
 Each case directory contains:
 

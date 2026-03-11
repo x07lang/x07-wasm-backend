@@ -18,7 +18,7 @@ Current proving traces:
 - `tests/web_ui/m0_blob_quota.trace.json`: deterministic `blob_item_too_large` and `blob_total_too_large` import failures
 - `tests/web_ui/m0_notification_cancel.trace.json`: schedule followed by `notifications.cancel`
 
-Strict-M1 native incident fixtures live under `tests/native_incidents/`:
+Native incident fixtures live under `tests/native_incidents/`:
 
 - `permission_blocked`: denied permission path with explicit replay hints
 - `location_timeout`: synthesized replay from `native_bridge_timeout` breadcrumbs

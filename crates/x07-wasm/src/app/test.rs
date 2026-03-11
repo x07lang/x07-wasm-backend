@@ -318,6 +318,7 @@ pub fn cmd_app_test(
         storage: BTreeMap::new(),
         nav_href: "http://localhost/".to_string(),
         timers: BTreeMap::new(),
+        step_device_results: BTreeMap::new(),
     };
 
     let max_steps = args.max_steps as usize;
@@ -327,13 +328,16 @@ pub fn cmd_app_test(
         for (idx, step) in steps.into_iter().enumerate().take(max_steps) {
             steps_run = steps_run.saturating_add(1);
             let ui_dispatch = step.get("ui_dispatch").cloned().unwrap_or(Value::Null);
+            let (ui_dispatch_run, device_result_overrides) =
+                strip_step_device_result_overrides(&ui_dispatch)?;
+            effects_state.step_device_results = device_result_overrides;
             let expected_frame = step.get("ui_frame").cloned().unwrap_or(Value::Null);
             let expected_http = step.get("http").cloned().unwrap_or_else(|| json!([]));
 
-            let event = ui_dispatch.get("event").cloned().unwrap_or(Value::Null);
+            let event = ui_dispatch_run.get("event").cloned().unwrap_or(Value::Null);
 
             let input_bytes =
-                replay::canonical_json_bytes_no_newline(&ui_dispatch).unwrap_or_default();
+                replay::canonical_json_bytes_no_newline(&ui_dispatch_run).unwrap_or_default();
             if input_bytes.len() as u64 > app_budgets.max_dispatch_bytes {
                 diagnostics.push(Diagnostic::new(
                     "X07WASM_APP_TEST_DISPATCH_TOO_LARGE",
@@ -590,6 +594,7 @@ struct AppTestEffectsState {
     storage: BTreeMap<String, String>,
     nav_href: String,
     timers: BTreeMap<String, u64>,
+    step_device_results: BTreeMap<String, Value>,
 }
 
 fn load_app_test_budgets(
@@ -832,9 +837,10 @@ async fn run_effects_loop(
             );
         }
 
-        let mut injected_state = current_state.clone();
-
         for eff in effects {
+            let mut injected_state = current_state.clone();
+            let mut handled = false;
+
             if let Some(req0) = parse_http_request_effect(&eff)? {
                 let req_env = build_exec_request_envelope(app_budgets.api_prefix.as_str(), &req0)?;
                 let resp_env = execute_http_request(
@@ -848,96 +854,132 @@ async fn run_effects_loop(
                 .await?;
                 exchanges.push(json!({ "request": req_env.clone(), "response": resp_env.clone() }));
                 injected_state = inject_http_response_state(injected_state, resp_env);
-                continue;
+                handled = true;
             }
 
-            if let Some(key) = parse_storage_get_effect(&eff)? {
-                let value = effects_state.storage.get(&key).cloned();
-                injected_state = inject_merge_object_field(
-                    injected_state,
-                    "__x07_storage",
-                    json!({ "get": { "key": key, "value": value } }),
-                )?;
-                continue;
+            if !handled {
+                if let Some(key) = parse_storage_get_effect(&eff)? {
+                    let value = effects_state.storage.get(&key).cloned();
+                    injected_state = inject_merge_object_field(
+                        injected_state,
+                        "__x07_storage",
+                        json!({ "get": { "key": key, "value": value } }),
+                    )?;
+                    handled = true;
+                }
             }
 
-            if let Some((key, value)) = parse_storage_set_effect(&eff)? {
-                effects_state.storage.insert(key.clone(), value.clone());
-                injected_state = inject_merge_object_field(
-                    injected_state,
-                    "__x07_storage",
-                    json!({ "set": { "key": key, "value": value, "ok": true } }),
-                )?;
-                continue;
+            if !handled {
+                if let Some((key, value)) = parse_storage_set_effect(&eff)? {
+                    effects_state.storage.insert(key.clone(), value.clone());
+                    injected_state = inject_merge_object_field(
+                        injected_state,
+                        "__x07_storage",
+                        json!({ "set": { "ok": true } }),
+                    )?;
+                    handled = true;
+                }
             }
 
-            if let Some(path) = parse_nav_push_effect(&eff)? {
-                let href = set_nav_href(&mut effects_state.nav_href, &path);
-                injected_state = inject_set_field(
-                    injected_state,
-                    "__x07_nav",
-                    json!({ "op": "push", "path": path, "href": href }),
-                );
-                continue;
+            if !handled {
+                if let Some(path) = parse_nav_push_effect(&eff)? {
+                    let href = set_nav_href(&mut effects_state.nav_href, &path);
+                    injected_state = inject_set_field(
+                        injected_state,
+                        "__x07_nav",
+                        json!({ "op": "push", "path": path, "href": href }),
+                    );
+                    handled = true;
+                }
             }
 
-            if let Some(path) = parse_nav_replace_effect(&eff)? {
-                let href = set_nav_href(&mut effects_state.nav_href, &path);
-                injected_state = inject_set_field(
-                    injected_state,
-                    "__x07_nav",
-                    json!({ "op": "replace", "path": path, "href": href }),
-                );
-                continue;
+            if !handled {
+                if let Some(path) = parse_nav_replace_effect(&eff)? {
+                    let href = set_nav_href(&mut effects_state.nav_href, &path);
+                    injected_state = inject_set_field(
+                        injected_state,
+                        "__x07_nav",
+                        json!({ "op": "replace", "path": path, "href": href }),
+                    );
+                    handled = true;
+                }
             }
 
-            if let Some((id, delay_ms)) = parse_timer_set_effect(&eff)? {
-                effects_state.timers.insert(id.clone(), delay_ms);
-                injected_state = inject_merge_object_field(
-                    injected_state,
-                    "__x07_timer",
-                    json!({ "set": { "id": id, "delay_ms": delay_ms, "ok": true } }),
-                )?;
-                continue;
+            if !handled {
+                if let Some((id, delay_ms)) = parse_timer_set_effect(&eff)? {
+                    effects_state.timers.insert(id.clone(), delay_ms);
+                    injected_state = inject_merge_object_field(
+                        injected_state,
+                        "__x07_timer",
+                        json!({ "set": { "id": id, "delay_ms": delay_ms, "ok": true } }),
+                    )?;
+                    handled = true;
+                }
             }
 
-            if let Some(id) = parse_timer_clear_effect(&eff)? {
-                effects_state.timers.remove(&id);
-                injected_state = inject_merge_object_field(
-                    injected_state,
-                    "__x07_timer",
-                    json!({ "clear": { "id": id, "ok": true } }),
-                )?;
-                continue;
+            if !handled {
+                if let Some(id) = parse_timer_clear_effect(&eff)? {
+                    effects_state.timers.remove(&id);
+                    injected_state = inject_merge_object_field(
+                        injected_state,
+                        "__x07_timer",
+                        json!({ "clear": { "id": id, "ok": true } }),
+                    )?;
+                    handled = true;
+                }
             }
 
-            anyhow::bail!("unsupported effect: {eff}");
+            if !handled {
+                if let Some(request_id) = parse_camera_capture_effect(&eff)? {
+                    injected_state = inject_device_result_state(
+                        injected_state,
+                        "camera",
+                        take_step_device_result(effects_state, "camera")
+                            .unwrap_or_else(|| deterministic_camera_result(&request_id)),
+                    )?;
+                    handled = true;
+                }
+            }
+
+            if !handled {
+                if let Some(request_id) = parse_files_pick_effect(&eff)? {
+                    injected_state = inject_device_result_state(
+                        injected_state,
+                        "files",
+                        take_step_device_result(effects_state, "files")
+                            .unwrap_or_else(|| deterministic_files_result(&request_id)),
+                    )?;
+                    handled = true;
+                }
+            }
+
+            if !handled {
+                if let Some(request_id) = parse_location_get_current_effect(&eff)? {
+                    injected_state = inject_device_result_state(
+                        injected_state,
+                        "location",
+                        take_step_device_result(effects_state, "location")
+                            .unwrap_or_else(|| deterministic_location_result(&request_id)),
+                    )?;
+                    handled = true;
+                }
+            }
+
+            if !handled {
+                anyhow::bail!("unsupported effect: {eff}");
+            }
+
+            frame = replay_effect_dispatch(
+                store,
+                app_budgets,
+                step_index,
+                core,
+                prev_ui,
+                current_state,
+                event,
+                injected_state,
+            )?;
         }
-
-        let env = json!({
-          "v": 1,
-          "kind": "x07.web_ui.dispatch",
-          "state": injected_state,
-          "event": event,
-        });
-        let input_bytes = replay::canonical_json_bytes_no_newline(&env)?;
-        if input_bytes.len() as u64 > app_budgets.max_dispatch_bytes {
-            anyhow::bail!("dispatch exceeds max_dispatch_bytes");
-        }
-        let out_bytes = core.call(&input_bytes)?;
-        if out_bytes.len() as u64 > app_budgets.max_frame_bytes {
-            anyhow::bail!("frame exceeds max_frame_bytes");
-        }
-        let next_frame: Value = serde_json::from_slice(&out_bytes).context("frame JSON")?;
-        let diags = store.validate(
-            "https://x07.io/spec/x07-web_ui.frame.schema.json",
-            &next_frame,
-        )?;
-        if diags.iter().any(|d| d.severity == Severity::Error) {
-            anyhow::bail!("frame schema invalid: {diags:?}");
-        }
-        commit_frame(step_index, &next_frame, prev_ui, current_state)?;
-        frame = next_frame;
     }
 
     let remaining = frame_effects(&frame);
@@ -946,6 +988,42 @@ async fn run_effects_loop(
     }
 
     Ok((frame, exchanges))
+}
+
+fn replay_effect_dispatch(
+    store: &SchemaStore,
+    app_budgets: &AppTestBudgets,
+    step_index: usize,
+    core: &mut replay::CoreWasmRunner,
+    prev_ui: &mut Option<Value>,
+    current_state: &mut Value,
+    event: &Value,
+    injected_state: Value,
+) -> Result<Value> {
+    let env = json!({
+      "v": 1,
+      "kind": "x07.web_ui.dispatch",
+      "state": injected_state,
+      "event": event,
+    });
+    let input_bytes = replay::canonical_json_bytes_no_newline(&env)?;
+    if input_bytes.len() as u64 > app_budgets.max_dispatch_bytes {
+        anyhow::bail!("dispatch exceeds max_dispatch_bytes");
+    }
+    let out_bytes = core.call(&input_bytes)?;
+    if out_bytes.len() as u64 > app_budgets.max_frame_bytes {
+        anyhow::bail!("frame exceeds max_frame_bytes");
+    }
+    let next_frame: Value = serde_json::from_slice(&out_bytes).context("frame JSON")?;
+    let diags = store.validate(
+        "https://x07.io/spec/x07-web_ui.frame.schema.json",
+        &next_frame,
+    )?;
+    if diags.iter().any(|d| d.severity == Severity::Error) {
+        anyhow::bail!("frame schema invalid: {diags:?}");
+    }
+    commit_frame(step_index, &next_frame, prev_ui, current_state)?;
+    Ok(next_frame)
 }
 
 fn frame_effects(frame: &Value) -> Vec<Value> {
@@ -1065,6 +1143,31 @@ fn parse_timer_clear_effect(effect: &Value) -> Result<Option<String>> {
     Ok(Some(id.to_string()))
 }
 
+fn parse_camera_capture_effect(effect: &Value) -> Result<Option<String>> {
+    parse_device_effect_request_id(effect, "x07.web_ui.effect.device.camera.capture")
+}
+
+fn parse_files_pick_effect(effect: &Value) -> Result<Option<String>> {
+    parse_device_effect_request_id(effect, "x07.web_ui.effect.device.files.pick")
+}
+
+fn parse_location_get_current_effect(effect: &Value) -> Result<Option<String>> {
+    parse_device_effect_request_id(effect, "x07.web_ui.effect.device.location.get_current")
+}
+
+fn parse_device_effect_request_id(effect: &Value, expected_kind: &str) -> Result<Option<String>> {
+    let v = effect.get("v").and_then(Value::as_u64).unwrap_or(0);
+    let kind = effect.get("kind").and_then(Value::as_str).unwrap_or("");
+    if v != 1 || kind != expected_kind {
+        return Ok(None);
+    }
+    let request_id = effect
+        .get("request_id")
+        .and_then(Value::as_str)
+        .ok_or_else(|| anyhow::anyhow!("{expected_kind} effect missing request_id"))?;
+    Ok(Some(request_id.to_string()))
+}
+
 fn build_exec_request_envelope(api_prefix: &str, req0: &Value) -> Result<Value> {
     let id = req0
         .get("id")
@@ -1163,6 +1266,105 @@ fn inject_merge_object_field(state: Value, field: &str, inj: Value) -> Result<Va
 
 fn inject_http_response_state(state: Value, resp_env: Value) -> Value {
     inject_set_field(state, "__x07_http", json!({ "response": resp_env }))
+}
+
+fn inject_device_result_state(state: Value, kind: &str, result: Value) -> Result<Value> {
+    inject_merge_object_field(state, "__x07_device", json!({ kind: { "result": result } }))
+}
+
+fn take_step_device_result(effects_state: &mut AppTestEffectsState, kind: &str) -> Option<Value> {
+    effects_state.step_device_results.remove(kind)
+}
+
+fn strip_step_device_result_overrides(
+    ui_dispatch: &Value,
+) -> Result<(Value, BTreeMap<String, Value>)> {
+    let mut stripped = ui_dispatch.clone();
+    let mut overrides = BTreeMap::new();
+
+    let Some(state_obj) = stripped
+        .as_object_mut()
+        .and_then(|dispatch| dispatch.get_mut("state"))
+        .and_then(Value::as_object_mut)
+    else {
+        return Ok((stripped, overrides));
+    };
+
+    let Some(device_obj) = state_obj.get("__x07_device").and_then(Value::as_object) else {
+        return Ok((stripped, overrides));
+    };
+
+    for kind in ["camera", "files", "location"] {
+        if let Some(result) = device_obj
+            .get(kind)
+            .and_then(|value| value.get("result"))
+            .cloned()
+        {
+            overrides.insert(kind.to_string(), result);
+        }
+    }
+
+    if !overrides.is_empty() {
+        state_obj.remove("__x07_device");
+    }
+
+    Ok((stripped, overrides))
+}
+
+fn deterministic_camera_result(request_id: &str) -> Value {
+    json!({
+      "request_id": request_id,
+      "op": "camera.capture",
+      "status": "ok",
+      "payload": {
+        "blob": {
+          "handle": format!("blob:app-test:camera:{request_id}"),
+          "byte_size": 32768,
+          "mime": "image/jpeg",
+          "name": "crewops-capture.jpg",
+        }
+      },
+      "host_meta": {
+        "platform": "app-test"
+      }
+    })
+}
+
+fn deterministic_files_result(request_id: &str) -> Value {
+    json!({
+      "request_id": request_id,
+      "op": "files.pick",
+      "status": "ok",
+      "payload": {
+        "blobs": [{
+          "handle": format!("blob:app-test:file:{request_id}"),
+          "byte_size": 49152,
+          "mime": "application/pdf",
+          "name": "crewops-import.pdf",
+        }]
+      },
+      "host_meta": {
+        "platform": "app-test"
+      }
+    })
+}
+
+fn deterministic_location_result(request_id: &str) -> Value {
+    json!({
+      "request_id": request_id,
+      "op": "location.get_current",
+      "status": "ok",
+      "payload": {
+        "latitude": 47.6205,
+        "longitude": -122.3493,
+        "accuracy_meters": 12,
+        "captured_at": "2026-03-10T09:10:00Z",
+        "provider": "app-test",
+      },
+      "host_meta": {
+        "platform": "app-test"
+      }
+    })
 }
 
 async fn execute_http_request(

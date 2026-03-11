@@ -1,6 +1,6 @@
-# WIT registry (Phase 1)
+# WIT Registry
 
-Phase 1 introduces a pinned WIT registry used to build and validate WebAssembly components offline.
+This repo uses a pinned WIT registry to build and validate WebAssembly components offline.
 
 - Registry: `arch/wit/index.x07wit.json` (`x07.arch.wit.index@0.1.0`)
 - Packages:
@@ -12,4 +12,3 @@ Validation:
 ```sh
 x07-wasm wit validate --json
 ```
-
