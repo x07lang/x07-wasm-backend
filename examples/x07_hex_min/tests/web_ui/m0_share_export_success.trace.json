@@ -1,0 +1,3387 @@
+{
+  "kind": "x07.web_ui.trace",
+  "meta": {
+    "name": "m0_share_export_success",
+    "steps": 5
+  },
+  "steps": [
+    {
+      "env": {
+        "event": {
+          "type": "init"
+        },
+        "kind": "x07.web_ui.dispatch",
+        "state": null,
+        "v": 1
+      },
+      "frame": {
+        "effects": [],
+        "kind": "x07.web_ui.frame",
+        "patches": [
+          {
+            "op": "replace",
+            "path": "",
+            "value": {
+              "kind": "x07.web_ui.tree",
+              "root": {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "title",
+                        "text": "x07 Hex Min"
+                      },
+                      {
+                        "k": "text",
+                        "key": "intro",
+                        "text": "Minimal tactics lane for select, move, victory, and device UX replay."
+                      }
+                    ],
+                    "k": "el",
+                    "key": "header",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "board_label",
+                        "text": "Red scout"
+                      },
+                      {
+                        "k": "text",
+                        "key": "board_hex",
+                        "text": "A1"
+                      },
+                      {
+                        "k": "text",
+                        "key": "board_enemy",
+                        "text": "Blue guard C3"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "board",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Select"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_select",
+                            "on": [
+                              {
+                                "target": "btn_select",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Move"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_move",
+                            "on": [
+                              {
+                                "target": "btn_move",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "End Turn"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_end_turn",
+                            "on": [
+                              {
+                                "target": "btn_end_turn",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "row1",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      },
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Copy State"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_copy",
+                            "on": [
+                              {
+                                "target": "btn_copy",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Share State"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_share",
+                            "on": [
+                              {
+                                "target": "btn_share",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Export Plan"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_export",
+                            "on": [
+                              {
+                                "target": "btn_export",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "row2",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "turn",
+                            "text": "red"
+                          },
+                          {
+                            "k": "text",
+                            "key": "status",
+                            "text": "Select the red scout."
+                          },
+                          {
+                            "k": "text",
+                            "key": "export_state",
+                            "text": "idle"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "status_box",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "section"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "actions",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  }
+                ],
+                "k": "el",
+                "key": "root",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "hex_min"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              "v": 1
+            }
+          }
+        ],
+        "state": {
+          "audio_status": "idle",
+          "clipboard_status": "idle",
+          "export_status": "idle",
+          "haptics_status": "idle",
+          "phase": "start",
+          "red_hex": "A1",
+          "share_status": "idle",
+          "status": "Select the red scout.",
+          "turn": "red"
+        },
+        "telemetry": {},
+        "ui": {
+          "kind": "x07.web_ui.tree",
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "k": "text",
+                    "key": "title",
+                    "text": "x07 Hex Min"
+                  },
+                  {
+                    "k": "text",
+                    "key": "intro",
+                    "text": "Minimal tactics lane for select, move, victory, and device UX replay."
+                  }
+                ],
+                "k": "el",
+                "key": "header",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              {
+                "children": [
+                  {
+                    "k": "text",
+                    "key": "board_label",
+                    "text": "Red scout"
+                  },
+                  {
+                    "k": "text",
+                    "key": "board_hex",
+                    "text": "A1"
+                  },
+                  {
+                    "k": "text",
+                    "key": "board_enemy",
+                    "text": "Blue guard C3"
+                  }
+                ],
+                "k": "el",
+                "key": "board",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Select"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_select",
+                        "on": [
+                          {
+                            "target": "btn_select",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Move"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_move",
+                        "on": [
+                          {
+                            "target": "btn_move",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "End Turn"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_end_turn",
+                        "on": [
+                          {
+                            "target": "btn_end_turn",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "row1",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "row"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Copy State"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_copy",
+                        "on": [
+                          {
+                            "target": "btn_copy",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Share State"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_share",
+                        "on": [
+                          {
+                            "target": "btn_share",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Export Plan"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_export",
+                        "on": [
+                          {
+                            "target": "btn_export",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "row2",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "row"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "turn",
+                        "text": "red"
+                      },
+                      {
+                        "k": "text",
+                        "key": "status",
+                        "text": "Select the red scout."
+                      },
+                      {
+                        "k": "text",
+                        "key": "export_state",
+                        "text": "idle"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "status_box",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  }
+                ],
+                "k": "el",
+                "key": "actions",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              }
+            ],
+            "k": "el",
+            "key": "root",
+            "on": [],
+            "props": {
+              "attrs": {},
+              "class": [
+                "hex_min"
+              ],
+              "style": {}
+            },
+            "tag": "div"
+          },
+          "v": 1
+        },
+        "v": 1
+      }
+    },
+    {
+      "env": {
+        "event": {
+          "target": "btn_share",
+          "type": "click"
+        },
+        "kind": "x07.web_ui.dispatch",
+        "state": {
+          "audio_status": "ok",
+          "clipboard_status": "ok",
+          "export_status": "idle",
+          "haptics_status": "ok",
+          "phase": "victory",
+          "red_hex": "B2",
+          "share_status": "idle",
+          "status": "Blue turn. Objective secured.",
+          "turn": "blue"
+        },
+        "v": 1
+      },
+      "frame": {
+        "effects": [
+          {
+            "capability": "share.present",
+            "kind": "x07.web_ui.effect.device.share.share_text",
+            "op": "share.present",
+            "payload": {
+              "text": "Blue turn. Objective secured.",
+              "title": "x07 Hex Min"
+            },
+            "request_id": "share_text",
+            "v": 1
+          }
+        ],
+        "kind": "x07.web_ui.frame",
+        "patches": [
+          {
+            "op": "replace",
+            "path": "",
+            "value": {
+              "kind": "x07.web_ui.tree",
+              "root": {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "title",
+                        "text": "x07 Hex Min"
+                      },
+                      {
+                        "k": "text",
+                        "key": "intro",
+                        "text": "Minimal tactics lane for select, move, victory, and device UX replay."
+                      }
+                    ],
+                    "k": "el",
+                    "key": "header",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "board_label",
+                        "text": "Red scout"
+                      },
+                      {
+                        "k": "text",
+                        "key": "board_hex",
+                        "text": "B2"
+                      },
+                      {
+                        "k": "text",
+                        "key": "board_enemy",
+                        "text": "Blue guard C3"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "board",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Select"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_select",
+                            "on": [
+                              {
+                                "target": "btn_select",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Move"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_move",
+                            "on": [
+                              {
+                                "target": "btn_move",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "End Turn"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_end_turn",
+                            "on": [
+                              {
+                                "target": "btn_end_turn",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "row1",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      },
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Copy State"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_copy",
+                            "on": [
+                              {
+                                "target": "btn_copy",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Share State"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_share",
+                            "on": [
+                              {
+                                "target": "btn_share",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Export Plan"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_export",
+                            "on": [
+                              {
+                                "target": "btn_export",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "row2",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "turn",
+                            "text": "blue"
+                          },
+                          {
+                            "k": "text",
+                            "key": "status",
+                            "text": "Blue turn. Objective secured."
+                          },
+                          {
+                            "k": "text",
+                            "key": "export_state",
+                            "text": "idle"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "status_box",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "section"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "actions",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  }
+                ],
+                "k": "el",
+                "key": "root",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "hex_min"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              "v": 1
+            }
+          }
+        ],
+        "state": {
+          "audio_status": "ok",
+          "clipboard_status": "ok",
+          "export_status": "idle",
+          "haptics_status": "ok",
+          "phase": "victory",
+          "red_hex": "B2",
+          "share_status": "pending",
+          "status": "Blue turn. Objective secured.",
+          "turn": "blue"
+        },
+        "telemetry": {},
+        "ui": {
+          "kind": "x07.web_ui.tree",
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "k": "text",
+                    "key": "title",
+                    "text": "x07 Hex Min"
+                  },
+                  {
+                    "k": "text",
+                    "key": "intro",
+                    "text": "Minimal tactics lane for select, move, victory, and device UX replay."
+                  }
+                ],
+                "k": "el",
+                "key": "header",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              {
+                "children": [
+                  {
+                    "k": "text",
+                    "key": "board_label",
+                    "text": "Red scout"
+                  },
+                  {
+                    "k": "text",
+                    "key": "board_hex",
+                    "text": "B2"
+                  },
+                  {
+                    "k": "text",
+                    "key": "board_enemy",
+                    "text": "Blue guard C3"
+                  }
+                ],
+                "k": "el",
+                "key": "board",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Select"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_select",
+                        "on": [
+                          {
+                            "target": "btn_select",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Move"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_move",
+                        "on": [
+                          {
+                            "target": "btn_move",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "End Turn"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_end_turn",
+                        "on": [
+                          {
+                            "target": "btn_end_turn",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "row1",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "row"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Copy State"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_copy",
+                        "on": [
+                          {
+                            "target": "btn_copy",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Share State"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_share",
+                        "on": [
+                          {
+                            "target": "btn_share",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Export Plan"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_export",
+                        "on": [
+                          {
+                            "target": "btn_export",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "row2",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "row"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "turn",
+                        "text": "blue"
+                      },
+                      {
+                        "k": "text",
+                        "key": "status",
+                        "text": "Blue turn. Objective secured."
+                      },
+                      {
+                        "k": "text",
+                        "key": "export_state",
+                        "text": "idle"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "status_box",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  }
+                ],
+                "k": "el",
+                "key": "actions",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              }
+            ],
+            "k": "el",
+            "key": "root",
+            "on": [],
+            "props": {
+              "attrs": {},
+              "class": [
+                "hex_min"
+              ],
+              "style": {}
+            },
+            "tag": "div"
+          },
+          "v": 1
+        },
+        "v": 1
+      }
+    },
+    {
+      "env": {
+        "event": {
+          "target": "btn_share",
+          "type": "click"
+        },
+        "kind": "x07.web_ui.dispatch",
+        "state": {
+          "__x07_device": {
+            "share": {
+              "result": {
+                "host_meta": {
+                  "platform": "ios",
+                  "provider": "ios_native"
+                },
+                "op": "share.present",
+                "payload": {
+                  "text": "Blue turn. Objective secured.",
+                  "title": "x07 Hex Min"
+                },
+                "request_id": "share_text",
+                "status": "ok"
+              }
+            }
+          },
+          "audio_status": "ok",
+          "clipboard_status": "ok",
+          "export_status": "idle",
+          "haptics_status": "ok",
+          "phase": "victory",
+          "red_hex": "B2",
+          "share_status": "pending",
+          "status": "Blue turn. Objective secured.",
+          "turn": "blue"
+        },
+        "v": 1
+      },
+      "frame": {
+        "effects": [],
+        "kind": "x07.web_ui.frame",
+        "patches": [
+          {
+            "op": "replace",
+            "path": "",
+            "value": {
+              "kind": "x07.web_ui.tree",
+              "root": {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "title",
+                        "text": "x07 Hex Min"
+                      },
+                      {
+                        "k": "text",
+                        "key": "intro",
+                        "text": "Minimal tactics lane for select, move, victory, and device UX replay."
+                      }
+                    ],
+                    "k": "el",
+                    "key": "header",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "board_label",
+                        "text": "Red scout"
+                      },
+                      {
+                        "k": "text",
+                        "key": "board_hex",
+                        "text": "B2"
+                      },
+                      {
+                        "k": "text",
+                        "key": "board_enemy",
+                        "text": "Blue guard C3"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "board",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Select"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_select",
+                            "on": [
+                              {
+                                "target": "btn_select",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Move"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_move",
+                            "on": [
+                              {
+                                "target": "btn_move",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "End Turn"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_end_turn",
+                            "on": [
+                              {
+                                "target": "btn_end_turn",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "row1",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      },
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Copy State"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_copy",
+                            "on": [
+                              {
+                                "target": "btn_copy",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Share State"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_share",
+                            "on": [
+                              {
+                                "target": "btn_share",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Export Plan"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_export",
+                            "on": [
+                              {
+                                "target": "btn_export",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "row2",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "turn",
+                            "text": "blue"
+                          },
+                          {
+                            "k": "text",
+                            "key": "status",
+                            "text": "Blue turn. Objective secured."
+                          },
+                          {
+                            "k": "text",
+                            "key": "export_state",
+                            "text": "idle"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "status_box",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "section"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "actions",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  }
+                ],
+                "k": "el",
+                "key": "root",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "hex_min"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              "v": 1
+            }
+          }
+        ],
+        "state": {
+          "audio_status": "ok",
+          "clipboard_status": "ok",
+          "export_status": "idle",
+          "haptics_status": "ok",
+          "phase": "victory",
+          "red_hex": "B2",
+          "share_status": "ok",
+          "status": "Blue turn. Objective secured.",
+          "turn": "blue"
+        },
+        "telemetry": {},
+        "ui": {
+          "kind": "x07.web_ui.tree",
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "k": "text",
+                    "key": "title",
+                    "text": "x07 Hex Min"
+                  },
+                  {
+                    "k": "text",
+                    "key": "intro",
+                    "text": "Minimal tactics lane for select, move, victory, and device UX replay."
+                  }
+                ],
+                "k": "el",
+                "key": "header",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              {
+                "children": [
+                  {
+                    "k": "text",
+                    "key": "board_label",
+                    "text": "Red scout"
+                  },
+                  {
+                    "k": "text",
+                    "key": "board_hex",
+                    "text": "B2"
+                  },
+                  {
+                    "k": "text",
+                    "key": "board_enemy",
+                    "text": "Blue guard C3"
+                  }
+                ],
+                "k": "el",
+                "key": "board",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Select"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_select",
+                        "on": [
+                          {
+                            "target": "btn_select",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Move"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_move",
+                        "on": [
+                          {
+                            "target": "btn_move",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "End Turn"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_end_turn",
+                        "on": [
+                          {
+                            "target": "btn_end_turn",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "row1",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "row"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Copy State"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_copy",
+                        "on": [
+                          {
+                            "target": "btn_copy",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Share State"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_share",
+                        "on": [
+                          {
+                            "target": "btn_share",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Export Plan"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_export",
+                        "on": [
+                          {
+                            "target": "btn_export",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "row2",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "row"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "turn",
+                        "text": "blue"
+                      },
+                      {
+                        "k": "text",
+                        "key": "status",
+                        "text": "Blue turn. Objective secured."
+                      },
+                      {
+                        "k": "text",
+                        "key": "export_state",
+                        "text": "idle"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "status_box",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  }
+                ],
+                "k": "el",
+                "key": "actions",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              }
+            ],
+            "k": "el",
+            "key": "root",
+            "on": [],
+            "props": {
+              "attrs": {},
+              "class": [
+                "hex_min"
+              ],
+              "style": {}
+            },
+            "tag": "div"
+          },
+          "v": 1
+        },
+        "v": 1
+      }
+    },
+    {
+      "env": {
+        "event": {
+          "target": "btn_export",
+          "type": "click"
+        },
+        "kind": "x07.web_ui.dispatch",
+        "state": {
+          "audio_status": "ok",
+          "clipboard_status": "ok",
+          "export_status": "idle",
+          "haptics_status": "ok",
+          "phase": "victory",
+          "red_hex": "B2",
+          "share_status": "ok",
+          "status": "Blue turn. Objective secured.",
+          "turn": "blue"
+        },
+        "v": 1
+      },
+      "frame": {
+        "effects": [
+          {
+            "capability": "files.save",
+            "kind": "x07.web_ui.effect.device.files.save_text",
+            "op": "files.save",
+            "payload": {
+              "name": "hex-plan.txt",
+              "text": "Blue turn. Objective secured."
+            },
+            "request_id": "export_text",
+            "v": 1
+          }
+        ],
+        "kind": "x07.web_ui.frame",
+        "patches": [
+          {
+            "op": "replace",
+            "path": "",
+            "value": {
+              "kind": "x07.web_ui.tree",
+              "root": {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "title",
+                        "text": "x07 Hex Min"
+                      },
+                      {
+                        "k": "text",
+                        "key": "intro",
+                        "text": "Minimal tactics lane for select, move, victory, and device UX replay."
+                      }
+                    ],
+                    "k": "el",
+                    "key": "header",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "board_label",
+                        "text": "Red scout"
+                      },
+                      {
+                        "k": "text",
+                        "key": "board_hex",
+                        "text": "B2"
+                      },
+                      {
+                        "k": "text",
+                        "key": "board_enemy",
+                        "text": "Blue guard C3"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "board",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Select"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_select",
+                            "on": [
+                              {
+                                "target": "btn_select",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Move"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_move",
+                            "on": [
+                              {
+                                "target": "btn_move",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "End Turn"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_end_turn",
+                            "on": [
+                              {
+                                "target": "btn_end_turn",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "row1",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      },
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Copy State"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_copy",
+                            "on": [
+                              {
+                                "target": "btn_copy",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Share State"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_share",
+                            "on": [
+                              {
+                                "target": "btn_share",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Export Plan"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_export",
+                            "on": [
+                              {
+                                "target": "btn_export",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "row2",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "turn",
+                            "text": "blue"
+                          },
+                          {
+                            "k": "text",
+                            "key": "status",
+                            "text": "Blue turn. Objective secured."
+                          },
+                          {
+                            "k": "text",
+                            "key": "export_state",
+                            "text": "pending"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "status_box",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "section"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "actions",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  }
+                ],
+                "k": "el",
+                "key": "root",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "hex_min"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              "v": 1
+            }
+          }
+        ],
+        "state": {
+          "audio_status": "ok",
+          "clipboard_status": "ok",
+          "export_status": "pending",
+          "haptics_status": "ok",
+          "phase": "victory",
+          "red_hex": "B2",
+          "share_status": "ok",
+          "status": "Blue turn. Objective secured.",
+          "turn": "blue"
+        },
+        "telemetry": {},
+        "ui": {
+          "kind": "x07.web_ui.tree",
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "k": "text",
+                    "key": "title",
+                    "text": "x07 Hex Min"
+                  },
+                  {
+                    "k": "text",
+                    "key": "intro",
+                    "text": "Minimal tactics lane for select, move, victory, and device UX replay."
+                  }
+                ],
+                "k": "el",
+                "key": "header",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              {
+                "children": [
+                  {
+                    "k": "text",
+                    "key": "board_label",
+                    "text": "Red scout"
+                  },
+                  {
+                    "k": "text",
+                    "key": "board_hex",
+                    "text": "B2"
+                  },
+                  {
+                    "k": "text",
+                    "key": "board_enemy",
+                    "text": "Blue guard C3"
+                  }
+                ],
+                "k": "el",
+                "key": "board",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Select"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_select",
+                        "on": [
+                          {
+                            "target": "btn_select",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Move"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_move",
+                        "on": [
+                          {
+                            "target": "btn_move",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "End Turn"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_end_turn",
+                        "on": [
+                          {
+                            "target": "btn_end_turn",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "row1",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "row"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Copy State"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_copy",
+                        "on": [
+                          {
+                            "target": "btn_copy",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Share State"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_share",
+                        "on": [
+                          {
+                            "target": "btn_share",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Export Plan"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_export",
+                        "on": [
+                          {
+                            "target": "btn_export",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "row2",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "row"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "turn",
+                        "text": "blue"
+                      },
+                      {
+                        "k": "text",
+                        "key": "status",
+                        "text": "Blue turn. Objective secured."
+                      },
+                      {
+                        "k": "text",
+                        "key": "export_state",
+                        "text": "pending"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "status_box",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  }
+                ],
+                "k": "el",
+                "key": "actions",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              }
+            ],
+            "k": "el",
+            "key": "root",
+            "on": [],
+            "props": {
+              "attrs": {},
+              "class": [
+                "hex_min"
+              ],
+              "style": {}
+            },
+            "tag": "div"
+          },
+          "v": 1
+        },
+        "v": 1
+      }
+    },
+    {
+      "env": {
+        "event": {
+          "target": "btn_export",
+          "type": "click"
+        },
+        "kind": "x07.web_ui.dispatch",
+        "state": {
+          "__x07_device": {
+            "files": {
+              "result": {
+                "host_meta": {
+                  "platform": "android",
+                  "provider": "android_native"
+                },
+                "op": "files.save",
+                "payload": {
+                  "name": "hex-plan.txt",
+                  "path": "/tmp/hex-plan.txt"
+                },
+                "request_id": "export_text",
+                "status": "ok"
+              }
+            }
+          },
+          "audio_status": "ok",
+          "clipboard_status": "ok",
+          "export_status": "pending",
+          "haptics_status": "ok",
+          "phase": "victory",
+          "red_hex": "B2",
+          "share_status": "ok",
+          "status": "Blue turn. Objective secured.",
+          "turn": "blue"
+        },
+        "v": 1
+      },
+      "frame": {
+        "effects": [],
+        "kind": "x07.web_ui.frame",
+        "patches": [
+          {
+            "op": "replace",
+            "path": "",
+            "value": {
+              "kind": "x07.web_ui.tree",
+              "root": {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "title",
+                        "text": "x07 Hex Min"
+                      },
+                      {
+                        "k": "text",
+                        "key": "intro",
+                        "text": "Minimal tactics lane for select, move, victory, and device UX replay."
+                      }
+                    ],
+                    "k": "el",
+                    "key": "header",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "board_label",
+                        "text": "Red scout"
+                      },
+                      {
+                        "k": "text",
+                        "key": "board_hex",
+                        "text": "B2"
+                      },
+                      {
+                        "k": "text",
+                        "key": "board_enemy",
+                        "text": "Blue guard C3"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "board",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Select"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_select",
+                            "on": [
+                              {
+                                "target": "btn_select",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Move"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_move",
+                            "on": [
+                              {
+                                "target": "btn_move",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "End Turn"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_end_turn",
+                            "on": [
+                              {
+                                "target": "btn_end_turn",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "row1",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      },
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Copy State"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_copy",
+                            "on": [
+                              {
+                                "target": "btn_copy",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Share State"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_share",
+                            "on": [
+                              {
+                                "target": "btn_share",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Export Plan"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_export",
+                            "on": [
+                              {
+                                "target": "btn_export",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "row2",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "turn",
+                            "text": "blue"
+                          },
+                          {
+                            "k": "text",
+                            "key": "status",
+                            "text": "Blue turn. Objective secured."
+                          },
+                          {
+                            "k": "text",
+                            "key": "export_state",
+                            "text": "ok"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "status_box",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "section"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "actions",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  }
+                ],
+                "k": "el",
+                "key": "root",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "hex_min"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              "v": 1
+            }
+          }
+        ],
+        "state": {
+          "audio_status": "ok",
+          "clipboard_status": "ok",
+          "export_status": "ok",
+          "haptics_status": "ok",
+          "phase": "victory",
+          "red_hex": "B2",
+          "share_status": "ok",
+          "status": "Blue turn. Objective secured.",
+          "turn": "blue"
+        },
+        "telemetry": {},
+        "ui": {
+          "kind": "x07.web_ui.tree",
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "k": "text",
+                    "key": "title",
+                    "text": "x07 Hex Min"
+                  },
+                  {
+                    "k": "text",
+                    "key": "intro",
+                    "text": "Minimal tactics lane for select, move, victory, and device UX replay."
+                  }
+                ],
+                "k": "el",
+                "key": "header",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              {
+                "children": [
+                  {
+                    "k": "text",
+                    "key": "board_label",
+                    "text": "Red scout"
+                  },
+                  {
+                    "k": "text",
+                    "key": "board_hex",
+                    "text": "B2"
+                  },
+                  {
+                    "k": "text",
+                    "key": "board_enemy",
+                    "text": "Blue guard C3"
+                  }
+                ],
+                "k": "el",
+                "key": "board",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Select"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_select",
+                        "on": [
+                          {
+                            "target": "btn_select",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Move"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_move",
+                        "on": [
+                          {
+                            "target": "btn_move",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "End Turn"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_end_turn",
+                        "on": [
+                          {
+                            "target": "btn_end_turn",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "row1",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "row"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Copy State"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_copy",
+                        "on": [
+                          {
+                            "target": "btn_copy",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Share State"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_share",
+                        "on": [
+                          {
+                            "target": "btn_share",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Export Plan"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_export",
+                        "on": [
+                          {
+                            "target": "btn_export",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "row2",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "row"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "turn",
+                        "text": "blue"
+                      },
+                      {
+                        "k": "text",
+                        "key": "status",
+                        "text": "Blue turn. Objective secured."
+                      },
+                      {
+                        "k": "text",
+                        "key": "export_state",
+                        "text": "ok"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "status_box",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  }
+                ],
+                "k": "el",
+                "key": "actions",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              }
+            ],
+            "k": "el",
+            "key": "root",
+            "on": [],
+            "props": {
+              "attrs": {},
+              "class": [
+                "hex_min"
+              ],
+              "style": {}
+            },
+            "tag": "div"
+          },
+          "v": 1
+        },
+        "v": 1
+      }
+    }
+  ],
+  "v": 1
+}

@@ -2,7 +2,7 @@
   "digests": {
     "arch/host_abi/host_abi.snapshot.json": {
       "bytes_len": 867,
-      "sha256": "1549651ecd6a1c2f640475da1b24037d8602998616ceae489e60b6d516d2c837"
+      "sha256": "6f48aa5e89d4516f86ee99bb39e913047ba06c9abfcd4cc2b36b3e447cf9d3e2"
     },
     "mobile/android/template/app/build.gradle.kts": {
       "bytes_len": 704,
@@ -13,8 +13,8 @@
       "sha256": "3dab8dfbd52362c868f2493ccee51272ed71ffd48c3aa13430c2a55bbfa6d228"
     },
     "mobile/android/template/app/src/main/assets/x07/app-host.mjs": {
-      "bytes_len": 96753,
-      "sha256": "bb4dea13ae4bd0c8aa324ed3272ac2219ccdd3f824c47f9e3a001e31f2fc207f"
+      "bytes_len": 105916,
+      "sha256": "3d983102652ce156f5e5ee1bff97eb18b5463615cf82c4671226959c37bca374"
     },
     "mobile/android/template/app/src/main/assets/x07/bootstrap.js": {
       "bytes_len": 8139,
@@ -29,8 +29,8 @@
       "sha256": "254f54e73c2c3afea1b7b29aabded8fcd64fbe5f4f9f7fc07757b0d62a1272f0"
     },
     "mobile/android/template/app/src/main/java/org/x07/deviceapp/MainActivity.kt": {
-      "bytes_len": 70510,
-      "sha256": "a1989e64b92be6096a0759374dd8df3a3fa0d56827340e677b031ef6f115f7bc"
+      "bytes_len": 73964,
+      "sha256": "f6e08794a1ee65ed0ce64b56dd199adf9d51fa0440617c0e4d6ba44fa8b7bd67"
     },
     "mobile/android/template/app/src/main/res/values/strings.xml": {
       "bytes_len": 121,
@@ -85,12 +85,12 @@
       "sha256": "759e43560d27a0757f681eb660c30b83925c25d852fc5111a148bd91f7dfbc09"
     },
     "mobile/ios/template/X07DeviceApp/X07WebView.swift": {
-      "bytes_len": 73255,
-      "sha256": "31024cd7333830eb18850acae089d9396d0300f76372b3712cefd83a95f1a25c"
+      "bytes_len": 76054,
+      "sha256": "c80431e26033a528376afcbf9b6e315f6cc4ed015cf136bdf88e7b9c7cd0dcb9"
     },
     "mobile/ios/template/X07DeviceApp/x07/app-host.mjs": {
-      "bytes_len": 96753,
-      "sha256": "bb4dea13ae4bd0c8aa324ed3272ac2219ccdd3f824c47f9e3a001e31f2fc207f"
+      "bytes_len": 105916,
+      "sha256": "3d983102652ce156f5e5ee1bff97eb18b5463615cf82c4671226959c37bca374"
     },
     "mobile/ios/template/X07DeviceApp/x07/bootstrap.js": {
       "bytes_len": 8139,
@@ -105,7 +105,7 @@
       "sha256": "254f54e73c2c3afea1b7b29aabded8fcd64fbe5f4f9f7fc07757b0d62a1272f0"
     }
   },
-  "git_sha": "3be756003dc229b54bbaf2b8fcf57e46cef85bb5",
-  "host_abi_hash": "6c5c537fd50f1fadba3bc9e3843154ec0bc9805c626fb5bad47bbdea57aed5f8",
+  "git_sha": "ebf3e53ccbec736773c8c37cbd3fa252ba6cc05f",
+  "host_abi_hash": "32deeb58901cf0ca6340b503e9f1310354182d7bfe75069c4adee3ac0854668b",
   "source": "https://github.com/x07lang/x07-device-host.git"
 }

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-device.capabilities.schema.json",
   "title": "x07.device.capabilities@0.2.0",
-  "description": "Pinned strict-M0 device runtime capability allowlist consumed by x07-wasm device tooling and device hosts, including the Forge builder-I/O clipboard, file, drop, and share capabilities.",
+  "description": "Pinned strict-M0 device runtime capability allowlist consumed by x07-wasm device tooling and device hosts, including the Forge builder-I/O clipboard, file, drop, share, audio, and haptics capabilities.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "network", "device"],
@@ -39,6 +39,14 @@
           "required": ["photo"],
           "properties": {
             "photo": { "type": "boolean" }
+          }
+        },
+        "audio": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["playback"],
+          "properties": {
+            "playback": { "type": "boolean" }
           }
         },
         "files": {
@@ -80,6 +88,14 @@
             "enabled": { "type": "boolean" },
             "max_total_bytes": { "type": "integer", "minimum": 1, "maximum": 1073741824 },
             "max_item_bytes": { "type": "integer", "minimum": 1, "maximum": 268435456 }
+          }
+        },
+        "haptics": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["present"],
+          "properties": {
+            "present": { "type": "boolean" }
           }
         },
         "location": {

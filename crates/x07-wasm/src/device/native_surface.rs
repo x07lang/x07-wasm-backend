@@ -32,6 +32,7 @@ pub(crate) struct NativeSummary {
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct NativeCapabilitiesSummary {
     pub(crate) camera_photo: bool,
+    pub(crate) audio_playback: bool,
     pub(crate) files_pick: bool,
     pub(crate) files_pick_multiple: bool,
     pub(crate) files_save: bool,
@@ -40,6 +41,7 @@ pub(crate) struct NativeCapabilitiesSummary {
     pub(crate) clipboard_read_text: bool,
     pub(crate) clipboard_write_text: bool,
     pub(crate) blob_store: BlobStoreSummary,
+    pub(crate) haptics_present: bool,
     pub(crate) location_foreground: bool,
     pub(crate) notifications_local: bool,
     pub(crate) notifications_push: bool,
@@ -158,6 +160,9 @@ pub(crate) fn android_runtime_permissions(capabilities: &Value) -> Vec<String> {
     if capability_bool(capabilities, "/device/camera/photo") {
         permissions.push("android.permission.CAMERA".to_string());
     }
+    if capability_bool(capabilities, "/device/haptics/present") {
+        permissions.push("android.permission.VIBRATE".to_string());
+    }
     if capability_bool(capabilities, "/device/location/foreground") {
         permissions.push("android.permission.ACCESS_COARSE_LOCATION".to_string());
         permissions.push("android.permission.ACCESS_FINE_LOCATION".to_string());
@@ -209,6 +214,7 @@ pub(crate) fn ios_usage_descriptions(
 fn derive_capabilities_summary(doc: &Value) -> NativeCapabilitiesSummary {
     NativeCapabilitiesSummary {
         camera_photo: capability_bool(doc, "/device/camera/photo"),
+        audio_playback: capability_bool(doc, "/device/audio/playback"),
         files_pick: capability_bool(doc, "/device/files/pick"),
         files_pick_multiple: capability_bool(doc, "/device/files/pick_multiple"),
         files_save: capability_bool(doc, "/device/files/save"),
@@ -227,6 +233,7 @@ fn derive_capabilities_summary(doc: &Value) -> NativeCapabilitiesSummary {
                 .and_then(Value::as_u64)
                 .unwrap_or(0),
         },
+        haptics_present: capability_bool(doc, "/device/haptics/present"),
         location_foreground: capability_bool(doc, "/device/location/foreground"),
         notifications_local: capability_bool(doc, "/device/notifications/local"),
         notifications_push: capability_bool(doc, "/device/notifications/push"),
@@ -253,6 +260,9 @@ fn permission_declarations(capabilities: &NativeCapabilitiesSummary) -> Vec<Stri
     }
     if capabilities.files_pick || capabilities.files_pick_multiple {
         permissions.push("files_pick".to_string());
+    }
+    if capabilities.haptics_present {
+        permissions.push("haptics_present".to_string());
     }
     if capabilities.location_foreground {
         permissions.push("location_foreground".to_string());
@@ -324,6 +334,7 @@ mod tests {
             },
             "device": {
                 "camera": { "photo": true },
+                "audio": { "playback": true },
                 "files": {
                     "pick": true,
                     "pick_multiple": true,
@@ -340,6 +351,7 @@ mod tests {
                     "max_total_bytes": 67108864,
                     "max_item_bytes": 16777216
                 },
+                "haptics": { "present": true },
                 "location": { "foreground": true },
                 "notifications": { "local": true, "push": push },
                 "share": { "present": true }
@@ -439,13 +451,26 @@ mod tests {
         assert!(capabilities.files_pick_multiple);
         assert!(capabilities.files_save);
         assert!(capabilities.files_drop);
+        assert!(capabilities.audio_playback);
         assert!(capabilities.clipboard_read_text);
         assert!(capabilities.clipboard_write_text);
+        assert!(capabilities.haptics_present);
         assert!(capabilities.share_present);
         assert!(derived
             .native_summary
             .permission_declarations
             .iter()
             .any(|entry| entry == "files_pick"));
+        assert!(derived
+            .native_summary
+            .permission_declarations
+            .iter()
+            .any(|entry| entry == "haptics_present"));
+    }
+
+    #[test]
+    fn android_runtime_permissions_include_haptics_vibrate() {
+        let permissions = android_runtime_permissions(&capability_doc(false));
+        assert!(permissions.iter().any(|entry| entry == "android.permission.VIBRATE"));
     }
 }

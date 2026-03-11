@@ -1,0 +1,44 @@
+{
+  "schema_version": "x07.device.capabilities@0.2.0",
+  "network": {
+    "mode": "deny_by_default",
+    "allow_hosts": []
+  },
+  "device": {
+    "audio": {
+      "playback": true
+    },
+    "camera": {
+      "photo": false
+    },
+    "files": {
+      "pick": false,
+      "pick_multiple": false,
+      "save": true,
+      "drop": false,
+      "accept_defaults": ["text/plain"]
+    },
+    "clipboard": {
+      "read_text": false,
+      "write_text": true
+    },
+    "blob_store": {
+      "enabled": false,
+      "max_total_bytes": 67108864,
+      "max_item_bytes": 16777216
+    },
+    "haptics": {
+      "present": true
+    },
+    "location": {
+      "foreground": false
+    },
+    "notifications": {
+      "local": false,
+      "push": false
+    },
+    "share": {
+      "present": true
+    }
+  }
+}

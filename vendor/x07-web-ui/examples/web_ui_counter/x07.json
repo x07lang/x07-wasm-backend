@@ -2,7 +2,7 @@
   "schema_version": "x07.project@0.3.0",
   "world": "solve-pure",
   "entry": "src/main.x07.json",
-  "module_roots": ["src", "$workspace/packages/std-web-ui/0.2.2/modules"],
+  "module_roots": ["src", "$workspace/packages/std-web-ui/0.2.3/modules"],
   "lockfile": null,
   "dependencies": []
 }

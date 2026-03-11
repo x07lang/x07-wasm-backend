@@ -38,6 +38,40 @@ test("parseAnyDeviceEffect() parses the Forge M0 device request families", () =>
     payload: { quality: "medium" },
   });
 
+  const audio = host.parseAnyDeviceEffect({
+    v: 1,
+    kind: "x07.web_ui.effect.device.audio.play",
+    request_id: "req2a",
+    op: "audio.play",
+    capability: "audio.playback",
+    payload: { cue: "select", channel: "sfx", loop: false },
+  });
+  assert.deepEqual(audio, {
+    family: "audio",
+    kind: "x07.web_ui.effect.device.audio.play",
+    request_id: "req2a",
+    op: "audio.play",
+    capability: "audio.playback",
+    payload: { cue: "select", channel: "sfx", loop: false },
+  });
+
+  const haptics = host.parseAnyDeviceEffect({
+    v: 1,
+    kind: "x07.web_ui.effect.device.haptics.trigger",
+    request_id: "req2b",
+    op: "haptics.trigger",
+    capability: "haptics.present",
+    payload: { pattern: "impact" },
+  });
+  assert.deepEqual(haptics, {
+    family: "haptics",
+    kind: "x07.web_ui.effect.device.haptics.trigger",
+    request_id: "req2b",
+    op: "haptics.trigger",
+    capability: "haptics.present",
+    payload: { pattern: "impact" },
+  });
+
   const clipboard = host.parseAnyDeviceEffect({
     v: 1,
     kind: "x07.web_ui.effect.device.clipboard.read_text",
@@ -111,6 +145,8 @@ test("capabilityAllowed() follows the Forge M0 capability names", () => {
   const capabilities = {
     device: {
       camera: { photo: true },
+      audio: { playback: true },
+      haptics: { present: true },
       clipboard: { read_text: true, write_text: true },
       files: { pick: true, pick_multiple: true, save: true, drop: true },
       blob_store: { enabled: true },
@@ -121,6 +157,8 @@ test("capabilityAllowed() follows the Forge M0 capability names", () => {
   };
 
   assert.equal(host.capabilityAllowed(capabilities, "camera.photo"), true);
+  assert.equal(host.capabilityAllowed(capabilities, "audio.playback"), true);
+  assert.equal(host.capabilityAllowed(capabilities, "haptics.present"), true);
   assert.equal(host.capabilityAllowed(capabilities, "clipboard.read_text"), true);
   assert.equal(host.capabilityAllowed(capabilities, "clipboard.write_text"), true);
   assert.equal(host.capabilityAllowed(capabilities, "files.pick"), true);
@@ -345,6 +383,134 @@ test("createBrowserNativeHost() executes clipboard, save, and share requests", a
       Object.defineProperty(globalThis, "showSaveFilePicker", {
         configurable: true,
         value: originalShowSaveFilePicker,
+      });
+    }
+  }
+});
+
+test("createBrowserNativeHost() executes audio and haptics requests", async () => {
+  const originalNavigator = globalThis.navigator;
+  const originalAudioContext = globalThis.AudioContext;
+  const audioOps = [];
+  const hapticOps = [];
+
+  class FakeAudioParam {
+    setValueAtTime() {}
+    linearRampToValueAtTime() {}
+    exponentialRampToValueAtTime() {}
+  }
+
+  class FakeGainNode {
+    constructor() {
+      this.gain = new FakeAudioParam();
+    }
+    connect() {}
+    disconnect() {}
+  }
+
+  class FakeOscillatorNode {
+    constructor() {
+      this.frequency = {
+        setValueAtTime: (value) => {
+          this.frequencyValue = value;
+        },
+      };
+    }
+    connect() {}
+    start(when) {
+      audioOps.push({ op: "start", when, type: this.type, frequency: this.frequencyValue });
+    }
+    stop(when) {
+      audioOps.push({ op: "stop", when });
+    }
+    disconnect() {}
+  }
+
+  class FakeAudioContext {
+    constructor() {
+      this.currentTime = 0;
+      this.destination = {};
+    }
+    async resume() {
+      audioOps.push({ op: "resume" });
+    }
+    createOscillator() {
+      return new FakeOscillatorNode();
+    }
+    createGain() {
+      return new FakeGainNode();
+    }
+  }
+
+  Object.defineProperty(globalThis, "navigator", {
+    configurable: true,
+    value: {
+      vibrate(pattern) {
+        hapticOps.push(pattern);
+        return true;
+      },
+    },
+  });
+  Object.defineProperty(globalThis, "AudioContext", {
+    configurable: true,
+    value: FakeAudioContext,
+  });
+
+  try {
+    const browserHost = host.createBrowserNativeHost({
+      capabilities: null,
+      dispatchHostEvent: async () => {},
+      platform: "web",
+    });
+
+    const play = await browserHost.invoke({
+      family: "audio",
+      kind: "x07.web_ui.effect.device.audio.play",
+      request_id: "req20",
+      op: "audio.play",
+      capability: "audio.playback",
+      payload: { cue: "select", channel: "sfx", loop: false },
+    });
+    assert.equal(play.result.status, "ok");
+    assert.deepEqual(play.result.payload, { cue: "select", channel: "sfx", loop: false });
+    assert.equal(audioOps.some((entry) => entry.op === "start"), true);
+
+    const stop = await browserHost.invoke({
+      family: "audio",
+      kind: "x07.web_ui.effect.device.audio.stop",
+      request_id: "req21",
+      op: "audio.stop",
+      capability: "audio.playback",
+      payload: { channel: "sfx" },
+    });
+    assert.equal(stop.result.status, "ok");
+    assert.equal(stop.result.payload.channel, "sfx");
+
+    const haptics = await browserHost.invoke({
+      family: "haptics",
+      kind: "x07.web_ui.effect.device.haptics.trigger",
+      request_id: "req22",
+      op: "haptics.trigger",
+      capability: "haptics.present",
+      payload: { pattern: "impact" },
+    });
+    assert.equal(haptics.result.status, "ok");
+    assert.deepEqual(hapticOps, [[25]]);
+  } finally {
+    if (originalNavigator === undefined) {
+      delete globalThis.navigator;
+    } else {
+      Object.defineProperty(globalThis, "navigator", {
+        configurable: true,
+        value: originalNavigator,
+      });
+    }
+    if (originalAudioContext === undefined) {
+      delete globalThis.AudioContext;
+    } else {
+      Object.defineProperty(globalThis, "AudioContext", {
+        configurable: true,
+        value: originalAudioContext,
       });
     }
   }

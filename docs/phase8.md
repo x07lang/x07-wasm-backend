@@ -37,7 +37,7 @@ Consumer repos do not need to vendor either the device host ABI snapshot or the 
 - Device telemetry profiles: `arch/device/profiles/*.telemetry.profile.json`
 - Bundle manifest: `bundle.manifest.json` (`x07.device.bundle.manifest@0.1.0`)
 
-Telemetry profiles must advertise the standard event-class set used by the platform device-release loop and may target either `http/json` or `http/protobuf` OTLP transport. M0 device bundles also carry `x07.device.capabilities@0.2.0`, which separates build-time capability allowlisting from runtime permission outcomes for camera, files, clipboard, blob storage, foreground location, local notifications, and share support. The `files` capability line now also carries the Forge builder-I/O switches for `pick_multiple`, `save`, and `drop`, while `clipboard` and `share` live under their own device subobjects.
+Telemetry profiles must advertise the standard event-class set used by the platform device-release loop and may target either `http/json` or `http/protobuf` OTLP transport. M0 device bundles also carry `x07.device.capabilities@0.2.0`, which separates build-time capability allowlisting from runtime permission outcomes for camera, audio, haptics, files, clipboard, blob storage, foreground location, local notifications, and share support. The `files` capability line now also carries the Forge builder-I/O switches for `pick_multiple`, `save`, and `drop`, while `audio`, `haptics`, `clipboard`, and `share` live under their own device subobjects.
 
 ## CLI
 

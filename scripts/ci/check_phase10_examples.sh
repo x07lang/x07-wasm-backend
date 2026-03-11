@@ -410,6 +410,9 @@ bash examples/x07_builder_io_min/scripts/ci/check_builder_io_min.sh
 echo "==> phase10_examples: native-surface proving app"
 bash examples/x07_capture_min/scripts/ci/check_capture_min.sh
 
+echo "==> phase10_examples: tactics audio/haptics proving app"
+bash examples/x07_hex_min/scripts/ci/check_hex_min.sh
+
 echo "==> phase10_examples: richer mobile showcase"
 bash examples/x07_field_notes/scripts/ci/check_showcase_mobile.sh
 

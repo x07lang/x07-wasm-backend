@@ -14,6 +14,9 @@
     { "$ref": "#/$defs/device_permissions_query" },
     { "$ref": "#/$defs/device_permissions_request" },
     { "$ref": "#/$defs/device_camera_capture" },
+    { "$ref": "#/$defs/device_audio_play" },
+    { "$ref": "#/$defs/device_audio_stop" },
+    { "$ref": "#/$defs/device_haptics_trigger" },
     { "$ref": "#/$defs/device_clipboard_copy_text" },
     { "$ref": "#/$defs/device_clipboard_read_text" },
     { "$ref": "#/$defs/device_files_pick" },
@@ -178,6 +181,77 @@
               "properties": {
                 "quality": { "$ref": "#/$defs/json_string" },
                 "lens": { "$ref": "#/$defs/json_string" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "device_audio_play": {
+      "allOf": [
+        { "$ref": "#/$defs/device_effect_base" },
+        {
+          "properties": {
+            "kind": { "const": "x07.web_ui.effect.device.audio.play" },
+            "op": { "const": "audio.play" },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["cue", "channel", "loop"],
+              "properties": {
+                "cue": {
+                  "type": "string",
+                  "enum": ["select", "move", "confirm", "attack", "victory", "defeat", "music_loop"]
+                },
+                "channel": {
+                  "type": "string",
+                  "enum": ["sfx", "music"]
+                },
+                "loop": { "$ref": "#/$defs/bool" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "device_audio_stop": {
+      "allOf": [
+        { "$ref": "#/$defs/device_effect_base" },
+        {
+          "properties": {
+            "kind": { "const": "x07.web_ui.effect.device.audio.stop" },
+            "op": { "const": "audio.stop" },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["channel"],
+              "properties": {
+                "channel": {
+                  "type": "string",
+                  "enum": ["sfx", "music"]
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "device_haptics_trigger": {
+      "allOf": [
+        { "$ref": "#/$defs/device_effect_base" },
+        {
+          "properties": {
+            "kind": { "const": "x07.web_ui.effect.device.haptics.trigger" },
+            "op": { "const": "haptics.trigger" },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["pattern"],
+              "properties": {
+                "pattern": {
+                  "type": "string",
+                  "enum": ["selection", "impact", "victory", "defeat"]
+                }
               }
             }
           }

@@ -148,6 +148,7 @@
       ],
       "properties": {
         "camera_photo": { "type": "boolean" },
+        "audio_playback": { "type": "boolean" },
         "files_pick": { "type": "boolean" },
         "files_pick_multiple": { "type": "boolean" },
         "files_save": { "type": "boolean" },
@@ -156,6 +157,7 @@
         "clipboard_read_text": { "type": "boolean" },
         "clipboard_write_text": { "type": "boolean" },
         "blob_store": { "$ref": "#/$defs/blob_store_summary" },
+        "haptics_present": { "type": "boolean" },
         "location_foreground": { "type": "boolean" },
         "notifications_local": { "type": "boolean" },
         "notifications_push": { "type": "boolean" },
