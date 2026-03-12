@@ -1193,6 +1193,84 @@ function capabilityAllowed(capabilities, capability) {
   }
 }
 
+function buildShareClipboardText(payload) {
+  const data = payload && typeof payload === "object" ? payload : {};
+  const parts = [];
+  if (typeof data.title === "string" && data.title.trim() !== "") {
+    parts.push(data.title.trim());
+  }
+  if (typeof data.text === "string" && data.text.trim() !== "") {
+    parts.push(data.text.trim());
+  }
+  if (typeof data.url === "string" && data.url.trim() !== "") {
+    parts.push(data.url.trim());
+  }
+  return parts.join("\n\n");
+}
+
+function copyTextViaExecCommand(text) {
+  const doc = globalThis.document;
+  if (!doc?.createElement || !doc?.body || typeof doc.execCommand !== "function") {
+    return false;
+  }
+  const textarea = doc.createElement("textarea");
+  textarea.value = String(text ?? "");
+  textarea.setAttribute("readonly", "readonly");
+  textarea.setAttribute("aria-hidden", "true");
+  textarea.style.position = "fixed";
+  textarea.style.top = "-1000px";
+  textarea.style.left = "-1000px";
+  textarea.style.opacity = "0";
+  doc.body.appendChild(textarea);
+  try {
+    textarea.focus();
+    textarea.select();
+    textarea.setSelectionRange?.(0, textarea.value.length);
+    return doc.execCommand("copy") === true;
+  } catch (_) {
+    return false;
+  } finally {
+    textarea.remove();
+  }
+}
+
+async function fallbackShareToClipboard(request, payload, hostMeta) {
+  const text = buildShareClipboardText(payload);
+  if (!text) {
+    return { family: request.family, result: mkDeviceResult(request, "unsupported", {}, hostMeta) };
+  }
+  const clipboard = globalThis.navigator?.clipboard;
+  if (clipboard && typeof clipboard.writeText === "function") {
+    try {
+      await clipboard.writeText(text);
+      return {
+        family: request.family,
+        result: mkDeviceResult(
+          request,
+          "ok",
+          { delivered_via: "clipboard", text_len: text.length },
+          hostMeta,
+        ),
+      };
+    } catch (_) {}
+  }
+  if (copyTextViaExecCommand(text)) {
+    return {
+      family: request.family,
+      result: mkDeviceResult(
+        request,
+        "ok",
+        { delivered_via: "exec_command", text_len: text.length },
+        hostMeta,
+      ),
+    };
+  }
+  return {
+    family: request.family,
+    result: mkDeviceResult(request, "denied", {}, hostMeta),
+  };
+}
+
 function blobQuotaConfig(capabilities) {
   const cfg = capabilities?.device?.blob_store;
   return {
@@ -1961,6 +2039,23 @@ function buildSaveFileRequest(request) {
 }
 
 async function saveBrowserFile({ name, mime, bytes }) {
+  if (globalThis.document?.createElement && globalThis.URL?.createObjectURL) {
+    try {
+      const blob = new Blob([bytes], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.style.display = "none";
+      document.body?.appendChild?.(a);
+      a.click();
+      a.remove?.();
+      globalThis.setTimeout?.(() => URL.revokeObjectURL(url), 1000);
+      return { status: "ok" };
+    } catch (err) {
+      return { status: "error", error: err };
+    }
+  }
   if (typeof globalThis.showSaveFilePicker === "function") {
     try {
       const handle = await globalThis.showSaveFilePicker({ suggestedName: name });
@@ -1972,21 +2067,7 @@ async function saveBrowserFile({ name, mime, bytes }) {
       return { status: browserErrorStatus(err), error: err };
     }
   }
-  if (!globalThis.document?.createElement || !globalThis.URL?.createObjectURL) {
-    return { status: "unsupported" };
-  }
-  try {
-    const blob = new Blob([bytes], { type: mime });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = name;
-    a.click();
-    globalThis.setTimeout?.(() => URL.revokeObjectURL(url), 1000);
-    return { status: "ok" };
-  } catch (err) {
-    return { status: "error", error: err };
-  }
+  return { status: "unsupported" };
 }
 
 function buildSavedFileItem({ name, mime, bytes }) {
@@ -2301,7 +2382,10 @@ function createBrowserNativeHost({ capabilities, dispatchHostEvent, platform = "
         case "share": {
           const share = globalThis.navigator?.share;
           if (typeof share !== "function") {
-            return { family: request.family, result: mkDeviceResult(request, "unsupported", {}, hostMeta) };
+            if (request.kind === "x07.web_ui.effect.device.share.share_files") {
+              return { family: request.family, result: mkDeviceResult(request, "unsupported", {}, hostMeta) };
+            }
+            return fallbackShareToClipboard(request, request.payload, hostMeta);
           }
           const payload = request.payload && typeof request.payload === "object" ? request.payload : {};
           const title = typeof payload.title === "string" ? payload.title : undefined;
@@ -2340,7 +2424,10 @@ function createBrowserNativeHost({ capabilities, dispatchHostEvent, platform = "
             };
           } catch (err) {
             if (err?.code === "unsupported") {
-              return { family: request.family, result: mkDeviceResult(request, "unsupported", {}, hostMeta) };
+              if (request.kind === "x07.web_ui.effect.device.share.share_files") {
+                return { family: request.family, result: mkDeviceResult(request, "unsupported", {}, hostMeta) };
+              }
+              return fallbackShareToClipboard(request, payload, hostMeta);
             }
             return {
               family: request.family,
@@ -2917,7 +3004,8 @@ export async function mountWebUiApp({
         if (deviceRequest) {
           let normalized = null;
           const platform = ipcNativeHost ? "device" : "web";
-          if (!capabilityAllowed(capabilities, deviceRequest.capability)) {
+          const bypassCapabilityCheck = !ipcNativeHost && capabilities == null;
+          if (!bypassCapabilityCheck && !capabilityAllowed(capabilities, deviceRequest.capability)) {
             emitTelemetry(
               "policy.violation",
               "policy.device.denied",

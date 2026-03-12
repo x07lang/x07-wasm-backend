@@ -1,0 +1,286 @@
+{
+  "decls": [
+    {
+      "kind": "export",
+      "names": [
+        "std.web_ui.effects.device.notifications.cancel_v1",
+        "std.web_ui.effects.device.notifications.dispatch_opened_payload_canon_or_err_v1",
+        "std.web_ui.effects.device.notifications.dispatch_opened_present_v1",
+        "std.web_ui.effects.device.notifications.dispatch_result_canon_or_err_v1",
+        "std.web_ui.effects.device.notifications.dispatch_result_present_v1",
+        "std.web_ui.effects.device.notifications.dispatch_status_canon_or_err_v1",
+        "std.web_ui.effects.device.notifications.schedule_v1"
+      ]
+    },
+    {
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          [
+            "bytes.concat",
+            [
+              "bytes.concat",
+              [
+                "bytes.lit",
+                "{\"v\":1,\"kind\":\"x07.web_ui.effect.device.notifications.cancel\",\"request_id\":"
+              ],
+              [
+                "view.to_bytes",
+                "request_id_json"
+              ]
+            ],
+            [
+              "bytes.lit",
+              ",\"op\":\"notifications.cancel\",\"capability\":\"notifications.local\",\"payload\":"
+            ]
+          ],
+          [
+            "view.to_bytes",
+            "payload_json"
+          ]
+        ],
+        [
+          "bytes.lit",
+          "}"
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.notifications.cancel_v1",
+      "params": [
+        {
+          "name": "request_id_json",
+          "ty": "bytes_view"
+        },
+        {
+          "name": "payload_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "event.notification"
+          ]
+        ],
+        [
+          "std.web_ui.runtime.dispatch_extract_canon_or_err_v1",
+          "dispatch_json",
+          [
+            "bytes.view",
+            "path"
+          ]
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.notifications.dispatch_opened_payload_canon_or_err_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "event.type"
+          ]
+        ],
+        [
+          "let",
+          "event_type",
+          [
+            "std.web_ui.runtime.dispatch_extract_canon_or_err_v1",
+            "dispatch_json",
+            [
+              "bytes.view",
+              "path"
+            ]
+          ]
+        ],
+        [
+          "if",
+          [
+            "view.eq",
+            [
+              "bytes.view",
+              "event_type"
+            ],
+            [
+              "bytes.view_lit",
+              "\"notification.opened\""
+            ]
+          ],
+          1,
+          0
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.notifications.dispatch_opened_present_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "i32"
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "state.__x07_device.notifications.result"
+          ]
+        ],
+        [
+          "std.web_ui.runtime.dispatch_extract_canon_or_err_v1",
+          "dispatch_json",
+          [
+            "bytes.view",
+            "path"
+          ]
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.notifications.dispatch_result_canon_or_err_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "state.__x07_device.notifications.result"
+          ]
+        ],
+        [
+          "std.web_ui.runtime.dispatch_has_path_v1",
+          "dispatch_json",
+          [
+            "bytes.view",
+            "path"
+          ]
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.notifications.dispatch_result_present_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "i32"
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "path",
+          [
+            "bytes.lit",
+            "state.__x07_device.notifications.result.status"
+          ]
+        ],
+        [
+          "std.web_ui.runtime.dispatch_extract_canon_or_err_v1",
+          "dispatch_json",
+          [
+            "bytes.view",
+            "path"
+          ]
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.notifications.dispatch_status_canon_or_err_v1",
+      "params": [
+        {
+          "name": "dispatch_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "bytes.concat",
+        [
+          "bytes.concat",
+          [
+            "bytes.concat",
+            [
+              "bytes.concat",
+              [
+                "bytes.lit",
+                "{\"v\":1,\"kind\":\"x07.web_ui.effect.device.notifications.schedule\",\"request_id\":"
+              ],
+              [
+                "view.to_bytes",
+                "request_id_json"
+              ]
+            ],
+            [
+              "bytes.lit",
+              ",\"op\":\"notifications.schedule\",\"capability\":\"notifications.local\",\"payload\":"
+            ]
+          ],
+          [
+            "view.to_bytes",
+            "payload_json"
+          ]
+        ],
+        [
+          "bytes.lit",
+          "}"
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.notifications.schedule_v1",
+      "params": [
+        {
+          "name": "request_id_json",
+          "ty": "bytes_view"
+        },
+        {
+          "name": "payload_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    }
+  ],
+  "imports": [
+    "std.web_ui.runtime"
+  ],
+  "kind": "module",
+  "module_id": "std.web_ui.effects.device.notifications",
+  "schema_version": "x07.x07ast@0.5.0"
+}

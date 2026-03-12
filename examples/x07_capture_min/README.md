@@ -20,7 +20,7 @@ This example keeps the reducer intentionally small while proving the same `std.w
 
 ## What It Demonstrates
 
-- `std-web-ui@0.2.4` device helpers from the vendored package path
+- `std-web-ui@0.2.5` device helpers from the vendored package path
 - One reducer packaged for desktop, iOS, and Android
 - Target-specific capability contracts instead of fake feature parity
 - Deterministic replay of both positive and negative native outcomes

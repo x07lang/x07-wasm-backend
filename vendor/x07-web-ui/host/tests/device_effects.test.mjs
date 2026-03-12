@@ -388,6 +388,56 @@ test("createBrowserNativeHost() executes clipboard, save, and share requests", a
   }
 });
 
+test("createBrowserNativeHost() falls back to clipboard when navigator.share is unavailable", async () => {
+  const originalNavigator = globalThis.navigator;
+  const writes = [];
+
+  Object.defineProperty(globalThis, "navigator", {
+    configurable: true,
+    value: {
+      clipboard: {
+        async writeText(text) {
+          writes.push(text);
+        },
+      },
+    },
+  });
+
+  try {
+    const browserHost = host.createBrowserNativeHost({
+      capabilities: null,
+      dispatchHostEvent: async () => {},
+      platform: "web",
+    });
+
+    const share = await browserHost.invoke({
+      family: "share",
+      kind: "x07.web_ui.effect.device.share.share_text",
+      request_id: "req_share_clipboard",
+      op: "share.present",
+      capability: "share.present",
+      payload: {
+        title: "Forge",
+        text: "Release summary",
+        url: "https://x07.io/forge",
+      },
+    });
+
+    assert.equal(share.result.status, "ok");
+    assert.equal(share.result.payload.delivered_via, "clipboard");
+    assert.deepEqual(writes, ["Forge\n\nRelease summary\n\nhttps://x07.io/forge"]);
+  } finally {
+    if (originalNavigator === undefined) {
+      delete globalThis.navigator;
+    } else {
+      Object.defineProperty(globalThis, "navigator", {
+        configurable: true,
+        value: originalNavigator,
+      });
+    }
+  }
+});
+
 test("createBrowserNativeHost() executes audio and haptics requests", async () => {
   const originalNavigator = globalThis.navigator;
   const originalAudioContext = globalThis.AudioContext;

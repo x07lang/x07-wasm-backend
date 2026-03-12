@@ -954,6 +954,18 @@ async fn run_effects_loop(
             }
 
             if !handled {
+                if let Some(request_id) = parse_files_save_effect(&eff)? {
+                    injected_state = inject_device_result_state(
+                        injected_state,
+                        "files",
+                        take_step_device_result(effects_state, "files")
+                            .unwrap_or_else(|| deterministic_files_save_result(&request_id, &eff)),
+                    )?;
+                    handled = true;
+                }
+            }
+
+            if !handled {
                 if let Some(request_id) = parse_location_get_current_effect(&eff)? {
                     injected_state = inject_device_result_state(
                         injected_state,
@@ -1157,6 +1169,15 @@ fn parse_files_pick_effect(effect: &Value) -> Result<Option<String>> {
     parse_device_effect_request_id(effect, "x07.web_ui.effect.device.files.pick")
 }
 
+fn parse_files_save_effect(effect: &Value) -> Result<Option<String>> {
+    if let Some(request_id) =
+        parse_device_effect_request_id(effect, "x07.web_ui.effect.device.files.save_json")?
+    {
+        return Ok(Some(request_id));
+    }
+    parse_device_effect_request_id(effect, "x07.web_ui.effect.device.files.save_text")
+}
+
 fn parse_location_get_current_effect(effect: &Value) -> Result<Option<String>> {
     parse_device_effect_request_id(effect, "x07.web_ui.effect.device.location.get_current")
 }
@@ -1347,6 +1368,27 @@ fn deterministic_files_result(request_id: &str) -> Value {
           "byte_size": 49152,
           "mime": "application/pdf",
           "name": "crewops-import.pdf",
+        }]
+      },
+      "host_meta": {
+        "platform": "app-test"
+      }
+    })
+}
+
+fn deterministic_files_save_result(request_id: &str, effect: &Value) -> Value {
+    let name = effect
+        .get("payload")
+        .and_then(|payload| payload.get("name"))
+        .and_then(Value::as_str)
+        .unwrap_or("app-test.json");
+    json!({
+      "request_id": request_id,
+      "op": "files.save",
+      "status": "ok",
+      "payload": {
+        "items": [{
+          "name": name,
         }]
       },
       "host_meta": {

@@ -3,17 +3,17 @@
   "abi_name": "webview_host_v1",
   "abi_version": "0.1.0",
   "bridge_protocol_version": "web_ui_bridge_v1",
-  "host_abi_hash": "0d10476ab38b2bc92f6553bfb088e7770f5d087581d65d3d3d8dc83653ba2408",
+  "host_abi_hash": "e388f05801d6223d265bcbf59cb001732c2edb68a948654b21af5444462cfd41",
   "assets": [
     {
       "path": "index.html",
-      "sha256": "32dd8528fcd0a92d51031119e7f4b13de9b0b6120eb6dc79aa294d3a39fb7e5a",
-      "bytes_len": 894
+      "sha256": "95781e9bcca7332548b8a80cb3349afcae5cf62361ad493fc60ed3fd0f8f10c3",
+      "bytes_len": 1502
     },
     {
       "path": "bootstrap.js",
-      "sha256": "105fc98dc3d03b27885e3f484d6f6fa761d9006ba8e91b90bcb0089d6062d4aa",
-      "bytes_len": 8139
+      "sha256": "e5ddb36e10154a4db8e40e083c1daaa8c08594cce2fcb3ab7c95617e03d47de9",
+      "bytes_len": 8171
     },
     {
       "path": "main.mjs",
@@ -22,8 +22,8 @@
     },
     {
       "path": "app-host.mjs",
-      "sha256": "012276203935f8781aa9be137ca6ee6025f5befbf7df692486092cc26e08d833",
-      "bytes_len": 107210
+      "sha256": "d19ddee14f20f90ec051532da0dce5f07df00bfa7de3eaab17d33f1b435a7759",
+      "bytes_len": 110035
     }
   ]
 }
