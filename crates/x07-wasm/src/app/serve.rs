@@ -680,19 +680,12 @@ fn serve_static_request(
             .unwrap());
     }
 
-    let rel = sanitize_path(path);
-    let rel = if rel.is_empty() {
-        "index.html".to_string()
-    } else {
-        rel
-    };
-    let full = dir.join(&rel);
-    if !full.is_file() {
+    let Some(full) = resolve_static_path(dir, path) else {
         return Ok(Response::builder()
             .status(StatusCode::NOT_FOUND)
             .body(Full::new(Bytes::from_static(b"not found")))
             .unwrap());
-    }
+    };
 
     let mime = mime_for_path(&full);
     if method == Method::HEAD {
@@ -739,6 +732,26 @@ fn mime_for_path(path: &Path) -> &'static str {
         "css" => "text/css; charset=utf-8",
         _ => "application/octet-stream",
     }
+}
+
+fn resolve_static_path(dir: &Path, raw_path: &str) -> Option<PathBuf> {
+    let rel = sanitize_path(raw_path);
+    let rel = if rel.is_empty() {
+        "index.html".to_string()
+    } else {
+        rel
+    };
+    let full = dir.join(&rel);
+    if full.is_file() {
+        return Some(full);
+    }
+    if Path::new(&rel).extension().is_none() {
+        let index = dir.join("index.html");
+        if index.is_file() {
+            return Some(index);
+        }
+    }
+    None
 }
 
 fn sanitize_path(raw: &str) -> String {
@@ -1061,6 +1074,19 @@ fn load_app_serve_settings(
 mod tests {
     use super::*;
     use http_body::Body as _;
+    use std::fs;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn temp_dir(prefix: &str) -> PathBuf {
+        let stamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system time")
+            .as_nanos();
+        let dir =
+            std::env::temp_dir().join(format!("x07-wasm-{prefix}-{}-{stamp}", std::process::id()));
+        fs::create_dir_all(&dir).expect("create temp dir");
+        dir
+    }
 
     #[test]
     fn api_empty_response_sets_cors_headers() {
@@ -1093,5 +1119,42 @@ mod tests {
             .expect("preflight response");
         assert_eq!(resp.status(), StatusCode::NO_CONTENT);
         assert!(resp.into_body().is_end_stream());
+    }
+
+    #[test]
+    fn serve_static_request_falls_back_to_index_for_extensionless_route() {
+        let dir = temp_dir("app-serve-spa-route");
+        fs::write(
+            dir.join("index.html"),
+            "<!doctype html><title>forge</title>",
+        )
+        .expect("index");
+
+        let resp = serve_static_request(Method::GET, "/evals", &dir).expect("spa fallback");
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(
+            resp.headers()
+                .get(hyper::header::CONTENT_TYPE)
+                .and_then(|v| v.to_str().ok()),
+            Some("text/html; charset=utf-8")
+        );
+
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn serve_static_request_keeps_missing_assets_as_404() {
+        let dir = temp_dir("app-serve-missing-asset");
+        fs::write(
+            dir.join("index.html"),
+            "<!doctype html><title>forge</title>",
+        )
+        .expect("index");
+
+        let resp =
+            serve_static_request(Method::GET, "/missing.js", &dir).expect("missing asset response");
+        assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+
+        let _ = fs::remove_dir_all(&dir);
     }
 }

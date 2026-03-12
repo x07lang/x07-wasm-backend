@@ -1,7 +1,7 @@
 use std::ffi::OsString;
 use std::io::{Read as _, Write as _};
 use std::net::{SocketAddr, TcpListener, TcpStream};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use serde_json::json;
@@ -270,17 +270,10 @@ fn handle_one(dir: &Path, mut stream: TcpStream) -> Result<()> {
         return Ok(());
     }
 
-    let rel = sanitize_path(path);
-    let rel = if rel.is_empty() {
-        "index.html".to_string()
-    } else {
-        rel
-    };
-    let full = dir.join(&rel);
-    if !full.exists() || !full.is_file() {
+    let Some(full) = resolve_static_path(dir, path) else {
         write_response(&mut stream, 404, "text/plain; charset=utf-8", b"not found")?;
         return Ok(());
-    }
+    };
 
     let mime = mime_for_path(&full);
     if method == "HEAD" {
@@ -331,6 +324,26 @@ fn mime_for_path(path: &Path) -> String {
     }
 }
 
+fn resolve_static_path(dir: &Path, raw_path: &str) -> Option<PathBuf> {
+    let rel = sanitize_path(raw_path);
+    let rel = if rel.is_empty() {
+        "index.html".to_string()
+    } else {
+        rel
+    };
+    let full = dir.join(&rel);
+    if full.is_file() {
+        return Some(full);
+    }
+    if Path::new(&rel).extension().is_none() {
+        let index = dir.join("index.html");
+        if index.is_file() {
+            return Some(index);
+        }
+    }
+    None
+}
+
 fn sanitize_path(raw: &str) -> String {
     let mut s = raw.split('?').next().unwrap_or("").to_string();
     if s.starts_with('/') {
@@ -344,4 +357,54 @@ fn sanitize_path(raw: &str) -> String {
         parts.push(p);
     }
     parts.join("/")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn temp_dir(prefix: &str) -> PathBuf {
+        let stamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system time")
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!(
+            "x07-web-ui-{prefix}-{}-{stamp}",
+            std::process::id()
+        ));
+        fs::create_dir_all(&dir).expect("create temp dir");
+        dir
+    }
+
+    #[test]
+    fn resolve_static_path_falls_back_to_index_for_extensionless_route() {
+        let dir = temp_dir("serve-spa-route");
+        fs::write(
+            dir.join("index.html"),
+            "<!doctype html><title>forge</title>",
+        )
+        .expect("index");
+
+        let resolved = resolve_static_path(&dir, "/evals").expect("spa fallback");
+        assert_eq!(resolved, dir.join("index.html"));
+
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn resolve_static_path_keeps_missing_assets_as_not_found() {
+        let dir = temp_dir("serve-missing-asset");
+        fs::write(
+            dir.join("index.html"),
+            "<!doctype html><title>forge</title>",
+        )
+        .expect("index");
+
+        let resolved = resolve_static_path(&dir, "/missing.js");
+        assert!(resolved.is_none());
+
+        let _ = fs::remove_dir_all(&dir);
+    }
 }

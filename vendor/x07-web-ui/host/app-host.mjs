@@ -2490,6 +2490,37 @@ export async function mountWebUiApp({
     return dispatch(event);
   }
 
+  function currentNavInjection(op = "replace") {
+    const href = String(globalThis.location?.href ?? "");
+    const path = sanitizeSameOriginUrlPath(href);
+    if (!href || path == null) return null;
+    const currentRoute =
+      state && typeof state === "object" && !Array.isArray(state) && typeof state.route === "string"
+        ? state.route
+        : null;
+    if (currentRoute === path) return null;
+    return { op, path, href };
+  }
+
+  async function dispatchInjectedState(event, injectedDelta) {
+    const baseState =
+      state && typeof state === "object" && !Array.isArray(state) ? state : null;
+    const nextState =
+      injectedDelta && typeof injectedDelta === "object" && !Array.isArray(injectedDelta)
+        ? { ...(baseState ?? {}), ...injectedDelta }
+        : baseState;
+    const env0 = { v: 1, kind: "x07.web_ui.dispatch", state: nextState, event };
+    const out = await callReducer(env0, false);
+    commitFrame(out.frame);
+    return runEffectsLoop(event, env0, out.frame, out.wallMs);
+  }
+
+  async function dispatchCurrentNavSync(op = "replace") {
+    const nav = currentNavInjection(op);
+    if (!nav) return null;
+    return dispatchInjectedState({ type: "nav.sync" }, { __x07_nav: nav });
+  }
+
   const ipcNativeHost = createIpcNativeHost({ dispatchHostEvent });
   const browserNativeHost = createBrowserNativeHost({
     capabilities,
@@ -2993,10 +3024,7 @@ export async function mountWebUiApp({
   }
 
   async function dispatch(event) {
-    const env0 = { v: 1, kind: "x07.web_ui.dispatch", state, event };
-    const out = await callReducer(env0, false);
-    commitFrame(out.frame);
-    return runEffectsLoop(event, env0, out.frame, out.wallMs);
+    return dispatchInjectedState(event, null);
   }
 
   function installDeviceEventSources() {
@@ -3031,6 +3059,11 @@ export async function mountWebUiApp({
         reportDispatchError("connectivity.offline", err),
       );
     });
+    globalThis.addEventListener?.("popstate", () => {
+      void dispatchCurrentNavSync("replace").catch((err) =>
+        reportDispatchError("nav.popstate", err),
+      );
+    });
   }
 
   try {
@@ -3039,6 +3072,7 @@ export async function mountWebUiApp({
     const out = await callReducer(env0, true);
     commitFrame(out.frame);
     await runEffectsLoop(event, env0, out.frame, out.wallMs);
+    await dispatchCurrentNavSync("replace");
     installDeviceEventSources();
   } catch (err) {
     emitTelemetry(
