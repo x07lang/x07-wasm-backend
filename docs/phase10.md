@@ -11,8 +11,8 @@ The generated project skeletons come from the vendored `x07-device-host` mobile 
 
 Forge M0 extends the examples and CI for this phase in two directions:
 
-- [`examples/x07_builder_io_min`](../examples/x07_builder_io_min/README.md) is the reference reducer for import/edit/export, clipboard, and share flows backed by the `std-web-ui@0.2.3` builder-I/O helpers.
-- [`examples/x07_hex_min`](../examples/x07_hex_min/README.md) is the Tactics M0 reference reducer for deterministic select/move/end-turn flow backed by the `std-web-ui@0.2.3` audio/haptics helpers.
+- [`examples/x07_builder_io_min`](../examples/x07_builder_io_min/README.md) is the reference reducer for import/edit/export, clipboard, and share flows backed by the `std-web-ui@0.2.4` builder-I/O helpers.
+- [`examples/x07_hex_min`](../examples/x07_hex_min/README.md) is the Tactics M0 reference reducer for deterministic select/move/end-turn flow backed by the `std-web-ui@0.2.4` audio/haptics helpers.
 - `scripts/ci/check_phase10_mcp_inspect.sh` drives the repo-local `x07lang-mcp` reference server through `x07-mcp inspect --command` and verifies the new machine-readable inspect surface end to end when `../x07-mcp` is available.
 
 Strict M1 extends the machine-readable side of this phase:

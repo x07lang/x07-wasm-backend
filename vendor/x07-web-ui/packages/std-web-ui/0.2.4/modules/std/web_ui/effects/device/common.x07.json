@@ -1,0 +1,356 @@
+{
+  "decls": [
+    {
+      "kind": "export",
+      "names": [
+        "std.web_ui.effects.device.common.request_v1",
+        "std.web_ui.effects.device.common.status_is_v1",
+        "std.web_ui.effects.device.common.status_is_ok_v1",
+        "std.web_ui.effects.device.common.status_is_denied_v1",
+        "std.web_ui.effects.device.common.status_is_cancelled_v1",
+        "std.web_ui.effects.device.common.status_is_unsupported_v1",
+        "std.web_ui.effects.device.common.status_is_timeout_v1",
+        "std.web_ui.effects.device.common.status_is_error_v1"
+      ]
+    },
+    {
+      "body": [
+        "begin",
+        [
+          "let",
+          "out",
+          [
+            "std.vec.with_capacity",
+            [
+              "+",
+              [
+                "+",
+                [
+                  "+",
+                  [
+                    "+",
+                    [
+                      "view.len",
+                      "kind_json"
+                    ],
+                    [
+                      "view.len",
+                      "request_id_json"
+                    ]
+                  ],
+                  [
+                    "view.len",
+                    "op_json"
+                  ]
+                ],
+                [
+                  "view.len",
+                  "capability_json"
+                ]
+              ],
+              [
+                "+",
+                [
+                  "view.len",
+                  "payload_json"
+                ],
+                80
+              ]
+            ]
+          ]
+        ],
+        [
+          "set",
+          "out",
+          [
+            "std.vec.extend_bytes",
+            "out",
+            [
+              "bytes.view_lit",
+              "{\"v\":1,\"kind\":"
+            ]
+          ]
+        ],
+        [
+          "set",
+          "out",
+          [
+            "std.vec.extend_bytes",
+            "out",
+            "kind_json"
+          ]
+        ],
+        [
+          "set",
+          "out",
+          [
+            "std.vec.extend_bytes",
+            "out",
+            [
+              "bytes.view_lit",
+              ",\"request_id\":"
+            ]
+          ]
+        ],
+        [
+          "set",
+          "out",
+          [
+            "std.vec.extend_bytes",
+            "out",
+            "request_id_json"
+          ]
+        ],
+        [
+          "set",
+          "out",
+          [
+            "std.vec.extend_bytes",
+            "out",
+            [
+              "bytes.view_lit",
+              ",\"op\":"
+            ]
+          ]
+        ],
+        [
+          "set",
+          "out",
+          [
+            "std.vec.extend_bytes",
+            "out",
+            "op_json"
+          ]
+        ],
+        [
+          "set",
+          "out",
+          [
+            "std.vec.extend_bytes",
+            "out",
+            [
+              "bytes.view_lit",
+              ",\"capability\":"
+            ]
+          ]
+        ],
+        [
+          "set",
+          "out",
+          [
+            "std.vec.extend_bytes",
+            "out",
+            "capability_json"
+          ]
+        ],
+        [
+          "set",
+          "out",
+          [
+            "std.vec.extend_bytes",
+            "out",
+            [
+              "bytes.view_lit",
+              ",\"payload\":"
+            ]
+          ]
+        ],
+        [
+          "set",
+          "out",
+          [
+            "std.vec.extend_bytes",
+            "out",
+            "payload_json"
+          ]
+        ],
+        [
+          "set",
+          "out",
+          [
+            "std.vec.extend_bytes",
+            "out",
+            [
+              "bytes.view_lit",
+              "}"
+            ]
+          ]
+        ],
+        [
+          "std.vec.as_bytes",
+          "out"
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.common.request_v1",
+      "params": [
+        {
+          "name": "kind_json",
+          "ty": "bytes_view"
+        },
+        {
+          "name": "request_id_json",
+          "ty": "bytes_view"
+        },
+        {
+          "name": "op_json",
+          "ty": "bytes_view"
+        },
+        {
+          "name": "capability_json",
+          "ty": "bytes_view"
+        },
+        {
+          "name": "payload_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "bytes"
+    },
+    {
+      "body": [
+        "if",
+        [
+          "view.eq",
+          "status_json",
+          "want_json"
+        ],
+        1,
+        0
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.common.status_is_v1",
+      "params": [
+        {
+          "name": "status_json",
+          "ty": "bytes_view"
+        },
+        {
+          "name": "want_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "i32"
+    },
+    {
+      "body": [
+        "std.web_ui.effects.device.common.status_is_v1",
+        "status_json",
+        [
+          "bytes.view_lit",
+          "\"ok\""
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.common.status_is_ok_v1",
+      "params": [
+        {
+          "name": "status_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "i32"
+    },
+    {
+      "body": [
+        "std.web_ui.effects.device.common.status_is_v1",
+        "status_json",
+        [
+          "bytes.view_lit",
+          "\"denied\""
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.common.status_is_denied_v1",
+      "params": [
+        {
+          "name": "status_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "i32"
+    },
+    {
+      "body": [
+        "std.web_ui.effects.device.common.status_is_v1",
+        "status_json",
+        [
+          "bytes.view_lit",
+          "\"cancelled\""
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.common.status_is_cancelled_v1",
+      "params": [
+        {
+          "name": "status_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "i32"
+    },
+    {
+      "body": [
+        "std.web_ui.effects.device.common.status_is_v1",
+        "status_json",
+        [
+          "bytes.view_lit",
+          "\"unsupported\""
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.common.status_is_unsupported_v1",
+      "params": [
+        {
+          "name": "status_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "i32"
+    },
+    {
+      "body": [
+        "std.web_ui.effects.device.common.status_is_v1",
+        "status_json",
+        [
+          "bytes.view_lit",
+          "\"timeout\""
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.common.status_is_timeout_v1",
+      "params": [
+        {
+          "name": "status_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "i32"
+    },
+    {
+      "body": [
+        "std.web_ui.effects.device.common.status_is_v1",
+        "status_json",
+        [
+          "bytes.view_lit",
+          "\"error\""
+        ]
+      ],
+      "kind": "defn",
+      "name": "std.web_ui.effects.device.common.status_is_error_v1",
+      "params": [
+        {
+          "name": "status_json",
+          "ty": "bytes_view"
+        }
+      ],
+      "result": "i32"
+    }
+  ],
+  "imports": [
+    "std.vec"
+  ],
+  "kind": "module",
+  "module_id": "std.web_ui.effects.device.common",
+  "schema_version": "x07.x07ast@0.5.0"
+}

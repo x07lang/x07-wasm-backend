@@ -18,7 +18,7 @@ This example keeps the reducer intentionally small while proving the same `std.w
 
 ## What It Demonstrates
 
-- `std-web-ui@0.2.3` builder-I/O helpers from the vendored package path
+- `std-web-ui@0.2.4` builder-I/O helpers from the vendored package path
 - One reducer packaged for desktop, iOS, and Android
 - Deterministic replay for import, edit, clipboard, export, share, and negative host outcomes
 - Device capability sidecars that match the Forge M0 clipboard/files/share host contract

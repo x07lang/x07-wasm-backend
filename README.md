@@ -20,7 +20,7 @@ x07 wasm doctor --json
 Fallbacks:
 
 ```sh
-cargo install --locked x07-wasm --version 0.2.5
+cargo install --locked x07-wasm --version 0.2.6
 ```
 
 Use `cargo install --locked --git https://github.com/x07lang/x07-wasm-backend.git x07-wasm` only when you need unreleased development state from this repo.
@@ -80,7 +80,7 @@ Device profiles now keep runtime capabilities and telemetry transport settings i
 - `profile/device.capabilities.json`
 - `profile/device.telemetry.profile.json`
 
-The device-capability sidecar now carries the Forge/Tactics M0 fields consumed by `std-web-ui@0.2.3` and `x07-device-host`: `audio.playback`, `haptics.present`, `clipboard.read_text`, `clipboard.write_text`, `files.pick_multiple`, `files.save`, `files.drop`, and `share.present`.
+The device-capability sidecar now carries the Forge/Tactics M0 fields consumed by `std-web-ui@0.2.4` and `x07-device-host`: `audio.playback`, `haptics.present`, `clipboard.read_text`, `clipboard.write_text`, `files.pick_multiple`, `files.save`, `files.drop`, and `share.present`.
 
 `x07-wasm device build` writes `app.manifest.json` into the bundle root so device hosts can reuse the same `apiPrefix`, component entrypoint, and `webUi` runtime limits that the browser host reads from app builds. `x07-wasm app serve` also answers API `OPTIONS` preflight requests with the canonical CORS headers expected by packaged device hosts calling a local or remote HTTP backend.
 
