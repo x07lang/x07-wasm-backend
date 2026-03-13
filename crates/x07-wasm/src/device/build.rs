@@ -259,37 +259,35 @@ pub fn cmd_device_build(
                 }
             }
 
-            if diagnostics.iter().all(|d| d.severity != Severity::Error) {
-                if src_transpiled_dir.is_dir() {
-                    let dst_transpiled_dir = out_dir.join("transpiled");
-                    match copy_dir_tree(&src_transpiled_dir, &dst_transpiled_dir) {
-                        Ok(digests) => {
-                            for digest in digests {
-                                meta.outputs.push(digest.clone());
-                                artifacts.push(digest);
-                            }
+            if diagnostics.iter().all(|d| d.severity != Severity::Error)
+                && src_transpiled_dir.is_dir()
+            {
+                let dst_transpiled_dir = out_dir.join("transpiled");
+                match copy_dir_tree(&src_transpiled_dir, &dst_transpiled_dir) {
+                    Ok(digests) => {
+                        for digest in digests {
+                            meta.outputs.push(digest.clone());
+                            artifacts.push(digest);
                         }
-                        Err(err) => diagnostics.push(Diagnostic::new(
-                            "X07WASM_DEVICE_BUILD_COPY_FAILED",
-                            Severity::Error,
-                            Stage::Run,
-                            format!(
-                                "failed to copy transpiled dir {} -> {}: {err:#}",
-                                src_transpiled_dir.display(),
-                                dst_transpiled_dir.display()
-                            ),
-                        )),
                     }
+                    Err(err) => diagnostics.push(Diagnostic::new(
+                        "X07WASM_DEVICE_BUILD_COPY_FAILED",
+                        Severity::Error,
+                        Stage::Run,
+                        format!(
+                            "failed to copy transpiled dir {} -> {}: {err:#}",
+                            src_transpiled_dir.display(),
+                            dst_transpiled_dir.display()
+                        ),
+                    )),
                 }
             }
 
             if diagnostics.iter().all(|d| d.severity != Severity::Error) {
                 let has_component_esm = src_transpiled_dir.join("app.mjs").is_file();
-                match load_runtime_manifest_from_profile(&src_web_ui_profile)
-                    .and_then(|runtime| {
-                        write_device_app_manifest(&out_dir, &runtime, has_component_esm)
-                    })
-                {
+                match load_runtime_manifest_from_profile(&src_web_ui_profile).and_then(|runtime| {
+                    write_device_app_manifest(&out_dir, &runtime, has_component_esm)
+                }) {
                     Ok(()) => match file_digest_rel(&out_dir, &out_dir.join("app.manifest.json")) {
                         Ok(d) => {
                             meta.outputs.push(d.clone());
@@ -694,9 +692,13 @@ fn copy_dir_tree_inner(
     {
         let entry = entry.with_context(|| format!("read dir entry: {}", current_src.display()))?;
         let path = entry.path();
-        let rel = path
-            .strip_prefix(root_src)
-            .with_context(|| format!("strip prefix: {} from {}", root_src.display(), path.display()))?;
+        let rel = path.strip_prefix(root_src).with_context(|| {
+            format!(
+                "strip prefix: {} from {}",
+                root_src.display(),
+                path.display()
+            )
+        })?;
         let dst = dst_dir.join(rel);
         let file_type = entry
             .file_type()
