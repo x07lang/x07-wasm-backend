@@ -87,6 +87,9 @@ mod tests {
             "x".repeat(DIAGNOSTIC_MESSAGE_MAX_CHARS + 64),
         );
 
-        assert_eq!(diagnostic.message.chars().count(), DIAGNOSTIC_MESSAGE_MAX_CHARS);
+        assert_eq!(
+            diagnostic.message.chars().count(),
+            DIAGNOSTIC_MESSAGE_MAX_CHARS
+        );
     }
 }
