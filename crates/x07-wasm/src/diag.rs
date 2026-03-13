@@ -1,5 +1,7 @@
 use serde::Serialize;
 
+const DIAGNOSTIC_MESSAGE_MAX_CHARS: usize = 4096;
+
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -54,16 +56,37 @@ impl Diagnostic {
         stage: Stage,
         message: impl Into<String>,
     ) -> Self {
+        let mut message = message.into();
+        if message.chars().nth(DIAGNOSTIC_MESSAGE_MAX_CHARS).is_some() {
+            message = message.chars().take(DIAGNOSTIC_MESSAGE_MAX_CHARS).collect();
+        }
         Self {
             code: code.into(),
             severity,
             stage,
-            message: message.into(),
+            message,
             loc: None,
             notes: Vec::new(),
             related: Vec::new(),
             data: std::collections::BTreeMap::new(),
             quickfix: None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn truncates_overlong_messages_to_schema_limit() {
+        let diagnostic = Diagnostic::new(
+            "X07WASM_TEST",
+            Severity::Error,
+            Stage::Run,
+            "x".repeat(DIAGNOSTIC_MESSAGE_MAX_CHARS + 64),
+        );
+
+        assert_eq!(diagnostic.message.chars().count(), DIAGNOSTIC_MESSAGE_MAX_CHARS);
     }
 }

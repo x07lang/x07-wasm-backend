@@ -2713,9 +2713,18 @@ export async function mountWebUiApp({
       outBytes = initCall ? await app.init() : await app.step(inputBytes);
     } catch (err) {
       const response = env?.state?.__x07_http?.response ?? null;
+      const errName =
+        err && typeof err === "object" && typeof err.name === "string" ? err.name : null;
+      const errMessage =
+        err && typeof err === "object" && typeof err.message === "string"
+          ? err.message
+          : null;
       const context = {
         init_call: Boolean(initCall),
         event_type: String(env?.event?.type ?? "unknown"),
+        error_name: errName,
+        error_message: errMessage,
+        error_string: String(err ?? "unknown error"),
         input_bytes_len: inputBytes.length,
         state_keys:
           env?.state && typeof env.state === "object" && !Array.isArray(env.state)

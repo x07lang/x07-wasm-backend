@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use serde_json::{json, Value};
 
-use crate::cli::{DeviceBuildArgs, MachineArgs, Scope, WebUiBuildArgs, WebUiBuildFormat};
+use crate::cli::{DeviceBuildArgs, MachineArgs, Scope, WebUiBuildArgs};
 use crate::device::contracts::{DeviceIndexDoc, DeviceProfileDoc};
 use crate::device::host_abi;
 use crate::device::sidecars::load_profile_sidecars;
@@ -176,7 +176,7 @@ pub fn cmd_device_build(
                 profile_file: None,
                 index: PathBuf::from("arch/web_ui/index.x07webui.json"),
                 wasm_index: PathBuf::from("arch/wasm/index.x07wasm.json"),
-                format: Some(WebUiBuildFormat::Core),
+                format: None,
                 out_dir: internal_dist_dir.clone(),
                 clean: true,
                 strict: args.strict,
@@ -204,6 +204,7 @@ pub fn cmd_device_build(
 
             let src_wasm = internal_dist_dir.join("app.wasm");
             let src_web_ui_profile = internal_dist_dir.join("web-ui.profile.json");
+            let src_transpiled_dir = internal_dist_dir.join("transpiled");
             if !src_wasm.is_file() {
                 diagnostics.push(Diagnostic::new(
                     "X07WASM_DEVICE_BUILD_WEB_UI_WASM_MISSING",
@@ -259,8 +260,35 @@ pub fn cmd_device_build(
             }
 
             if diagnostics.iter().all(|d| d.severity != Severity::Error) {
+                if src_transpiled_dir.is_dir() {
+                    let dst_transpiled_dir = out_dir.join("transpiled");
+                    match copy_dir_tree(&src_transpiled_dir, &dst_transpiled_dir) {
+                        Ok(digests) => {
+                            for digest in digests {
+                                meta.outputs.push(digest.clone());
+                                artifacts.push(digest);
+                            }
+                        }
+                        Err(err) => diagnostics.push(Diagnostic::new(
+                            "X07WASM_DEVICE_BUILD_COPY_FAILED",
+                            Severity::Error,
+                            Stage::Run,
+                            format!(
+                                "failed to copy transpiled dir {} -> {}: {err:#}",
+                                src_transpiled_dir.display(),
+                                dst_transpiled_dir.display()
+                            ),
+                        )),
+                    }
+                }
+            }
+
+            if diagnostics.iter().all(|d| d.severity != Severity::Error) {
+                let has_component_esm = src_transpiled_dir.join("app.mjs").is_file();
                 match load_runtime_manifest_from_profile(&src_web_ui_profile)
-                    .and_then(|runtime| write_device_app_manifest(&out_dir, &runtime))
+                    .and_then(|runtime| {
+                        write_device_app_manifest(&out_dir, &runtime, has_component_esm)
+                    })
                 {
                     Ok(()) => match file_digest_rel(&out_dir, &out_dir.join("app.manifest.json")) {
                         Ok(d) => {
@@ -614,11 +642,18 @@ fn load_device_profile_file(
     })
 }
 
-fn write_device_app_manifest(out_dir: &Path, runtime: &WebUiRuntimeManifest) -> Result<()> {
-    let doc = json!({
+fn write_device_app_manifest(
+    out_dir: &Path,
+    runtime: &WebUiRuntimeManifest,
+    has_component_esm: bool,
+) -> Result<()> {
+    let mut doc = json!({
       "wasmUrl": "./ui/reducer.wasm",
       "webUi": runtime,
     });
+    if has_component_esm {
+        doc["componentEsmUrl"] = json!("./transpiled/app.mjs");
+    }
     let bytes = report::canon::canonical_pretty_json_bytes(&doc)?;
     std::fs::create_dir_all(out_dir)
         .with_context(|| format!("create dir: {}", out_dir.display()))?;
@@ -633,4 +668,48 @@ fn file_digest_rel(root: &Path, path: &Path) -> Result<report::meta::FileDigest>
         d.path = rel.to_string_lossy().to_string();
     }
     Ok(d)
+}
+
+fn copy_dir_tree(src_dir: &Path, dst_dir: &Path) -> Result<Vec<report::meta::FileDigest>> {
+    if dst_dir.exists() {
+        std::fs::remove_dir_all(dst_dir)
+            .with_context(|| format!("remove dir: {}", dst_dir.display()))?;
+    }
+    std::fs::create_dir_all(dst_dir)
+        .with_context(|| format!("create dir: {}", dst_dir.display()))?;
+
+    let mut digests = Vec::new();
+    copy_dir_tree_inner(src_dir, src_dir, dst_dir, &mut digests)?;
+    Ok(digests)
+}
+
+fn copy_dir_tree_inner(
+    root_src: &Path,
+    current_src: &Path,
+    dst_dir: &Path,
+    digests: &mut Vec<report::meta::FileDigest>,
+) -> Result<()> {
+    for entry in std::fs::read_dir(current_src)
+        .with_context(|| format!("read dir: {}", current_src.display()))?
+    {
+        let entry = entry.with_context(|| format!("read dir entry: {}", current_src.display()))?;
+        let path = entry.path();
+        let rel = path
+            .strip_prefix(root_src)
+            .with_context(|| format!("strip prefix: {} from {}", root_src.display(), path.display()))?;
+        let dst = dst_dir.join(rel);
+        let file_type = entry
+            .file_type()
+            .with_context(|| format!("file type: {}", path.display()))?;
+        if file_type.is_dir() {
+            std::fs::create_dir_all(&dst)
+                .with_context(|| format!("create dir: {}", dst.display()))?;
+            copy_dir_tree_inner(root_src, &path, dst_dir, digests)?;
+            continue;
+        }
+        std::fs::copy(&path, &dst)
+            .with_context(|| format!("copy {} -> {}", path.display(), dst.display()))?;
+        digests.push(file_digest_rel(dst_dir.parent().unwrap_or(dst_dir), &dst)?);
+    }
+    Ok(())
 }

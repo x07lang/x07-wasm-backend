@@ -185,6 +185,7 @@ pub struct CoreWasmRunner {
     data_end: u32,
     arena_cap_bytes: u32,
     max_output_bytes: u32,
+    max_fuel: Option<u64>,
 }
 
 impl CoreWasmRunner {
@@ -254,10 +255,14 @@ impl CoreWasmRunner {
             data_end,
             arena_cap_bytes,
             max_output_bytes,
+            max_fuel: runtime_limits.max_fuel,
         })
     }
 
     pub fn call(&mut self, input: &[u8]) -> Result<Vec<u8>> {
+        if let Some(max_fuel) = self.max_fuel {
+            self.store.set_fuel(max_fuel)?;
+        }
         let out = abi_solve_v2::call_solve_v2(
             &mut self.store,
             &self.memory,

@@ -17,7 +17,7 @@ This example keeps the reducer intentionally narrow while proving the same `std.
 
 ## What It Demonstrates
 
-- `std-web-ui@0.2.5` audio/haptics helpers from the vendored package path
+- `std-web-ui@0.2.6` audio/haptics helpers from the vendored package path
 - One reducer packaged for desktop, iOS, and Android
 - Deterministic replay for select/move/victory, clipboard/share/export, and unsupported haptics outcomes
 - Device capability sidecars that match the tactics M0 audio/haptics/clipboard/files/share host contract
