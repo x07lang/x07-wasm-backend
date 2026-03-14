@@ -1,14 +1,38 @@
 # x07-wasm-backend
 
-WASM build pipeline, host runners, and full-stack app tooling for [X07](https://github.com/x07lang/x07) — covering the full `x07-wasm` surface from solve-pure modules through desktop and mobile packaging.
+`x07-wasm-backend` is the WebAssembly production line for [X07](https://github.com/x07lang/x07). It contains the `x07-wasm` build pipeline, host runners, packaging commands, schemas, examples, and release tooling for the full WASM story: small solve-pure modules, server-side components, browser UI apps, and packaged desktop/mobile apps.
 
-x07-wasm-backend is designed for **100% agentic coding** — an AI coding agent builds, tests, packages, deploys, and verifies WASM artifacts entirely on its own using structured contracts, deterministic runners, and machine-readable outputs. No human needs to write X07 by hand.
+The vision is that WASM should not be a side path in x07. It should be a first-class way to ship fast, portable, inspectable programs that coding agents can build and verify reliably.
+
+x07-wasm-backend is designed for **100% agentic coding**. An AI coding agent can build, test, package, deploy, and regress-check WASM artifacts using machine-readable reports and stable contracts instead of custom per-project glue.
+
+## How it fits into the x07 ecosystem
+
+`x07-wasm-backend` connects the core language to the rest of the application stack:
+
+- **`x07`** is the language, compiler front door, repair loop, and docs entrypoint.
+- **`x07-wasm-backend`** turns x07 projects into WASM modules, components, browser apps, and device bundles.
+- **`x07-web-ui`** provides the canonical reducer-side UI contracts used by browser and device apps.
+- **`x07-device-host`** runs packaged device bundles on desktop and mobile.
+- **`x07-platform`** consumes the resulting app packs, release metadata, and incident/regression artifacts.
+
+If the core repo tells you how to write x07, this repo is what turns that code into runnable WASM products.
 
 ## Prerequisites
 
 The [X07 toolchain](https://github.com/x07lang/x07) must be installed before using x07-wasm-backend. If you (or your agent) are new to X07, start with the **[Agent Quickstart](https://x07lang.org/docs/getting-started/agent-quickstart)** — it covers toolchain setup, project structure, and the workflow conventions an agent needs to be productive.
 
 Rust is pinned via `rust-toolchain.toml` for deterministic outputs (including embedded WASM adapter snapshots). Run `cargo`/CI gate scripts from this repo root so `rustup` applies the pin.
+
+## Practical usage
+
+Use `x07-wasm-backend` when you want to:
+
+- compile an x07 program to a portable WASM module
+- run WASM code with deterministic budgets and machine-readable reports
+- build a browser UI app from an x07 reducer
+- package the same reducer for desktop, iOS, and Android
+- produce app packs, incident bundles, regression inputs, SLO checks, and provenance data for release automation
 
 ## Install
 
@@ -44,6 +68,16 @@ x07-wasm run \
   --output-out dist/out.bin \
   --json
 ```
+
+That is the simplest standalone flow: build one WASM artifact and run it locally.
+
+As part of the wider x07 ecosystem, the usual progression is:
+
+1. start in `x07` with a normal project
+2. use `x07-wasm` to build the target you need
+3. use `x07-web-ui` for browser/device UI reducers when applicable
+4. use `x07-device-host` for native shells
+5. use `x07-platform` when the artifact needs staged release, incident capture, and regression feedback
 
 ## Consumer web-ui/device apps
 
