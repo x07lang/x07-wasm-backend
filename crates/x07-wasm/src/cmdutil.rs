@@ -115,3 +115,15 @@ pub fn diag_io_failed(code: &str, stage: Stage, msg: String, err: &anyhow::Error
         .insert("error".to_string(), json!(format!("{err:#}")));
     d
 }
+
+pub fn emit_scaffold_report(command: &str, message: &str) -> Result<u8> {
+    let report = json!({
+        "schema_version": "x07.wasm.scaffold.report@0.1.0",
+        "ok": true,
+        "command": command,
+        "status": "scaffolded",
+        "message": message
+    });
+    println!("{}", serde_json::to_string_pretty(&report)?);
+    Ok(0)
+}

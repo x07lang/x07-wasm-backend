@@ -1,0 +1,7 @@
+{
+  "schema_version": "x07.workload.profile@0.1.0",
+  "id": "workload_dev",
+  "placement": "co-located",
+  "target_kind": "hosted",
+  "runtime_preferences": ["native-http", "native-worker", "wasm-component"]
+}

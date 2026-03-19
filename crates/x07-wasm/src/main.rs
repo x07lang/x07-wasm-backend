@@ -3,6 +3,7 @@
 mod adapters;
 mod app;
 mod arch;
+mod binding;
 mod blob;
 mod caps;
 mod cli;
@@ -24,11 +25,13 @@ mod serve;
 mod slo;
 mod stream_payload;
 mod toolchain;
+mod topology;
 mod util;
 mod wasm;
 mod wasmtime_limits;
 mod web_ui;
 mod wit;
+mod workload;
 
 use std::io::Write as _;
 use std::process::ExitCode;

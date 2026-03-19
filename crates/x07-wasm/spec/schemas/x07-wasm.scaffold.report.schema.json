@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-wasm.scaffold.report.schema.json",
+  "title": "x07.wasm.scaffold.report@0.1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "ok",
+    "command",
+    "status",
+    "message"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "x07.wasm.scaffold.report@0.1.0"
+    },
+    "ok": {
+      "const": true
+    },
+    "command": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "const": "scaffolded"
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

@@ -191,6 +191,15 @@ pub enum Command {
     #[command(name = "app-regress-from-incident")]
     AppRegressFromIncident(AppRegressFromIncidentArgs),
 
+    /// Workload packaging and inspection tooling.
+    Workload(crate::workload::cli::WorkloadArgs),
+
+    /// Topology preview tooling for service-oriented workloads.
+    Topology(crate::topology::cli::TopologyArgs),
+
+    /// Provider-neutral binding resolution tooling for workloads.
+    Binding(crate::binding::cli::BindingArgs),
+
     /// HTTP reducer tooling (Phase 5 recommended).
     Http(HttpArgs),
     /// Alias for `x07-wasm http contracts validate`.
@@ -480,6 +489,33 @@ impl Command {
                     raw_argv, scope, machine, v,
                 )
             }
+            Command::Workload(args) => match args.cmd {
+                Some(crate::workload::cli::WorkloadCommand::Build) => {
+                    crate::workload::build::cmd_workload_build()
+                }
+                Some(crate::workload::cli::WorkloadCommand::Pack) => {
+                    crate::workload::pack::cmd_workload_pack()
+                }
+                Some(crate::workload::cli::WorkloadCommand::Inspect) => {
+                    crate::workload::inspect::cmd_workload_inspect()
+                }
+                Some(crate::workload::cli::WorkloadCommand::ContractsValidate) => {
+                    crate::workload::contracts_validate::cmd_workload_contracts_validate()
+                }
+                None => anyhow::bail!("missing workload subcommand (try --help)"),
+            },
+            Command::Topology(args) => match args.cmd {
+                Some(crate::topology::cli::TopologyCommand::Preview) => {
+                    crate::topology::preview::cmd_topology_preview()
+                }
+                None => anyhow::bail!("missing topology subcommand (try --help)"),
+            },
+            Command::Binding(args) => match args.cmd {
+                Some(crate::binding::cli::BindingCommand::Resolve) => {
+                    crate::binding::resolve::cmd_binding_resolve()
+                }
+                None => anyhow::bail!("missing binding subcommand (try --help)"),
+            },
 
             Command::Http(args) => match args.cmd {
                 HttpCommand::Contracts(c) => match c.cmd {
@@ -2226,6 +2262,12 @@ pub enum Scope {
     AppServe,
     AppTest,
     AppRegressFromIncident,
+    WorkloadBuild,
+    WorkloadPack,
+    WorkloadInspect,
+    WorkloadContractsValidate,
+    TopologyPreview,
+    BindingResolve,
     HttpContractsValidate,
     HttpServe,
     HttpTest,
@@ -2326,6 +2368,23 @@ pub fn scope_for_command(cmd: Option<&Command>) -> Scope {
         Some(Command::AppServe(_)) => Scope::AppServe,
         Some(Command::AppTest(_)) => Scope::AppTest,
         Some(Command::AppRegressFromIncident(_)) => Scope::AppRegressFromIncident,
+        Some(Command::Workload(args)) => match args.cmd {
+            Some(crate::workload::cli::WorkloadCommand::Build) => Scope::WorkloadBuild,
+            Some(crate::workload::cli::WorkloadCommand::Pack) => Scope::WorkloadPack,
+            Some(crate::workload::cli::WorkloadCommand::Inspect) => Scope::WorkloadInspect,
+            Some(crate::workload::cli::WorkloadCommand::ContractsValidate) => {
+                Scope::WorkloadContractsValidate
+            }
+            None => Scope::WorkloadBuild,
+        },
+        Some(Command::Topology(args)) => match args.cmd {
+            Some(crate::topology::cli::TopologyCommand::Preview) => Scope::TopologyPreview,
+            None => Scope::TopologyPreview,
+        },
+        Some(Command::Binding(args)) => match args.cmd {
+            Some(crate::binding::cli::BindingCommand::Resolve) => Scope::BindingResolve,
+            None => Scope::BindingResolve,
+        },
         Some(Command::Http(args)) => match args.cmd {
             HttpCommand::Contracts(_) => Scope::HttpContractsValidate,
             HttpCommand::Serve(_) => Scope::HttpServe,

@@ -1,0 +1,7 @@
+{
+  "schema_version": "x07.workload.profile@0.1.0",
+  "id": "workload_release",
+  "placement": "split-by-cell",
+  "target_kind": "k8s",
+  "runtime_preferences": ["native-http", "native-worker", "wasm-component"]
+}

@@ -455,6 +455,12 @@ fn report_schema_id_for_scope(scope: Scope) -> &'static str {
         Scope::AppRegressFromIncident => {
             "https://x07.io/spec/x07-wasm.app.regress.from_incident.report.schema.json"
         }
+        Scope::WorkloadBuild
+        | Scope::WorkloadPack
+        | Scope::WorkloadInspect
+        | Scope::WorkloadContractsValidate
+        | Scope::TopologyPreview
+        | Scope::BindingResolve => "https://x07.io/spec/x07-wasm.scaffold.report.schema.json",
         Scope::HttpContractsValidate => {
             "https://x07.io/spec/x07-wasm.http.contracts.validate.report.schema.json"
         }

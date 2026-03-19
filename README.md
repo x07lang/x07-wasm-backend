@@ -32,6 +32,7 @@ Use `x07-wasm-backend` when you want to:
 - run WASM code with deterministic budgets and machine-readable reports
 - build a browser UI app from an x07 reducer
 - package the same reducer for desktop, iOS, and Android
+- inspect workload-oriented packaging and topology previews for service-style backends
 - produce app packs, incident bundles, regression inputs, SLO checks, and provenance data for release automation
 
 ## Install
@@ -172,6 +173,14 @@ The examples index lives in [`examples/README.md`](examples/README.md).
 - `x07-wasm app contracts validate` / `profile validate`
 - `x07-wasm app build` / `serve` / `test` / `regress from-incident`
 
+### Service Workload Scaffolding
+
+- `x07-wasm workload build` / `pack` / `inspect` / `contracts-validate`
+- `x07-wasm topology preview`
+- `x07-wasm binding resolve`
+
+These commands are the new service-oriented workload lane. In the current train they are scaffolded command surfaces with deterministic report output, workload profile assets under `arch/workload/`, and the public `x07.workload.pack` contract hooks that downstream platform and MCP slices consume.
+
 ### Native Backend Targets
 
 - `x07-wasm component build --emit http-native` / `--emit cli-native`
@@ -225,6 +234,7 @@ The packaged mobile templates are vendored from `x07-device-host/mobile/*` and r
 - Web UI profile registry: `arch/web_ui/index.x07webui.json`
 - App profile registry: `arch/app/index.x07app.json`
 - Device profile registry: `arch/device/index.x07device.json`
+- Workload profile registry: `arch/workload/index.x07workload.json`
 - Schemas (published to `https://x07.io/spec/`): `crates/x07-wasm/spec/schemas/*.schema.json`
 
 ## CI gates

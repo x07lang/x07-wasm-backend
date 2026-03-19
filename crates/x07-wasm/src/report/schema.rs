@@ -78,6 +78,8 @@ const APP_TEST_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../spec/schemas/x07-wasm.app.test.report.schema.json");
 const APP_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../spec/schemas/x07-wasm.app.regress.from_incident.report.schema.json");
+const SCAFFOLD_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../spec/schemas/x07-wasm.scaffold.report.schema.json");
 const HTTP_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../spec/schemas/x07-wasm.http.contracts.validate.report.schema.json");
 const HTTP_SERVE_REPORT_SCHEMA_BYTES: &[u8] =
@@ -171,6 +173,12 @@ fn schema_bytes_for_scope(scope: Scope) -> Result<&'static [u8]> {
         Scope::AppServe => Ok(APP_SERVE_REPORT_SCHEMA_BYTES),
         Scope::AppTest => Ok(APP_TEST_REPORT_SCHEMA_BYTES),
         Scope::AppRegressFromIncident => Ok(APP_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES),
+        Scope::WorkloadBuild
+        | Scope::WorkloadPack
+        | Scope::WorkloadInspect
+        | Scope::WorkloadContractsValidate
+        | Scope::TopologyPreview
+        | Scope::BindingResolve => Ok(SCAFFOLD_REPORT_SCHEMA_BYTES),
         Scope::HttpContractsValidate => Ok(HTTP_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES),
         Scope::HttpServe => Ok(HTTP_SERVE_REPORT_SCHEMA_BYTES),
         Scope::HttpTest => Ok(HTTP_TEST_REPORT_SCHEMA_BYTES),
@@ -224,6 +232,12 @@ fn schema_version_for_scope(scope: Scope) -> &'static str {
         Scope::AppServe => "x07.wasm.app.serve.report@0.1.0",
         Scope::AppTest => "x07.wasm.app.test.report@0.1.0",
         Scope::AppRegressFromIncident => "x07.wasm.app.regress.from_incident.report@0.1.0",
+        Scope::WorkloadBuild
+        | Scope::WorkloadPack
+        | Scope::WorkloadInspect
+        | Scope::WorkloadContractsValidate
+        | Scope::TopologyPreview
+        | Scope::BindingResolve => "x07.wasm.scaffold.report@0.1.0",
         Scope::HttpContractsValidate => "x07.wasm.http.contracts.validate.report@0.1.0",
         Scope::HttpServe => "x07.wasm.http.serve.report@0.1.0",
         Scope::HttpTest => "x07.wasm.http.test.report@0.1.0",

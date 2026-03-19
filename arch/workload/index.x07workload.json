@@ -1,0 +1,13 @@
+{
+  "schema_version": "x07.workload.profile.index@0.1.0",
+  "profiles": [
+    {
+      "id": "workload_dev",
+      "path": "profiles/workload_dev.json"
+    },
+    {
+      "id": "workload_release",
+      "path": "profiles/workload_release.json"
+    }
+  ]
+}
