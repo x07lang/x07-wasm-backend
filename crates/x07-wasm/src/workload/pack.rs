@@ -43,7 +43,7 @@ pub fn cmd_workload_pack(
                         copy_stats = stats;
                         match build_runtime_pack_doc(
                             &args.out_dir,
-                            &artifacts.workload_doc,
+                            &source,
                             args.runtime_image.as_deref(),
                             args.container_port,
                         )
@@ -131,47 +131,12 @@ fn push_input_digest(meta: &mut report::meta::ReportMeta, path: &Path) {
 
 fn build_runtime_pack_doc(
     out_dir: &Path,
-    workload_doc: &Value,
+    source: &surface::WorkloadSource,
     runtime_image: Option<&str>,
     container_port: u16,
 ) -> Result<Value> {
-    let workload_id = workload_doc
-        .get("workload_id")
-        .and_then(Value::as_str)
-        .unwrap_or_default();
-    let cells = workload_doc
-        .get("cells")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default()
-        .into_iter()
-        .map(|cell| {
-            let runtime_class = cell
-                .get("runtime_class")
-                .and_then(Value::as_str)
-                .unwrap_or_default();
-            let ingress_kind = cell
-                .get("ingress_kind")
-                .and_then(Value::as_str)
-                .unwrap_or_default();
-            let mut doc = json!({
-                "cell_key": cell.get("cell_key").cloned().unwrap_or(Value::Null),
-                "runtime_class": runtime_class,
-                "ingress_kind": ingress_kind,
-            });
-            if runtime_class == "native-http" && ingress_kind == "http" {
-                if let Some(image) = runtime_image.filter(|value| !value.trim().is_empty()) {
-                    doc["executable"] = json!({
-                        "kind": "oci_image",
-                        "image": image,
-                        "container_port": container_port,
-                        "health_path": "/",
-                    });
-                }
-            }
-            doc
-        })
-        .collect::<Vec<_>>();
+    let workload_id = surface::workload_id(source).to_string();
+    let cells = surface::runtime_pack_cells(source, runtime_image, container_port);
     Ok(json!({
         "schema_version": "x07.workload.pack@0.1.0",
         "workload_id": workload_id,

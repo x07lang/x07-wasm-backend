@@ -40,6 +40,102 @@ struct ServiceCell {
     #[serde(default)]
     binding_refs: Vec<String>,
     topology_group: String,
+    #[serde(default)]
+    runtime: ServiceCellRuntime,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+struct ServiceCellRuntime {
+    #[serde(default)]
+    event: Option<ServiceCellEventRuntime>,
+    #[serde(default)]
+    schedule: Option<ServiceCellScheduleRuntime>,
+    #[serde(default)]
+    probes: Option<ServiceCellProbeSet>,
+    #[serde(default)]
+    rollout: Option<ServiceCellRollout>,
+    #[serde(default)]
+    autoscaling: Option<ServiceCellAutoscaling>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct ServiceCellEventRuntime {
+    binding_ref: String,
+    topic: String,
+    consumer_group: String,
+    #[serde(default)]
+    ack_mode: Option<String>,
+    #[serde(default)]
+    max_in_flight: Option<u32>,
+    #[serde(default)]
+    drain_timeout_seconds: Option<u32>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct ServiceCellScheduleRuntime {
+    cron: String,
+    #[serde(default)]
+    timezone: Option<String>,
+    #[serde(default)]
+    concurrency_policy: Option<String>,
+    #[serde(default)]
+    retry_limit: Option<u32>,
+    #[serde(default)]
+    start_deadline_seconds: Option<u32>,
+    #[serde(default)]
+    suspend: Option<bool>,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+struct ServiceCellProbeSet {
+    #[serde(default)]
+    startup: Option<ServiceCellProbe>,
+    #[serde(default)]
+    readiness: Option<ServiceCellProbe>,
+    #[serde(default)]
+    liveness: Option<ServiceCellProbe>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct ServiceCellProbe {
+    probe_kind: String,
+    #[serde(default)]
+    path: Option<String>,
+    #[serde(default)]
+    port: Option<u16>,
+    #[serde(default)]
+    command: Vec<String>,
+    #[serde(default)]
+    initial_delay_seconds: Option<u32>,
+    #[serde(default)]
+    period_seconds: Option<u32>,
+    #[serde(default)]
+    timeout_seconds: Option<u32>,
+    #[serde(default)]
+    success_threshold: Option<u32>,
+    #[serde(default)]
+    failure_threshold: Option<u32>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct ServiceCellRollout {
+    strategy: String,
+    #[serde(default)]
+    max_unavailable: Option<String>,
+    #[serde(default)]
+    max_surge: Option<String>,
+    #[serde(default)]
+    canary_percent: Option<u8>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct ServiceCellAutoscaling {
+    min_replicas: u32,
+    max_replicas: u32,
+    #[serde(default)]
+    target_cpu_utilization: Option<u8>,
+    #[serde(default)]
+    target_inflight: Option<u32>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -248,6 +344,101 @@ pub(crate) fn pack_manifest_doc(source: &WorkloadSource) -> Result<Value> {
     }))
 }
 
+pub(crate) fn workload_id(source: &WorkloadSource) -> &str {
+    &source.manifest.service_id
+}
+
+pub(crate) fn runtime_pack_cells(
+    source: &WorkloadSource,
+    runtime_image: Option<&str>,
+    container_port: u16,
+) -> Vec<Value> {
+    let binding_kinds = source
+        .manifest
+        .resource_bindings
+        .iter()
+        .map(|binding| (binding.name.as_str(), binding.kind.as_str()))
+        .collect::<BTreeMap<_, _>>();
+    source
+        .manifest
+        .cells
+        .iter()
+        .map(|cell| {
+            let mut doc = json!({
+                "cell_key": cell.cell_key,
+                "cell_kind": cell.cell_kind,
+                "runtime_class": cell.runtime_class,
+                "ingress_kind": cell.ingress_kind,
+                "scale_class": cell.scale_class,
+                "topology_group": cell.topology_group,
+                "binding_refs": cell.binding_refs,
+                "binding_probe_hints": cell.binding_refs.iter().map(|binding_ref| {
+                    json!({
+                        "binding_ref": binding_ref,
+                        "binding_kind": binding_kinds.get(binding_ref.as_str()).copied().unwrap_or("unknown")
+                    })
+                }).collect::<Vec<_>>(),
+            });
+            if let Some(event) = cell.runtime.event.as_ref() {
+                doc["event"] = json!({
+                    "binding_ref": event.binding_ref,
+                    "topic": event.topic,
+                    "consumer_group": event.consumer_group,
+                    "ack_mode": event.ack_mode,
+                    "max_in_flight": event.max_in_flight,
+                    "drain_timeout_seconds": event.drain_timeout_seconds,
+                });
+            }
+            if let Some(schedule) = cell.runtime.schedule.as_ref() {
+                doc["schedule"] = json!({
+                    "cron": schedule.cron,
+                    "timezone": schedule.timezone,
+                    "concurrency_policy": schedule.concurrency_policy,
+                    "retry_limit": schedule.retry_limit,
+                    "start_deadline_seconds": schedule.start_deadline_seconds,
+                    "suspend": schedule.suspend,
+                });
+            }
+            if let Some(probes) = cell.runtime.probes.as_ref() {
+                doc["probes"] = json!({
+                    "startup": runtime_probe_doc(probes.startup.as_ref()),
+                    "readiness": runtime_probe_doc(probes.readiness.as_ref()),
+                    "liveness": runtime_probe_doc(probes.liveness.as_ref()),
+                });
+            }
+            if let Some(rollout) = cell.runtime.rollout.as_ref() {
+                doc["rollout"] = json!({
+                    "strategy": rollout.strategy,
+                    "max_unavailable": rollout.max_unavailable,
+                    "max_surge": rollout.max_surge,
+                    "canary_percent": rollout.canary_percent,
+                });
+            }
+            if let Some(autoscaling) = cell.runtime.autoscaling.as_ref() {
+                doc["autoscaling"] = json!({
+                    "min_replicas": autoscaling.min_replicas,
+                    "max_replicas": autoscaling.max_replicas,
+                    "target_cpu_utilization": autoscaling.target_cpu_utilization,
+                    "target_inflight": autoscaling.target_inflight,
+                });
+            }
+            if matches!(cell.runtime_class.as_str(), "native-http" | "native-worker") {
+                if let Some(image) = runtime_image.filter(|value| !value.trim().is_empty()) {
+                    doc["execution_kind"] = json!("oci_image");
+                    doc["executable"] = json!({
+                        "kind": "oci_image",
+                        "image": image,
+                        "container_port": if cell.ingress_kind == "http" { json!(container_port) } else { Value::Null },
+                    });
+                }
+            } else if cell.runtime_class == "embedded-kernel" {
+                doc["execution_kind"] = json!("embedded");
+            }
+            doc
+        })
+        .collect()
+}
+
 pub(crate) fn workload_describe_doc(source: &WorkloadSource, view: &str) -> Result<Value> {
     if !matches!(view, "summary" | "full") {
         anyhow::bail!("unsupported inspect view: {view}");
@@ -438,6 +629,23 @@ fn manifest_cells(source: &WorkloadSource) -> Vec<Value> {
         .collect()
 }
 
+fn runtime_probe_doc(probe: Option<&ServiceCellProbe>) -> Value {
+    let Some(probe) = probe else {
+        return Value::Null;
+    };
+    json!({
+        "probe_kind": probe.probe_kind,
+        "path": probe.path,
+        "port": probe.port,
+        "command": probe.command,
+        "initial_delay_seconds": probe.initial_delay_seconds,
+        "period_seconds": probe.period_seconds,
+        "timeout_seconds": probe.timeout_seconds,
+        "success_threshold": probe.success_threshold,
+        "failure_threshold": probe.failure_threshold,
+    })
+}
+
 fn validate_source_docs(project: &ProjectManifest, manifest: &ServiceManifest) -> Result<()> {
     if project.schema_version.trim().is_empty() {
         anyhow::bail!("project schema_version must not be empty");
@@ -468,12 +676,15 @@ fn validate_source_docs(project: &ProjectManifest, manifest: &ServiceManifest) -
     if manifest.cells.is_empty() {
         anyhow::bail!("service manifest must define at least one cell");
     }
-    let mut binding_names = BTreeSet::new();
+    let mut binding_names = BTreeMap::new();
     for binding in &manifest.resource_bindings {
         if binding.name.trim().is_empty() {
             anyhow::bail!("binding name must not be empty");
         }
-        if !binding_names.insert(binding.name.clone()) {
+        if binding_names
+            .insert(binding.name.clone(), binding.kind.clone())
+            .is_some()
+        {
             anyhow::bail!("duplicate binding name: {}", binding.name);
         }
         validate_binding_kind(&binding.kind)?;
@@ -532,7 +743,7 @@ fn validate_source_docs(project: &ProjectManifest, manifest: &ServiceManifest) -
             ],
         )?;
         for binding_ref in &cell.binding_refs {
-            if !binding_names.contains(binding_ref) {
+            if !binding_names.contains_key(binding_ref) {
                 anyhow::bail!(
                     "cell {} references unknown binding {}",
                     cell.cell_key,
@@ -540,6 +751,7 @@ fn validate_source_docs(project: &ProjectManifest, manifest: &ServiceManifest) -
                 );
             }
         }
+        validate_cell_runtime(cell, &binding_names)?;
     }
     let mut topology_ids = BTreeSet::new();
     for profile in &manifest.topology_profiles {
@@ -556,6 +768,283 @@ fn validate_source_docs(project: &ProjectManifest, manifest: &ServiceManifest) -
         )?;
         if let Some(target_kind) = profile.target_kind.as_deref() {
             validate_cell_value("target_kind", target_kind, &["hosted", "k8s", "wasmcloud"])?;
+        }
+    }
+    Ok(())
+}
+
+fn validate_cell_runtime(
+    cell: &ServiceCell,
+    binding_names: &BTreeMap<String, String>,
+) -> Result<()> {
+    match cell.ingress_kind.as_str() {
+        "event" => {
+            let event = cell.runtime.event.as_ref().ok_or_else(|| {
+                anyhow::anyhow!(
+                    "cell {} requires runtime.event for event ingress",
+                    cell.cell_key
+                )
+            })?;
+            validate_event_runtime(cell, event, binding_names)?;
+        }
+        _ if cell.runtime.event.is_some() => {
+            anyhow::bail!(
+                "cell {} must not declare runtime.event unless ingress_kind is event",
+                cell.cell_key
+            );
+        }
+        _ => {}
+    }
+
+    match cell.ingress_kind.as_str() {
+        "schedule" => {
+            let schedule = cell.runtime.schedule.as_ref().ok_or_else(|| {
+                anyhow::anyhow!(
+                    "cell {} requires runtime.schedule for schedule ingress",
+                    cell.cell_key
+                )
+            })?;
+            validate_schedule_runtime(cell, schedule)?;
+        }
+        _ if cell.runtime.schedule.is_some() => {
+            anyhow::bail!(
+                "cell {} must not declare runtime.schedule unless ingress_kind is schedule",
+                cell.cell_key
+            );
+        }
+        _ => {}
+    }
+
+    if let Some(probes) = cell.runtime.probes.as_ref() {
+        for (label, probe) in [
+            ("startup", probes.startup.as_ref()),
+            ("readiness", probes.readiness.as_ref()),
+            ("liveness", probes.liveness.as_ref()),
+        ] {
+            if let Some(probe) = probe {
+                validate_probe(cell, label, probe)?;
+            }
+        }
+    }
+
+    if let Some(rollout) = cell.runtime.rollout.as_ref() {
+        validate_rollout(cell, rollout)?;
+    }
+
+    if let Some(autoscaling) = cell.runtime.autoscaling.as_ref() {
+        validate_autoscaling(cell, autoscaling)?;
+    }
+
+    Ok(())
+}
+
+fn validate_event_runtime(
+    cell: &ServiceCell,
+    event: &ServiceCellEventRuntime,
+    binding_names: &BTreeMap<String, String>,
+) -> Result<()> {
+    if event.binding_ref.trim().is_empty() {
+        anyhow::bail!(
+            "cell {} runtime.event.binding_ref must not be empty",
+            cell.cell_key
+        );
+    }
+    if !cell
+        .binding_refs
+        .iter()
+        .any(|binding_ref| binding_ref == &event.binding_ref)
+    {
+        anyhow::bail!(
+            "cell {} runtime.event.binding_ref must appear in binding_refs",
+            cell.cell_key
+        );
+    }
+    match binding_names.get(&event.binding_ref).map(String::as_str) {
+        Some("amqp") | Some("kafka") => {}
+        Some(kind) => anyhow::bail!(
+            "cell {} runtime.event.binding_ref must reference amqp or kafka, got {}",
+            cell.cell_key,
+            kind
+        ),
+        None => anyhow::bail!(
+            "cell {} runtime.event.binding_ref references an unknown binding",
+            cell.cell_key
+        ),
+    }
+    if event.topic.trim().is_empty() {
+        anyhow::bail!(
+            "cell {} runtime.event.topic must not be empty",
+            cell.cell_key
+        );
+    }
+    if event.consumer_group.trim().is_empty() {
+        anyhow::bail!(
+            "cell {} runtime.event.consumer_group must not be empty",
+            cell.cell_key
+        );
+    }
+    if let Some(ack_mode) = event.ack_mode.as_deref() {
+        validate_cell_value("ack_mode", ack_mode, &["auto", "manual"])?;
+    }
+    Ok(())
+}
+
+fn validate_schedule_runtime(
+    cell: &ServiceCell,
+    schedule: &ServiceCellScheduleRuntime,
+) -> Result<()> {
+    if schedule.cron.trim().is_empty() {
+        anyhow::bail!(
+            "cell {} runtime.schedule.cron must not be empty",
+            cell.cell_key
+        );
+    }
+    if let Some(timezone) = schedule.timezone.as_deref() {
+        if timezone.trim().is_empty() {
+            anyhow::bail!(
+                "cell {} runtime.schedule.timezone must not be empty when provided",
+                cell.cell_key
+            );
+        }
+    }
+    if let Some(policy) = schedule.concurrency_policy.as_deref() {
+        validate_cell_value(
+            "concurrency_policy",
+            policy,
+            &["allow", "forbid", "replace"],
+        )?;
+    }
+    Ok(())
+}
+
+fn validate_probe(cell: &ServiceCell, label: &str, probe: &ServiceCellProbe) -> Result<()> {
+    validate_cell_value("probe_kind", &probe.probe_kind, &["http", "exec"])?;
+    match probe.probe_kind.as_str() {
+        "http" => {
+            let path = probe.path.as_deref().ok_or_else(|| {
+                anyhow::anyhow!(
+                    "cell {} runtime.probes.{} requires path for http probes",
+                    cell.cell_key,
+                    label
+                )
+            })?;
+            if path.trim().is_empty() || !path.starts_with('/') {
+                anyhow::bail!(
+                    "cell {} runtime.probes.{} path must start with '/'",
+                    cell.cell_key,
+                    label
+                );
+            }
+            if !probe.command.is_empty() {
+                anyhow::bail!(
+                    "cell {} runtime.probes.{} must not set command for http probes",
+                    cell.cell_key,
+                    label
+                );
+            }
+        }
+        "exec" => {
+            if probe.command.is_empty() || probe.command.iter().any(|part| part.trim().is_empty()) {
+                anyhow::bail!(
+                    "cell {} runtime.probes.{} command must contain non-empty entries",
+                    cell.cell_key,
+                    label
+                );
+            }
+            if probe.path.is_some() || probe.port.is_some() {
+                anyhow::bail!(
+                    "cell {} runtime.probes.{} must not set path or port for exec probes",
+                    cell.cell_key,
+                    label
+                );
+            }
+        }
+        _ => unreachable!(),
+    }
+    Ok(())
+}
+
+fn validate_rollout(cell: &ServiceCell, rollout: &ServiceCellRollout) -> Result<()> {
+    validate_cell_value(
+        "rollout strategy",
+        &rollout.strategy,
+        &["rolling", "canary-lite", "recreate"],
+    )?;
+    if rollout.strategy == "canary-lite" && !matches!(cell.ingress_kind.as_str(), "http" | "event")
+    {
+        anyhow::bail!(
+            "cell {} only supports canary-lite rollout for http or event ingress",
+            cell.cell_key
+        );
+    }
+    for (label, value) in [
+        ("max_unavailable", rollout.max_unavailable.as_deref()),
+        ("max_surge", rollout.max_surge.as_deref()),
+    ] {
+        if let Some(value) = value {
+            validate_rollout_step_value(cell, label, value)?;
+        }
+    }
+    if let Some(percent) = rollout.canary_percent {
+        if percent == 0 || percent > 100 {
+            anyhow::bail!(
+                "cell {} runtime.rollout.canary_percent must be between 1 and 100",
+                cell.cell_key
+            );
+        }
+    }
+    Ok(())
+}
+
+fn validate_rollout_step_value(cell: &ServiceCell, label: &str, value: &str) -> Result<()> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        anyhow::bail!(
+            "cell {} runtime.rollout.{} must not be empty",
+            cell.cell_key,
+            label
+        );
+    }
+    let valid = if let Some(percent) = trimmed.strip_suffix('%') {
+        !percent.is_empty() && percent.chars().all(|ch| ch.is_ascii_digit())
+    } else {
+        trimmed.chars().all(|ch| ch.is_ascii_digit())
+    };
+    if !valid {
+        anyhow::bail!(
+            "cell {} runtime.rollout.{} must be a decimal count or percentage string",
+            cell.cell_key,
+            label
+        );
+    }
+    Ok(())
+}
+
+fn validate_autoscaling(cell: &ServiceCell, autoscaling: &ServiceCellAutoscaling) -> Result<()> {
+    if !matches!(cell.ingress_kind.as_str(), "http" | "event") {
+        anyhow::bail!(
+            "cell {} only supports autoscaling hints for http or event ingress",
+            cell.cell_key
+        );
+    }
+    if autoscaling.min_replicas > autoscaling.max_replicas {
+        anyhow::bail!(
+            "cell {} runtime.autoscaling min_replicas must be <= max_replicas",
+            cell.cell_key
+        );
+    }
+    if autoscaling.target_cpu_utilization.is_none() && autoscaling.target_inflight.is_none() {
+        anyhow::bail!(
+            "cell {} runtime.autoscaling must define target_cpu_utilization or target_inflight",
+            cell.cell_key
+        );
+    }
+    if let Some(target) = autoscaling.target_cpu_utilization {
+        if target == 0 || target > 100 {
+            anyhow::bail!(
+                "cell {} runtime.autoscaling target_cpu_utilization must be between 1 and 100",
+                cell.cell_key
+            );
         }
     }
     Ok(())
@@ -869,7 +1358,31 @@ mod tests {
       "runtime_class": "native-http",
       "scale_class": "replicated-http",
       "binding_refs": ["db.primary", "obj.documents"],
-      "topology_group": "frontdoor"
+      "topology_group": "frontdoor",
+      "runtime": {
+        "probes": {
+          "readiness": {
+            "probe_kind": "http",
+            "path": "/readyz",
+            "port": 8080
+          },
+          "liveness": {
+            "probe_kind": "http",
+            "path": "/livez",
+            "port": 8080
+          }
+        },
+        "rollout": {
+          "strategy": "rolling",
+          "max_unavailable": "25%",
+          "max_surge": "25%"
+        },
+        "autoscaling": {
+          "min_replicas": 2,
+          "max_replicas": 6,
+          "target_cpu_utilization": 70
+        }
+      }
     },
     {
       "cell_key": "events",
@@ -879,7 +1392,35 @@ mod tests {
       "runtime_class": "native-worker",
       "scale_class": "partitioned-consumer",
       "binding_refs": ["db.primary", "msg.orders"],
-      "topology_group": "async"
+      "topology_group": "async",
+      "runtime": {
+        "event": {
+          "binding_ref": "msg.orders",
+          "topic": "orders.created",
+          "consumer_group": "orders-workers",
+          "ack_mode": "manual",
+          "max_in_flight": 32
+        },
+        "probes": {
+          "readiness": {
+            "probe_kind": "exec",
+            "command": ["check-consumer", "--ready"]
+          },
+          "liveness": {
+            "probe_kind": "exec",
+            "command": ["check-consumer", "--alive"]
+          }
+        },
+        "rollout": {
+          "strategy": "rolling",
+          "max_unavailable": "1"
+        },
+        "autoscaling": {
+          "min_replicas": 1,
+          "max_replicas": 8,
+          "target_inflight": 64
+        }
+      }
     },
     {
       "cell_key": "settlement",
@@ -889,7 +1430,16 @@ mod tests {
       "runtime_class": "native-worker",
       "scale_class": "burst-batch",
       "binding_refs": ["db.primary"],
-      "topology_group": "async"
+      "topology_group": "async",
+      "runtime": {
+        "schedule": {
+          "cron": "0 */6 * * *",
+          "timezone": "UTC",
+          "concurrency_policy": "forbid",
+          "retry_limit": 3,
+          "start_deadline_seconds": 600
+        }
+      }
     }
   ],
   "topology_profiles": [
@@ -959,6 +1509,30 @@ mod tests {
         assert!(out_dir
             .join("sources/arch/service/index.x07service.json")
             .is_file());
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn runtime_pack_cells_include_consumer_and_job_hints() {
+        let root = temp_dir("surface-runtime-pack");
+        write_fixture_project(&root);
+        let source = load_source(
+            &root.join("x07.json"),
+            &root.join("arch/service/index.x07service.json"),
+        )
+        .expect("load source");
+        let cells = runtime_pack_cells(&source, Some("ghcr.io/x07/orders:v1"), 8080);
+        assert_eq!(cells.len(), 3);
+        let api = &cells[0];
+        assert_eq!(api["execution_kind"], "oci_image");
+        assert_eq!(api["executable"]["container_port"], 8080);
+        let consumer = &cells[1];
+        assert_eq!(consumer["event"]["binding_ref"], "msg.orders");
+        assert_eq!(consumer["execution_kind"], "oci_image");
+        assert_eq!(consumer["binding_probe_hints"][1]["binding_kind"], "amqp");
+        let job = &cells[2];
+        assert_eq!(job["schedule"]["cron"], "0 */6 * * *");
+        assert_eq!(job["executable"]["container_port"], Value::Null);
         let _ = fs::remove_dir_all(root);
     }
 }

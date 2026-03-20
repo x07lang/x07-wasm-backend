@@ -96,9 +96,7 @@
       "additionalProperties": false,
       "required": [
         "kind",
-        "image",
-        "container_port",
-        "health_path"
+        "image"
       ],
       "properties": {
         "kind": {
@@ -110,15 +108,287 @@
           "maxLength": 512
         },
         "container_port": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 65535
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      }
+    },
+    "binding_probe_hint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "binding_ref",
+        "binding_kind"
+      ],
+      "properties": {
+        "binding_ref": {
+          "$ref": "#/$defs/id"
         },
-        "health_path": {
+        "binding_kind": {
+          "type": "string",
+          "enum": [
+            "postgres",
+            "mysql",
+            "sqlite",
+            "redis",
+            "kafka",
+            "amqp",
+            "s3",
+            "secret",
+            "otlp"
+          ]
+        }
+      }
+    },
+    "probe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "probe_kind"
+      ],
+      "properties": {
+        "probe_kind": {
+          "type": "string",
+          "enum": [
+            "http",
+            "exec"
+          ]
+        },
+        "path": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^/"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "port": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "default": []
+        },
+        "initial_delay_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "period_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "success_threshold": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "failure_threshold": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "probes": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "startup": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/probe"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "readiness": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/probe"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "liveness": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/probe"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "binding_ref",
+        "topic",
+        "consumer_group"
+      ],
+      "properties": {
+        "binding_ref": {
+          "$ref": "#/$defs/id"
+        },
+        "topic": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 256,
-          "pattern": "^/[^\\s]*$"
+          "maxLength": 512
+        },
+        "consumer_group": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "ack_mode": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "manual"
+          ]
+        },
+        "max_in_flight": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "drain_timeout_seconds": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "schedule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cron"
+      ],
+      "properties": {
+        "cron": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "timezone": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "concurrency_policy": {
+          "type": "string",
+          "enum": [
+            "allow",
+            "forbid",
+            "replace"
+          ]
+        },
+        "retry_limit": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "start_deadline_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "suspend": {
+          "type": "boolean"
+        }
+      }
+    },
+    "rollout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "strategy"
+      ],
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": [
+            "rolling",
+            "canary-lite",
+            "recreate"
+          ]
+        },
+        "max_unavailable": {
+          "type": "string",
+          "minLength": 1
+        },
+        "max_surge": {
+          "type": "string",
+          "minLength": 1
+        },
+        "canary_percent": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      }
+    },
+    "autoscaling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "min_replicas",
+        "max_replicas"
+      ],
+      "properties": {
+        "min_replicas": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_replicas": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "target_cpu_utilization": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "target_inflight": {
+          "type": "integer",
+          "minimum": 1
         }
       }
     },
@@ -127,12 +397,28 @@
       "additionalProperties": false,
       "required": [
         "cell_key",
+        "cell_kind",
         "runtime_class",
-        "ingress_kind"
+        "ingress_kind",
+        "scale_class",
+        "topology_group",
+        "binding_refs",
+        "binding_probe_hints"
       ],
       "properties": {
         "cell_key": {
           "$ref": "#/$defs/id"
+        },
+        "cell_kind": {
+          "type": "string",
+          "enum": [
+            "api-cell",
+            "event-consumer",
+            "scheduled-job",
+            "policy-service",
+            "workflow-service",
+            "mcp-tool"
+          ]
         },
         "runtime_class": {
           "type": "string",
@@ -152,6 +438,56 @@
             "workflow",
             "mcp"
           ]
+        },
+        "scale_class": {
+          "type": "string",
+          "enum": [
+            "replicated-http",
+            "partitioned-consumer",
+            "singleton-orchestrator",
+            "leased-worker",
+            "burst-batch",
+            "embedded-kernel"
+          ]
+        },
+        "topology_group": {
+          "$ref": "#/$defs/id"
+        },
+        "binding_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "default": []
+        },
+        "binding_probe_hints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/binding_probe_hint"
+          },
+          "default": []
+        },
+        "execution_kind": {
+          "type": "string",
+          "enum": [
+            "oci_image",
+            "embedded"
+          ]
+        },
+        "probes": {
+          "$ref": "#/$defs/probes"
+        },
+        "event": {
+          "$ref": "#/$defs/event"
+        },
+        "schedule": {
+          "$ref": "#/$defs/schedule"
+        },
+        "rollout": {
+          "$ref": "#/$defs/rollout"
+        },
+        "autoscaling": {
+          "$ref": "#/$defs/autoscaling"
         },
         "executable": {
           "$ref": "#/$defs/executable"
