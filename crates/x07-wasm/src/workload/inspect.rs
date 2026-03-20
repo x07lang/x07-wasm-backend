@@ -2,7 +2,7 @@ use std::ffi::OsString;
 use std::fs;
 
 use anyhow::Result;
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 
 use crate::cli::{MachineArgs, Scope};
 use crate::diag::{Diagnostic, Severity, Stage};
@@ -72,11 +72,13 @@ pub fn cmd_workload_inspect(
         started,
         "x07-wasm.workload.inspect",
         meta,
-        diagnostics,
-        stdout_json,
-        None,
-        CopyStats::default(),
-        Vec::new(),
+        surface::SurfaceReportPayload {
+            diagnostics,
+            stdout_json,
+            output_path: None,
+            copy_stats: CopyStats::default(),
+            checked_schema_ids: Vec::new(),
+        },
     )
 }
 

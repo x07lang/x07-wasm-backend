@@ -60,11 +60,13 @@ pub fn cmd_binding_resolve(
         started,
         "x07-wasm.binding.resolve",
         meta,
-        diagnostics,
-        stdout_json,
-        None,
-        CopyStats::default(),
-        Vec::new(),
+        surface::SurfaceReportPayload {
+            diagnostics,
+            stdout_json,
+            output_path: None,
+            copy_stats: CopyStats::default(),
+            checked_schema_ids: Vec::new(),
+        },
     )
 }
 

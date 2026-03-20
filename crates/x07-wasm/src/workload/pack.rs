@@ -3,7 +3,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 
 use crate::cli::{MachineArgs, Scope};
 use crate::diag::{Diagnostic, Severity, Stage};
@@ -48,8 +48,10 @@ pub fn cmd_workload_pack(
                             args.container_port,
                         )
                         .and_then(|doc| {
-                            let digest =
-                                surface::write_json_doc(&args.out_dir.join("x07.workload.pack.json"), &doc)?;
+                            let digest = surface::write_json_doc(
+                                &args.out_dir.join("x07.workload.pack.json"),
+                                &doc,
+                            )?;
                             Ok((doc, digest))
                         }) {
                             Ok((runtime_pack, digest)) => {
@@ -111,11 +113,13 @@ pub fn cmd_workload_pack(
         started,
         "x07-wasm.workload.pack",
         meta,
-        diagnostics,
-        stdout_json,
-        Some(&args.out_dir),
-        copy_stats,
-        Vec::new(),
+        surface::SurfaceReportPayload {
+            diagnostics,
+            stdout_json,
+            output_path: Some(args.out_dir),
+            copy_stats,
+            checked_schema_ids: Vec::new(),
+        },
     )
 }
 
@@ -193,14 +197,18 @@ fn collect_matching_digests(out_dir: &Path, prefix: &str, suffix: &str) -> Resul
         }
     }
     paths.sort();
-    paths.into_iter().map(|path| relative_digest(out_dir, &path)).collect()
+    paths
+        .into_iter()
+        .map(|path| relative_digest(out_dir, &path))
+        .collect()
 }
 
 fn collect_relative_digests(root: &Path, pack_root: &Path) -> Result<Vec<Value>> {
     let mut files = Vec::new();
     collect_files_recursive(root, &mut files)?;
     files.sort();
-    files.into_iter()
+    files
+        .into_iter()
         .map(|path| relative_digest(pack_root, &path))
         .collect()
 }

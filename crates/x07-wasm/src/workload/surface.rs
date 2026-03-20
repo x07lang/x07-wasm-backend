@@ -97,8 +97,8 @@ pub(crate) struct SurfaceArtifacts {
 }
 
 pub(crate) fn load_source(project_path: &Path, manifest_path: &Path) -> Result<WorkloadSource> {
-    let project_bytes =
-        fs::read(project_path).with_context(|| format!("read project {}", project_path.display()))?;
+    let project_bytes = fs::read(project_path)
+        .with_context(|| format!("read project {}", project_path.display()))?;
     let manifest_bytes = fs::read(manifest_path)
         .with_context(|| format!("read service manifest {}", manifest_path.display()))?;
     let project: ProjectManifest = serde_json::from_slice(&project_bytes)
@@ -176,7 +176,8 @@ pub(crate) fn write_build_outputs(
 pub(crate) fn write_pack_sources(source: &WorkloadSource, out_dir: &Path) -> Result<CopyStats> {
     let project_root = project_root(&source.project_path);
     let sources_dir = out_dir.join("sources");
-    fs::create_dir_all(&sources_dir).with_context(|| format!("create {}", sources_dir.display()))?;
+    fs::create_dir_all(&sources_dir)
+        .with_context(|| format!("create {}", sources_dir.display()))?;
     let mut seen = BTreeSet::new();
     let mut stats = CopyStats::default();
     copy_relative_file(
@@ -372,9 +373,13 @@ fn topology_preview_doc(
                 .map(|cell| cell.cell_key.clone())
                 .collect::<Vec<_>>();
             cell_keys.sort();
-            let runtime_class = collapse_or_first(cells.iter().map(|cell| cell.runtime_class.as_str()));
+            let runtime_class =
+                collapse_or_first(cells.iter().map(|cell| cell.runtime_class.as_str()));
             let scale_class = collapse_or_first(cells.iter().map(|cell| cell.scale_class.as_str()));
-            let exposure = if cells.iter().any(|cell| matches!(cell.ingress_kind.as_str(), "http" | "mcp")) {
+            let exposure = if cells
+                .iter()
+                .any(|cell| matches!(cell.ingress_kind.as_str(), "http" | "mcp"))
+            {
                 "public"
             } else {
                 "none"
@@ -444,7 +449,10 @@ fn validate_source_docs(project: &ProjectManifest, manifest: &ServiceManifest) -
         anyhow::bail!("project module_roots must not be empty");
     }
     if manifest.schema_version != "x07.service.manifest@0.1.0" {
-        anyhow::bail!("unsupported service manifest schema_version: {}", manifest.schema_version);
+        anyhow::bail!(
+            "unsupported service manifest schema_version: {}",
+            manifest.schema_version
+        );
     }
     if !workload_id_valid(&manifest.service_id) {
         anyhow::bail!("invalid workload_id/service_id: {}", manifest.service_id);
@@ -452,7 +460,9 @@ fn validate_source_docs(project: &ProjectManifest, manifest: &ServiceManifest) -
     if manifest.display_name.trim().is_empty() {
         anyhow::bail!("service display_name must not be empty");
     }
-    if manifest.domain_pack.id.trim().is_empty() || manifest.domain_pack.display_name.trim().is_empty() {
+    if manifest.domain_pack.id.trim().is_empty()
+        || manifest.domain_pack.display_name.trim().is_empty()
+    {
         anyhow::bail!("domain_pack id/display_name must not be empty");
     }
     if manifest.cells.is_empty() {
@@ -482,13 +492,52 @@ fn validate_source_docs(project: &ProjectManifest, manifest: &ServiceManifest) -
         if cell.topology_group.trim().is_empty() {
             anyhow::bail!("topology_group must not be empty");
         }
-        validate_cell_value("cell_kind", &cell.cell_kind, &["api-cell","event-consumer","scheduled-job","policy-service","workflow-service","mcp-tool"])?;
-        validate_cell_value("ingress_kind", &cell.ingress_kind, &["http","event","schedule","workflow","mcp"])?;
-        validate_cell_value("runtime_class", &cell.runtime_class, &["wasm-component","native-http","native-worker","embedded-kernel"])?;
-        validate_cell_value("scale_class", &cell.scale_class, &["replicated-http","partitioned-consumer","singleton-orchestrator","leased-worker","burst-batch","embedded-kernel"])?;
+        validate_cell_value(
+            "cell_kind",
+            &cell.cell_kind,
+            &[
+                "api-cell",
+                "event-consumer",
+                "scheduled-job",
+                "policy-service",
+                "workflow-service",
+                "mcp-tool",
+            ],
+        )?;
+        validate_cell_value(
+            "ingress_kind",
+            &cell.ingress_kind,
+            &["http", "event", "schedule", "workflow", "mcp"],
+        )?;
+        validate_cell_value(
+            "runtime_class",
+            &cell.runtime_class,
+            &[
+                "wasm-component",
+                "native-http",
+                "native-worker",
+                "embedded-kernel",
+            ],
+        )?;
+        validate_cell_value(
+            "scale_class",
+            &cell.scale_class,
+            &[
+                "replicated-http",
+                "partitioned-consumer",
+                "singleton-orchestrator",
+                "leased-worker",
+                "burst-batch",
+                "embedded-kernel",
+            ],
+        )?;
         for binding_ref in &cell.binding_refs {
             if !binding_names.contains(binding_ref) {
-                anyhow::bail!("cell {} references unknown binding {}", cell.cell_key, binding_ref);
+                anyhow::bail!(
+                    "cell {} references unknown binding {}",
+                    cell.cell_key,
+                    binding_ref
+                );
             }
         }
     }
@@ -500,9 +549,13 @@ fn validate_source_docs(project: &ProjectManifest, manifest: &ServiceManifest) -
         if !topology_ids.insert(profile.id.clone()) {
             anyhow::bail!("duplicate topology profile id: {}", profile.id);
         }
-        validate_cell_value("placement", &profile.placement, &["co-located","split-by-cell","embedded-kernel"])?;
+        validate_cell_value(
+            "placement",
+            &profile.placement,
+            &["co-located", "split-by-cell", "embedded-kernel"],
+        )?;
         if let Some(target_kind) = profile.target_kind.as_deref() {
-            validate_cell_value("target_kind", target_kind, &["hosted","k8s","wasmcloud"])?;
+            validate_cell_value("target_kind", target_kind, &["hosted", "k8s", "wasmcloud"])?;
         }
     }
     Ok(())
@@ -512,12 +565,14 @@ fn validate_binding_kind(kind: &str) -> Result<()> {
     validate_cell_value(
         "binding kind",
         kind,
-        &["postgres", "mysql", "sqlite", "redis", "kafka", "amqp", "s3", "secret", "otlp"],
+        &[
+            "postgres", "mysql", "sqlite", "redis", "kafka", "amqp", "s3", "secret", "otlp",
+        ],
     )
 }
 
 fn validate_cell_value(label: &str, value: &str, allowed: &[&str]) -> Result<()> {
-    if allowed.iter().any(|allowed_value| *allowed_value == value) {
+    if allowed.contains(&value) {
         return Ok(());
     }
     anyhow::bail!("{label} has unsupported value: {value}");
@@ -550,7 +605,11 @@ fn collapse_or_first<'a>(values: impl Iterator<Item = &'a str>) -> &'a str {
         }
         seen.insert(value);
     }
-    if seen.len() == 1 { first } else { "mixed" }
+    if seen.len() == 1 {
+        first
+    } else {
+        "mixed"
+    }
 }
 
 pub(crate) fn resolve_schema_dir(explicit: Option<&Path>) -> Result<PathBuf> {
@@ -566,7 +625,10 @@ pub(crate) fn resolve_schema_dir(explicit: Option<&Path>) -> Result<PathBuf> {
         if direct.is_dir() {
             return Ok(direct);
         }
-        let sibling = ancestor.join("x07-platform-contracts").join("spec").join("schemas");
+        let sibling = ancestor
+            .join("x07-platform-contracts")
+            .join("spec")
+            .join("schemas");
         if sibling.is_dir() {
             return Ok(sibling);
         }
@@ -580,7 +642,9 @@ pub(crate) fn validate_contract_docs(
 ) -> Result<Vec<Diagnostic>> {
     let mut by_id = BTreeMap::new();
     let mut schemas_by_name = BTreeMap::new();
-    for entry in fs::read_dir(schema_dir).with_context(|| format!("read {}", schema_dir.display()))? {
+    for entry in
+        fs::read_dir(schema_dir).with_context(|| format!("read {}", schema_dir.display()))?
+    {
         let entry = entry?;
         let path = entry.path();
         let Some(name) = path.file_name().and_then(|value| value.to_str()) else {
@@ -606,7 +670,9 @@ pub(crate) fn validate_contract_docs(
     for (schema_name, instance) in docs {
         let schema = schemas_by_name
             .get(*schema_name)
-            .ok_or_else(|| anyhow::anyhow!("missing schema {} in {}", schema_name, schema_dir.display()))?
+            .ok_or_else(|| {
+                anyhow::anyhow!("missing schema {} in {}", schema_name, schema_dir.display())
+            })?
             .clone();
         let validator = jsonschema::options()
             .with_draft(Draft::Draft202012)
@@ -620,16 +686,26 @@ pub(crate) fn validate_contract_docs(
                 Stage::Lint,
                 format!("{schema_name}: {err}"),
             );
-            diagnostic
-                .data
-                .insert("instance_path".to_string(), json!(err.instance_path().to_string()));
-            diagnostic
-                .data
-                .insert("schema_path".to_string(), json!(err.schema_path().to_string()));
+            diagnostic.data.insert(
+                "instance_path".to_string(),
+                json!(err.instance_path().to_string()),
+            );
+            diagnostic.data.insert(
+                "schema_path".to_string(),
+                json!(err.schema_path().to_string()),
+            );
             diagnostics.push(diagnostic);
         }
     }
     Ok(diagnostics)
+}
+
+pub(crate) struct SurfaceReportPayload {
+    pub diagnostics: Vec<Diagnostic>,
+    pub stdout_json: Value,
+    pub output_path: Option<PathBuf>,
+    pub copy_stats: CopyStats,
+    pub checked_schema_ids: Vec<String>,
 }
 
 pub(crate) fn emit_report(
@@ -639,14 +715,19 @@ pub(crate) fn emit_report(
     started: std::time::Instant,
     command: &str,
     mut meta: ReportMeta,
-    diagnostics: Vec<Diagnostic>,
-    stdout_json: Value,
-    output_path: Option<&Path>,
-    copy_stats: CopyStats,
-    checked_schema_ids: Vec<String>,
+    payload: SurfaceReportPayload,
 ) -> Result<u8> {
     let store = SchemaStore::new()?;
-    let ok = diagnostics.iter().all(|diagnostic| diagnostic.severity != Severity::Error);
+    let SurfaceReportPayload {
+        diagnostics,
+        stdout_json,
+        output_path,
+        copy_stats,
+        checked_schema_ids,
+    } = payload;
+    let ok = diagnostics
+        .iter()
+        .all(|diagnostic| diagnostic.severity != Severity::Error);
     let exit_code = report::exit_code::exit_code_for_diagnostics(&diagnostics);
     meta.elapsed_ms = started.elapsed().as_millis() as u64;
     let stdout_bytes_len = report::canon::canonical_json_bytes(&stdout_json)?.len() as u64;
@@ -689,7 +770,9 @@ fn copy_relative_path(
         return copy_relative_file(root, rel_path, dst_root, seen, stats);
     }
     if src_path.is_dir() {
-        for entry in fs::read_dir(&src_path).with_context(|| format!("read {}", src_path.display()))? {
+        for entry in
+            fs::read_dir(&src_path).with_context(|| format!("read {}", src_path.display()))?
+        {
             let entry = entry?;
             let rel = rel_path.join(entry.file_name());
             copy_relative_path(root, &rel, dst_root, seen, stats)?;
@@ -717,7 +800,8 @@ fn copy_relative_file(
         fs::create_dir_all(parent).with_context(|| format!("create {}", parent.display()))?;
     }
     let bytes = fs::read(&src_path).with_context(|| format!("read {}", src_path.display()))?;
-    util::write_file_atomic(&dst_path, &bytes).with_context(|| format!("write {}", dst_path.display()))?;
+    util::write_file_atomic(&dst_path, &bytes)
+        .with_context(|| format!("write {}", dst_path.display()))?;
     stats.files_copied += 1;
     stats.bytes_copied += bytes.len() as u64;
     Ok(())
@@ -746,7 +830,8 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .expect("clock")
             .as_nanos();
-        let path = std::env::temp_dir().join(format!("x07-wasm-{label}-{}-{ts}", std::process::id()));
+        let path =
+            std::env::temp_dir().join(format!("x07-wasm-{label}-{}-{ts}", std::process::id()));
         fs::create_dir_all(&path).expect("create temp dir");
         path
     }
@@ -833,8 +918,20 @@ mod tests {
         .expect("load source");
         let artifacts = build_artifacts(&source, "full", None).expect("build artifacts");
         assert_eq!(artifacts.pack_manifest["workload_id"], "orders");
-        assert_eq!(artifacts.pack_manifest["cells"].as_array().expect("cells").len(), 3);
-        assert_eq!(artifacts.binding_doc["bindings"].as_array().expect("bindings").len(), 3);
+        assert_eq!(
+            artifacts.pack_manifest["cells"]
+                .as_array()
+                .expect("cells")
+                .len(),
+            3
+        );
+        assert_eq!(
+            artifacts.binding_doc["bindings"]
+                .as_array()
+                .expect("bindings")
+                .len(),
+            3
+        );
         assert_eq!(artifacts.topology_docs.len(), 2);
         let prod = artifacts
             .topology_docs
@@ -859,7 +956,9 @@ mod tests {
         let stats = write_pack_sources(&source, &out_dir).expect("write pack sources");
         assert!(stats.files_copied >= 4);
         assert!(out_dir.join("sources/x07.json").is_file());
-        assert!(out_dir.join("sources/arch/service/index.x07service.json").is_file());
+        assert!(out_dir
+            .join("sources/arch/service/index.x07service.json")
+            .is_file());
         let _ = fs::remove_dir_all(root);
     }
 }

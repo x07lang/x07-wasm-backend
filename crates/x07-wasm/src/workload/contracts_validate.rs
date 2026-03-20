@@ -44,9 +44,18 @@ pub fn cmd_workload_contracts_validate(
             Ok(artifacts) => match surface::resolve_schema_dir(args.schema_dir.as_deref()) {
                 Ok(schema_dir) => {
                     let mut docs = vec![
-                        ("lp.workload.pack.manifest.schema.json", &artifacts.pack_manifest),
-                        ("lp.workload.describe.result.schema.json", &artifacts.workload_doc),
-                        ("lp.binding.requirements.result.schema.json", &artifacts.binding_doc),
+                        (
+                            "lp.workload.pack.manifest.schema.json",
+                            &artifacts.pack_manifest,
+                        ),
+                        (
+                            "lp.workload.describe.result.schema.json",
+                            &artifacts.workload_doc,
+                        ),
+                        (
+                            "lp.binding.requirements.result.schema.json",
+                            &artifacts.binding_doc,
+                        ),
                     ];
                     for (_, doc) in &artifacts.topology_docs {
                         docs.push(("lp.topology.preview.result.schema.json", doc));
@@ -114,11 +123,13 @@ pub fn cmd_workload_contracts_validate(
         started,
         "x07-wasm.workload.contracts-validate",
         meta,
-        diagnostics,
-        stdout_json,
-        None,
-        CopyStats::default(),
-        checked_schema_ids,
+        surface::SurfaceReportPayload {
+            diagnostics,
+            stdout_json,
+            output_path: None,
+            copy_stats: CopyStats::default(),
+            checked_schema_ids,
+        },
     )
 }
 

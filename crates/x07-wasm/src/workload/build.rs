@@ -70,11 +70,13 @@ pub fn cmd_workload_build(
         started,
         "x07-wasm.workload.build",
         meta,
-        diagnostics,
-        stdout_json,
-        Some(&args.out_dir),
-        CopyStats::default(),
-        Vec::new(),
+        surface::SurfaceReportPayload {
+            diagnostics,
+            stdout_json,
+            output_path: Some(args.out_dir),
+            copy_stats: CopyStats::default(),
+            checked_schema_ids: Vec::new(),
+        },
     )
 }
 
