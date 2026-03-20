@@ -490,29 +490,31 @@ impl Command {
                 )
             }
             Command::Workload(args) => match args.cmd {
-                Some(crate::workload::cli::WorkloadCommand::Build) => {
-                    crate::workload::build::cmd_workload_build()
+                Some(crate::workload::cli::WorkloadCommand::Build(v)) => {
+                    crate::workload::build::cmd_workload_build(raw_argv, scope, machine, v)
                 }
-                Some(crate::workload::cli::WorkloadCommand::Pack) => {
-                    crate::workload::pack::cmd_workload_pack()
+                Some(crate::workload::cli::WorkloadCommand::Pack(v)) => {
+                    crate::workload::pack::cmd_workload_pack(raw_argv, scope, machine, v)
                 }
-                Some(crate::workload::cli::WorkloadCommand::Inspect) => {
-                    crate::workload::inspect::cmd_workload_inspect()
+                Some(crate::workload::cli::WorkloadCommand::Inspect(v)) => {
+                    crate::workload::inspect::cmd_workload_inspect(raw_argv, scope, machine, v)
                 }
-                Some(crate::workload::cli::WorkloadCommand::ContractsValidate) => {
-                    crate::workload::contracts_validate::cmd_workload_contracts_validate()
+                Some(crate::workload::cli::WorkloadCommand::ContractsValidate(v)) => {
+                    crate::workload::contracts_validate::cmd_workload_contracts_validate(
+                        raw_argv, scope, machine, v,
+                    )
                 }
                 None => anyhow::bail!("missing workload subcommand (try --help)"),
             },
             Command::Topology(args) => match args.cmd {
-                Some(crate::topology::cli::TopologyCommand::Preview) => {
-                    crate::topology::preview::cmd_topology_preview()
+                Some(crate::topology::cli::TopologyCommand::Preview(v)) => {
+                    crate::topology::preview::cmd_topology_preview(raw_argv, scope, machine, v)
                 }
                 None => anyhow::bail!("missing topology subcommand (try --help)"),
             },
             Command::Binding(args) => match args.cmd {
-                Some(crate::binding::cli::BindingCommand::Resolve) => {
-                    crate::binding::resolve::cmd_binding_resolve()
+                Some(crate::binding::cli::BindingCommand::Resolve(v)) => {
+                    crate::binding::resolve::cmd_binding_resolve(raw_argv, scope, machine, v)
                 }
                 None => anyhow::bail!("missing binding subcommand (try --help)"),
             },
@@ -2369,20 +2371,20 @@ pub fn scope_for_command(cmd: Option<&Command>) -> Scope {
         Some(Command::AppTest(_)) => Scope::AppTest,
         Some(Command::AppRegressFromIncident(_)) => Scope::AppRegressFromIncident,
         Some(Command::Workload(args)) => match args.cmd {
-            Some(crate::workload::cli::WorkloadCommand::Build) => Scope::WorkloadBuild,
-            Some(crate::workload::cli::WorkloadCommand::Pack) => Scope::WorkloadPack,
-            Some(crate::workload::cli::WorkloadCommand::Inspect) => Scope::WorkloadInspect,
-            Some(crate::workload::cli::WorkloadCommand::ContractsValidate) => {
+            Some(crate::workload::cli::WorkloadCommand::Build(_)) => Scope::WorkloadBuild,
+            Some(crate::workload::cli::WorkloadCommand::Pack(_)) => Scope::WorkloadPack,
+            Some(crate::workload::cli::WorkloadCommand::Inspect(_)) => Scope::WorkloadInspect,
+            Some(crate::workload::cli::WorkloadCommand::ContractsValidate(_)) => {
                 Scope::WorkloadContractsValidate
             }
             None => Scope::WorkloadBuild,
         },
         Some(Command::Topology(args)) => match args.cmd {
-            Some(crate::topology::cli::TopologyCommand::Preview) => Scope::TopologyPreview,
+            Some(crate::topology::cli::TopologyCommand::Preview(_)) => Scope::TopologyPreview,
             None => Scope::TopologyPreview,
         },
         Some(Command::Binding(args)) => match args.cmd {
-            Some(crate::binding::cli::BindingCommand::Resolve) => Scope::BindingResolve,
+            Some(crate::binding::cli::BindingCommand::Resolve(_)) => Scope::BindingResolve,
             None => Scope::BindingResolve,
         },
         Some(Command::Http(args)) => match args.cmd {

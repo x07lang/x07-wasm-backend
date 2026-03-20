@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-wasm.workload.surface.report.schema.json",
+  "title": "x07.wasm.workload.surface.report@0.1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "ok",
+    "exit_code",
+    "diagnostics",
+    "meta",
+    "result"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "x07.wasm.workload.surface.report@0.1.0"
+    },
+    "command": {
+      "type": "string",
+      "minLength": 1
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "exit_code": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 255
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "$ref": "https://x07.io/spec/x07diag.schema.json#/$defs/diagnostic"
+      }
+    },
+    "meta": {
+      "type": "object"
+    },
+    "result": {
+      "type": "object",
+      "required": [
+        "stdout",
+        "stderr",
+        "stdout_json"
+      ],
+      "properties": {
+        "stdout": {
+          "type": "object",
+          "required": ["bytes_len"],
+          "properties": {
+            "bytes_len": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "stderr": {
+          "type": "object",
+          "required": ["bytes_len"],
+          "properties": {
+            "bytes_len": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "stdout_json": {
+          "type": ["object", "array", "null"]
+        },
+        "output_path": {
+          "type": ["string", "null"]
+        },
+        "files_copied": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bytes_copied": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checked_schema_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

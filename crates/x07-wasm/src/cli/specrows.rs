@@ -66,6 +66,11 @@ pub fn build_specrows_doc() -> Value {
         ["app-regress-from-incident","opt","","--out-dir","out.dir","PATH","Output directory for generated regression assets.",{ "default": "tests/regress" }],
         ["app-regress-from-incident","arg","INCIDENT_DIR","incident.dir","Path to an app incident bundle directory.",{ "required": true }],
 
+        ["binding-resolve","about","Alias for `x07-wasm binding resolve`. Normalize provider-neutral workload binding requirements and emit x07.wasm.workload.surface.report@0.1.0."],
+        ["binding-resolve","opt","","--manifest","manifest","PATH","Path to arch/service/index.x07service.json.",{ "default": "arch/service/index.x07service.json" }],
+        ["binding-resolve","opt","","--pack-manifest","pack_manifest","PATH","Workload pack manifest file to inspect instead of source inputs."],
+        ["binding-resolve","opt","","--project","project","PATH","Path to x07 project manifest.",{ "default": "x07.json" }],
+
         ["app-serve","about","Alias for `x07-wasm app serve`. Serve a built app bundle: static frontend + /api routed to backend component. Emits x07.wasm.app.serve.report@0.1.0."],
         ["app-serve","flag","","--strict","strict","Treat warnings as errors (nonzero exit on any warning)."],
         ["app-serve","flag","","--strict-mime","strict.mime","Fail if .wasm is not served as application/wasm (exact, no parameters)."],
@@ -210,6 +215,35 @@ pub fn build_specrows_doc() -> Value {
         ["http-regress-from-incident","about","Alias for `x07-wasm http regress from-incident`. Generate a regression test + trace fixture from an incident bundle and emit x07.wasm.http.regress.from.incident.report@0.1.0."],
         ["http-regress-from-incident","opt","","--incident-dir","incident_dir","PATH","Incident bundle directory."],
         ["http-regress-from-incident","opt","","--out-dir","out_dir","PATH","Where to write generated test/fixture.",{ "default": "tests/regress" }],
+
+        ["topology-preview","about","Alias for `x07-wasm topology preview`. Preview workload grouping and placement for a service-oriented workload and emit x07.wasm.workload.surface.report@0.1.0."],
+        ["topology-preview","opt","","--manifest","manifest","PATH","Path to arch/service/index.x07service.json.",{ "default": "arch/service/index.x07service.json" }],
+        ["topology-preview","opt","","--pack-manifest","pack_manifest","PATH","Workload pack manifest file to inspect instead of source inputs."],
+        ["topology-preview","opt","","--profile","profile","STR","Only emit the named topology profile."],
+        ["topology-preview","opt","","--project","project","PATH","Path to x07 project manifest.",{ "default": "x07.json" }],
+
+        ["workload-build","about","Alias for `x07-wasm workload build`. Emit deterministic workload metadata documents from a service manifest and emit x07.wasm.workload.surface.report@0.1.0."],
+        ["workload-build","opt","","--manifest","manifest","PATH","Path to arch/service/index.x07service.json.",{ "default": "arch/service/index.x07service.json" }],
+        ["workload-build","opt","","--out-dir","out.dir","PATH","Output directory for generated workload documents.",{ "default": "dist/workload-build" }],
+        ["workload-build","opt","","--project","project","PATH","Path to x07 project manifest.",{ "default": "x07.json" }],
+
+        ["workload-contracts-validate","about","Alias for `x07-wasm workload contracts validate`. Validate generated workload documents against public platform contracts and emit x07.wasm.workload.surface.report@0.1.0."],
+        ["workload-contracts-validate","opt","","--manifest","manifest","PATH","Path to arch/service/index.x07service.json.",{ "default": "arch/service/index.x07service.json" }],
+        ["workload-contracts-validate","opt","","--pack-manifest","pack_manifest","PATH","Workload pack manifest file to validate instead of source inputs."],
+        ["workload-contracts-validate","opt","","--profile","profile","STR","Only validate the named topology profile."],
+        ["workload-contracts-validate","opt","","--project","project","PATH","Path to x07 project manifest.",{ "default": "x07.json" }],
+        ["workload-contracts-validate","opt","","--schema-dir","schema.dir","PATH","Path to x07-platform-contracts/spec/schemas."],
+
+        ["workload-inspect","about","Alias for `x07-wasm workload inspect`. Inspect a workload pack deterministically and emit x07.wasm.workload.surface.report@0.1.0."],
+        ["workload-inspect","opt","","--pack-manifest","pack_manifest","PATH","Workload pack manifest file.",{ "default": "dist/workload/workload.pack.json" }],
+        ["workload-inspect","opt","","--view","view","STR","Inspection view: summary|full.",{ "default": "full" }],
+
+        ["workload-pack","about","Alias for `x07-wasm workload pack`. Emit workload documents, a source snapshot pack directory, and a deployable `x07.workload.pack@0.1.0` manifest from a service manifest; emit x07.wasm.workload.surface.report@0.1.0."],
+        ["workload-pack","opt","","--manifest","manifest","PATH","Path to arch/service/index.x07service.json.",{ "default": "arch/service/index.x07service.json" }],
+        ["workload-pack","opt","","--out-dir","out.dir","PATH","Output directory for the workload pack.",{ "default": "dist/workload" }],
+        ["workload-pack","opt","","--project","project","PATH","Path to x07 project manifest.",{ "default": "x07.json" }],
+        ["workload-pack","opt","","--runtime-image","runtime.image","STR","OCI image reference to attach to `native-http` workload cells for runtime deployment."],
+        ["workload-pack","opt","","--container-port","container.port","U32","Container port recorded for attached OCI image executables.",{ "default": 8080 }],
 
         ["http-serve","about","Alias for `x07-wasm http serve`. Run an http reducer effect loop and emit x07.wasm.http.serve.report@0.1.0."],
         ["http-serve","opt","","--component","component","PATH","Reducer component wasm."],

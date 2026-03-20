@@ -111,6 +111,8 @@ const X07_HTTP_TRACE_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../spec/schemas/x07-http.trace.schema.json");
 const X07_APP_TRACE_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../spec/schemas/x07-app.trace.schema.json");
+const X07_WORKLOAD_PACK_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../spec/schemas/x07-workload.pack.schema.json");
 
 const X07_WASM_TOOLCHAIN_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../spec/schemas/x07-wasm.toolchain.validate.report.schema.json");
@@ -192,6 +194,8 @@ const X07_WASM_APP_PACK_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../spec/schemas/x07-wasm.app.pack.report.schema.json");
 const X07_WASM_APP_VERIFY_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../spec/schemas/x07-wasm.app.verify.report.schema.json");
+const X07_WASM_WORKLOAD_SURFACE_REPORT_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../spec/schemas/x07-wasm.workload.surface.report.schema.json");
 
 const X07_WASM_HTTP_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../spec/schemas/x07-wasm.http.contracts.validate.report.schema.json");
@@ -261,6 +265,7 @@ impl SchemaStore {
             X07_HTTP_FRAME_SCHEMA_BYTES,
             X07_HTTP_TRACE_SCHEMA_BYTES,
             X07_APP_TRACE_SCHEMA_BYTES,
+            X07_WORKLOAD_PACK_SCHEMA_BYTES,
             X07_APP_OPS_PROFILE_SCHEMA_BYTES,
             X07_APP_CAPABILITIES_SCHEMA_BYTES,
             X07_POLICY_CARD_SCHEMA_BYTES,
@@ -310,6 +315,7 @@ impl SchemaStore {
             X07_WASM_APP_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES,
             X07_WASM_APP_PACK_REPORT_SCHEMA_BYTES,
             X07_WASM_APP_VERIFY_REPORT_SCHEMA_BYTES,
+            X07_WASM_WORKLOAD_SURFACE_REPORT_SCHEMA_BYTES,
             X07_WASM_HTTP_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES,
             X07_WASM_HTTP_SERVE_REPORT_SCHEMA_BYTES,
             X07_WASM_HTTP_TEST_REPORT_SCHEMA_BYTES,
@@ -460,7 +466,9 @@ fn report_schema_id_for_scope(scope: Scope) -> &'static str {
         | Scope::WorkloadInspect
         | Scope::WorkloadContractsValidate
         | Scope::TopologyPreview
-        | Scope::BindingResolve => "https://x07.io/spec/x07-wasm.scaffold.report.schema.json",
+        | Scope::BindingResolve => {
+            "https://x07.io/spec/x07-wasm.workload.surface.report.schema.json"
+        }
         Scope::HttpContractsValidate => {
             "https://x07.io/spec/x07-wasm.http.contracts.validate.report.schema.json"
         }

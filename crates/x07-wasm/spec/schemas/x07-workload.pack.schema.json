@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-workload.pack.schema.json",
+  "title": "x07.workload.pack@0.1.0",
+  "description": "Deployable workload pack manifest for service-oriented x07 backends.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "workload_id",
+    "public_manifest",
+    "workload",
+    "binding_requirements",
+    "topology",
+    "sources",
+    "cells"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "x07.workload.pack@0.1.0"
+    },
+    "workload_id": {
+      "$ref": "#/$defs/id"
+    },
+    "public_manifest": {
+      "$ref": "#/$defs/file_digest"
+    },
+    "workload": {
+      "$ref": "#/$defs/file_digest"
+    },
+    "binding_requirements": {
+      "$ref": "#/$defs/file_digest"
+    },
+    "topology": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/file_digest"
+      }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/file_digest"
+      }
+    },
+    "cells": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/cell_runtime"
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "rel_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^(?![\\\\/])(?![A-Za-z]:)(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)).+"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "file_digest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "bytes_len"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/rel_path"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "bytes_len": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "executable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "image",
+        "container_port",
+        "health_path"
+      ],
+      "properties": {
+        "kind": {
+          "const": "oci_image"
+        },
+        "image": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "container_port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "health_path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^/[^\\s]*$"
+        }
+      }
+    },
+    "cell_runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cell_key",
+        "runtime_class",
+        "ingress_kind"
+      ],
+      "properties": {
+        "cell_key": {
+          "$ref": "#/$defs/id"
+        },
+        "runtime_class": {
+          "type": "string",
+          "enum": [
+            "wasm-component",
+            "native-http",
+            "native-worker",
+            "embedded-kernel"
+          ]
+        },
+        "ingress_kind": {
+          "type": "string",
+          "enum": [
+            "http",
+            "event",
+            "schedule",
+            "workflow",
+            "mcp"
+          ]
+        },
+        "executable": {
+          "$ref": "#/$defs/executable"
+        }
+      }
+    }
+  }
+}

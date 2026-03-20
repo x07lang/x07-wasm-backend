@@ -179,7 +179,7 @@ The examples index lives in [`examples/README.md`](examples/README.md).
 - `x07-wasm topology preview`
 - `x07-wasm binding resolve`
 
-These commands are the new service-oriented workload lane. In the current train they are scaffolded command surfaces with deterministic report output, workload profile assets under `arch/workload/`, and the public `x07.workload.pack` contract hooks that downstream platform and MCP slices consume.
+These commands are the service-oriented workload lane. They emit deterministic workload metadata, provider-neutral binding requirements, topology previews, and a deployable `x07.workload.pack@0.1.0` manifest that can attach OCI image executables to `native-http` cells for downstream runtime adapters such as Kubernetes.
 
 ### Native Backend Targets
 

@@ -309,6 +309,10 @@
       "path": "x07-wasm.runtime.limits.schema.json"
     },
     {
+      "id": "https://x07.io/spec/x07-wasm.scaffold.report.schema.json",
+      "path": "x07-wasm.scaffold.report.schema.json"
+    },
+    {
       "id": "https://x07.io/spec/x07-wasm.serve.report.schema.json",
       "path": "x07-wasm.serve.report.schema.json"
     },
@@ -357,6 +361,10 @@
       "path": "x07-wasm.wit.validate.report.schema.json"
     },
     {
+      "id": "https://x07.io/spec/x07-wasm.workload.surface.report.schema.json",
+      "path": "x07-wasm.workload.surface.report.schema.json"
+    },
+    {
       "id": "https://x07.io/spec/x07-web_ui.dispatch.schema.json",
       "path": "x07-web_ui.dispatch.schema.json"
     },
@@ -383,6 +391,10 @@
     {
       "id": "https://x07.io/spec/x07-web_ui.tree.schema.json",
       "path": "x07-web_ui.tree.schema.json"
+    },
+    {
+      "id": "https://x07.io/spec/x07-workload.pack.schema.json",
+      "path": "x07-workload.pack.schema.json"
     },
     {
       "id": "https://x07.io/spec/x07diag.schema.json",
