@@ -36,6 +36,7 @@ if [[ ! -x "${X07_MCP_CLI}" || "${MCP_ROOT}/cli/src/app.x07.json" -nt "${X07_MCP
   echo "==> phase10_mcp_inspect: bundle x07-mcp CLI"
   (
     cd "${MCP_ROOT}"
+    PATH="${X07_BIN_DIR}:$PATH" x07 pkg lock --project x07.json --check --json=off >/dev/null
     PATH="${X07_BIN_DIR}:$PATH" x07 bundle --project x07.json --profile os --out dist/x07-mcp >/dev/null
   )
 else
