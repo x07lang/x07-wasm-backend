@@ -353,6 +353,7 @@ pub(crate) fn runtime_pack_cells(
     runtime_image: Option<&str>,
     container_port: u16,
 ) -> Vec<Value> {
+    let runtime_image = runtime_image.filter(|value| !value.trim().is_empty());
     let binding_kinds = source
         .manifest
         .resource_bindings
@@ -400,10 +401,14 @@ pub(crate) fn runtime_pack_cells(
                 });
             }
             if let Some(probes) = cell.runtime.probes.as_ref() {
+                let http_probe_port_override =
+                    runtime_image
+                        .filter(|_| cell.ingress_kind == "http")
+                        .map(|_| container_port);
                 doc["probes"] = json!({
-                    "startup": runtime_probe_doc(probes.startup.as_ref()),
-                    "readiness": runtime_probe_doc(probes.readiness.as_ref()),
-                    "liveness": runtime_probe_doc(probes.liveness.as_ref()),
+                    "startup": runtime_probe_doc(probes.startup.as_ref(), http_probe_port_override),
+                    "readiness": runtime_probe_doc(probes.readiness.as_ref(), http_probe_port_override),
+                    "liveness": runtime_probe_doc(probes.liveness.as_ref(), http_probe_port_override),
                 });
             }
             if let Some(rollout) = cell.runtime.rollout.as_ref() {
@@ -423,7 +428,7 @@ pub(crate) fn runtime_pack_cells(
                 });
             }
             if matches!(cell.runtime_class.as_str(), "native-http" | "native-worker") {
-                if let Some(image) = runtime_image.filter(|value| !value.trim().is_empty()) {
+                if let Some(image) = runtime_image {
                     doc["execution_kind"] = json!("oci_image");
                     doc["executable"] = json!({
                         "kind": "oci_image",
@@ -629,14 +634,22 @@ fn manifest_cells(source: &WorkloadSource) -> Vec<Value> {
         .collect()
 }
 
-fn runtime_probe_doc(probe: Option<&ServiceCellProbe>) -> Value {
+fn runtime_probe_doc(
+    probe: Option<&ServiceCellProbe>,
+    http_probe_port_override: Option<u16>,
+) -> Value {
     let Some(probe) = probe else {
         return Value::Null;
+    };
+    let port = if probe.probe_kind == "http" {
+        http_probe_port_override.or(probe.port)
+    } else {
+        probe.port
     };
     json!({
         "probe_kind": probe.probe_kind,
         "path": probe.path,
-        "port": probe.port,
+        "port": port,
         "command": probe.command,
         "initial_delay_seconds": probe.initial_delay_seconds,
         "period_seconds": probe.period_seconds,
@@ -1521,11 +1534,13 @@ mod tests {
             &root.join("arch/service/index.x07service.json"),
         )
         .expect("load source");
-        let cells = runtime_pack_cells(&source, Some("ghcr.io/x07/orders:v1"), 8080);
+        let cells = runtime_pack_cells(&source, Some("ghcr.io/x07/orders:v1"), 80);
         assert_eq!(cells.len(), 3);
         let api = &cells[0];
         assert_eq!(api["execution_kind"], "oci_image");
-        assert_eq!(api["executable"]["container_port"], 8080);
+        assert_eq!(api["executable"]["container_port"], 80);
+        assert_eq!(api["probes"]["readiness"]["port"], 80);
+        assert_eq!(api["probes"]["liveness"]["port"], 80);
         let consumer = &cells[1];
         assert_eq!(consumer["event"]["binding_ref"], "msg.orders");
         assert_eq!(consumer["execution_kind"], "oci_image");
