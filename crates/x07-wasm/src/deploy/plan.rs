@@ -196,6 +196,30 @@ pub fn cmd_deploy_plan(
 
     let k8s_name = k8s_name(pack_profile_id);
     let strategy = build_strategy(&loaded_ops.ops.doc_json);
+    let service_id = args
+        .service_id
+        .as_deref()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or(pack_profile_id)
+        .to_string();
+    let environment_id = args
+        .environment_id
+        .as_deref()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or("default")
+        .to_string();
+    let deployment_id_default = format!("{service_id}.{k8s_name}");
+    let deployment_id = args
+        .deployment_id
+        .as_deref()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or(deployment_id_default.as_str())
+        .to_string();
+    let telemetry_identity = TelemetryIdentity {
+        environment_id: &environment_id,
+        deployment_id: &deployment_id,
+        service_id: &service_id,
+    };
 
     let mut outputs: Vec<report::meta::FileDigest> = Vec::new();
     if args.emit_k8s {
@@ -206,10 +230,10 @@ pub fn cmd_deploy_plan(
 
         let analysis_name = format!("{k8s_name}-analysis");
 
-        let rollout_yaml = rollout_yaml(&k8s_name, &analysis_name, &strategy);
-        let analysis_yaml = analysis_template_yaml(&analysis_name);
-        let service_yaml = service_yaml(&k8s_name);
-        let ingress_yaml = ingress_yaml(&k8s_name);
+        let rollout_yaml = rollout_yaml(&k8s_name, &analysis_name, &strategy, &telemetry_identity);
+        let analysis_yaml = analysis_template_yaml(&analysis_name, &telemetry_identity);
+        let service_yaml = service_yaml(&k8s_name, &telemetry_identity);
+        let ingress_yaml = ingress_yaml(&k8s_name, &telemetry_identity);
 
         let yaml_ok = yaml_sanity_check("rollout.yaml", "Rollout", &rollout_yaml, &mut diagnostics)
             && yaml_sanity_check(
@@ -423,7 +447,51 @@ fn build_strategy(ops_doc: &Value) -> Value {
     }
 }
 
-fn rollout_yaml(name: &str, analysis_name: &str, strategy: &Value) -> String {
+#[derive(Clone, Copy)]
+struct TelemetryIdentity<'a> {
+    environment_id: &'a str,
+    deployment_id: &'a str,
+    service_id: &'a str,
+}
+
+fn yaml_single_quote(value: &str) -> String {
+    format!("'{}'", value.replace('\'', "''"))
+}
+
+fn telemetry_labels_yaml(indent: &str, telemetry: &TelemetryIdentity<'_>) -> String {
+    format!(
+        "{indent}lp.environment_id: {}\n{indent}lp.deployment_id: {}\n{indent}lp.service_id: {}\n",
+        yaml_single_quote(telemetry.environment_id),
+        yaml_single_quote(telemetry.deployment_id),
+        yaml_single_quote(telemetry.service_id),
+    )
+}
+
+fn telemetry_env_yaml(indent: &str, telemetry: &TelemetryIdentity<'_>) -> String {
+    let inner_indent = format!("{indent}  ");
+    let attrs = format!(
+        "service.name={},deployment.environment={},lp.environment_id={},lp.deployment_id={},lp.service_id={}",
+        telemetry.service_id,
+        telemetry.environment_id,
+        telemetry.environment_id,
+        telemetry.deployment_id,
+        telemetry.service_id
+    );
+    format!(
+        "{indent}- name: LP_ENVIRONMENT_ID\n{inner_indent}value: {}\n{indent}- name: LP_DEPLOYMENT_ID\n{inner_indent}value: {}\n{indent}- name: LP_SERVICE_ID\n{inner_indent}value: {}\n{indent}- name: OTEL_RESOURCE_ATTRIBUTES\n{inner_indent}value: {}\n",
+        yaml_single_quote(telemetry.environment_id),
+        yaml_single_quote(telemetry.deployment_id),
+        yaml_single_quote(telemetry.service_id),
+        yaml_single_quote(&attrs),
+    )
+}
+
+fn rollout_yaml(
+    name: &str,
+    analysis_name: &str,
+    strategy: &Value,
+    telemetry: &TelemetryIdentity<'_>,
+) -> String {
     let steps_yaml = if strategy.get("type").and_then(Value::as_str) == Some("canary") {
         let steps = strategy
             .get("canary")
@@ -456,26 +524,35 @@ fn rollout_yaml(name: &str, analysis_name: &str, strategy: &Value) -> String {
         "        - setWeight: 100\n".to_string()
     };
 
+    let meta_labels_yaml = telemetry_labels_yaml("    ", telemetry);
+    let pod_labels_yaml = telemetry_labels_yaml("        ", telemetry);
+    let env_yaml = telemetry_env_yaml("            ", telemetry);
+
     format!(
-        "apiVersion: argoproj.io/v1alpha1\nkind: Rollout\nmetadata:\n  name: {name}\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: {name}\n  template:\n    metadata:\n      labels:\n        app: {name}\n    spec:\n      containers:\n        - name: app\n          image: REPLACE_ME\n          ports:\n            - containerPort: 8080\n  strategy:\n    canary:\n      steps:\n{steps_yaml}"
+        "apiVersion: argoproj.io/v1alpha1\nkind: Rollout\nmetadata:\n  name: {name}\n  labels:\n{meta_labels_yaml}spec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: {name}\n  template:\n    metadata:\n      labels:\n        app: {name}\n{pod_labels_yaml}    spec:\n      containers:\n        - name: app\n          image: REPLACE_ME\n          ports:\n            - containerPort: 8080\n          env:\n{env_yaml}  strategy:\n    canary:\n      steps:\n{steps_yaml}"
     )
 }
 
-fn analysis_template_yaml(name: &str) -> String {
+fn analysis_template_yaml(name: &str, telemetry: &TelemetryIdentity<'_>) -> String {
+    let meta_labels_yaml = telemetry_labels_yaml("    ", telemetry);
+    let pod_labels_yaml = telemetry_labels_yaml("                  ", telemetry);
+    let env_yaml = telemetry_env_yaml("                      ", telemetry);
     format!(
-        "apiVersion: argoproj.io/v1alpha1\nkind: AnalysisTemplate\nmetadata:\n  name: {name}\nspec:\n  metrics:\n    - name: slo-eval\n      interval: 30s\n      count: 1\n      successCondition: result == 'promote'\n      provider:\n        job:\n          spec:\n            template:\n              spec:\n                restartPolicy: Never\n                containers:\n                  - name: slo-eval\n                    image: REPLACE_ME\n                    command: ['sh','-c','echo promote']"
+        "apiVersion: argoproj.io/v1alpha1\nkind: AnalysisTemplate\nmetadata:\n  name: {name}\n  labels:\n{meta_labels_yaml}spec:\n  metrics:\n    - name: slo-eval\n      interval: 30s\n      count: 1\n      successCondition: result == 'promote'\n      provider:\n        job:\n          spec:\n            template:\n              metadata:\n                labels:\n{pod_labels_yaml}              spec:\n                restartPolicy: Never\n                containers:\n                  - name: slo-eval\n                    image: REPLACE_ME\n                    command: ['sh','-c','echo promote']\n                    env:\n{env_yaml}"
     )
 }
 
-fn service_yaml(name: &str) -> String {
+fn service_yaml(name: &str, telemetry: &TelemetryIdentity<'_>) -> String {
+    let meta_labels_yaml = telemetry_labels_yaml("    ", telemetry);
     format!(
-        "apiVersion: v1\nkind: Service\nmetadata:\n  name: {name}\nspec:\n  selector:\n    app: {name}\n  ports:\n    - name: http\n      port: 80\n      targetPort: 8080"
+        "apiVersion: v1\nkind: Service\nmetadata:\n  name: {name}\n  labels:\n{meta_labels_yaml}spec:\n  selector:\n    app: {name}\n  ports:\n    - name: http\n      port: 80\n      targetPort: 8080"
     )
 }
 
-fn ingress_yaml(name: &str) -> String {
+fn ingress_yaml(name: &str, telemetry: &TelemetryIdentity<'_>) -> String {
+    let meta_labels_yaml = telemetry_labels_yaml("    ", telemetry);
     format!(
-        "apiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: {name}\nspec:\n  rules:\n    - http:\n        paths:\n          - path: /\n            pathType: Prefix\n            backend:\n              service:\n                name: {name}\n                port:\n                  number: 80"
+        "apiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: {name}\n  labels:\n{meta_labels_yaml}spec:\n  rules:\n    - http:\n        paths:\n          - path: /\n            pathType: Prefix\n            backend:\n              service:\n                name: {name}\n                port:\n                  number: 80"
     )
 }
 
@@ -541,6 +618,81 @@ fn yaml_sanity_check(
             ));
             false
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{analysis_template_yaml, rollout_yaml, TelemetryIdentity};
+    use serde_json::json;
+
+    fn env_value<'a>(doc: &'a serde_json::Value, name: &str) -> Option<&'a str> {
+        doc.get("spec")?
+            .get("template")?
+            .get("spec")?
+            .get("containers")?
+            .get(0)?
+            .get("env")?
+            .as_array()?
+            .iter()
+            .find(|item| item.get("name").and_then(serde_json::Value::as_str) == Some(name))
+            .and_then(|item| item.get("value"))
+            .and_then(serde_json::Value::as_str)
+    }
+
+    #[test]
+    fn rollout_yaml_includes_identity_labels_and_env() {
+        let strategy = json!({
+            "type": "canary",
+            "canary": { "steps": [{"set_weight": 100}] },
+            "blue_green": null,
+        });
+        let telemetry = TelemetryIdentity {
+            environment_id: "prod",
+            deployment_id: "deploy_123",
+            service_id: "svc.api",
+        };
+        let yaml = rollout_yaml("demo", "demo-analysis", &strategy, &telemetry);
+        let doc: serde_json::Value = serde_yaml::from_str(&yaml).expect("yaml");
+
+        assert_eq!(doc["metadata"]["labels"]["lp.environment_id"], "prod");
+        assert_eq!(doc["metadata"]["labels"]["lp.deployment_id"], "deploy_123");
+        assert_eq!(doc["metadata"]["labels"]["lp.service_id"], "svc.api");
+        assert_eq!(
+            doc["spec"]["template"]["metadata"]["labels"]["lp.environment_id"],
+            "prod"
+        );
+
+        assert_eq!(env_value(&doc, "LP_ENVIRONMENT_ID"), Some("prod"));
+        assert_eq!(env_value(&doc, "LP_DEPLOYMENT_ID"), Some("deploy_123"));
+        assert_eq!(env_value(&doc, "LP_SERVICE_ID"), Some("svc.api"));
+        assert_eq!(
+            env_value(&doc, "OTEL_RESOURCE_ATTRIBUTES"),
+            Some("service.name=svc.api,deployment.environment=prod,lp.environment_id=prod,lp.deployment_id=deploy_123,lp.service_id=svc.api")
+        );
+    }
+
+    #[test]
+    fn analysis_template_yaml_includes_identity_labels_and_env() {
+        let telemetry = TelemetryIdentity {
+            environment_id: "prod",
+            deployment_id: "deploy_123",
+            service_id: "svc.api",
+        };
+        let yaml = analysis_template_yaml("demo-analysis", &telemetry);
+        let doc: serde_json::Value = serde_yaml::from_str(&yaml).expect("yaml");
+
+        assert_eq!(doc["metadata"]["labels"]["lp.environment_id"], "prod");
+
+        let template = &doc["spec"]["metrics"][0]["provider"]["job"]["spec"]["template"];
+        assert_eq!(
+            template["metadata"]["labels"]["lp.deployment_id"],
+            "deploy_123"
+        );
+        assert_eq!(
+            template["spec"]["containers"][0]["env"][3]["name"],
+            "OTEL_RESOURCE_ATTRIBUTES"
+        );
     }
 }
 

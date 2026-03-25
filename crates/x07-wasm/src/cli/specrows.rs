@@ -157,6 +157,9 @@ pub fn build_specrows_doc() -> Value {
             ["deploy-plan","opt","","--ops","ops","PATH","Ops profile file (x07.app.ops.profile@0.1.0)."],
             ["deploy-plan","opt","","--emit-k8s","emit.k8s","STR","Emit Kubernetes YAML outputs (true/false; default true)."],
             ["deploy-plan","opt","","--out-dir","out_dir","PATH","Output directory for deploy plan + emitted manifests."],
+            ["deploy-plan","opt","","--environment-id","environment_id","STR","Optional environment id for emitted telemetry identity labels."],
+            ["deploy-plan","opt","","--deployment-id","deployment_id","STR","Optional deployment id for emitted telemetry identity labels."],
+            ["deploy-plan","opt","","--service-id","service_id","STR","Optional service id for emitted telemetry identity labels."],
             ["deploy-plan","opt","","--pack-manifest","pack_manifest","PATH","App pack manifest file (x07.app.pack@0.1.0)."],
 
         ["device-build","about","Alias for `x07-wasm device build`. Build a device UI bundle (web-ui reducer wasm + pinned host ABI) and emit x07.wasm.device.build.report@0.1.0."],

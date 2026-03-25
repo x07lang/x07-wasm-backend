@@ -198,6 +198,13 @@ These commands are the service-oriented workload lane. They emit deterministic w
 - `x07-wasm deploy plan`
 - `x07-wasm provenance attest` / `provenance verify`
 
+`x07-wasm deploy plan` can emit Kubernetes YAML with stable telemetry identity:
+
+- Resource labels: `lp.environment_id`, `lp.deployment_id`, `lp.service_id`
+- Container env: `LP_ENVIRONMENT_ID`, `LP_DEPLOYMENT_ID`, `LP_SERVICE_ID`, `OTEL_RESOURCE_ATTRIBUTES`
+
+Use `--environment-id`, `--deployment-id`, and `--service-id` to set those values (defaults: `environment_id=default`, `service_id=profile_id`, `deployment_id=<service_id>.<k8s_name>`).
+
 Supported D-OSS command surface:
 
 - `x07-wasm app pack`

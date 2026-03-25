@@ -1020,6 +1020,18 @@ pub struct DeployPlanArgs {
     /// Output directory for deploy plan + emitted manifests.
     #[arg(long, value_name = "PATH")]
     pub out_dir: PathBuf,
+
+    /// Optional environment id for emitted telemetry identity labels.
+    #[arg(long, value_name = "STR")]
+    pub environment_id: Option<String>,
+
+    /// Optional deployment id for emitted telemetry identity labels.
+    #[arg(long, value_name = "STR")]
+    pub deployment_id: Option<String>,
+
+    /// Optional service id for emitted telemetry identity labels.
+    #[arg(long, value_name = "STR")]
+    pub service_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Args)]
