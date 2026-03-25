@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-wasm.component.compose.report.schema.json",
   "title": "x07.wasm.component.compose.report@0.1.0",
-  "description": "Machine-readable report emitted by `x07-wasm component compose` (Phase 1).",
+  "description": "Machine-readable report emitted by `x07-wasm component compose`.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -244,4 +244,3 @@
     }
   }
 }
-

@@ -400,11 +400,11 @@
             "bytes.concat",
             [
               "bytes.lit",
-              "{\"phase\":"
+              "{\"step\":"
             ],
             [
               "view.to_bytes",
-              "phase_json"
+              "step_json"
             ]
           ]
         ],
@@ -613,7 +613,7 @@
       "name": "app.state_doc_v1",
       "params": [
         {
-          "name": "phase_json",
+          "name": "step_json",
           "ty": "bytes_view"
         },
         {
@@ -672,10 +672,10 @@
         ],
         [
           "let",
-          "path_phase",
+          "path_step",
           [
             "bytes.lit",
-            "state.phase"
+            "state.step"
           ]
         ],
         [
@@ -744,7 +744,7 @@
         ],
         [
           "let",
-          "phase_start_json",
+          "step_start_json",
           [
             "bytes.lit",
             "\"start\""
@@ -752,7 +752,7 @@
         ],
         [
           "let",
-          "phase_selected_json",
+          "step_selected_json",
           [
             "bytes.lit",
             "\"selected\""
@@ -760,7 +760,7 @@
         ],
         [
           "let",
-          "phase_moved_json",
+          "step_moved_json",
           [
             "bytes.lit",
             "\"moved\""
@@ -768,7 +768,7 @@
         ],
         [
           "let",
-          "phase_victory_json",
+          "step_victory_json",
           [
             "bytes.lit",
             "\"victory\""
@@ -907,17 +907,17 @@
         ],
         [
           "let",
-          "phase_json",
+          "step_json",
           [
             "app.extract_or_v1",
             "dispatch_json",
             [
               "bytes.view",
-              "path_phase"
+              "path_step"
             ],
             [
               "bytes.view",
-              "phase_start_json"
+              "step_start_json"
             ]
           ]
         ],
@@ -1358,11 +1358,11 @@
                 "view.eq",
                 [
                   "bytes.view",
-                  "phase_json"
+                  "step_json"
                 ],
                 [
                   "bytes.view",
-                  "phase_start_json"
+                  "step_start_json"
                 ]
               ],
               [
@@ -1413,11 +1413,11 @@
                 "view.eq",
                 [
                   "bytes.view",
-                  "phase_json"
+                  "step_json"
                 ],
                 [
                   "bytes.view",
-                  "phase_selected_json"
+                  "step_selected_json"
                 ]
               ],
               [
@@ -1468,11 +1468,11 @@
                 "view.eq",
                 [
                   "bytes.view",
-                  "phase_json"
+                  "step_json"
                 ],
                 [
                   "bytes.view",
-                  "phase_moved_json"
+                  "step_moved_json"
                 ]
               ],
               [
@@ -1588,7 +1588,7 @@
         ],
         [
           "let",
-          "phase_next",
+          "step_next",
           [
             "if",
             "select_can",
@@ -1596,7 +1596,7 @@
               "view.to_bytes",
               [
                 "bytes.view",
-                "phase_selected_json"
+                "step_selected_json"
               ]
             ],
             [
@@ -1606,7 +1606,7 @@
                 "view.to_bytes",
                 [
                   "bytes.view",
-                  "phase_moved_json"
+                  "step_moved_json"
                 ]
               ],
               [
@@ -1616,10 +1616,10 @@
                   "view.to_bytes",
                   [
                     "bytes.view",
-                    "phase_victory_json"
+                    "step_victory_json"
                   ]
                 ],
-                "phase_json"
+                "step_json"
               ]
             ]
           ]
@@ -3028,7 +3028,7 @@
             "app.state_doc_v1",
             [
               "bytes.view",
-              "phase_next"
+              "step_next"
             ],
             [
               "bytes.view",

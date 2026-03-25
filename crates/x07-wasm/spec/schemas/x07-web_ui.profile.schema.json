@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-web_ui.profile.schema.json",
   "title": "x07.web_ui.profile@0.1.0",
-  "description": "Web UI profile for x07-wasm Phase 2 (core wasm or component build + host budgets).",
+  "description": "Web UI profile for x07-wasm (core wasm or component build + host budgets).",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "id", "v", "wasm_profile_id", "defaults"],
@@ -53,4 +53,3 @@
     }
   }
 }
-

@@ -2,6 +2,8 @@ use std::convert::Infallible;
 use std::ffi::OsString;
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use base64::Engine as _;
@@ -11,7 +13,7 @@ use tokio::task::LocalSet;
 
 use http_body_util::{BodyExt, Full, Limited};
 use hyper::body::Incoming;
-use hyper::header::HeaderName;
+use hyper::header::{HeaderName, HeaderValue};
 use hyper::{Method, Request, Response, Uri};
 
 use wasmtime::component::{Component, Linker, ResourceTable};
@@ -913,8 +915,14 @@ async fn serve_canary(
                 diagnostics.extend(request_diags);
 
                 let wall_ms = started.elapsed().as_millis() as u64;
-                let (req_env_bytes, req_env_doc, _req_sha) =
-                    request_envelope_bytes(&method, &uri, &headers, &body_loaded.bytes);
+                let (req_env_bytes, req_env_doc, _req_sha) = request_envelope_bytes(
+                    "req0",
+                    &method,
+                    &uri,
+                    &headers,
+                    &body_loaded.bytes,
+                    args.hot_path,
+                );
 
                 let mut response_ok = true;
                 match guest_diag::extract_guest_diag_from_http_headers(&buf.headers) {
@@ -944,6 +952,7 @@ async fn serve_canary(
                             diagnostics,
                             format!("guest diagnostic: {}", d.code),
                             budgets,
+                            args.hot_path,
                         ) {
                             Ok(dir) => {
                                 meta.nondeterminism.uses_os_time = true;
@@ -974,6 +983,7 @@ async fn serve_canary(
                             diagnostics,
                             d.message.clone(),
                             budgets,
+                            args.hot_path,
                         ) {
                             Ok(dir) => {
                                 meta.nondeterminism.uses_os_time = true;
@@ -991,7 +1001,7 @@ async fn serve_canary(
                 responses.push(ServeResponseSummary {
                     ok: response_ok,
                     status: buf.status,
-                    body: blob_ref_for_bytes(&buf.body),
+                    body: blob_ref_for_bytes_with_base64(&buf.body, !args.hot_path),
                     wall_ms,
                 });
             }
@@ -1048,8 +1058,14 @@ async fn serve_canary(
                         format!("{err:#}"),
                     ));
                 }
-                let (req_env_bytes, req_env_doc, req_sha) =
-                    request_envelope_bytes(&method, &uri, &headers, &body_loaded.bytes);
+                let (req_env_bytes, req_env_doc, req_sha) = request_envelope_bytes(
+                    "req0",
+                    &method,
+                    &uri,
+                    &headers,
+                    &body_loaded.bytes,
+                    args.hot_path,
+                );
                 let incident = match write_http_incident(
                     &args.incidents_dir,
                     component,
@@ -1061,6 +1077,7 @@ async fn serve_canary(
                     diagnostics,
                     err.to_string(),
                     budgets,
+                    args.hot_path,
                 ) {
                     Ok(v) => Some(v),
                     Err(err) => {
@@ -1239,6 +1256,8 @@ async fn serve_listen(
     let stop_after = args.stop_after;
     let mut handled: u32 = 0;
     let runtime_limits = runtime_limits.to_owned();
+    let hot_path = args.hot_path;
+    let request_seq: Arc<AtomicU64> = Arc::new(AtomicU64::new(0));
 
     while stop_after == 0 || handled < stop_after {
         let (stream, _peer) = match listener.accept().await {
@@ -1267,6 +1286,7 @@ async fn serve_listen(
         let diagnostics_acc = diagnostics_acc.clone();
         let caps = caps.clone();
         let wasi_base_dir = wasi_base_dir.to_path_buf();
+        let request_seq = request_seq.clone();
 
         let svc = hyper::service::service_fn(move |req: Request<Incoming>| {
             let proxy = proxy.clone();
@@ -1279,8 +1299,12 @@ async fn serve_listen(
             let diagnostics_acc = diagnostics_acc.clone();
             let caps = caps.clone();
             let wasi_base_dir = wasi_base_dir.clone();
+            let request_seq = request_seq.clone();
             async move {
                 let (parts, body) = req.into_parts();
+                let request_id = request_id_from_headers(&parts.headers).unwrap_or_else(|| {
+                    format!("req{}", request_seq.fetch_add(1, Ordering::Relaxed))
+                });
                 let body_bytes =
                     match collect_body_with_limit(body, budgets.max_request_bytes).await {
                         Ok(v) => v,
@@ -1293,15 +1317,22 @@ async fn serve_listen(
                                 wall_ms,
                             });
                             let _ = err;
-                            return Ok::<_, hyper::Error>(
-                                Response::builder()
-                                    .status(413)
-                                    .body(Full::new(Bytes::from_static(b"request too large")))
-                                    .unwrap(),
-                            );
+                            let mut resp = Response::builder()
+                                .status(413)
+                                .body(Full::new(Bytes::from_static(b"request too large")))
+                                .unwrap();
+                            if let Ok(v) = HeaderValue::from_str(&request_id) {
+                                resp.headers_mut()
+                                    .insert(HeaderName::from_static("x-request-id"), v);
+                            }
+                            return Ok::<_, hyper::Error>(resp);
                         }
                     };
-                let req2 = Request::from_parts(parts, full_body(body_bytes.clone()));
+                let mut req2 = Request::from_parts(parts, full_body(body_bytes.clone()));
+                if let Ok(v) = HeaderValue::from_str(&request_id) {
+                    req2.headers_mut()
+                        .insert(HeaderName::from_static("x-request-id"), v);
+                }
                 let method = req2.method().clone();
                 let uri = req2.uri().clone();
                 let headers = req2.headers().clone();
@@ -1342,8 +1373,14 @@ async fn serve_listen(
                                 }
                                 diagnostics_acc.lock().unwrap().push(d.clone());
 
-                                let (req_env_bytes, req_env_doc, _req_sha) =
-                                    request_envelope_bytes(&method, &uri, &headers, &body_bytes);
+                                let (req_env_bytes, req_env_doc, _req_sha) = request_envelope_bytes(
+                                    &request_id,
+                                    &method,
+                                    &uri,
+                                    &headers,
+                                    &body_bytes,
+                                    hot_path,
+                                );
                                 match write_http_incident(
                                     &incidents_dir,
                                     &component,
@@ -1355,6 +1392,7 @@ async fn serve_listen(
                                     &mut Vec::new(),
                                     format!("guest diagnostic: {}", d.code),
                                     &budgets,
+                                    hot_path,
                                 ) {
                                     Ok(dir) => incident_dirs_acc.lock().unwrap().push(dir),
                                     Err(err) => {
@@ -1373,8 +1411,14 @@ async fn serve_listen(
                                 let d = err.into_diagnostic();
                                 diagnostics_acc.lock().unwrap().push(d.clone());
 
-                                let (req_env_bytes, req_env_doc, _req_sha) =
-                                    request_envelope_bytes(&method, &uri, &headers, &body_bytes);
+                                let (req_env_bytes, req_env_doc, _req_sha) = request_envelope_bytes(
+                                    &request_id,
+                                    &method,
+                                    &uri,
+                                    &headers,
+                                    &body_bytes,
+                                    hot_path,
+                                );
                                 match write_http_incident(
                                     &incidents_dir,
                                     &component,
@@ -1386,6 +1430,7 @@ async fn serve_listen(
                                     &mut Vec::new(),
                                     d.message.clone(),
                                     &budgets,
+                                    hot_path,
                                 ) {
                                     Ok(dir) => incident_dirs_acc.lock().unwrap().push(dir),
                                     Err(err) => {
@@ -1402,7 +1447,7 @@ async fn serve_listen(
                         responses_acc.lock().unwrap().push(ServeResponseSummary {
                             ok: response_ok,
                             status: buf.status,
-                            body: blob_ref_for_bytes(&buf.body),
+                            body: blob_ref_for_bytes_with_base64(&buf.body, !hot_path),
                             wall_ms,
                         });
 
@@ -1416,7 +1461,11 @@ async fn serve_listen(
                             }
                         }
                         let body = Full::new(Bytes::from(buf.body));
-                        let resp = resp.body(body).unwrap();
+                        let mut resp = resp.body(body).unwrap();
+                        if let Ok(v) = HeaderValue::from_str(&request_id) {
+                            resp.headers_mut()
+                                .insert(HeaderName::from_static("x-request-id"), v);
+                        }
                         Ok::<_, hyper::Error>(resp)
                     }
                     Err(err) => {
@@ -1459,8 +1508,14 @@ async fn serve_listen(
                                 format!("{err:#}"),
                             ));
                         }
-                        let (_req_env_bytes, req_env_doc, _req_sha) =
-                            request_envelope_bytes(&method, &uri, &headers, &body_bytes);
+                        let (_req_env_bytes, req_env_doc, _req_sha) = request_envelope_bytes(
+                            &request_id,
+                            &method,
+                            &uri,
+                            &headers,
+                            &body_bytes,
+                            hot_path,
+                        );
                         let incident = write_http_incident(
                             &incidents_dir,
                             &component,
@@ -1472,6 +1527,7 @@ async fn serve_listen(
                             &mut Vec::new(),
                             err.to_string(),
                             &budgets,
+                            hot_path,
                         );
                         if let Ok(dir) = incident {
                             incident_dirs_acc.lock().unwrap().push(dir);
@@ -1482,12 +1538,15 @@ async fn serve_listen(
                             body: json!({ "bytes_len": 0, "sha256": "0".repeat(64) }),
                             wall_ms,
                         });
-                        Ok::<_, hyper::Error>(
-                            Response::builder()
-                                .status(500)
-                                .body(Full::new(Bytes::from_static(b"internal error")))
-                                .unwrap(),
-                        )
+                        let mut resp = Response::builder()
+                            .status(500)
+                            .body(Full::new(Bytes::from_static(b"internal error")))
+                            .unwrap();
+                        if let Ok(v) = HeaderValue::from_str(&request_id) {
+                            resp.headers_mut()
+                                .insert(HeaderName::from_static("x-request-id"), v);
+                        }
+                        Ok::<_, hyper::Error>(resp)
                     }
                 }
             }
@@ -1689,31 +1748,66 @@ where
     Ok(collected.to_bytes().to_vec())
 }
 
-fn blob_ref_for_bytes(bytes: &[u8]) -> Value {
-    json!({
-      "bytes_len": bytes.len() as u64,
-      "sha256": util::sha256_hex(bytes),
-      "base64": base64::engine::general_purpose::STANDARD.encode(bytes),
-    })
+fn request_id_from_headers(headers: &hyper::HeaderMap) -> Option<String> {
+    let raw = headers.get("x-request-id")?.to_str().ok()?;
+    normalize_request_id(raw)
+}
+
+fn normalize_request_id(raw: &str) -> Option<String> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() || trimmed.len() > 64 {
+        return None;
+    }
+    let lowered = trimmed.to_ascii_lowercase();
+    let mut chars = lowered.chars();
+    match chars.next() {
+        Some(first) if first.is_ascii_lowercase() || first.is_ascii_digit() => {}
+        _ => return None,
+    }
+    if lowered
+        .chars()
+        .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || matches!(ch, '.' | '_' | '-'))
+    {
+        Some(lowered)
+    } else {
+        None
+    }
+}
+
+fn blob_ref_for_bytes_with_base64(bytes: &[u8], include_base64: bool) -> Value {
+    let mut doc = serde_json::Map::new();
+    doc.insert("bytes_len".to_string(), json!(bytes.len() as u64));
+    doc.insert("sha256".to_string(), json!(util::sha256_hex(bytes)));
+    if include_base64 {
+        doc.insert(
+            "base64".to_string(),
+            json!(base64::engine::general_purpose::STANDARD.encode(bytes)),
+        );
+    }
+    Value::Object(doc)
 }
 
 fn request_envelope_bytes(
+    request_id: &str,
     method: &Method,
     uri: &Uri,
     headers: &hyper::HeaderMap,
     body: &[u8],
+    compact_payload: bool,
 ) -> (Vec<u8>, Value, String) {
-    let env = request_envelope_value(method, uri, headers, body);
+    let env = request_envelope_value(request_id, method, uri, headers, body, compact_payload);
     let bytes = report::canon::canonical_json_bytes(&env).unwrap_or_else(|_| b"{}\n".to_vec());
     let sha = util::sha256_hex(&bytes);
     (bytes, env, sha)
 }
 
 pub(crate) fn request_envelope_value(
+    request_id: &str,
     method: &Method,
     uri: &Uri,
     headers: &hyper::HeaderMap,
     body: &[u8],
+    compact_payload: bool,
 ) -> Value {
     let path = uri.path().to_string();
     let query = uri.query().unwrap_or("").to_string();
@@ -1730,14 +1824,20 @@ pub(crate) fn request_envelope_value(
         .map(|(k, v)| json!({ "k": k, "v": v }))
         .collect::<Vec<_>>();
 
+    let body = if compact_payload {
+        crate::stream_payload::bytes_to_stream_payload_compact(body)
+    } else {
+        crate::stream_payload::bytes_to_stream_payload(body)
+    };
+
     json!({
       "schema_version": "x07.http.request.envelope@0.1.0",
-      "id": "req0",
+      "id": request_id,
       "method": method.as_str(),
       "path": path,
       "query": query,
       "headers": headers_json,
-      "body": crate::stream_payload::bytes_to_stream_payload(body),
+      "body": body,
     })
 }
 
@@ -1746,6 +1846,7 @@ pub(crate) fn response_envelope_value(
     status: u16,
     headers: &[(String, String)],
     body: &[u8],
+    compact_payload: bool,
 ) -> Value {
     let mut hdrs = headers.to_vec();
     hdrs.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
@@ -1753,12 +1854,17 @@ pub(crate) fn response_envelope_value(
         .into_iter()
         .map(|(k, v)| json!({ "k": k, "v": v }))
         .collect::<Vec<_>>();
+    let body = if compact_payload {
+        crate::stream_payload::bytes_to_stream_payload_compact(body)
+    } else {
+        crate::stream_payload::bytes_to_stream_payload(body)
+    };
     json!({
       "schema_version": "x07.http.response.envelope@0.1.0",
       "request_id": request_id,
       "status": status,
       "headers": hdrs,
-      "body": crate::stream_payload::bytes_to_stream_payload(body),
+      "body": body,
     })
 }
 
@@ -1774,6 +1880,7 @@ fn write_http_incident(
     diagnostics: &mut Vec<Diagnostic>,
     error: String,
     budgets: &ServeBudgets,
+    compact_payload: bool,
 ) -> Result<PathBuf> {
     let req_sha = util::sha256_hex(request_envelope_bytes);
     let incident_id = util::sha256_hex(format!("{}:{}", component.sha256, req_sha).as_bytes());
@@ -1799,12 +1906,18 @@ fn write_http_incident(
         .unwrap_or("req0");
 
     if let Some(resp) = response {
-        let env = response_envelope_value(request_id, resp.status, &resp.headers, &resp.body);
+        let env = response_envelope_value(
+            request_id,
+            resp.status,
+            &resp.headers,
+            &resp.body,
+            compact_payload,
+        );
         let bytes = report::canon::canonical_json_bytes(&env)?;
         std::fs::write(dir.join("response.envelope.json"), bytes)
             .with_context(|| format!("write: {}", dir.join("response.envelope.json").display()))?;
     } else if let Some(status) = response_status {
-        let env = response_envelope_value(request_id, status, &[], &[]);
+        let env = response_envelope_value(request_id, status, &[], &[], compact_payload);
         let bytes = report::canon::canonical_json_bytes(&env)?;
         let _ = std::fs::write(dir.join("response.envelope.json"), bytes);
     }

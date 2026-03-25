@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-wasm.component.artifact.schema.json",
   "title": "x07.wasm.component.artifact@0.1.0",
-  "description": "Artifact manifest for a WebAssembly component produced by x07-wasm Phase 1 tooling.",
+  "description": "Artifact manifest for a WebAssembly component produced by x07-wasm component tooling.",
   "type": "object",
   "additionalProperties": false,
   "required": [

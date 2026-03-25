@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-wasm.serve.report.schema.json",
   "title": "x07.wasm.serve.report@0.1.0",
-  "description": "Machine-readable report emitted by `x07-wasm serve` (Phase 1).",
+  "description": "Machine-readable report emitted by `x07-wasm serve`.",
   "type": "object",
   "additionalProperties": false,
   "properties": {

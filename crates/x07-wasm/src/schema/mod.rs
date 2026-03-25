@@ -113,6 +113,8 @@ const X07_APP_TRACE_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../spec/schemas/x07-app.trace.schema.json");
 const X07_WORKLOAD_PACK_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../spec/schemas/x07-workload.pack.schema.json");
+const X07_EMBEDDED_KERNEL_STARTER_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../spec/schemas/x07-embedded.kernel.starter.schema.json");
 
 const X07_WASM_TOOLCHAIN_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../spec/schemas/x07-wasm.toolchain.validate.report.schema.json");
@@ -266,6 +268,7 @@ impl SchemaStore {
             X07_HTTP_TRACE_SCHEMA_BYTES,
             X07_APP_TRACE_SCHEMA_BYTES,
             X07_WORKLOAD_PACK_SCHEMA_BYTES,
+            X07_EMBEDDED_KERNEL_STARTER_SCHEMA_BYTES,
             X07_APP_OPS_PROFILE_SCHEMA_BYTES,
             X07_APP_CAPABILITIES_SCHEMA_BYTES,
             X07_POLICY_CARD_SCHEMA_BYTES,

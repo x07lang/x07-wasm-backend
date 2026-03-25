@@ -89,6 +89,10 @@
       "path": "x07-device.telemetry.profile.schema.json"
     },
     {
+      "id": "https://x07.io/spec/x07-embedded.kernel.starter.schema.json",
+      "path": "x07-embedded.kernel.starter.schema.json"
+    },
+    {
       "id": "https://x07.io/spec/x07-http.dispatch.schema.json",
       "path": "x07-http.dispatch.schema.json"
     },

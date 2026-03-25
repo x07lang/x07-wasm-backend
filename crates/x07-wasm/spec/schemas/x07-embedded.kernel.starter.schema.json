@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x07.io/spec/x07-embedded.kernel.starter.schema.json",
+  "title": "x07.embedded.kernel.starter@0.1.0",
+  "description": "Starter manifest for an embedded-kernel workload cell emitted by x07-wasm workload pack.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "service_id",
+    "cell_key",
+    "cell_kind",
+    "entry_symbol",
+    "ingress_kind",
+    "runtime_class",
+    "scale_class",
+    "topology_group",
+    "project"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "x07.embedded.kernel.starter@0.1.0"
+    },
+    "service_id": {
+      "$ref": "#/$defs/id"
+    },
+    "cell_key": {
+      "$ref": "#/$defs/id"
+    },
+    "cell_kind": {
+      "$ref": "#/$defs/id"
+    },
+    "entry_symbol": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "ingress_kind": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "runtime_class": {
+      "const": "embedded-kernel"
+    },
+    "scale_class": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "topology_group": {
+      "$ref": "#/$defs/id"
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entry", "module_roots"],
+      "properties": {
+        "entry": {
+          "$ref": "#/$defs/rel_path"
+        },
+        "module_roots": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/rel_path"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "rel_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^(?![\\\\/])(?![A-Za-z]:)(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)).+"
+    }
+  }
+}

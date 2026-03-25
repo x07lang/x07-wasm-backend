@@ -326,6 +326,22 @@
         }
       }
     },
+    "embedded_executable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "manifest"
+      ],
+      "properties": {
+        "kind": {
+          "const": "embedded-kernel-starter_v1"
+        },
+        "manifest": {
+          "$ref": "#/$defs/file_digest"
+        }
+      }
+    },
     "binding_probe_hint": {
       "type": "object",
       "additionalProperties": false,
@@ -609,6 +625,31 @@
         "binding_refs",
         "binding_probe_hints"
       ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "runtime_class": {
+                "const": "embedded-kernel"
+              }
+            },
+            "required": [
+              "runtime_class"
+            ]
+          },
+          "then": {
+            "required": [
+              "execution_kind",
+              "embedded"
+            ],
+            "properties": {
+              "execution_kind": {
+                "const": "embedded"
+              }
+            }
+          }
+        }
+      ],
       "properties": {
         "cell_key": {
           "$ref": "#/$defs/id"
@@ -677,6 +718,9 @@
             "oci_image",
             "embedded"
           ]
+        },
+        "embedded": {
+          "$ref": "#/$defs/embedded_executable"
         },
         "probes": {
           "$ref": "#/$defs/probes"

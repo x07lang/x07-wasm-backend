@@ -65,7 +65,7 @@
         "format": {
           "type": "string",
           "enum": ["core_wasm_v1", "component_jco_v1"],
-          "description": "Frontend delivery format. Phase 3 defaults to core_wasm_v1; component_jco_v1 is Phase 2B+ compatible."
+          "description": "Frontend delivery format. Defaults to core_wasm_v1; component_jco_v1 is compatible with component-based builds."
         },
         "project": {
           "$ref": "#/$defs/rel_path",

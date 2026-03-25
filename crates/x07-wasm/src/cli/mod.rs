@@ -832,6 +832,10 @@ pub struct ServeArgs {
     #[arg(long, value_name = "N", default_value_t = 16)]
     pub max_concurrent: u32,
 
+    /// Reduce per-request overhead for production traffic.
+    #[arg(long)]
+    pub hot_path: bool,
+
     /// Max Wasmtime fuel per request (overrides profile).
     #[arg(long, value_name = "N")]
     pub max_fuel: Option<u64>,

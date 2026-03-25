@@ -538,8 +538,13 @@ async fn execute_effect(
                         }
                     };
 
-                    let response =
-                        crate::serve::response_envelope_value(id, status, &headers, &body_bytes);
+                    let response = crate::serve::response_envelope_value(
+                        id,
+                        status,
+                        &headers,
+                        &body_bytes,
+                        false,
+                    );
                     json!({
                       "id": id,
                       "type": "http.fetch",

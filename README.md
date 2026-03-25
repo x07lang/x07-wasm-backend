@@ -161,7 +161,7 @@ The examples index lives in [`examples/README.md`](examples/README.md).
 
 - `x07-wasm wit validate`
 - `x07-wasm component profile validate` / `build` / `compose` / `targets`
-- `x07-wasm serve` / `x07-wasm component run`
+- `x07-wasm serve` / `x07-wasm component run` (use `x07-wasm serve --hot-path` for low-overhead request serving)
 
 ### Web UI
 
@@ -180,6 +180,8 @@ The examples index lives in [`examples/README.md`](examples/README.md).
 - `x07-wasm binding resolve`
 
 These commands are the service-oriented workload lane. They emit deterministic workload metadata, provider-neutral binding requirements, topology previews, and a deployable `x07.workload.pack@0.1.0` manifest with first-class API, event-consumer, and scheduled-job hints. The runtime pack now carries cell kind, scale class, binding probe hints, event metadata, schedule metadata, probe definitions, rollout hints, autoscaling hints, and OCI image executables for both `native-http` and `native-worker` cells.
+
+For `embedded-kernel` cells, the runtime pack uses `execution_kind=embedded` and includes an `embedded.manifest` file digest that points at `embedded-kernel.<cell_key>.starter.json` in the pack output directory.
 
 ### Native Backend Targets
 

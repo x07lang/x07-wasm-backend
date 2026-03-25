@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-policy.card.schema.json",
   "title": "x07.policy.card@0.1.0",
-  "description": "Machine-readable runtime governance policy card (Phase 6 minimal enforceable subset).",
+  "description": "Machine-readable runtime governance policy card (minimal enforceable subset).",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "id", "v", "rules"],

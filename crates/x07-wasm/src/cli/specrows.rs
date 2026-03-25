@@ -304,6 +304,7 @@ pub fn build_specrows_doc() -> Value {
             ["serve","opt","","--component","component","PATH","Path to HTTP component (.wasm)."],
             ["serve","opt","","--incidents-dir","incidents.dir","PATH","Root directory for incident bundles (default: .x07-wasm/incidents)."],
             ["serve","opt","","--max-concurrent","concurrency.max","U32","Hard cap on concurrent request handling."],
+            ["serve","flag","","--hot-path","hot.path","Reduce per-request overhead for production traffic."],
             ["serve","opt","","--max-request-bytes","request.max.bytes","U32","Hard cap on request bytes (body + headers)."],
             ["serve","opt","","--max-response-bytes","response.max.bytes","U32","Hard cap on response body bytes."],
             ["serve","opt","","--max-wall-ms-per-request","wall.max.ms.per.request","U32","Hard cap on wall time spent per request (ms)."],

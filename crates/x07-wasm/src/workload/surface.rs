@@ -444,6 +444,35 @@ pub(crate) fn runtime_pack_cells(
         .collect()
 }
 
+pub(crate) fn embedded_kernel_starter_docs(source: &WorkloadSource) -> Vec<(String, Value)> {
+    source
+        .manifest
+        .cells
+        .iter()
+        .filter(|cell| cell.runtime_class == "embedded-kernel")
+        .map(|cell| {
+            (
+                cell.cell_key.clone(),
+                json!({
+                    "schema_version": "x07.embedded.kernel.starter@0.1.0",
+                    "service_id": source.manifest.service_id,
+                    "cell_key": cell.cell_key,
+                    "cell_kind": cell.cell_kind,
+                    "entry_symbol": cell.entry_symbol,
+                    "ingress_kind": cell.ingress_kind,
+                    "runtime_class": cell.runtime_class,
+                    "scale_class": cell.scale_class,
+                    "topology_group": cell.topology_group,
+                    "project": {
+                        "entry": source.project.entry,
+                        "module_roots": source.project.module_roots,
+                    }
+                }),
+            )
+        })
+        .collect()
+}
+
 pub(crate) fn workload_describe_doc(source: &WorkloadSource, view: &str) -> Result<Value> {
     if !matches!(view, "summary" | "full") {
         anyhow::bail!("unsupported inspect view: {view}");
@@ -1325,6 +1354,7 @@ fn project_root(project_path: &Path) -> PathBuf {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use jsonschema::Draft;
     use std::time::{SystemTime, UNIX_EPOCH};
 
     fn temp_dir(label: &str) -> PathBuf {
@@ -1470,6 +1500,42 @@ mod tests {
         .expect("write service manifest");
     }
 
+    fn write_fixture_project_with_embedded_kernel(root: &Path) {
+        write_fixture_project(root);
+        let manifest_path = root.join("arch/service/index.x07service.json");
+        let mut doc: Value =
+            serde_json::from_slice(&fs::read(&manifest_path).expect("read manifest"))
+                .expect("manifest json");
+        let cells = doc
+            .get_mut("cells")
+            .and_then(Value::as_array_mut)
+            .expect("cells array");
+        cells.push(json!({
+            "cell_key": "kernel",
+            "cell_kind": "api-cell",
+            "entry_symbol": "orders.kernel.main",
+            "ingress_kind": "http",
+            "runtime_class": "embedded-kernel",
+            "scale_class": "embedded-kernel",
+            "binding_refs": [],
+            "topology_group": "frontdoor",
+            "runtime": {
+                "probes": {
+                    "readiness": {
+                        "probe_kind": "http",
+                        "path": "/readyz",
+                        "port": 8080
+                    }
+                }
+            }
+        }));
+        fs::write(
+            &manifest_path,
+            serde_json::to_vec_pretty(&doc).expect("manifest pretty json"),
+        )
+        .expect("write manifest");
+    }
+
     #[test]
     fn builds_pack_manifest_and_topology_docs_for_multi_cell_service() {
         let root = temp_dir("surface-build");
@@ -1548,6 +1614,94 @@ mod tests {
         let job = &cells[2];
         assert_eq!(job["schedule"]["cron"], "0 */6 * * *");
         assert_eq!(job["executable"]["container_port"], Value::Null);
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn workload_pack_writes_embedded_kernel_starter_manifest() {
+        let root = temp_dir("surface-embedded-kernel");
+        write_fixture_project_with_embedded_kernel(&root);
+        let out_dir = root.join("dist/workload");
+
+        let machine = crate::cli::MachineArgs {
+            json: None,
+            report_json: None,
+            report_out: None,
+            quiet_json: false,
+            json_schema: false,
+            json_schema_id: false,
+        };
+        let args = crate::workload::cli::WorkloadPackArgs {
+            project: root.join("x07.json"),
+            manifest: root.join("arch/service/index.x07service.json"),
+            out_dir: out_dir.clone(),
+            runtime_image: Some("ghcr.io/x07/orders:v1".to_string()),
+            container_port: 80,
+        };
+
+        let code = crate::workload::pack::cmd_workload_pack(
+            &[],
+            crate::cli::Scope::WorkloadPack,
+            &machine,
+            args,
+        )
+        .expect("workload pack");
+        assert_eq!(code, 0);
+
+        let runtime_pack: Value = serde_json::from_slice(
+            &fs::read(out_dir.join("x07.workload.pack.json")).expect("read runtime pack"),
+        )
+        .expect("runtime pack json");
+        let cells = runtime_pack
+            .get("cells")
+            .and_then(Value::as_array)
+            .expect("cells");
+        let embedded = cells
+            .iter()
+            .find(|cell| {
+                cell.get("runtime_class").and_then(Value::as_str) == Some("embedded-kernel")
+            })
+            .expect("embedded-kernel cell");
+
+        assert_eq!(embedded["execution_kind"], "embedded");
+        assert_eq!(embedded["embedded"]["kind"], "embedded-kernel-starter_v1");
+        let manifest_rel = embedded["embedded"]["manifest"]["path"]
+            .as_str()
+            .expect("manifest path");
+        assert!(out_dir.join(manifest_rel).is_file());
+
+        let manifest: Value = serde_json::from_slice(
+            &fs::read(out_dir.join(manifest_rel)).expect("read embedded manifest"),
+        )
+        .expect("embedded manifest json");
+        let schema: Value = serde_json::from_slice(
+            &fs::read(
+                Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("spec/schemas/x07-embedded.kernel.starter.schema.json"),
+            )
+            .expect("read embedded schema"),
+        )
+        .expect("embedded schema json");
+
+        let validator = jsonschema::options()
+            .with_draft(Draft::Draft202012)
+            .build(&schema)
+            .expect("compile embedded schema");
+        let errors: Vec<String> = validator
+            .iter_errors(&manifest)
+            .map(|err| err.to_string())
+            .collect();
+        assert!(
+            errors.is_empty(),
+            "expected embedded manifest to validate, got: {errors:?}"
+        );
+        assert_eq!(
+            manifest["schema_version"],
+            "x07.embedded.kernel.starter@0.1.0"
+        );
+        assert_eq!(manifest["service_id"], "orders");
+        assert_eq!(manifest["cell_key"], "kernel");
+
         let _ = fs::remove_dir_all(root);
     }
 }

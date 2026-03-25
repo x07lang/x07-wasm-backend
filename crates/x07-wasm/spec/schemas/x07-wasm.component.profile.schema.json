@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x07.io/spec/x07-wasm.component.profile.schema.json",
   "title": "x07.wasm.component.profile@0.2.0",
-  "description": "Pinned configuration for building and composing WebAssembly components from x07 solve-pure artifacts (Phase 1) and native backend targets (Phase 4B).",
+  "description": "Pinned configuration for building and composing WebAssembly components from x07 solve-pure artifacts and native backend targets.",
   "type": "object",
   "additionalProperties": false,
   "required": [

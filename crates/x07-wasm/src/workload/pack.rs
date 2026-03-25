@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -47,15 +48,16 @@ pub fn cmd_workload_pack(
                             args.runtime_image.as_deref(),
                             args.container_port,
                         )
-                        .and_then(|doc| {
+                        .and_then(|(doc, mut outputs)| {
                             let digest = surface::write_json_doc(
                                 &args.out_dir.join("x07.workload.pack.json"),
                                 &doc,
                             )?;
-                            Ok((doc, digest))
+                            outputs.push(digest.clone());
+                            Ok((doc, outputs))
                         }) {
-                            Ok((runtime_pack, digest)) => {
-                                meta.outputs.push(digest);
+                            Ok((runtime_pack, outputs)) => {
+                                meta.outputs.extend(outputs);
                                 stdout_json = json!({
                                     "mode": "pack",
                                     "out_dir": args.out_dir.display().to_string(),
@@ -134,19 +136,49 @@ fn build_runtime_pack_doc(
     source: &surface::WorkloadSource,
     runtime_image: Option<&str>,
     container_port: u16,
-) -> Result<Value> {
+) -> Result<(Value, Vec<FileDigest>)> {
     let workload_id = surface::workload_id(source).to_string();
-    let cells = surface::runtime_pack_cells(source, runtime_image, container_port);
-    Ok(json!({
-        "schema_version": "x07.workload.pack@0.1.0",
-        "workload_id": workload_id,
-        "public_manifest": relative_digest(out_dir, &out_dir.join("workload.pack.json"))?,
-        "workload": relative_digest(out_dir, &out_dir.join("workload.describe.json"))?,
-        "binding_requirements": relative_digest(out_dir, &out_dir.join("binding.requirements.json"))?,
-        "topology": collect_matching_digests(out_dir, "topology.preview.", ".json")?,
-        "sources": collect_relative_digests(&out_dir.join("sources"), out_dir)?,
-        "cells": cells,
-    }))
+    let mut cells = surface::runtime_pack_cells(source, runtime_image, container_port);
+
+    let mut outputs = Vec::new();
+    let mut embedded_by_cell_key: BTreeMap<String, Value> = BTreeMap::new();
+    for (cell_key, doc) in surface::embedded_kernel_starter_docs(source) {
+        let path = out_dir.join(format!("embedded-kernel.{cell_key}.starter.json"));
+        let digest = surface::write_json_doc(&path, &doc)?;
+        outputs.push(digest.clone());
+        embedded_by_cell_key.insert(cell_key, json!(relative_file_digest(out_dir, digest)?));
+    }
+    if !embedded_by_cell_key.is_empty() {
+        for cell in &mut cells {
+            if cell.get("runtime_class").and_then(Value::as_str) != Some("embedded-kernel") {
+                continue;
+            }
+            let Some(cell_key) = cell.get("cell_key").and_then(Value::as_str) else {
+                continue;
+            };
+            let Some(manifest) = embedded_by_cell_key.get(cell_key) else {
+                continue;
+            };
+            cell["embedded"] = json!({
+                "kind": "embedded-kernel-starter_v1",
+                "manifest": manifest,
+            });
+        }
+    }
+
+    Ok((
+        json!({
+            "schema_version": "x07.workload.pack@0.1.0",
+            "workload_id": workload_id,
+            "public_manifest": relative_digest(out_dir, &out_dir.join("workload.pack.json"))?,
+            "workload": relative_digest(out_dir, &out_dir.join("workload.describe.json"))?,
+            "binding_requirements": relative_digest(out_dir, &out_dir.join("binding.requirements.json"))?,
+            "topology": collect_matching_digests(out_dir, "topology.preview.", ".json")?,
+            "sources": collect_relative_digests(&out_dir.join("sources"), out_dir)?,
+            "cells": cells,
+        }),
+        outputs,
+    ))
 }
 
 fn collect_matching_digests(out_dir: &Path, prefix: &str, suffix: &str) -> Result<Vec<Value>> {
