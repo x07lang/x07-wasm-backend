@@ -1,0 +1,54 @@
+{
+  "schema_version": "x07.workload.pack@0.1.0",
+  "workload_id": "orders",
+  "public_manifest": { "path": "workload.pack.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000", "bytes_len": 1234 },
+  "workload": { "path": "workload.describe.json", "sha256": "1111111111111111111111111111111111111111111111111111111111111111", "bytes_len": 2345 },
+  "binding_requirements": {
+    "path": "binding.requirements.json",
+    "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "bytes_len": 3456
+  },
+  "topology": [
+    { "path": "topology.preview.default.json", "sha256": "3333333333333333333333333333333333333333333333333333333333333333", "bytes_len": 4567 }
+  ],
+  "sources": [
+    { "path": "sources/x07.json", "sha256": "4444444444444444444444444444444444444444444444444444444444444444", "bytes_len": 5678 }
+  ],
+  "performance_hints": {
+    "target_concurrency": 200,
+    "expected_p95_latency_ms": 250,
+    "memory_class": "medium",
+    "io_profile": "mixed",
+    "notes": "example workload pack annotations"
+  },
+  "slo_spec": {
+    "objectives": [
+      { "objective_id": "slo_error_rate_5m", "kind": "error_rate", "window_s": 300, "target": { "max": 0.01 } },
+      { "objective_id": "slo_latency_p95_5m", "kind": "latency_p95_ms", "window_s": 300, "target": { "max_ms": 250 } }
+    ]
+  },
+  "cells": [
+    {
+      "cell_key": "api",
+      "cell_kind": "api-cell",
+      "runtime_class": "native-http",
+      "ingress_kind": "http",
+      "scale_class": "replicated-http",
+      "topology_group": "frontdoor",
+      "binding_refs": ["db.primary", "otlp"],
+      "binding_probe_hints": [
+        { "binding_ref": "db.primary", "binding_kind": "postgres" },
+        { "binding_ref": "otlp", "binding_kind": "otlp" }
+      ],
+      "execution_kind": "oci_image",
+      "probes": {
+        "startup": null,
+        "readiness": { "probe_kind": "http", "path": "/readyz", "port": 8080, "command": [], "initial_delay_seconds": 0, "period_seconds": 0, "timeout_seconds": 0, "success_threshold": 1, "failure_threshold": 1 },
+        "liveness": { "probe_kind": "http", "path": "/livez", "port": 8080, "command": [], "initial_delay_seconds": 0, "period_seconds": 0, "timeout_seconds": 0, "success_threshold": 1, "failure_threshold": 1 }
+      },
+      "rollout": { "strategy": "rolling", "max_unavailable": "25%", "max_surge": "25%", "canary_percent": 25 },
+      "autoscaling": { "min_replicas": 2, "max_replicas": 6, "target_cpu_utilization": 70, "target_inflight": 128 },
+      "executable": { "kind": "oci_image", "image": "ghcr.io/x07/orders:v1", "container_port": 8080 }
+    }
+  ]
+}

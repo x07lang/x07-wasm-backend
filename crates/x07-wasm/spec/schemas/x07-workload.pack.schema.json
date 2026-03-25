@@ -45,6 +45,28 @@
         "$ref": "#/$defs/file_digest"
       }
     },
+    "performance_hints": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/performance_hints"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "slo_spec": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/slo_spec"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
     "cells": {
       "type": "array",
       "minItems": 1,
@@ -70,6 +92,11 @@
       "type": "string",
       "pattern": "^[0-9a-f]{64}$"
     },
+    "ratio": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
     "file_digest": {
       "type": "object",
       "additionalProperties": false,
@@ -88,6 +115,183 @@
         "bytes_len": {
           "type": "integer",
           "minimum": 0
+        }
+      }
+    },
+    "performance_hints": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "target_concurrency": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "expected_p95_latency_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "memory_class": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "io_profile": {
+          "type": "string",
+          "enum": [
+            "cpu",
+            "io",
+            "mixed"
+          ]
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        }
+      }
+    },
+    "slo_kind": {
+      "type": "string",
+      "enum": [
+        "error_rate",
+        "latency_p95_ms",
+        "availability"
+      ]
+    },
+    "slo_target_error_rate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max"
+      ],
+      "properties": {
+        "max": {
+          "$ref": "#/$defs/ratio"
+        }
+      }
+    },
+    "slo_target_availability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "min"
+      ],
+      "properties": {
+        "min": {
+          "$ref": "#/$defs/ratio"
+        }
+      }
+    },
+    "slo_target_latency_p95_ms": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_ms"
+      ],
+      "properties": {
+        "max_ms": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "slo_objective": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "objective_id",
+        "kind",
+        "window_s",
+        "target"
+      ],
+      "properties": {
+        "objective_id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "$ref": "#/$defs/slo_kind"
+        },
+        "window_s": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 31536000
+        },
+        "target": {}
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "error_rate"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "target": {
+                "$ref": "#/$defs/slo_target_error_rate"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "availability"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "target": {
+                "$ref": "#/$defs/slo_target_availability"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "latency_p95_ms"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "target": {
+                "$ref": "#/$defs/slo_target_latency_p95_ms"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "slo_spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "objectives"
+      ],
+      "properties": {
+        "objectives": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "$ref": "#/$defs/slo_objective"
+          }
         }
       }
     },

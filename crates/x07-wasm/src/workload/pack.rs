@@ -210,3 +210,38 @@ fn relative_file_digest(root: &Path, digest: FileDigest) -> Result<FileDigest> {
         bytes_len: digest.bytes_len,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use jsonschema::Draft;
+    use std::fs;
+
+    #[test]
+    fn workload_pack_schema_accepts_performance_and_slo_metadata() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let schema_path = root.join("spec/schemas/x07-workload.pack.schema.json");
+        let example_path =
+            root.join("spec/fixtures/workload/x07.workload.pack.annotations.example.json");
+
+        let schema: Value =
+            serde_json::from_slice(&fs::read(&schema_path).expect("read schema")).expect("schema");
+        let instance: Value =
+            serde_json::from_slice(&fs::read(&example_path).expect("read example"))
+                .expect("example");
+
+        let validator = jsonschema::options()
+            .with_draft(Draft::Draft202012)
+            .build(&schema)
+            .expect("compile schema");
+
+        let errors: Vec<String> = validator
+            .iter_errors(&instance)
+            .map(|err| err.to_string())
+            .collect();
+        assert!(
+            errors.is_empty(),
+            "expected example to validate against schema, got: {errors:?}"
+        );
+    }
+}
