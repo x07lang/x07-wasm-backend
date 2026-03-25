@@ -2,6 +2,7 @@
 name = "x07-wasm"
 version = "0.2.11"
 edition = "2021"
+default-run = "x07-wasm"
 license = "Apache-2.0"
 description = "WASM build and runtime tooling for X07."
 repository = "https://github.com/x07lang/x07-wasm-backend"
