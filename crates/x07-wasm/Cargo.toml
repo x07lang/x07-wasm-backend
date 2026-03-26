@@ -1,6 +1,6 @@
 [package]
 name = "x07-wasm"
-version = "0.2.11"
+version = "0.2.12"
 edition = "2021"
 default-run = "x07-wasm"
 license = "Apache-2.0"
