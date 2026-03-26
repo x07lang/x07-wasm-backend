@@ -266,6 +266,14 @@ Release-ready also enforces `scripts/ci/check_schema_index.sh` so newly added pu
 
 Example freestanding smoke: `examples/solve_pure_echo/ci/freestanding_smoke.sh`
 
+## Micro-benchmark harness
+
+`crates/x07-wasm-bench` is a repo-local micro-benchmark harness for measuring baseline Wasm overhead (instantiate-per-call vs reuse-instance) under Wasmtime.
+
+```sh
+cargo run -p x07-wasm-bench -- --iters=50000 --warmup=2000
+```
+
 ## Avoiding CI reruns (pre-push checklist)
 
 The CI workflow runs `cargo fmt --check`, `cargo test`, and `cargo clippy --all-targets -- -D warnings` on every push. Run these locally before pushing (especially to `main`) to avoid “fix-and-push-again” loops:

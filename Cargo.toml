@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/x07-wasm"]
+members = ["crates/x07-wasm", "crates/x07-wasm-bench"]
 exclude = [
   "guest/http-adapter",
   "guest/http-state-doc-adapter",

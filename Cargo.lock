@@ -3623,6 +3623,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "x07-wasm-bench"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde_json",
+ "wasm-encoder 0.245.1",
+ "wasmtime",
+]
+
+[[package]]
 name = "yoke"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
