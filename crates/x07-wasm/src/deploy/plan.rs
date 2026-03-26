@@ -621,6 +621,46 @@ fn yaml_sanity_check(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
+fn emit_report(
+    store: &SchemaStore,
+    scope: Scope,
+    machine: &MachineArgs,
+    started: std::time::Instant,
+    raw_argv: &[OsString],
+    meta: report::meta::ReportMeta,
+    diagnostics: Vec<Diagnostic>,
+    out_dir: &Path,
+    plan_manifest: Option<report::meta::FileDigest>,
+    outputs: Vec<report::meta::FileDigest>,
+) -> Result<u8> {
+    let ok = diagnostics.iter().all(|d| d.severity != Severity::Error);
+    let exit_code = report::exit_code::exit_code_for_diagnostics(&diagnostics);
+
+    let plan_manifest = plan_manifest.unwrap_or(report::meta::FileDigest {
+        path: out_dir.join("deploy.plan.json").display().to_string(),
+        sha256: "0".repeat(64),
+        bytes_len: 0,
+    });
+
+    let report_doc = json!({
+      "schema_version": "x07.wasm.deploy.plan.report@0.1.0",
+      "command": "x07-wasm.deploy.plan",
+      "ok": ok,
+      "exit_code": exit_code,
+      "diagnostics": diagnostics,
+      "meta": meta,
+      "result": {
+        "out_dir": out_dir.display().to_string(),
+        "plan_manifest": plan_manifest,
+        "outputs": outputs,
+      }
+    });
+
+    store.validate_report_and_emit(scope, machine, started, raw_argv, report_doc)?;
+    Ok(exit_code)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{analysis_template_yaml, rollout_yaml, TelemetryIdentity};
@@ -694,44 +734,4 @@ mod tests {
             "OTEL_RESOURCE_ATTRIBUTES"
         );
     }
-}
-
-#[allow(clippy::too_many_arguments)]
-fn emit_report(
-    store: &SchemaStore,
-    scope: Scope,
-    machine: &MachineArgs,
-    started: std::time::Instant,
-    raw_argv: &[OsString],
-    meta: report::meta::ReportMeta,
-    diagnostics: Vec<Diagnostic>,
-    out_dir: &Path,
-    plan_manifest: Option<report::meta::FileDigest>,
-    outputs: Vec<report::meta::FileDigest>,
-) -> Result<u8> {
-    let ok = diagnostics.iter().all(|d| d.severity != Severity::Error);
-    let exit_code = report::exit_code::exit_code_for_diagnostics(&diagnostics);
-
-    let plan_manifest = plan_manifest.unwrap_or(report::meta::FileDigest {
-        path: out_dir.join("deploy.plan.json").display().to_string(),
-        sha256: "0".repeat(64),
-        bytes_len: 0,
-    });
-
-    let report_doc = json!({
-      "schema_version": "x07.wasm.deploy.plan.report@0.1.0",
-      "command": "x07-wasm.deploy.plan",
-      "ok": ok,
-      "exit_code": exit_code,
-      "diagnostics": diagnostics,
-      "meta": meta,
-      "result": {
-        "out_dir": out_dir.display().to_string(),
-        "plan_manifest": plan_manifest,
-        "outputs": outputs,
-      }
-    });
-
-    store.validate_report_and_emit(scope, machine, started, raw_argv, report_doc)?;
-    Ok(exit_code)
 }
