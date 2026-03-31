@@ -1,5 +1,9 @@
 # x07-wasm-backend
 
+## Agent Entrypoint
+
+Start here: https://x07lang.org/docs/getting-started/agent-quickstart
+
 `x07-wasm-backend` is the WebAssembly production line for [X07](https://github.com/x07lang/x07). It contains the `x07-wasm` build pipeline, host runners, packaging commands, schemas, examples, and release tooling for the full WASM story: small solve-pure modules, server-side components, browser UI apps, and packaged desktop/mobile apps.
 
 The vision is that WASM should not be a side path in x07. It should be a first-class way to ship fast, portable, inspectable programs that coding agents can build and verify reliably.
