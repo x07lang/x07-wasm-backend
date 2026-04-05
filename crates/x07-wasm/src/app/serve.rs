@@ -600,9 +600,11 @@ fn api_empty_response(
     } else {
         Bytes::from_static(body)
     };
-    Ok(apply_api_cors_headers(Response::builder().status(status), origin)
-        .body(Full::new(bytes))
-        .unwrap())
+    Ok(
+        apply_api_cors_headers(Response::builder().status(status), origin)
+            .body(Full::new(bytes))
+            .unwrap(),
+    )
 }
 
 async fn proxy_api_request(
@@ -699,14 +701,17 @@ fn serve_static_request(
             Response::builder().status(StatusCode::METHOD_NOT_ALLOWED),
             origin,
         )
-            .body(Full::new(Bytes::from_static(b"method not allowed")))
-            .unwrap());
+        .body(Full::new(Bytes::from_static(b"method not allowed")))
+        .unwrap());
     }
 
     let Some(full) = resolve_static_path(dir, path) else {
-        return Ok(apply_api_cors_headers(Response::builder().status(StatusCode::NOT_FOUND), origin)
-            .body(Full::new(Bytes::from_static(b"not found")))
-            .unwrap());
+        return Ok(apply_api_cors_headers(
+            Response::builder().status(StatusCode::NOT_FOUND),
+            origin,
+        )
+        .body(Full::new(Bytes::from_static(b"not found")))
+        .unwrap());
     };
 
     let mime = mime_for_path(&full);
@@ -729,14 +734,12 @@ fn serve_static_request(
     let body = match std::fs::read(&full) {
         Ok(v) => v,
         Err(_) => {
-            return Ok(
-                apply_api_cors_headers(
-                    Response::builder().status(StatusCode::INTERNAL_SERVER_ERROR),
-                    origin,
-                )
-                    .body(Full::new(Bytes::from_static(b"read failed")))
-                    .unwrap(),
-            );
+            return Ok(apply_api_cors_headers(
+                Response::builder().status(StatusCode::INTERNAL_SERVER_ERROR),
+                origin,
+            )
+            .body(Full::new(Bytes::from_static(b"read failed")))
+            .unwrap());
         }
     };
     let mut resp = apply_api_cors_headers(
@@ -812,8 +815,8 @@ fn serve_bytes(
             Response::builder().status(StatusCode::METHOD_NOT_ALLOWED),
             origin,
         )
-            .body(Full::new(Bytes::from_static(b"method not allowed")))
-            .unwrap());
+        .body(Full::new(Bytes::from_static(b"method not allowed")))
+        .unwrap());
     }
     let bytes =
         report::canon::canonical_pretty_json_bytes(doc).unwrap_or_else(|_| b"{}\n".to_vec());
@@ -1128,8 +1131,13 @@ mod tests {
 
     #[test]
     fn api_empty_response_sets_cors_headers() {
-        let resp = api_empty_response(&Method::POST, StatusCode::SERVICE_UNAVAILABLE, b"down")
-            .expect("api response");
+        let resp = api_empty_response(
+            &Method::POST,
+            StatusCode::SERVICE_UNAVAILABLE,
+            b"down",
+            None,
+        )
+        .expect("api response");
         assert_eq!(resp.status(), StatusCode::SERVICE_UNAVAILABLE);
         assert_eq!(
             resp.headers()
@@ -1153,7 +1161,7 @@ mod tests {
 
     #[test]
     fn api_empty_response_omits_body_for_options() {
-        let resp = api_empty_response(&Method::OPTIONS, StatusCode::NO_CONTENT, b"ignored")
+        let resp = api_empty_response(&Method::OPTIONS, StatusCode::NO_CONTENT, b"ignored", None)
             .expect("preflight response");
         assert_eq!(resp.status(), StatusCode::NO_CONTENT);
         assert!(resp.into_body().is_end_stream());
@@ -1168,7 +1176,7 @@ mod tests {
         )
         .expect("index");
 
-        let resp = serve_static_request(Method::GET, "/evals", &dir).expect("spa fallback");
+        let resp = serve_static_request(Method::GET, "/evals", &dir, None).expect("spa fallback");
         assert_eq!(resp.status(), StatusCode::OK);
         assert_eq!(
             resp.headers()
@@ -1189,8 +1197,8 @@ mod tests {
         )
         .expect("index");
 
-        let resp =
-            serve_static_request(Method::GET, "/missing.js", &dir).expect("missing asset response");
+        let resp = serve_static_request(Method::GET, "/missing.js", &dir, None)
+            .expect("missing asset response");
         assert_eq!(resp.status(), StatusCode::NOT_FOUND);
 
         let _ = fs::remove_dir_all(&dir);
