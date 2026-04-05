@@ -1,6 +1,6 @@
 # `x07 Builder IO Min`
 
-Reference builder app for the Forge M0 import/edit/export/share surface in `x07-wasm-backend`.
+Reference builder app for the Forge import/edit/export/share surface in `x07-wasm-backend`.
 
 This example keeps the reducer intentionally small while proving the same `std.web_ui` program across browser replay, desktop bundle smoke, and iOS/Android project generation. It is the canonical reference for:
 
@@ -12,7 +12,7 @@ This example keeps the reducer intentionally small while proving the same `std.w
 - target-specific device capabilities and telemetry sidecars
 
 - CI gate: `bash scripts/ci/check_builder_io_min.sh`
-- Alias gate: `bash scripts/ci/check_m0_native_surface.sh`
+- Alias gate: `bash scripts/ci/check_native_surface.sh`
 - Trace notes: [`tests/README.md`](tests/README.md)
 - Native packaging notes: [`tests/native_incidents/README.md`](tests/native_incidents/README.md)
 
@@ -21,7 +21,7 @@ This example keeps the reducer intentionally small while proving the same `std.w
 - `std-web-ui@0.2.6` builder-I/O helpers from the vendored package path
 - One reducer packaged for desktop, iOS, and Android
 - Deterministic replay for import, edit, clipboard, export, share, and negative host outcomes
-- Device capability sidecars that match the Forge M0 clipboard/files/share host contract
+- Device capability sidecars that match the Forge clipboard/files/share host contract
 
 ## Run With Released Tools
 
@@ -62,7 +62,7 @@ PATH="<workspace>/x07/target/debug:<workspace>/x07-wasm-backend/target/debug:<wo
 - Desktop profile: [`arch/device/profiles/device_desktop_dev.json`](arch/device/profiles/device_desktop_dev.json)
 - iOS profile: [`arch/device/profiles/device_ios_dev.json`](arch/device/profiles/device_ios_dev.json)
 - Android profile: [`arch/device/profiles/device_android_dev.json`](arch/device/profiles/device_android_dev.json)
-- Import/export replay: [`tests/web_ui/m0_import_export.trace.json`](tests/web_ui/m0_import_export.trace.json)
-- Clipboard replay: [`tests/web_ui/m0_clipboard_roundtrip.trace.json`](tests/web_ui/m0_clipboard_roundtrip.trace.json)
-- Share replay: [`tests/web_ui/m0_share_success.trace.json`](tests/web_ui/m0_share_success.trace.json)
-- Negative replay: [`tests/web_ui/m0_negative.trace.json`](tests/web_ui/m0_negative.trace.json)
+- Import/export replay: [`tests/web_ui/import_export.trace.json`](tests/web_ui/import_export.trace.json)
+- Clipboard replay: [`tests/web_ui/clipboard_roundtrip.trace.json`](tests/web_ui/clipboard_roundtrip.trace.json)
+- Share replay: [`tests/web_ui/share_success.trace.json`](tests/web_ui/share_success.trace.json)
+- Negative replay: [`tests/web_ui/negative.trace.json`](tests/web_ui/negative.trace.json)

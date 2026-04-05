@@ -1,7 +1,7 @@
 {
   "kind": "x07.web_ui.trace",
   "meta": {
-    "name": "m0_import_export",
+    "name": "clipboard_roundtrip",
     "steps": 7
   },
   "steps": [
@@ -792,7 +792,7 @@
         "event": {
           "target": "in_title",
           "type": "input",
-          "value": "Release Checklist"
+          "value": "Daily Standup"
         },
         "kind": "x07.web_ui.dispatch",
         "state": {
@@ -861,7 +861,7 @@
                           "attrs": {
                             "placeholder": "Draft title",
                             "type": "text",
-                            "value": "Release Checklist"
+                            "value": "Daily Standup"
                           },
                           "class": [
                             "editor_input"
@@ -895,7 +895,7 @@
                       {
                         "k": "text",
                         "key": "draft_preview",
-                        "text": "Release Checklist\n\n"
+                        "text": "Daily Standup\n\n"
                       }
                     ],
                     "k": "el",
@@ -1134,7 +1134,7 @@
                               {
                                 "k": "text",
                                 "key": "share_line",
-                                "text": "Share: idle | Release Checklist"
+                                "text": "Share: idle | Daily Standup"
                               }
                             ],
                             "k": "el",
@@ -1202,7 +1202,7 @@
           "import_source": "picker",
           "import_status": "idle",
           "share_status": "idle",
-          "title": "Release Checklist"
+          "title": "Daily Standup"
         },
         "telemetry": {},
         "ui": {
@@ -1250,7 +1250,7 @@
                       "attrs": {
                         "placeholder": "Draft title",
                         "type": "text",
-                        "value": "Release Checklist"
+                        "value": "Daily Standup"
                       },
                       "class": [
                         "editor_input"
@@ -1284,7 +1284,7 @@
                   {
                     "k": "text",
                     "key": "draft_preview",
-                    "text": "Release Checklist\n\n"
+                    "text": "Daily Standup\n\n"
                   }
                 ],
                 "k": "el",
@@ -1523,7 +1523,7 @@
                           {
                             "k": "text",
                             "key": "share_line",
-                            "text": "Share: idle | Release Checklist"
+                            "text": "Share: idle | Daily Standup"
                           }
                         ],
                         "k": "el",
@@ -1587,7 +1587,7 @@
         "event": {
           "target": "in_body",
           "type": "input",
-          "value": "Verify bundles."
+          "value": "Ship Forge M0"
         },
         "kind": "x07.web_ui.dispatch",
         "state": {
@@ -1600,7 +1600,7 @@
           "import_source": "picker",
           "import_status": "idle",
           "share_status": "idle",
-          "title": "Release Checklist"
+          "title": "Daily Standup"
         },
         "v": 1
       },
@@ -1656,7 +1656,7 @@
                           "attrs": {
                             "placeholder": "Draft title",
                             "type": "text",
-                            "value": "Release Checklist"
+                            "value": "Daily Standup"
                           },
                           "class": [
                             "editor_input"
@@ -1678,7 +1678,7 @@
                         "props": {
                           "attrs": {
                             "rows": "8",
-                            "value": "Verify bundles."
+                            "value": "Ship Forge M0"
                           },
                           "class": [
                             "editor_input"
@@ -1690,7 +1690,7 @@
                       {
                         "k": "text",
                         "key": "draft_preview",
-                        "text": "Release Checklist\n\nVerify bundles."
+                        "text": "Daily Standup\n\nShip Forge M0"
                       }
                     ],
                     "k": "el",
@@ -1929,7 +1929,7 @@
                               {
                                 "k": "text",
                                 "key": "share_line",
-                                "text": "Share: idle | Release Checklist"
+                                "text": "Share: idle | Daily Standup"
                               }
                             ],
                             "k": "el",
@@ -1988,7 +1988,7 @@
           }
         ],
         "state": {
-          "body": "Verify bundles.",
+          "body": "Ship Forge M0",
           "clipboard_preview": "",
           "clipboard_status": "idle",
           "export_status": "idle",
@@ -1997,7 +1997,7 @@
           "import_source": "picker",
           "import_status": "idle",
           "share_status": "idle",
-          "title": "Release Checklist"
+          "title": "Daily Standup"
         },
         "telemetry": {},
         "ui": {
@@ -2045,7 +2045,7 @@
                       "attrs": {
                         "placeholder": "Draft title",
                         "type": "text",
-                        "value": "Release Checklist"
+                        "value": "Daily Standup"
                       },
                       "class": [
                         "editor_input"
@@ -2067,7 +2067,7 @@
                     "props": {
                       "attrs": {
                         "rows": "8",
-                        "value": "Verify bundles."
+                        "value": "Ship Forge M0"
                       },
                       "class": [
                         "editor_input"
@@ -2079,7 +2079,7 @@
                   {
                     "k": "text",
                     "key": "draft_preview",
-                    "text": "Release Checklist\n\nVerify bundles."
+                    "text": "Daily Standup\n\nShip Forge M0"
                   }
                 ],
                 "k": "el",
@@ -2318,7 +2318,7 @@
                           {
                             "k": "text",
                             "key": "share_line",
-                            "text": "Share: idle | Release Checklist"
+                            "text": "Share: idle | Daily Standup"
                           }
                         ],
                         "k": "el",
@@ -2380,12 +2380,12 @@
     {
       "env": {
         "event": {
-          "target": "btn_import",
+          "target": "btn_copy",
           "type": "click"
         },
         "kind": "x07.web_ui.dispatch",
         "state": {
-          "body": "Verify bundles.",
+          "body": "Ship Forge M0",
           "clipboard_preview": "",
           "clipboard_status": "idle",
           "export_status": "idle",
@@ -2394,24 +2394,20 @@
           "import_source": "picker",
           "import_status": "idle",
           "share_status": "idle",
-          "title": "Release Checklist"
+          "title": "Daily Standup"
         },
         "v": 1
       },
       "frame": {
         "effects": [
           {
-            "capability": "files.pick",
-            "kind": "x07.web_ui.effect.device.files.pick",
-            "op": "files.pick",
+            "capability": "clipboard.write_text",
+            "kind": "x07.web_ui.effect.device.clipboard.copy_text",
+            "op": "clipboard.write_text",
             "payload": {
-              "accept": [
-                "text/plain",
-                "application/json"
-              ],
-              "multiple": true
+              "text": "Daily Standup\n\nShip Forge M0"
             },
-            "request_id": "import_pick",
+            "request_id": "clipboard_copy",
             "v": 1
           }
         ],
@@ -2465,7 +2461,7 @@
                           "attrs": {
                             "placeholder": "Draft title",
                             "type": "text",
-                            "value": "Release Checklist"
+                            "value": "Daily Standup"
                           },
                           "class": [
                             "editor_input"
@@ -2487,7 +2483,7 @@
                         "props": {
                           "attrs": {
                             "rows": "8",
-                            "value": "Verify bundles."
+                            "value": "Ship Forge M0"
                           },
                           "class": [
                             "editor_input"
@@ -2499,7 +2495,7 @@
                       {
                         "k": "text",
                         "key": "draft_preview",
-                        "text": "Release Checklist\n\nVerify bundles."
+                        "text": "Daily Standup\n\nShip Forge M0"
                       }
                     ],
                     "k": "el",
@@ -2703,7 +2699,7 @@
                               {
                                 "k": "text",
                                 "key": "import_line",
-                                "text": "Import: requesting | picker"
+                                "text": "Import: idle | picker"
                               },
                               {
                                 "k": "text",
@@ -2713,7 +2709,7 @@
                               {
                                 "k": "text",
                                 "key": "clipboard_line",
-                                "text": "Clipboard: idle | "
+                                "text": "Clipboard: requesting | Daily Standup\\n\\nShip Forge M0"
                               }
                             ],
                             "k": "el",
@@ -2738,7 +2734,7 @@
                               {
                                 "k": "text",
                                 "key": "share_line",
-                                "text": "Share: idle | Release Checklist"
+                                "text": "Share: idle | Daily Standup"
                               }
                             ],
                             "k": "el",
@@ -2797,16 +2793,16 @@
           }
         ],
         "state": {
-          "body": "Verify bundles.",
-          "clipboard_preview": "",
-          "clipboard_status": "idle",
+          "body": "Ship Forge M0",
+          "clipboard_preview": "Daily Standup\n\nShip Forge M0",
+          "clipboard_status": "requesting",
           "export_status": "idle",
           "import_primary_name": "",
           "import_secondary_name": "",
           "import_source": "picker",
-          "import_status": "requesting",
+          "import_status": "idle",
           "share_status": "idle",
-          "title": "Release Checklist"
+          "title": "Daily Standup"
         },
         "telemetry": {},
         "ui": {
@@ -2854,7 +2850,7 @@
                       "attrs": {
                         "placeholder": "Draft title",
                         "type": "text",
-                        "value": "Release Checklist"
+                        "value": "Daily Standup"
                       },
                       "class": [
                         "editor_input"
@@ -2876,7 +2872,7 @@
                     "props": {
                       "attrs": {
                         "rows": "8",
-                        "value": "Verify bundles."
+                        "value": "Ship Forge M0"
                       },
                       "class": [
                         "editor_input"
@@ -2888,7 +2884,7 @@
                   {
                     "k": "text",
                     "key": "draft_preview",
-                    "text": "Release Checklist\n\nVerify bundles."
+                    "text": "Daily Standup\n\nShip Forge M0"
                   }
                 ],
                 "k": "el",
@@ -3092,7 +3088,7 @@
                           {
                             "k": "text",
                             "key": "import_line",
-                            "text": "Import: requesting | picker"
+                            "text": "Import: idle | picker"
                           },
                           {
                             "k": "text",
@@ -3102,7 +3098,7 @@
                           {
                             "k": "text",
                             "key": "clipboard_line",
-                            "text": "Clipboard: idle | "
+                            "text": "Clipboard: requesting | Daily Standup\\n\\nShip Forge M0"
                           }
                         ],
                         "k": "el",
@@ -3127,7 +3123,7 @@
                           {
                             "k": "text",
                             "key": "share_line",
-                            "text": "Share: idle | Release Checklist"
+                            "text": "Share: idle | Daily Standup"
                           }
                         ],
                         "k": "el",
@@ -3189,41 +3185,27 @@
     {
       "env": {
         "event": {
-          "target": "btn_import",
+          "target": "btn_copy",
           "type": "click"
         },
         "kind": "x07.web_ui.dispatch",
         "state": {
           "__x07_device": {
-            "files": {
+            "clipboard": {
               "result": {
                 "host_meta": {
-                  "platform": "ios",
-                  "provider": "ios_native"
+                  "platform": "web"
                 },
-                "op": "files.pick",
+                "op": "clipboard.write_text",
                 "payload": {
-                  "items": [
-                    {
-                      "byte_size": 120,
-                      "mime": "text/markdown",
-                      "name": "checklist.md",
-                      "source": "files.pick"
-                    },
-                    {
-                      "byte_size": 64,
-                      "mime": "application/json",
-                      "name": "notes.json",
-                      "source": "files.pick"
-                    }
-                  ]
+                  "text": "Daily Standup\n\nShip Forge M0"
                 },
-                "request_id": "import_req",
+                "request_id": "clipboard_copy",
                 "status": "ok"
               }
             }
           },
-          "body": "Verify bundles.",
+          "body": "Ship Forge M0",
           "clipboard_preview": "",
           "clipboard_status": "idle",
           "export_status": "idle",
@@ -3232,7 +3214,7 @@
           "import_source": "picker",
           "import_status": "idle",
           "share_status": "idle",
-          "title": "Release Checklist"
+          "title": "Daily Standup"
         },
         "v": 1
       },
@@ -3288,7 +3270,7 @@
                           "attrs": {
                             "placeholder": "Draft title",
                             "type": "text",
-                            "value": "Release Checklist"
+                            "value": "Daily Standup"
                           },
                           "class": [
                             "editor_input"
@@ -3310,7 +3292,7 @@
                         "props": {
                           "attrs": {
                             "rows": "8",
-                            "value": "Verify bundles."
+                            "value": "Ship Forge M0"
                           },
                           "class": [
                             "editor_input"
@@ -3322,7 +3304,7 @@
                       {
                         "k": "text",
                         "key": "draft_preview",
-                        "text": "Release Checklist\n\nVerify bundles."
+                        "text": "Daily Standup\n\nShip Forge M0"
                       }
                     ],
                     "k": "el",
@@ -3526,7 +3508,7 @@
                               {
                                 "k": "text",
                                 "key": "import_line",
-                                "text": "Import: ok | picker"
+                                "text": "Import: idle | picker"
                               },
                               {
                                 "k": "text",
@@ -3536,7 +3518,7 @@
                               {
                                 "k": "text",
                                 "key": "clipboard_line",
-                                "text": "Clipboard: idle | "
+                                "text": "Clipboard: ok | Daily Standup\\n\\nShip Forge M0"
                               }
                             ],
                             "k": "el",
@@ -3561,7 +3543,7 @@
                               {
                                 "k": "text",
                                 "key": "share_line",
-                                "text": "Share: idle | Release Checklist"
+                                "text": "Share: idle | Daily Standup"
                               }
                             ],
                             "k": "el",
@@ -3620,16 +3602,16 @@
           }
         ],
         "state": {
-          "body": "Verify bundles.",
-          "clipboard_preview": "",
-          "clipboard_status": "idle",
+          "body": "Ship Forge M0",
+          "clipboard_preview": "Daily Standup\n\nShip Forge M0",
+          "clipboard_status": "ok",
           "export_status": "idle",
           "import_primary_name": "",
           "import_secondary_name": "",
           "import_source": "picker",
-          "import_status": "ok",
+          "import_status": "idle",
           "share_status": "idle",
-          "title": "Release Checklist"
+          "title": "Daily Standup"
         },
         "telemetry": {},
         "ui": {
@@ -3677,7 +3659,7 @@
                       "attrs": {
                         "placeholder": "Draft title",
                         "type": "text",
-                        "value": "Release Checklist"
+                        "value": "Daily Standup"
                       },
                       "class": [
                         "editor_input"
@@ -3699,7 +3681,7 @@
                     "props": {
                       "attrs": {
                         "rows": "8",
-                        "value": "Verify bundles."
+                        "value": "Ship Forge M0"
                       },
                       "class": [
                         "editor_input"
@@ -3711,7 +3693,7 @@
                   {
                     "k": "text",
                     "key": "draft_preview",
-                    "text": "Release Checklist\n\nVerify bundles."
+                    "text": "Daily Standup\n\nShip Forge M0"
                   }
                 ],
                 "k": "el",
@@ -3915,7 +3897,7 @@
                           {
                             "k": "text",
                             "key": "import_line",
-                            "text": "Import: ok | picker"
+                            "text": "Import: idle | picker"
                           },
                           {
                             "k": "text",
@@ -3925,7 +3907,7 @@
                           {
                             "k": "text",
                             "key": "clipboard_line",
-                            "text": "Clipboard: idle | "
+                            "text": "Clipboard: ok | Daily Standup\\n\\nShip Forge M0"
                           }
                         ],
                         "k": "el",
@@ -3950,7 +3932,7 @@
                           {
                             "k": "text",
                             "key": "share_line",
-                            "text": "Share: idle | Release Checklist"
+                            "text": "Share: idle | Daily Standup"
                           }
                         ],
                         "k": "el",
@@ -4012,35 +3994,32 @@
     {
       "env": {
         "event": {
-          "target": "btn_export",
+          "target": "btn_paste",
           "type": "click"
         },
         "kind": "x07.web_ui.dispatch",
         "state": {
-          "body": "Verify bundles.",
+          "body": "Ship Forge M0",
           "clipboard_preview": "",
-          "clipboard_status": "idle",
+          "clipboard_status": "ok",
           "export_status": "idle",
-          "import_primary_name": "checklist.md",
-          "import_secondary_name": "notes.json",
+          "import_primary_name": "",
+          "import_secondary_name": "",
           "import_source": "picker",
-          "import_status": "ok",
+          "import_status": "idle",
           "share_status": "idle",
-          "title": "Release Checklist"
+          "title": "Daily Standup"
         },
         "v": 1
       },
       "frame": {
         "effects": [
           {
-            "capability": "files.save",
-            "kind": "x07.web_ui.effect.device.files.save_text",
-            "op": "files.save",
-            "payload": {
-              "name": "builder-io-draft.txt",
-              "text": "Release Checklist\n\nVerify bundles."
-            },
-            "request_id": "export_save",
+            "capability": "clipboard.read_text",
+            "kind": "x07.web_ui.effect.device.clipboard.read_text",
+            "op": "clipboard.read_text",
+            "payload": {},
+            "request_id": "clipboard_read",
             "v": 1
           }
         ],
@@ -4094,7 +4073,7 @@
                           "attrs": {
                             "placeholder": "Draft title",
                             "type": "text",
-                            "value": "Release Checklist"
+                            "value": "Daily Standup"
                           },
                           "class": [
                             "editor_input"
@@ -4116,7 +4095,7 @@
                         "props": {
                           "attrs": {
                             "rows": "8",
-                            "value": "Verify bundles."
+                            "value": "Ship Forge M0"
                           },
                           "class": [
                             "editor_input"
@@ -4128,7 +4107,7 @@
                       {
                         "k": "text",
                         "key": "draft_preview",
-                        "text": "Release Checklist\n\nVerify bundles."
+                        "text": "Daily Standup\n\nShip Forge M0"
                       }
                     ],
                     "k": "el",
@@ -4332,17 +4311,17 @@
                               {
                                 "k": "text",
                                 "key": "import_line",
-                                "text": "Import: ok | picker"
+                                "text": "Import: idle | picker"
                               },
                               {
                                 "k": "text",
                                 "key": "files_line",
-                                "text": "Files: checklist.md, notes.json | first two names"
+                                "text": "Files: none | first two names"
                               },
                               {
                                 "k": "text",
                                 "key": "clipboard_line",
-                                "text": "Clipboard: idle | "
+                                "text": "Clipboard: requesting | "
                               }
                             ],
                             "k": "el",
@@ -4362,12 +4341,12 @@
                               {
                                 "k": "text",
                                 "key": "export_line",
-                                "text": "Export: requesting | builder-io-draft.txt"
+                                "text": "Export: idle | builder-io-draft.txt"
                               },
                               {
                                 "k": "text",
                                 "key": "share_line",
-                                "text": "Share: idle | Release Checklist"
+                                "text": "Share: idle | Daily Standup"
                               }
                             ],
                             "k": "el",
@@ -4426,16 +4405,16 @@
           }
         ],
         "state": {
-          "body": "Verify bundles.",
+          "body": "Ship Forge M0",
           "clipboard_preview": "",
-          "clipboard_status": "idle",
-          "export_status": "requesting",
-          "import_primary_name": "checklist.md",
-          "import_secondary_name": "notes.json",
+          "clipboard_status": "requesting",
+          "export_status": "idle",
+          "import_primary_name": "",
+          "import_secondary_name": "",
           "import_source": "picker",
-          "import_status": "ok",
+          "import_status": "idle",
           "share_status": "idle",
-          "title": "Release Checklist"
+          "title": "Daily Standup"
         },
         "telemetry": {},
         "ui": {
@@ -4483,7 +4462,7 @@
                       "attrs": {
                         "placeholder": "Draft title",
                         "type": "text",
-                        "value": "Release Checklist"
+                        "value": "Daily Standup"
                       },
                       "class": [
                         "editor_input"
@@ -4505,7 +4484,7 @@
                     "props": {
                       "attrs": {
                         "rows": "8",
-                        "value": "Verify bundles."
+                        "value": "Ship Forge M0"
                       },
                       "class": [
                         "editor_input"
@@ -4517,7 +4496,7 @@
                   {
                     "k": "text",
                     "key": "draft_preview",
-                    "text": "Release Checklist\n\nVerify bundles."
+                    "text": "Daily Standup\n\nShip Forge M0"
                   }
                 ],
                 "k": "el",
@@ -4721,17 +4700,17 @@
                           {
                             "k": "text",
                             "key": "import_line",
-                            "text": "Import: ok | picker"
+                            "text": "Import: idle | picker"
                           },
                           {
                             "k": "text",
                             "key": "files_line",
-                            "text": "Files: checklist.md, notes.json | first two names"
+                            "text": "Files: none | first two names"
                           },
                           {
                             "k": "text",
                             "key": "clipboard_line",
-                            "text": "Clipboard: idle | "
+                            "text": "Clipboard: requesting | "
                           }
                         ],
                         "k": "el",
@@ -4751,12 +4730,12 @@
                           {
                             "k": "text",
                             "key": "export_line",
-                            "text": "Export: requesting | builder-io-draft.txt"
+                            "text": "Export: idle | builder-io-draft.txt"
                           },
                           {
                             "k": "text",
                             "key": "share_line",
-                            "text": "Share: idle | Release Checklist"
+                            "text": "Share: idle | Daily Standup"
                           }
                         ],
                         "k": "el",
@@ -4818,38 +4797,36 @@
     {
       "env": {
         "event": {
-          "target": "btn_export",
+          "target": "btn_paste",
           "type": "click"
         },
         "kind": "x07.web_ui.dispatch",
         "state": {
           "__x07_device": {
-            "files": {
+            "clipboard": {
               "result": {
                 "host_meta": {
-                  "platform": "ios",
-                  "provider": "ios_native"
+                  "platform": "web"
                 },
-                "op": "files.save",
+                "op": "clipboard.read_text",
                 "payload": {
-                  "byte_size": 32,
-                  "name": "builder-io-draft.txt"
+                  "text": "Copied from clipboard"
                 },
-                "request_id": "export_save",
+                "request_id": "clipboard_paste",
                 "status": "ok"
               }
             }
           },
-          "body": "Verify bundles.",
+          "body": "Ship Forge M0",
           "clipboard_preview": "",
-          "clipboard_status": "idle",
+          "clipboard_status": "ok",
           "export_status": "idle",
-          "import_primary_name": "checklist.md",
-          "import_secondary_name": "notes.json",
+          "import_primary_name": "",
+          "import_secondary_name": "",
           "import_source": "picker",
-          "import_status": "ok",
+          "import_status": "idle",
           "share_status": "idle",
-          "title": "Release Checklist"
+          "title": "Daily Standup"
         },
         "v": 1
       },
@@ -4905,7 +4882,7 @@
                           "attrs": {
                             "placeholder": "Draft title",
                             "type": "text",
-                            "value": "Release Checklist"
+                            "value": "Daily Standup"
                           },
                           "class": [
                             "editor_input"
@@ -4927,7 +4904,7 @@
                         "props": {
                           "attrs": {
                             "rows": "8",
-                            "value": "Verify bundles."
+                            "value": "Copied from clipboard"
                           },
                           "class": [
                             "editor_input"
@@ -4939,7 +4916,7 @@
                       {
                         "k": "text",
                         "key": "draft_preview",
-                        "text": "Release Checklist\n\nVerify bundles."
+                        "text": "Daily Standup\n\nCopied from clipboard"
                       }
                     ],
                     "k": "el",
@@ -5143,17 +5120,17 @@
                               {
                                 "k": "text",
                                 "key": "import_line",
-                                "text": "Import: ok | picker"
+                                "text": "Import: idle | picker"
                               },
                               {
                                 "k": "text",
                                 "key": "files_line",
-                                "text": "Files: checklist.md, notes.json | first two names"
+                                "text": "Files: none | first two names"
                               },
                               {
                                 "k": "text",
                                 "key": "clipboard_line",
-                                "text": "Clipboard: idle | "
+                                "text": "Clipboard: ok | Copied from clipboard"
                               }
                             ],
                             "k": "el",
@@ -5173,12 +5150,12 @@
                               {
                                 "k": "text",
                                 "key": "export_line",
-                                "text": "Export: ok | builder-io-draft.txt"
+                                "text": "Export: idle | builder-io-draft.txt"
                               },
                               {
                                 "k": "text",
                                 "key": "share_line",
-                                "text": "Share: idle | Release Checklist"
+                                "text": "Share: idle | Daily Standup"
                               }
                             ],
                             "k": "el",
@@ -5237,16 +5214,16 @@
           }
         ],
         "state": {
-          "body": "Verify bundles.",
-          "clipboard_preview": "",
-          "clipboard_status": "idle",
-          "export_status": "ok",
-          "import_primary_name": "checklist.md",
-          "import_secondary_name": "notes.json",
+          "body": "Copied from clipboard",
+          "clipboard_preview": "Copied from clipboard",
+          "clipboard_status": "ok",
+          "export_status": "idle",
+          "import_primary_name": "",
+          "import_secondary_name": "",
           "import_source": "picker",
-          "import_status": "ok",
+          "import_status": "idle",
           "share_status": "idle",
-          "title": "Release Checklist"
+          "title": "Daily Standup"
         },
         "telemetry": {},
         "ui": {
@@ -5294,7 +5271,7 @@
                       "attrs": {
                         "placeholder": "Draft title",
                         "type": "text",
-                        "value": "Release Checklist"
+                        "value": "Daily Standup"
                       },
                       "class": [
                         "editor_input"
@@ -5316,7 +5293,7 @@
                     "props": {
                       "attrs": {
                         "rows": "8",
-                        "value": "Verify bundles."
+                        "value": "Copied from clipboard"
                       },
                       "class": [
                         "editor_input"
@@ -5328,7 +5305,7 @@
                   {
                     "k": "text",
                     "key": "draft_preview",
-                    "text": "Release Checklist\n\nVerify bundles."
+                    "text": "Daily Standup\n\nCopied from clipboard"
                   }
                 ],
                 "k": "el",
@@ -5532,17 +5509,17 @@
                           {
                             "k": "text",
                             "key": "import_line",
-                            "text": "Import: ok | picker"
+                            "text": "Import: idle | picker"
                           },
                           {
                             "k": "text",
                             "key": "files_line",
-                            "text": "Files: checklist.md, notes.json | first two names"
+                            "text": "Files: none | first two names"
                           },
                           {
                             "k": "text",
                             "key": "clipboard_line",
-                            "text": "Clipboard: idle | "
+                            "text": "Clipboard: ok | Copied from clipboard"
                           }
                         ],
                         "k": "el",
@@ -5562,12 +5539,12 @@
                           {
                             "k": "text",
                             "key": "export_line",
-                            "text": "Export: ok | builder-io-draft.txt"
+                            "text": "Export: idle | builder-io-draft.txt"
                           },
                           {
                             "k": "text",
                             "key": "share_line",
-                            "text": "Share: idle | Release Checklist"
+                            "text": "Share: idle | Daily Standup"
                           }
                         ],
                         "k": "el",

@@ -23,10 +23,10 @@ rm -rf "${OUT_DIR}" "${REPORT_DIR}"
 mkdir -p "${OUT_DIR}" "${REPORT_DIR}"
 
 WEB_UI_CASES=(
-  "${TRACE_DIR}/m0_turn_flow.trace.json"
-  "${TRACE_DIR}/m0_clipboard_success.trace.json"
-  "${TRACE_DIR}/m0_share_export_success.trace.json"
-  "${TRACE_DIR}/m0_negative.trace.json"
+  "${TRACE_DIR}/turn_flow.trace.json"
+  "${TRACE_DIR}/clipboard_success.trace.json"
+  "${TRACE_DIR}/share_export_success.trace.json"
+  "${TRACE_DIR}/negative.trace.json"
 )
 
 echo "==> validate frontend"

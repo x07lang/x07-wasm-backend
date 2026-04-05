@@ -1,6 +1,6 @@
-# WASM Phase 2 (Web UI)
+# Web UI
 
-Phase 2 adds a Web UI loop for **solve-pure** X07 programs as deterministic reducers that emit `x07.web_ui.*` frames.
+This guide covers a Web UI loop for **solve-pure** X07 programs as deterministic reducers that emit `x07.web_ui.*` frames.
 
 This repo implements the `x07-wasm web-ui ...` toolchain. The canonical `std.web_ui.*` X07 package, browser host assets, and WIT contracts live in the `x07-web-ui` repo and are vendored/synced here.
 

@@ -14,7 +14,7 @@ This example keeps the reducer intentionally small while proving the same `std.w
 - native incident bundle -> replay synthesis fixtures
 
 - CI gate: `bash scripts/ci/check_capture_min.sh`
-- Alias gate: `bash scripts/ci/check_m0_native_surface.sh`
+- Alias gate: `bash scripts/ci/check_native_surface.sh`
 - Trace notes: [`tests/README.md`](tests/README.md)
 - Native incident fixtures: [`tests/native_incidents/README.md`](tests/native_incidents/README.md)
 
@@ -46,8 +46,8 @@ Compile the generated Android project:
 
 ```sh
 export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
-./dist/m0_capture/device_android_dev_package/android_project/gradlew \
-  -p ./dist/m0_capture/device_android_dev_package/android_project \
+./dist/capture_min/device_android_dev_package/android_project/gradlew \
+  -p ./dist/capture_min/device_android_dev_package/android_project \
   assembleDebug
 ```
 
@@ -66,8 +66,8 @@ PATH="<workspace>/x07/target/debug:<workspace>/x07-wasm-backend/target/debug:<wo
 - Desktop profile: [`arch/device/profiles/device_desktop_dev.json`](arch/device/profiles/device_desktop_dev.json)
 - iOS profile: [`arch/device/profiles/device_ios_dev.json`](arch/device/profiles/device_ios_dev.json)
 - Android profile: [`arch/device/profiles/device_android_dev.json`](arch/device/profiles/device_android_dev.json)
-- Success replay: [`tests/web_ui/m0_success.trace.json`](tests/web_ui/m0_success.trace.json)
-- Negative replay: [`tests/web_ui/m0_negative.trace.json`](tests/web_ui/m0_negative.trace.json)
-- Blob quota replay: [`tests/web_ui/m0_blob_quota.trace.json`](tests/web_ui/m0_blob_quota.trace.json)
-- Notification cancel replay: [`tests/web_ui/m0_notification_cancel.trace.json`](tests/web_ui/m0_notification_cancel.trace.json)
+- Success replay: [`tests/web_ui/success.trace.json`](tests/web_ui/success.trace.json)
+- Negative replay: [`tests/web_ui/negative.trace.json`](tests/web_ui/negative.trace.json)
+- Blob quota replay: [`tests/web_ui/blob_quota.trace.json`](tests/web_ui/blob_quota.trace.json)
+- Notification cancel replay: [`tests/web_ui/notification_cancel.trace.json`](tests/web_ui/notification_cancel.trace.json)
 - Native incident fixtures: [`tests/native_incidents/`](tests/native_incidents/)

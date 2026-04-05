@@ -1,15 +1,15 @@
-# WASM Phase 0
+# Solve-pure WASM modules (legacy C toolchain path)
 
-Phase 0 builds and runs **solve-pure** X07 programs as WASM modules without adding a new compiler backend.
+This guide covers building and running **solve-pure** X07 programs as WASM modules using the legacy C toolchain backend.
 
 ## Build pipeline
 
-As of Phase 7, `x07-wasm build` supports both:
+In current releases, `x07-wasm build` supports both:
 
 - `codegen_backend=native_x07_wasm_v1` (default): native `x07 build --emit-wasm` backend (no `clang` / `wasm-ld`)
-- `codegen_backend=c_toolchain_v1` (legacy): Phase 0 C toolchain backend
+- `codegen_backend=c_toolchain_v1` (legacy): C toolchain backend
 
-This document describes the legacy Phase 0 C toolchain backend (`c_toolchain_v1`).
+This document describes the legacy C toolchain backend (`c_toolchain_v1`).
 
 `x07-wasm build` (legacy):
 
@@ -23,7 +23,7 @@ This document describes the legacy Phase 0 C toolchain backend (`c_toolchain_v1`
 
 ## Run contract (ABI)
 
-`x07_solve_v2` returns a non-singleton C struct (`bytes_t`), so Phase 0 runners must use the **sret** calling convention under the WASM Basic C ABI:
+`x07_solve_v2` returns a non-singleton C struct (`bytes_t`), so the legacy runners must use the **sret** calling convention under the WASM Basic C ABI:
 
 - wasm export signature: `(retptr, arena_ptr, arena_cap, input_ptr, input_len) -> ()`
 - `bytes_t` is 8 bytes: `{ ptr:u32_le, len:u32_le }`
@@ -35,7 +35,7 @@ This document describes the legacy Phase 0 C toolchain backend (`c_toolchain_v1`
 
 ## Reports
 
-All Phase 0 commands support JSON reports with:
+All commands in this guide support JSON reports with:
 
 - stable canonical JSON ordering
 - `--json-schema` / `--json-schema-id` discovery

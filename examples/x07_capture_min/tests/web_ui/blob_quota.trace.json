@@ -1,7 +1,7 @@
 {
   "kind": "x07.web_ui.trace",
   "meta": {
-    "name": "m0_share_export_success",
+    "name": "blob_quota",
     "steps": 5
   },
   "steps": [
@@ -30,12 +30,12 @@
                       {
                         "k": "text",
                         "key": "title",
-                        "text": "x07 Hex Min"
+                        "text": "x07 Capture Min"
                       },
                       {
                         "k": "text",
                         "key": "intro",
-                        "text": "Minimal tactics lane for select, move, victory, and device UX replay."
+                        "text": "Canonical M0 proving app for permissions, capture/import, blob manifests, location, and local notifications."
                       }
                     ],
                     "k": "el",
@@ -53,50 +53,20 @@
                   {
                     "children": [
                       {
-                        "k": "text",
-                        "key": "board_label",
-                        "text": "Red scout"
-                      },
-                      {
-                        "k": "text",
-                        "key": "board_hex",
-                        "text": "A1"
-                      },
-                      {
-                        "k": "text",
-                        "key": "board_enemy",
-                        "text": "Blue guard C3"
-                      }
-                    ],
-                    "k": "el",
-                    "key": "board",
-                    "on": [],
-                    "props": {
-                      "attrs": {},
-                      "class": [
-                        "section"
-                      ],
-                      "style": {}
-                    },
-                    "tag": "div"
-                  },
-                  {
-                    "children": [
-                      {
                         "children": [
                           {
                             "children": [
                               {
                                 "k": "text",
                                 "key": "text",
-                                "text": "Select"
+                                "text": "Query Camera"
                               }
                             ],
                             "k": "el",
-                            "key": "btn_select",
+                            "key": "btn_perm_query",
                             "on": [
                               {
-                                "target": "btn_select",
+                                "target": "btn_perm_query",
                                 "type": "click"
                               }
                             ],
@@ -116,14 +86,14 @@
                               {
                                 "k": "text",
                                 "key": "text",
-                                "text": "Move"
+                                "text": "Request Camera"
                               }
                             ],
                             "k": "el",
-                            "key": "btn_move",
+                            "key": "btn_perm_request",
                             "on": [
                               {
-                                "target": "btn_move",
+                                "target": "btn_perm_request",
                                 "type": "click"
                               }
                             ],
@@ -143,14 +113,14 @@
                               {
                                 "k": "text",
                                 "key": "text",
-                                "text": "End Turn"
+                                "text": "Capture Photo"
                               }
                             ],
                             "k": "el",
-                            "key": "btn_end_turn",
+                            "key": "btn_capture",
                             "on": [
                               {
-                                "target": "btn_end_turn",
+                                "target": "btn_capture",
                                 "type": "click"
                               }
                             ],
@@ -167,7 +137,7 @@
                           }
                         ],
                         "k": "el",
-                        "key": "row1",
+                        "key": "controls_row1",
                         "on": [],
                         "props": {
                           "attrs": {},
@@ -185,14 +155,14 @@
                               {
                                 "k": "text",
                                 "key": "text",
-                                "text": "Copy State"
+                                "text": "Import File"
                               }
                             ],
                             "k": "el",
-                            "key": "btn_copy",
+                            "key": "btn_import",
                             "on": [
                               {
-                                "target": "btn_copy",
+                                "target": "btn_import",
                                 "type": "click"
                               }
                             ],
@@ -212,14 +182,14 @@
                               {
                                 "k": "text",
                                 "key": "text",
-                                "text": "Share State"
+                                "text": "Read Location"
                               }
                             ],
                             "k": "el",
-                            "key": "btn_share",
+                            "key": "btn_location",
                             "on": [
                               {
-                                "target": "btn_share",
+                                "target": "btn_location",
                                 "type": "click"
                               }
                             ],
@@ -239,14 +209,14 @@
                               {
                                 "k": "text",
                                 "key": "text",
-                                "text": "Export Plan"
+                                "text": "Toggle Alert"
                               }
                             ],
                             "k": "el",
-                            "key": "btn_export",
+                            "key": "btn_notify",
                             "on": [
                               {
-                                "target": "btn_export",
+                                "target": "btn_notify",
                                 "type": "click"
                               }
                             ],
@@ -263,42 +233,12 @@
                           }
                         ],
                         "k": "el",
-                        "key": "row2",
+                        "key": "controls_row2",
                         "on": [],
                         "props": {
                           "attrs": {},
                           "class": [
                             "row"
-                          ],
-                          "style": {}
-                        },
-                        "tag": "div"
-                      },
-                      {
-                        "children": [
-                          {
-                            "k": "text",
-                            "key": "turn",
-                            "text": "red"
-                          },
-                          {
-                            "k": "text",
-                            "key": "status",
-                            "text": "Select the red scout."
-                          },
-                          {
-                            "k": "text",
-                            "key": "export_state",
-                            "text": "idle"
-                          }
-                        ],
-                        "k": "el",
-                        "key": "status_box",
-                        "on": [],
-                        "props": {
-                          "attrs": {},
-                          "class": [
-                            "section"
                           ],
                           "style": {}
                         },
@@ -316,6 +256,81 @@
                       "style": {}
                     },
                     "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "permission_line",
+                            "text": "Permission: idle | unknown"
+                          },
+                          {
+                            "k": "text",
+                            "key": "capture_line",
+                            "text": "Capture: idle | none"
+                          },
+                          {
+                            "k": "text",
+                            "key": "import_line",
+                            "text": "Import: idle | []"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "status_row1",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "status_row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "blob_line",
+                            "text": "Blob Stat: idle | none"
+                          },
+                          {
+                            "k": "text",
+                            "key": "location_line",
+                            "text": "Location: idle | null,null"
+                          },
+                          {
+                            "k": "text",
+                            "key": "notification_line",
+                            "text": "Notification: idle | pending"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "status_row2",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "status_row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "status",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
                   }
                 ],
                 "k": "el",
@@ -324,7 +339,7 @@
                 "props": {
                   "attrs": {},
                   "class": [
-                    "hex_min"
+                    "capture_min"
                   ],
                   "style": {}
                 },
@@ -335,15 +350,18 @@
           }
         ],
         "state": {
-          "audio_status": "idle",
-          "clipboard_status": "idle",
-          "export_status": "idle",
-          "haptics_status": "idle",
-          "step": "start",
-          "red_hex": "A1",
-          "share_status": "idle",
-          "status": "Select the red scout.",
-          "turn": "red"
+          "blob_status": "idle",
+          "camera_status": "idle",
+          "capture_blob": null,
+          "files_status": "idle",
+          "import_blob": null,
+          "import_manifests": [],
+          "location": null,
+          "location_status": "idle",
+          "notification_opened_id": "",
+          "notification_status": "idle",
+          "permission_state": "unknown",
+          "permission_status": "idle"
         },
         "telemetry": {},
         "ui": {
@@ -355,12 +373,12 @@
                   {
                     "k": "text",
                     "key": "title",
-                    "text": "x07 Hex Min"
+                    "text": "x07 Capture Min"
                   },
                   {
                     "k": "text",
                     "key": "intro",
-                    "text": "Minimal tactics lane for select, move, victory, and device UX replay."
+                    "text": "Canonical M0 proving app for permissions, capture/import, blob manifests, location, and local notifications."
                   }
                 ],
                 "k": "el",
@@ -378,50 +396,20 @@
               {
                 "children": [
                   {
-                    "k": "text",
-                    "key": "board_label",
-                    "text": "Red scout"
-                  },
-                  {
-                    "k": "text",
-                    "key": "board_hex",
-                    "text": "A1"
-                  },
-                  {
-                    "k": "text",
-                    "key": "board_enemy",
-                    "text": "Blue guard C3"
-                  }
-                ],
-                "k": "el",
-                "key": "board",
-                "on": [],
-                "props": {
-                  "attrs": {},
-                  "class": [
-                    "section"
-                  ],
-                  "style": {}
-                },
-                "tag": "div"
-              },
-              {
-                "children": [
-                  {
                     "children": [
                       {
                         "children": [
                           {
                             "k": "text",
                             "key": "text",
-                            "text": "Select"
+                            "text": "Query Camera"
                           }
                         ],
                         "k": "el",
-                        "key": "btn_select",
+                        "key": "btn_perm_query",
                         "on": [
                           {
-                            "target": "btn_select",
+                            "target": "btn_perm_query",
                             "type": "click"
                           }
                         ],
@@ -441,14 +429,14 @@
                           {
                             "k": "text",
                             "key": "text",
-                            "text": "Move"
+                            "text": "Request Camera"
                           }
                         ],
                         "k": "el",
-                        "key": "btn_move",
+                        "key": "btn_perm_request",
                         "on": [
                           {
-                            "target": "btn_move",
+                            "target": "btn_perm_request",
                             "type": "click"
                           }
                         ],
@@ -468,14 +456,14 @@
                           {
                             "k": "text",
                             "key": "text",
-                            "text": "End Turn"
+                            "text": "Capture Photo"
                           }
                         ],
                         "k": "el",
-                        "key": "btn_end_turn",
+                        "key": "btn_capture",
                         "on": [
                           {
-                            "target": "btn_end_turn",
+                            "target": "btn_capture",
                             "type": "click"
                           }
                         ],
@@ -492,7 +480,7 @@
                       }
                     ],
                     "k": "el",
-                    "key": "row1",
+                    "key": "controls_row1",
                     "on": [],
                     "props": {
                       "attrs": {},
@@ -510,14 +498,14 @@
                           {
                             "k": "text",
                             "key": "text",
-                            "text": "Copy State"
+                            "text": "Import File"
                           }
                         ],
                         "k": "el",
-                        "key": "btn_copy",
+                        "key": "btn_import",
                         "on": [
                           {
-                            "target": "btn_copy",
+                            "target": "btn_import",
                             "type": "click"
                           }
                         ],
@@ -537,14 +525,14 @@
                           {
                             "k": "text",
                             "key": "text",
-                            "text": "Share State"
+                            "text": "Read Location"
                           }
                         ],
                         "k": "el",
-                        "key": "btn_share",
+                        "key": "btn_location",
                         "on": [
                           {
-                            "target": "btn_share",
+                            "target": "btn_location",
                             "type": "click"
                           }
                         ],
@@ -564,14 +552,14 @@
                           {
                             "k": "text",
                             "key": "text",
-                            "text": "Export Plan"
+                            "text": "Toggle Alert"
                           }
                         ],
                         "k": "el",
-                        "key": "btn_export",
+                        "key": "btn_notify",
                         "on": [
                           {
-                            "target": "btn_export",
+                            "target": "btn_notify",
                             "type": "click"
                           }
                         ],
@@ -588,42 +576,12 @@
                       }
                     ],
                     "k": "el",
-                    "key": "row2",
+                    "key": "controls_row2",
                     "on": [],
                     "props": {
                       "attrs": {},
                       "class": [
                         "row"
-                      ],
-                      "style": {}
-                    },
-                    "tag": "div"
-                  },
-                  {
-                    "children": [
-                      {
-                        "k": "text",
-                        "key": "turn",
-                        "text": "red"
-                      },
-                      {
-                        "k": "text",
-                        "key": "status",
-                        "text": "Select the red scout."
-                      },
-                      {
-                        "k": "text",
-                        "key": "export_state",
-                        "text": "idle"
-                      }
-                    ],
-                    "k": "el",
-                    "key": "status_box",
-                    "on": [],
-                    "props": {
-                      "attrs": {},
-                      "class": [
-                        "section"
                       ],
                       "style": {}
                     },
@@ -641,6 +599,81 @@
                   "style": {}
                 },
                 "tag": "div"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "permission_line",
+                        "text": "Permission: idle | unknown"
+                      },
+                      {
+                        "k": "text",
+                        "key": "capture_line",
+                        "text": "Capture: idle | none"
+                      },
+                      {
+                        "k": "text",
+                        "key": "import_line",
+                        "text": "Import: idle | []"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "status_row1",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "status_row"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "blob_line",
+                        "text": "Blob Stat: idle | none"
+                      },
+                      {
+                        "k": "text",
+                        "key": "location_line",
+                        "text": "Location: idle | null,null"
+                      },
+                      {
+                        "k": "text",
+                        "key": "notification_line",
+                        "text": "Notification: idle | pending"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "status_row2",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "status_row"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  }
+                ],
+                "k": "el",
+                "key": "status",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
               }
             ],
             "k": "el",
@@ -649,7 +682,7 @@
             "props": {
               "attrs": {},
               "class": [
-                "hex_min"
+                "capture_min"
               ],
               "style": {}
             },
@@ -663,34 +696,48 @@
     {
       "env": {
         "event": {
-          "target": "btn_share",
+          "target": "btn_import",
           "type": "click"
         },
         "kind": "x07.web_ui.dispatch",
         "state": {
-          "audio_status": "ok",
-          "clipboard_status": "ok",
-          "export_status": "idle",
-          "haptics_status": "ok",
-          "step": "victory",
-          "red_hex": "B2",
-          "share_status": "idle",
-          "status": "Blue turn. Objective secured.",
-          "turn": "blue"
+          "blob_status": "ok",
+          "camera_status": "ok",
+          "capture_blob": {
+            "byte_size": 2048,
+            "created_at_ms": 1770000000000,
+            "handle": "blob:sha256:capture-ok",
+            "local_state": "present",
+            "mime": "image/jpeg",
+            "sha256": "capture-ok",
+            "source": "camera"
+          },
+          "files_status": "idle",
+          "import_blob": null,
+          "import_manifests": [],
+          "location": null,
+          "location_status": "idle",
+          "notification_opened_id": "",
+          "notification_status": "idle",
+          "permission_state": "granted",
+          "permission_status": "ok"
         },
         "v": 1
       },
       "frame": {
         "effects": [
           {
-            "capability": "share.present",
-            "kind": "x07.web_ui.effect.device.share.share_text",
-            "op": "share.present",
+            "capability": "files.pick",
+            "kind": "x07.web_ui.effect.device.files.pick",
+            "op": "files.pick",
             "payload": {
-              "text": "Blue turn. Objective secured.",
-              "title": "x07 Hex Min"
+              "accept": [
+                "image/*",
+                "application/pdf"
+              ],
+              "multiple": false
             },
-            "request_id": "share_text",
+            "request_id": "import_file",
             "v": 1
           }
         ],
@@ -708,12 +755,12 @@
                       {
                         "k": "text",
                         "key": "title",
-                        "text": "x07 Hex Min"
+                        "text": "x07 Capture Min"
                       },
                       {
                         "k": "text",
                         "key": "intro",
-                        "text": "Minimal tactics lane for select, move, victory, and device UX replay."
+                        "text": "Canonical M0 proving app for permissions, capture/import, blob manifests, location, and local notifications."
                       }
                     ],
                     "k": "el",
@@ -731,50 +778,20 @@
                   {
                     "children": [
                       {
-                        "k": "text",
-                        "key": "board_label",
-                        "text": "Red scout"
-                      },
-                      {
-                        "k": "text",
-                        "key": "board_hex",
-                        "text": "B2"
-                      },
-                      {
-                        "k": "text",
-                        "key": "board_enemy",
-                        "text": "Blue guard C3"
-                      }
-                    ],
-                    "k": "el",
-                    "key": "board",
-                    "on": [],
-                    "props": {
-                      "attrs": {},
-                      "class": [
-                        "section"
-                      ],
-                      "style": {}
-                    },
-                    "tag": "div"
-                  },
-                  {
-                    "children": [
-                      {
                         "children": [
                           {
                             "children": [
                               {
                                 "k": "text",
                                 "key": "text",
-                                "text": "Select"
+                                "text": "Query Camera"
                               }
                             ],
                             "k": "el",
-                            "key": "btn_select",
+                            "key": "btn_perm_query",
                             "on": [
                               {
-                                "target": "btn_select",
+                                "target": "btn_perm_query",
                                 "type": "click"
                               }
                             ],
@@ -794,14 +811,14 @@
                               {
                                 "k": "text",
                                 "key": "text",
-                                "text": "Move"
+                                "text": "Request Camera"
                               }
                             ],
                             "k": "el",
-                            "key": "btn_move",
+                            "key": "btn_perm_request",
                             "on": [
                               {
-                                "target": "btn_move",
+                                "target": "btn_perm_request",
                                 "type": "click"
                               }
                             ],
@@ -821,14 +838,14 @@
                               {
                                 "k": "text",
                                 "key": "text",
-                                "text": "End Turn"
+                                "text": "Capture Photo"
                               }
                             ],
                             "k": "el",
-                            "key": "btn_end_turn",
+                            "key": "btn_capture",
                             "on": [
                               {
-                                "target": "btn_end_turn",
+                                "target": "btn_capture",
                                 "type": "click"
                               }
                             ],
@@ -845,7 +862,7 @@
                           }
                         ],
                         "k": "el",
-                        "key": "row1",
+                        "key": "controls_row1",
                         "on": [],
                         "props": {
                           "attrs": {},
@@ -863,14 +880,14 @@
                               {
                                 "k": "text",
                                 "key": "text",
-                                "text": "Copy State"
+                                "text": "Import File"
                               }
                             ],
                             "k": "el",
-                            "key": "btn_copy",
+                            "key": "btn_import",
                             "on": [
                               {
-                                "target": "btn_copy",
+                                "target": "btn_import",
                                 "type": "click"
                               }
                             ],
@@ -890,14 +907,14 @@
                               {
                                 "k": "text",
                                 "key": "text",
-                                "text": "Share State"
+                                "text": "Read Location"
                               }
                             ],
                             "k": "el",
-                            "key": "btn_share",
+                            "key": "btn_location",
                             "on": [
                               {
-                                "target": "btn_share",
+                                "target": "btn_location",
                                 "type": "click"
                               }
                             ],
@@ -917,14 +934,14 @@
                               {
                                 "k": "text",
                                 "key": "text",
-                                "text": "Export Plan"
+                                "text": "Toggle Alert"
                               }
                             ],
                             "k": "el",
-                            "key": "btn_export",
+                            "key": "btn_notify",
                             "on": [
                               {
-                                "target": "btn_export",
+                                "target": "btn_notify",
                                 "type": "click"
                               }
                             ],
@@ -941,42 +958,12 @@
                           }
                         ],
                         "k": "el",
-                        "key": "row2",
+                        "key": "controls_row2",
                         "on": [],
                         "props": {
                           "attrs": {},
                           "class": [
                             "row"
-                          ],
-                          "style": {}
-                        },
-                        "tag": "div"
-                      },
-                      {
-                        "children": [
-                          {
-                            "k": "text",
-                            "key": "turn",
-                            "text": "blue"
-                          },
-                          {
-                            "k": "text",
-                            "key": "status",
-                            "text": "Blue turn. Objective secured."
-                          },
-                          {
-                            "k": "text",
-                            "key": "export_state",
-                            "text": "idle"
-                          }
-                        ],
-                        "k": "el",
-                        "key": "status_box",
-                        "on": [],
-                        "props": {
-                          "attrs": {},
-                          "class": [
-                            "section"
                           ],
                           "style": {}
                         },
@@ -994,192 +981,6 @@
                       "style": {}
                     },
                     "tag": "div"
-                  }
-                ],
-                "k": "el",
-                "key": "root",
-                "on": [],
-                "props": {
-                  "attrs": {},
-                  "class": [
-                    "hex_min"
-                  ],
-                  "style": {}
-                },
-                "tag": "div"
-              },
-              "v": 1
-            }
-          }
-        ],
-        "state": {
-          "audio_status": "ok",
-          "clipboard_status": "ok",
-          "export_status": "idle",
-          "haptics_status": "ok",
-          "step": "victory",
-          "red_hex": "B2",
-          "share_status": "pending",
-          "status": "Blue turn. Objective secured.",
-          "turn": "blue"
-        },
-        "telemetry": {},
-        "ui": {
-          "kind": "x07.web_ui.tree",
-          "root": {
-            "children": [
-              {
-                "children": [
-                  {
-                    "k": "text",
-                    "key": "title",
-                    "text": "x07 Hex Min"
-                  },
-                  {
-                    "k": "text",
-                    "key": "intro",
-                    "text": "Minimal tactics lane for select, move, victory, and device UX replay."
-                  }
-                ],
-                "k": "el",
-                "key": "header",
-                "on": [],
-                "props": {
-                  "attrs": {},
-                  "class": [
-                    "section"
-                  ],
-                  "style": {}
-                },
-                "tag": "div"
-              },
-              {
-                "children": [
-                  {
-                    "k": "text",
-                    "key": "board_label",
-                    "text": "Red scout"
-                  },
-                  {
-                    "k": "text",
-                    "key": "board_hex",
-                    "text": "B2"
-                  },
-                  {
-                    "k": "text",
-                    "key": "board_enemy",
-                    "text": "Blue guard C3"
-                  }
-                ],
-                "k": "el",
-                "key": "board",
-                "on": [],
-                "props": {
-                  "attrs": {},
-                  "class": [
-                    "section"
-                  ],
-                  "style": {}
-                },
-                "tag": "div"
-              },
-              {
-                "children": [
-                  {
-                    "children": [
-                      {
-                        "children": [
-                          {
-                            "k": "text",
-                            "key": "text",
-                            "text": "Select"
-                          }
-                        ],
-                        "k": "el",
-                        "key": "btn_select",
-                        "on": [
-                          {
-                            "target": "btn_select",
-                            "type": "click"
-                          }
-                        ],
-                        "props": {
-                          "attrs": {
-                            "type": "button"
-                          },
-                          "class": [
-                            "control"
-                          ],
-                          "style": {}
-                        },
-                        "tag": "button"
-                      },
-                      {
-                        "children": [
-                          {
-                            "k": "text",
-                            "key": "text",
-                            "text": "Move"
-                          }
-                        ],
-                        "k": "el",
-                        "key": "btn_move",
-                        "on": [
-                          {
-                            "target": "btn_move",
-                            "type": "click"
-                          }
-                        ],
-                        "props": {
-                          "attrs": {
-                            "type": "button"
-                          },
-                          "class": [
-                            "control"
-                          ],
-                          "style": {}
-                        },
-                        "tag": "button"
-                      },
-                      {
-                        "children": [
-                          {
-                            "k": "text",
-                            "key": "text",
-                            "text": "End Turn"
-                          }
-                        ],
-                        "k": "el",
-                        "key": "btn_end_turn",
-                        "on": [
-                          {
-                            "target": "btn_end_turn",
-                            "type": "click"
-                          }
-                        ],
-                        "props": {
-                          "attrs": {
-                            "type": "button"
-                          },
-                          "class": [
-                            "control"
-                          ],
-                          "style": {}
-                        },
-                        "tag": "button"
-                      }
-                    ],
-                    "k": "el",
-                    "key": "row1",
-                    "on": [],
-                    "props": {
-                      "attrs": {},
-                      "class": [
-                        "row"
-                      ],
-                      "style": {}
-                    },
-                    "tag": "div"
                   },
                   {
                     "children": [
@@ -1187,449 +988,27 @@
                         "children": [
                           {
                             "k": "text",
-                            "key": "text",
-                            "text": "Copy State"
-                          }
-                        ],
-                        "k": "el",
-                        "key": "btn_copy",
-                        "on": [
-                          {
-                            "target": "btn_copy",
-                            "type": "click"
-                          }
-                        ],
-                        "props": {
-                          "attrs": {
-                            "type": "button"
+                            "key": "permission_line",
+                            "text": "Permission: ok | granted"
                           },
-                          "class": [
-                            "control"
-                          ],
-                          "style": {}
-                        },
-                        "tag": "button"
-                      },
-                      {
-                        "children": [
                           {
                             "k": "text",
-                            "key": "text",
-                            "text": "Share State"
-                          }
-                        ],
-                        "k": "el",
-                        "key": "btn_share",
-                        "on": [
-                          {
-                            "target": "btn_share",
-                            "type": "click"
-                          }
-                        ],
-                        "props": {
-                          "attrs": {
-                            "type": "button"
+                            "key": "capture_line",
+                            "text": "Capture: ok | blob:sha256:capture-ok"
                           },
-                          "class": [
-                            "control"
-                          ],
-                          "style": {}
-                        },
-                        "tag": "button"
-                      },
-                      {
-                        "children": [
                           {
                             "k": "text",
-                            "key": "text",
-                            "text": "Export Plan"
+                            "key": "import_line",
+                            "text": "Import: idle | []"
                           }
                         ],
                         "k": "el",
-                        "key": "btn_export",
-                        "on": [
-                          {
-                            "target": "btn_export",
-                            "type": "click"
-                          }
-                        ],
-                        "props": {
-                          "attrs": {
-                            "type": "button"
-                          },
-                          "class": [
-                            "control"
-                          ],
-                          "style": {}
-                        },
-                        "tag": "button"
-                      }
-                    ],
-                    "k": "el",
-                    "key": "row2",
-                    "on": [],
-                    "props": {
-                      "attrs": {},
-                      "class": [
-                        "row"
-                      ],
-                      "style": {}
-                    },
-                    "tag": "div"
-                  },
-                  {
-                    "children": [
-                      {
-                        "k": "text",
-                        "key": "turn",
-                        "text": "blue"
-                      },
-                      {
-                        "k": "text",
-                        "key": "status",
-                        "text": "Blue turn. Objective secured."
-                      },
-                      {
-                        "k": "text",
-                        "key": "export_state",
-                        "text": "idle"
-                      }
-                    ],
-                    "k": "el",
-                    "key": "status_box",
-                    "on": [],
-                    "props": {
-                      "attrs": {},
-                      "class": [
-                        "section"
-                      ],
-                      "style": {}
-                    },
-                    "tag": "div"
-                  }
-                ],
-                "k": "el",
-                "key": "actions",
-                "on": [],
-                "props": {
-                  "attrs": {},
-                  "class": [
-                    "section"
-                  ],
-                  "style": {}
-                },
-                "tag": "div"
-              }
-            ],
-            "k": "el",
-            "key": "root",
-            "on": [],
-            "props": {
-              "attrs": {},
-              "class": [
-                "hex_min"
-              ],
-              "style": {}
-            },
-            "tag": "div"
-          },
-          "v": 1
-        },
-        "v": 1
-      }
-    },
-    {
-      "env": {
-        "event": {
-          "target": "btn_share",
-          "type": "click"
-        },
-        "kind": "x07.web_ui.dispatch",
-        "state": {
-          "__x07_device": {
-            "share": {
-              "result": {
-                "host_meta": {
-                  "platform": "ios",
-                  "provider": "ios_native"
-                },
-                "op": "share.present",
-                "payload": {
-                  "text": "Blue turn. Objective secured.",
-                  "title": "x07 Hex Min"
-                },
-                "request_id": "share_text",
-                "status": "ok"
-              }
-            }
-          },
-          "audio_status": "ok",
-          "clipboard_status": "ok",
-          "export_status": "idle",
-          "haptics_status": "ok",
-          "step": "victory",
-          "red_hex": "B2",
-          "share_status": "pending",
-          "status": "Blue turn. Objective secured.",
-          "turn": "blue"
-        },
-        "v": 1
-      },
-      "frame": {
-        "effects": [],
-        "kind": "x07.web_ui.frame",
-        "patches": [
-          {
-            "op": "replace",
-            "path": "",
-            "value": {
-              "kind": "x07.web_ui.tree",
-              "root": {
-                "children": [
-                  {
-                    "children": [
-                      {
-                        "k": "text",
-                        "key": "title",
-                        "text": "x07 Hex Min"
-                      },
-                      {
-                        "k": "text",
-                        "key": "intro",
-                        "text": "Minimal tactics lane for select, move, victory, and device UX replay."
-                      }
-                    ],
-                    "k": "el",
-                    "key": "header",
-                    "on": [],
-                    "props": {
-                      "attrs": {},
-                      "class": [
-                        "section"
-                      ],
-                      "style": {}
-                    },
-                    "tag": "div"
-                  },
-                  {
-                    "children": [
-                      {
-                        "k": "text",
-                        "key": "board_label",
-                        "text": "Red scout"
-                      },
-                      {
-                        "k": "text",
-                        "key": "board_hex",
-                        "text": "B2"
-                      },
-                      {
-                        "k": "text",
-                        "key": "board_enemy",
-                        "text": "Blue guard C3"
-                      }
-                    ],
-                    "k": "el",
-                    "key": "board",
-                    "on": [],
-                    "props": {
-                      "attrs": {},
-                      "class": [
-                        "section"
-                      ],
-                      "style": {}
-                    },
-                    "tag": "div"
-                  },
-                  {
-                    "children": [
-                      {
-                        "children": [
-                          {
-                            "children": [
-                              {
-                                "k": "text",
-                                "key": "text",
-                                "text": "Select"
-                              }
-                            ],
-                            "k": "el",
-                            "key": "btn_select",
-                            "on": [
-                              {
-                                "target": "btn_select",
-                                "type": "click"
-                              }
-                            ],
-                            "props": {
-                              "attrs": {
-                                "type": "button"
-                              },
-                              "class": [
-                                "control"
-                              ],
-                              "style": {}
-                            },
-                            "tag": "button"
-                          },
-                          {
-                            "children": [
-                              {
-                                "k": "text",
-                                "key": "text",
-                                "text": "Move"
-                              }
-                            ],
-                            "k": "el",
-                            "key": "btn_move",
-                            "on": [
-                              {
-                                "target": "btn_move",
-                                "type": "click"
-                              }
-                            ],
-                            "props": {
-                              "attrs": {
-                                "type": "button"
-                              },
-                              "class": [
-                                "control"
-                              ],
-                              "style": {}
-                            },
-                            "tag": "button"
-                          },
-                          {
-                            "children": [
-                              {
-                                "k": "text",
-                                "key": "text",
-                                "text": "End Turn"
-                              }
-                            ],
-                            "k": "el",
-                            "key": "btn_end_turn",
-                            "on": [
-                              {
-                                "target": "btn_end_turn",
-                                "type": "click"
-                              }
-                            ],
-                            "props": {
-                              "attrs": {
-                                "type": "button"
-                              },
-                              "class": [
-                                "control"
-                              ],
-                              "style": {}
-                            },
-                            "tag": "button"
-                          }
-                        ],
-                        "k": "el",
-                        "key": "row1",
+                        "key": "status_row1",
                         "on": [],
                         "props": {
                           "attrs": {},
                           "class": [
-                            "row"
-                          ],
-                          "style": {}
-                        },
-                        "tag": "div"
-                      },
-                      {
-                        "children": [
-                          {
-                            "children": [
-                              {
-                                "k": "text",
-                                "key": "text",
-                                "text": "Copy State"
-                              }
-                            ],
-                            "k": "el",
-                            "key": "btn_copy",
-                            "on": [
-                              {
-                                "target": "btn_copy",
-                                "type": "click"
-                              }
-                            ],
-                            "props": {
-                              "attrs": {
-                                "type": "button"
-                              },
-                              "class": [
-                                "control"
-                              ],
-                              "style": {}
-                            },
-                            "tag": "button"
-                          },
-                          {
-                            "children": [
-                              {
-                                "k": "text",
-                                "key": "text",
-                                "text": "Share State"
-                              }
-                            ],
-                            "k": "el",
-                            "key": "btn_share",
-                            "on": [
-                              {
-                                "target": "btn_share",
-                                "type": "click"
-                              }
-                            ],
-                            "props": {
-                              "attrs": {
-                                "type": "button"
-                              },
-                              "class": [
-                                "control"
-                              ],
-                              "style": {}
-                            },
-                            "tag": "button"
-                          },
-                          {
-                            "children": [
-                              {
-                                "k": "text",
-                                "key": "text",
-                                "text": "Export Plan"
-                              }
-                            ],
-                            "k": "el",
-                            "key": "btn_export",
-                            "on": [
-                              {
-                                "target": "btn_export",
-                                "type": "click"
-                              }
-                            ],
-                            "props": {
-                              "attrs": {
-                                "type": "button"
-                              },
-                              "class": [
-                                "control"
-                              ],
-                              "style": {}
-                            },
-                            "tag": "button"
-                          }
-                        ],
-                        "k": "el",
-                        "key": "row2",
-                        "on": [],
-                        "props": {
-                          "attrs": {},
-                          "class": [
-                            "row"
+                            "status_row"
                           ],
                           "style": {}
                         },
@@ -1639,27 +1018,27 @@
                         "children": [
                           {
                             "k": "text",
-                            "key": "turn",
-                            "text": "blue"
+                            "key": "blob_line",
+                            "text": "Blob Stat: ok | blob:sha256:capture-ok"
                           },
                           {
                             "k": "text",
-                            "key": "status",
-                            "text": "Blue turn. Objective secured."
+                            "key": "location_line",
+                            "text": "Location: idle | null,null"
                           },
                           {
                             "k": "text",
-                            "key": "export_state",
-                            "text": "idle"
+                            "key": "notification_line",
+                            "text": "Notification: idle | pending"
                           }
                         ],
                         "k": "el",
-                        "key": "status_box",
+                        "key": "status_row2",
                         "on": [],
                         "props": {
                           "attrs": {},
                           "class": [
-                            "section"
+                            "status_row"
                           ],
                           "style": {}
                         },
@@ -1667,7 +1046,7 @@
                       }
                     ],
                     "k": "el",
-                    "key": "actions",
+                    "key": "status",
                     "on": [],
                     "props": {
                       "attrs": {},
@@ -1685,7 +1064,7 @@
                 "props": {
                   "attrs": {},
                   "class": [
-                    "hex_min"
+                    "capture_min"
                   ],
                   "style": {}
                 },
@@ -1696,15 +1075,26 @@
           }
         ],
         "state": {
-          "audio_status": "ok",
-          "clipboard_status": "ok",
-          "export_status": "idle",
-          "haptics_status": "ok",
-          "step": "victory",
-          "red_hex": "B2",
-          "share_status": "ok",
-          "status": "Blue turn. Objective secured.",
-          "turn": "blue"
+          "blob_status": "ok",
+          "camera_status": "ok",
+          "capture_blob": {
+            "byte_size": 2048,
+            "created_at_ms": 1770000000000,
+            "handle": "blob:sha256:capture-ok",
+            "local_state": "present",
+            "mime": "image/jpeg",
+            "sha256": "capture-ok",
+            "source": "camera"
+          },
+          "files_status": "idle",
+          "import_blob": null,
+          "import_manifests": [],
+          "location": null,
+          "location_status": "idle",
+          "notification_opened_id": "",
+          "notification_status": "idle",
+          "permission_state": "granted",
+          "permission_status": "ok"
         },
         "telemetry": {},
         "ui": {
@@ -1716,12 +1106,12 @@
                   {
                     "k": "text",
                     "key": "title",
-                    "text": "x07 Hex Min"
+                    "text": "x07 Capture Min"
                   },
                   {
                     "k": "text",
                     "key": "intro",
-                    "text": "Minimal tactics lane for select, move, victory, and device UX replay."
+                    "text": "Canonical M0 proving app for permissions, capture/import, blob manifests, location, and local notifications."
                   }
                 ],
                 "k": "el",
@@ -1739,50 +1129,20 @@
               {
                 "children": [
                   {
-                    "k": "text",
-                    "key": "board_label",
-                    "text": "Red scout"
-                  },
-                  {
-                    "k": "text",
-                    "key": "board_hex",
-                    "text": "B2"
-                  },
-                  {
-                    "k": "text",
-                    "key": "board_enemy",
-                    "text": "Blue guard C3"
-                  }
-                ],
-                "k": "el",
-                "key": "board",
-                "on": [],
-                "props": {
-                  "attrs": {},
-                  "class": [
-                    "section"
-                  ],
-                  "style": {}
-                },
-                "tag": "div"
-              },
-              {
-                "children": [
-                  {
                     "children": [
                       {
                         "children": [
                           {
                             "k": "text",
                             "key": "text",
-                            "text": "Select"
+                            "text": "Query Camera"
                           }
                         ],
                         "k": "el",
-                        "key": "btn_select",
+                        "key": "btn_perm_query",
                         "on": [
                           {
-                            "target": "btn_select",
+                            "target": "btn_perm_query",
                             "type": "click"
                           }
                         ],
@@ -1802,14 +1162,14 @@
                           {
                             "k": "text",
                             "key": "text",
-                            "text": "Move"
+                            "text": "Request Camera"
                           }
                         ],
                         "k": "el",
-                        "key": "btn_move",
+                        "key": "btn_perm_request",
                         "on": [
                           {
-                            "target": "btn_move",
+                            "target": "btn_perm_request",
                             "type": "click"
                           }
                         ],
@@ -1829,14 +1189,14 @@
                           {
                             "k": "text",
                             "key": "text",
-                            "text": "End Turn"
+                            "text": "Capture Photo"
                           }
                         ],
                         "k": "el",
-                        "key": "btn_end_turn",
+                        "key": "btn_capture",
                         "on": [
                           {
-                            "target": "btn_end_turn",
+                            "target": "btn_capture",
                             "type": "click"
                           }
                         ],
@@ -1853,7 +1213,7 @@
                       }
                     ],
                     "k": "el",
-                    "key": "row1",
+                    "key": "controls_row1",
                     "on": [],
                     "props": {
                       "attrs": {},
@@ -1871,14 +1231,14 @@
                           {
                             "k": "text",
                             "key": "text",
-                            "text": "Copy State"
+                            "text": "Import File"
                           }
                         ],
                         "k": "el",
-                        "key": "btn_copy",
+                        "key": "btn_import",
                         "on": [
                           {
-                            "target": "btn_copy",
+                            "target": "btn_import",
                             "type": "click"
                           }
                         ],
@@ -1898,14 +1258,14 @@
                           {
                             "k": "text",
                             "key": "text",
-                            "text": "Share State"
+                            "text": "Read Location"
                           }
                         ],
                         "k": "el",
-                        "key": "btn_share",
+                        "key": "btn_location",
                         "on": [
                           {
-                            "target": "btn_share",
+                            "target": "btn_location",
                             "type": "click"
                           }
                         ],
@@ -1925,14 +1285,14 @@
                           {
                             "k": "text",
                             "key": "text",
-                            "text": "Export Plan"
+                            "text": "Toggle Alert"
                           }
                         ],
                         "k": "el",
-                        "key": "btn_export",
+                        "key": "btn_notify",
                         "on": [
                           {
-                            "target": "btn_export",
+                            "target": "btn_notify",
                             "type": "click"
                           }
                         ],
@@ -1949,42 +1309,12 @@
                       }
                     ],
                     "k": "el",
-                    "key": "row2",
+                    "key": "controls_row2",
                     "on": [],
                     "props": {
                       "attrs": {},
                       "class": [
                         "row"
-                      ],
-                      "style": {}
-                    },
-                    "tag": "div"
-                  },
-                  {
-                    "children": [
-                      {
-                        "k": "text",
-                        "key": "turn",
-                        "text": "blue"
-                      },
-                      {
-                        "k": "text",
-                        "key": "status",
-                        "text": "Blue turn. Objective secured."
-                      },
-                      {
-                        "k": "text",
-                        "key": "export_state",
-                        "text": "idle"
-                      }
-                    ],
-                    "k": "el",
-                    "key": "status_box",
-                    "on": [],
-                    "props": {
-                      "attrs": {},
-                      "class": [
-                        "section"
                       ],
                       "style": {}
                     },
@@ -2002,637 +1332,34 @@
                   "style": {}
                 },
                 "tag": "div"
-              }
-            ],
-            "k": "el",
-            "key": "root",
-            "on": [],
-            "props": {
-              "attrs": {},
-              "class": [
-                "hex_min"
-              ],
-              "style": {}
-            },
-            "tag": "div"
-          },
-          "v": 1
-        },
-        "v": 1
-      }
-    },
-    {
-      "env": {
-        "event": {
-          "target": "btn_export",
-          "type": "click"
-        },
-        "kind": "x07.web_ui.dispatch",
-        "state": {
-          "audio_status": "ok",
-          "clipboard_status": "ok",
-          "export_status": "idle",
-          "haptics_status": "ok",
-          "step": "victory",
-          "red_hex": "B2",
-          "share_status": "ok",
-          "status": "Blue turn. Objective secured.",
-          "turn": "blue"
-        },
-        "v": 1
-      },
-      "frame": {
-        "effects": [
-          {
-            "capability": "files.save",
-            "kind": "x07.web_ui.effect.device.files.save_text",
-            "op": "files.save",
-            "payload": {
-              "name": "hex-plan.txt",
-              "text": "Blue turn. Objective secured."
-            },
-            "request_id": "export_text",
-            "v": 1
-          }
-        ],
-        "kind": "x07.web_ui.frame",
-        "patches": [
-          {
-            "op": "replace",
-            "path": "",
-            "value": {
-              "kind": "x07.web_ui.tree",
-              "root": {
-                "children": [
-                  {
-                    "children": [
-                      {
-                        "k": "text",
-                        "key": "title",
-                        "text": "x07 Hex Min"
-                      },
-                      {
-                        "k": "text",
-                        "key": "intro",
-                        "text": "Minimal tactics lane for select, move, victory, and device UX replay."
-                      }
-                    ],
-                    "k": "el",
-                    "key": "header",
-                    "on": [],
-                    "props": {
-                      "attrs": {},
-                      "class": [
-                        "section"
-                      ],
-                      "style": {}
-                    },
-                    "tag": "div"
-                  },
-                  {
-                    "children": [
-                      {
-                        "k": "text",
-                        "key": "board_label",
-                        "text": "Red scout"
-                      },
-                      {
-                        "k": "text",
-                        "key": "board_hex",
-                        "text": "B2"
-                      },
-                      {
-                        "k": "text",
-                        "key": "board_enemy",
-                        "text": "Blue guard C3"
-                      }
-                    ],
-                    "k": "el",
-                    "key": "board",
-                    "on": [],
-                    "props": {
-                      "attrs": {},
-                      "class": [
-                        "section"
-                      ],
-                      "style": {}
-                    },
-                    "tag": "div"
-                  },
-                  {
-                    "children": [
-                      {
-                        "children": [
-                          {
-                            "children": [
-                              {
-                                "k": "text",
-                                "key": "text",
-                                "text": "Select"
-                              }
-                            ],
-                            "k": "el",
-                            "key": "btn_select",
-                            "on": [
-                              {
-                                "target": "btn_select",
-                                "type": "click"
-                              }
-                            ],
-                            "props": {
-                              "attrs": {
-                                "type": "button"
-                              },
-                              "class": [
-                                "control"
-                              ],
-                              "style": {}
-                            },
-                            "tag": "button"
-                          },
-                          {
-                            "children": [
-                              {
-                                "k": "text",
-                                "key": "text",
-                                "text": "Move"
-                              }
-                            ],
-                            "k": "el",
-                            "key": "btn_move",
-                            "on": [
-                              {
-                                "target": "btn_move",
-                                "type": "click"
-                              }
-                            ],
-                            "props": {
-                              "attrs": {
-                                "type": "button"
-                              },
-                              "class": [
-                                "control"
-                              ],
-                              "style": {}
-                            },
-                            "tag": "button"
-                          },
-                          {
-                            "children": [
-                              {
-                                "k": "text",
-                                "key": "text",
-                                "text": "End Turn"
-                              }
-                            ],
-                            "k": "el",
-                            "key": "btn_end_turn",
-                            "on": [
-                              {
-                                "target": "btn_end_turn",
-                                "type": "click"
-                              }
-                            ],
-                            "props": {
-                              "attrs": {
-                                "type": "button"
-                              },
-                              "class": [
-                                "control"
-                              ],
-                              "style": {}
-                            },
-                            "tag": "button"
-                          }
-                        ],
-                        "k": "el",
-                        "key": "row1",
-                        "on": [],
-                        "props": {
-                          "attrs": {},
-                          "class": [
-                            "row"
-                          ],
-                          "style": {}
-                        },
-                        "tag": "div"
-                      },
-                      {
-                        "children": [
-                          {
-                            "children": [
-                              {
-                                "k": "text",
-                                "key": "text",
-                                "text": "Copy State"
-                              }
-                            ],
-                            "k": "el",
-                            "key": "btn_copy",
-                            "on": [
-                              {
-                                "target": "btn_copy",
-                                "type": "click"
-                              }
-                            ],
-                            "props": {
-                              "attrs": {
-                                "type": "button"
-                              },
-                              "class": [
-                                "control"
-                              ],
-                              "style": {}
-                            },
-                            "tag": "button"
-                          },
-                          {
-                            "children": [
-                              {
-                                "k": "text",
-                                "key": "text",
-                                "text": "Share State"
-                              }
-                            ],
-                            "k": "el",
-                            "key": "btn_share",
-                            "on": [
-                              {
-                                "target": "btn_share",
-                                "type": "click"
-                              }
-                            ],
-                            "props": {
-                              "attrs": {
-                                "type": "button"
-                              },
-                              "class": [
-                                "control"
-                              ],
-                              "style": {}
-                            },
-                            "tag": "button"
-                          },
-                          {
-                            "children": [
-                              {
-                                "k": "text",
-                                "key": "text",
-                                "text": "Export Plan"
-                              }
-                            ],
-                            "k": "el",
-                            "key": "btn_export",
-                            "on": [
-                              {
-                                "target": "btn_export",
-                                "type": "click"
-                              }
-                            ],
-                            "props": {
-                              "attrs": {
-                                "type": "button"
-                              },
-                              "class": [
-                                "control"
-                              ],
-                              "style": {}
-                            },
-                            "tag": "button"
-                          }
-                        ],
-                        "k": "el",
-                        "key": "row2",
-                        "on": [],
-                        "props": {
-                          "attrs": {},
-                          "class": [
-                            "row"
-                          ],
-                          "style": {}
-                        },
-                        "tag": "div"
-                      },
-                      {
-                        "children": [
-                          {
-                            "k": "text",
-                            "key": "turn",
-                            "text": "blue"
-                          },
-                          {
-                            "k": "text",
-                            "key": "status",
-                            "text": "Blue turn. Objective secured."
-                          },
-                          {
-                            "k": "text",
-                            "key": "export_state",
-                            "text": "pending"
-                          }
-                        ],
-                        "k": "el",
-                        "key": "status_box",
-                        "on": [],
-                        "props": {
-                          "attrs": {},
-                          "class": [
-                            "section"
-                          ],
-                          "style": {}
-                        },
-                        "tag": "div"
-                      }
-                    ],
-                    "k": "el",
-                    "key": "actions",
-                    "on": [],
-                    "props": {
-                      "attrs": {},
-                      "class": [
-                        "section"
-                      ],
-                      "style": {}
-                    },
-                    "tag": "div"
-                  }
-                ],
-                "k": "el",
-                "key": "root",
-                "on": [],
-                "props": {
-                  "attrs": {},
-                  "class": [
-                    "hex_min"
-                  ],
-                  "style": {}
-                },
-                "tag": "div"
-              },
-              "v": 1
-            }
-          }
-        ],
-        "state": {
-          "audio_status": "ok",
-          "clipboard_status": "ok",
-          "export_status": "pending",
-          "haptics_status": "ok",
-          "step": "victory",
-          "red_hex": "B2",
-          "share_status": "ok",
-          "status": "Blue turn. Objective secured.",
-          "turn": "blue"
-        },
-        "telemetry": {},
-        "ui": {
-          "kind": "x07.web_ui.tree",
-          "root": {
-            "children": [
-              {
-                "children": [
-                  {
-                    "k": "text",
-                    "key": "title",
-                    "text": "x07 Hex Min"
-                  },
-                  {
-                    "k": "text",
-                    "key": "intro",
-                    "text": "Minimal tactics lane for select, move, victory, and device UX replay."
-                  }
-                ],
-                "k": "el",
-                "key": "header",
-                "on": [],
-                "props": {
-                  "attrs": {},
-                  "class": [
-                    "section"
-                  ],
-                  "style": {}
-                },
-                "tag": "div"
-              },
-              {
-                "children": [
-                  {
-                    "k": "text",
-                    "key": "board_label",
-                    "text": "Red scout"
-                  },
-                  {
-                    "k": "text",
-                    "key": "board_hex",
-                    "text": "B2"
-                  },
-                  {
-                    "k": "text",
-                    "key": "board_enemy",
-                    "text": "Blue guard C3"
-                  }
-                ],
-                "k": "el",
-                "key": "board",
-                "on": [],
-                "props": {
-                  "attrs": {},
-                  "class": [
-                    "section"
-                  ],
-                  "style": {}
-                },
-                "tag": "div"
               },
               {
                 "children": [
                   {
                     "children": [
                       {
-                        "children": [
-                          {
-                            "k": "text",
-                            "key": "text",
-                            "text": "Select"
-                          }
-                        ],
-                        "k": "el",
-                        "key": "btn_select",
-                        "on": [
-                          {
-                            "target": "btn_select",
-                            "type": "click"
-                          }
-                        ],
-                        "props": {
-                          "attrs": {
-                            "type": "button"
-                          },
-                          "class": [
-                            "control"
-                          ],
-                          "style": {}
-                        },
-                        "tag": "button"
+                        "k": "text",
+                        "key": "permission_line",
+                        "text": "Permission: ok | granted"
                       },
                       {
-                        "children": [
-                          {
-                            "k": "text",
-                            "key": "text",
-                            "text": "Move"
-                          }
-                        ],
-                        "k": "el",
-                        "key": "btn_move",
-                        "on": [
-                          {
-                            "target": "btn_move",
-                            "type": "click"
-                          }
-                        ],
-                        "props": {
-                          "attrs": {
-                            "type": "button"
-                          },
-                          "class": [
-                            "control"
-                          ],
-                          "style": {}
-                        },
-                        "tag": "button"
+                        "k": "text",
+                        "key": "capture_line",
+                        "text": "Capture: ok | blob:sha256:capture-ok"
                       },
                       {
-                        "children": [
-                          {
-                            "k": "text",
-                            "key": "text",
-                            "text": "End Turn"
-                          }
-                        ],
-                        "k": "el",
-                        "key": "btn_end_turn",
-                        "on": [
-                          {
-                            "target": "btn_end_turn",
-                            "type": "click"
-                          }
-                        ],
-                        "props": {
-                          "attrs": {
-                            "type": "button"
-                          },
-                          "class": [
-                            "control"
-                          ],
-                          "style": {}
-                        },
-                        "tag": "button"
+                        "k": "text",
+                        "key": "import_line",
+                        "text": "Import: idle | []"
                       }
                     ],
                     "k": "el",
-                    "key": "row1",
+                    "key": "status_row1",
                     "on": [],
                     "props": {
                       "attrs": {},
                       "class": [
-                        "row"
-                      ],
-                      "style": {}
-                    },
-                    "tag": "div"
-                  },
-                  {
-                    "children": [
-                      {
-                        "children": [
-                          {
-                            "k": "text",
-                            "key": "text",
-                            "text": "Copy State"
-                          }
-                        ],
-                        "k": "el",
-                        "key": "btn_copy",
-                        "on": [
-                          {
-                            "target": "btn_copy",
-                            "type": "click"
-                          }
-                        ],
-                        "props": {
-                          "attrs": {
-                            "type": "button"
-                          },
-                          "class": [
-                            "control"
-                          ],
-                          "style": {}
-                        },
-                        "tag": "button"
-                      },
-                      {
-                        "children": [
-                          {
-                            "k": "text",
-                            "key": "text",
-                            "text": "Share State"
-                          }
-                        ],
-                        "k": "el",
-                        "key": "btn_share",
-                        "on": [
-                          {
-                            "target": "btn_share",
-                            "type": "click"
-                          }
-                        ],
-                        "props": {
-                          "attrs": {
-                            "type": "button"
-                          },
-                          "class": [
-                            "control"
-                          ],
-                          "style": {}
-                        },
-                        "tag": "button"
-                      },
-                      {
-                        "children": [
-                          {
-                            "k": "text",
-                            "key": "text",
-                            "text": "Export Plan"
-                          }
-                        ],
-                        "k": "el",
-                        "key": "btn_export",
-                        "on": [
-                          {
-                            "target": "btn_export",
-                            "type": "click"
-                          }
-                        ],
-                        "props": {
-                          "attrs": {
-                            "type": "button"
-                          },
-                          "class": [
-                            "control"
-                          ],
-                          "style": {}
-                        },
-                        "tag": "button"
-                      }
-                    ],
-                    "k": "el",
-                    "key": "row2",
-                    "on": [],
-                    "props": {
-                      "attrs": {},
-                      "class": [
-                        "row"
+                        "status_row"
                       ],
                       "style": {}
                     },
@@ -2642,27 +1369,27 @@
                     "children": [
                       {
                         "k": "text",
-                        "key": "turn",
-                        "text": "blue"
+                        "key": "blob_line",
+                        "text": "Blob Stat: ok | blob:sha256:capture-ok"
                       },
                       {
                         "k": "text",
-                        "key": "status",
-                        "text": "Blue turn. Objective secured."
+                        "key": "location_line",
+                        "text": "Location: idle | null,null"
                       },
                       {
                         "k": "text",
-                        "key": "export_state",
-                        "text": "pending"
+                        "key": "notification_line",
+                        "text": "Notification: idle | pending"
                       }
                     ],
                     "k": "el",
-                    "key": "status_box",
+                    "key": "status_row2",
                     "on": [],
                     "props": {
                       "attrs": {},
                       "class": [
-                        "section"
+                        "status_row"
                       ],
                       "style": {}
                     },
@@ -2670,7 +1397,7 @@
                   }
                 ],
                 "k": "el",
-                "key": "actions",
+                "key": "status",
                 "on": [],
                 "props": {
                   "attrs": {},
@@ -2688,7 +1415,7 @@
             "props": {
               "attrs": {},
               "class": [
-                "hex_min"
+                "capture_min"
               ],
               "style": {}
             },
@@ -2702,7 +1429,7 @@
     {
       "env": {
         "event": {
-          "target": "btn_export",
+          "target": "btn_import",
           "type": "click"
         },
         "kind": "x07.web_ui.dispatch",
@@ -2710,29 +1437,32 @@
           "__x07_device": {
             "files": {
               "result": {
+                "capability": "files.pick",
                 "host_meta": {
                   "platform": "android",
                   "provider": "android_native"
                 },
-                "op": "files.save",
+                "op": "files.pick",
                 "payload": {
-                  "name": "hex-plan.txt",
-                  "path": "/tmp/hex-plan.txt"
+                  "reason": "blob_item_too_large"
                 },
-                "request_id": "export_text",
-                "status": "ok"
+                "request_id": "import_file",
+                "status": "error"
               }
             }
           },
-          "audio_status": "ok",
-          "clipboard_status": "ok",
-          "export_status": "pending",
-          "haptics_status": "ok",
-          "step": "victory",
-          "red_hex": "B2",
-          "share_status": "ok",
-          "status": "Blue turn. Objective secured.",
-          "turn": "blue"
+          "blob_status": "idle",
+          "camera_status": "cancelled",
+          "capture_blob": null,
+          "files_status": "idle",
+          "import_blob": null,
+          "import_manifests": [],
+          "location": null,
+          "location_status": "idle",
+          "notification_opened_id": "",
+          "notification_status": "idle",
+          "permission_state": "denied",
+          "permission_status": "denied"
         },
         "v": 1
       },
@@ -2752,12 +1482,12 @@
                       {
                         "k": "text",
                         "key": "title",
-                        "text": "x07 Hex Min"
+                        "text": "x07 Capture Min"
                       },
                       {
                         "k": "text",
                         "key": "intro",
-                        "text": "Minimal tactics lane for select, move, victory, and device UX replay."
+                        "text": "Canonical M0 proving app for permissions, capture/import, blob manifests, location, and local notifications."
                       }
                     ],
                     "k": "el",
@@ -2775,50 +1505,20 @@
                   {
                     "children": [
                       {
-                        "k": "text",
-                        "key": "board_label",
-                        "text": "Red scout"
-                      },
-                      {
-                        "k": "text",
-                        "key": "board_hex",
-                        "text": "B2"
-                      },
-                      {
-                        "k": "text",
-                        "key": "board_enemy",
-                        "text": "Blue guard C3"
-                      }
-                    ],
-                    "k": "el",
-                    "key": "board",
-                    "on": [],
-                    "props": {
-                      "attrs": {},
-                      "class": [
-                        "section"
-                      ],
-                      "style": {}
-                    },
-                    "tag": "div"
-                  },
-                  {
-                    "children": [
-                      {
                         "children": [
                           {
                             "children": [
                               {
                                 "k": "text",
                                 "key": "text",
-                                "text": "Select"
+                                "text": "Query Camera"
                               }
                             ],
                             "k": "el",
-                            "key": "btn_select",
+                            "key": "btn_perm_query",
                             "on": [
                               {
-                                "target": "btn_select",
+                                "target": "btn_perm_query",
                                 "type": "click"
                               }
                             ],
@@ -2838,14 +1538,14 @@
                               {
                                 "k": "text",
                                 "key": "text",
-                                "text": "Move"
+                                "text": "Request Camera"
                               }
                             ],
                             "k": "el",
-                            "key": "btn_move",
+                            "key": "btn_perm_request",
                             "on": [
                               {
-                                "target": "btn_move",
+                                "target": "btn_perm_request",
                                 "type": "click"
                               }
                             ],
@@ -2865,14 +1565,14 @@
                               {
                                 "k": "text",
                                 "key": "text",
-                                "text": "End Turn"
+                                "text": "Capture Photo"
                               }
                             ],
                             "k": "el",
-                            "key": "btn_end_turn",
+                            "key": "btn_capture",
                             "on": [
                               {
-                                "target": "btn_end_turn",
+                                "target": "btn_capture",
                                 "type": "click"
                               }
                             ],
@@ -2889,7 +1589,7 @@
                           }
                         ],
                         "k": "el",
-                        "key": "row1",
+                        "key": "controls_row1",
                         "on": [],
                         "props": {
                           "attrs": {},
@@ -2907,14 +1607,14 @@
                               {
                                 "k": "text",
                                 "key": "text",
-                                "text": "Copy State"
+                                "text": "Import File"
                               }
                             ],
                             "k": "el",
-                            "key": "btn_copy",
+                            "key": "btn_import",
                             "on": [
                               {
-                                "target": "btn_copy",
+                                "target": "btn_import",
                                 "type": "click"
                               }
                             ],
@@ -2934,14 +1634,14 @@
                               {
                                 "k": "text",
                                 "key": "text",
-                                "text": "Share State"
+                                "text": "Read Location"
                               }
                             ],
                             "k": "el",
-                            "key": "btn_share",
+                            "key": "btn_location",
                             "on": [
                               {
-                                "target": "btn_share",
+                                "target": "btn_location",
                                 "type": "click"
                               }
                             ],
@@ -2961,14 +1661,14 @@
                               {
                                 "k": "text",
                                 "key": "text",
-                                "text": "Export Plan"
+                                "text": "Toggle Alert"
                               }
                             ],
                             "k": "el",
-                            "key": "btn_export",
+                            "key": "btn_notify",
                             "on": [
                               {
-                                "target": "btn_export",
+                                "target": "btn_notify",
                                 "type": "click"
                               }
                             ],
@@ -2985,42 +1685,12 @@
                           }
                         ],
                         "k": "el",
-                        "key": "row2",
+                        "key": "controls_row2",
                         "on": [],
                         "props": {
                           "attrs": {},
                           "class": [
                             "row"
-                          ],
-                          "style": {}
-                        },
-                        "tag": "div"
-                      },
-                      {
-                        "children": [
-                          {
-                            "k": "text",
-                            "key": "turn",
-                            "text": "blue"
-                          },
-                          {
-                            "k": "text",
-                            "key": "status",
-                            "text": "Blue turn. Objective secured."
-                          },
-                          {
-                            "k": "text",
-                            "key": "export_state",
-                            "text": "ok"
-                          }
-                        ],
-                        "k": "el",
-                        "key": "status_box",
-                        "on": [],
-                        "props": {
-                          "attrs": {},
-                          "class": [
-                            "section"
                           ],
                           "style": {}
                         },
@@ -3038,6 +1708,81 @@
                       "style": {}
                     },
                     "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "permission_line",
+                            "text": "Permission: denied | denied"
+                          },
+                          {
+                            "k": "text",
+                            "key": "capture_line",
+                            "text": "Capture: cancelled | none"
+                          },
+                          {
+                            "k": "text",
+                            "key": "import_line",
+                            "text": "Import: error(blob_item_too_large) | []"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "status_row1",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "status_row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "blob_line",
+                            "text": "Blob Stat: idle | none"
+                          },
+                          {
+                            "k": "text",
+                            "key": "location_line",
+                            "text": "Location: idle | null,null"
+                          },
+                          {
+                            "k": "text",
+                            "key": "notification_line",
+                            "text": "Notification: idle | pending"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "status_row2",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "status_row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "status",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
                   }
                 ],
                 "k": "el",
@@ -3046,7 +1791,7 @@
                 "props": {
                   "attrs": {},
                   "class": [
-                    "hex_min"
+                    "capture_min"
                   ],
                   "style": {}
                 },
@@ -3057,15 +1802,18 @@
           }
         ],
         "state": {
-          "audio_status": "ok",
-          "clipboard_status": "ok",
-          "export_status": "ok",
-          "haptics_status": "ok",
-          "step": "victory",
-          "red_hex": "B2",
-          "share_status": "ok",
-          "status": "Blue turn. Objective secured.",
-          "turn": "blue"
+          "blob_status": "idle",
+          "camera_status": "cancelled",
+          "capture_blob": null,
+          "files_status": "error(blob_item_too_large)",
+          "import_blob": null,
+          "import_manifests": [],
+          "location": null,
+          "location_status": "idle",
+          "notification_opened_id": "",
+          "notification_status": "idle",
+          "permission_state": "denied",
+          "permission_status": "denied"
         },
         "telemetry": {},
         "ui": {
@@ -3077,12 +1825,12 @@
                   {
                     "k": "text",
                     "key": "title",
-                    "text": "x07 Hex Min"
+                    "text": "x07 Capture Min"
                   },
                   {
                     "k": "text",
                     "key": "intro",
-                    "text": "Minimal tactics lane for select, move, victory, and device UX replay."
+                    "text": "Canonical M0 proving app for permissions, capture/import, blob manifests, location, and local notifications."
                   }
                 ],
                 "k": "el",
@@ -3100,23 +1848,710 @@
               {
                 "children": [
                   {
-                    "k": "text",
-                    "key": "board_label",
-                    "text": "Red scout"
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Query Camera"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_perm_query",
+                        "on": [
+                          {
+                            "target": "btn_perm_query",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Request Camera"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_perm_request",
+                        "on": [
+                          {
+                            "target": "btn_perm_request",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Capture Photo"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_capture",
+                        "on": [
+                          {
+                            "target": "btn_capture",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "controls_row1",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "row"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
                   },
                   {
-                    "k": "text",
-                    "key": "board_hex",
-                    "text": "B2"
-                  },
-                  {
-                    "k": "text",
-                    "key": "board_enemy",
-                    "text": "Blue guard C3"
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Import File"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_import",
+                        "on": [
+                          {
+                            "target": "btn_import",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Read Location"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_location",
+                        "on": [
+                          {
+                            "target": "btn_location",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Toggle Alert"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_notify",
+                        "on": [
+                          {
+                            "target": "btn_notify",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "controls_row2",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "row"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
                   }
                 ],
                 "k": "el",
-                "key": "board",
+                "key": "actions",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "permission_line",
+                        "text": "Permission: denied | denied"
+                      },
+                      {
+                        "k": "text",
+                        "key": "capture_line",
+                        "text": "Capture: cancelled | none"
+                      },
+                      {
+                        "k": "text",
+                        "key": "import_line",
+                        "text": "Import: error(blob_item_too_large) | []"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "status_row1",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "status_row"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "blob_line",
+                        "text": "Blob Stat: idle | none"
+                      },
+                      {
+                        "k": "text",
+                        "key": "location_line",
+                        "text": "Location: idle | null,null"
+                      },
+                      {
+                        "k": "text",
+                        "key": "notification_line",
+                        "text": "Notification: idle | pending"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "status_row2",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "status_row"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  }
+                ],
+                "k": "el",
+                "key": "status",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              }
+            ],
+            "k": "el",
+            "key": "root",
+            "on": [],
+            "props": {
+              "attrs": {},
+              "class": [
+                "capture_min"
+              ],
+              "style": {}
+            },
+            "tag": "div"
+          },
+          "v": 1
+        },
+        "v": 1
+      }
+    },
+    {
+      "env": {
+        "event": {
+          "target": "btn_import",
+          "type": "click"
+        },
+        "kind": "x07.web_ui.dispatch",
+        "state": {
+          "blob_status": "idle",
+          "camera_status": "idle",
+          "capture_blob": null,
+          "files_status": "error(blob_item_too_large)",
+          "import_blob": null,
+          "import_manifests": [],
+          "location": null,
+          "location_status": "idle",
+          "notification_opened_id": "",
+          "notification_status": "idle",
+          "permission_state": "unknown",
+          "permission_status": "idle"
+        },
+        "v": 1
+      },
+      "frame": {
+        "effects": [
+          {
+            "capability": "files.pick",
+            "kind": "x07.web_ui.effect.device.files.pick",
+            "op": "files.pick",
+            "payload": {
+              "accept": [
+                "image/*",
+                "application/pdf"
+              ],
+              "multiple": false
+            },
+            "request_id": "import_file",
+            "v": 1
+          }
+        ],
+        "kind": "x07.web_ui.frame",
+        "patches": [
+          {
+            "op": "replace",
+            "path": "",
+            "value": {
+              "kind": "x07.web_ui.tree",
+              "root": {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "title",
+                        "text": "x07 Capture Min"
+                      },
+                      {
+                        "k": "text",
+                        "key": "intro",
+                        "text": "Canonical M0 proving app for permissions, capture/import, blob manifests, location, and local notifications."
+                      }
+                    ],
+                    "k": "el",
+                    "key": "header",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Query Camera"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_perm_query",
+                            "on": [
+                              {
+                                "target": "btn_perm_query",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Request Camera"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_perm_request",
+                            "on": [
+                              {
+                                "target": "btn_perm_request",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Capture Photo"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_capture",
+                            "on": [
+                              {
+                                "target": "btn_capture",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "controls_row1",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      },
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Import File"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_import",
+                            "on": [
+                              {
+                                "target": "btn_import",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Read Location"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_location",
+                            "on": [
+                              {
+                                "target": "btn_location",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Toggle Alert"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_notify",
+                            "on": [
+                              {
+                                "target": "btn_notify",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "controls_row2",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "actions",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "permission_line",
+                            "text": "Permission: idle | unknown"
+                          },
+                          {
+                            "k": "text",
+                            "key": "capture_line",
+                            "text": "Capture: idle | none"
+                          },
+                          {
+                            "k": "text",
+                            "key": "import_line",
+                            "text": "Import: error(blob_item_too_large) | []"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "status_row1",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "status_row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "blob_line",
+                            "text": "Blob Stat: idle | none"
+                          },
+                          {
+                            "k": "text",
+                            "key": "location_line",
+                            "text": "Location: idle | null,null"
+                          },
+                          {
+                            "k": "text",
+                            "key": "notification_line",
+                            "text": "Notification: idle | pending"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "status_row2",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "status_row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "status",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  }
+                ],
+                "k": "el",
+                "key": "root",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "capture_min"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              "v": 1
+            }
+          }
+        ],
+        "state": {
+          "blob_status": "idle",
+          "camera_status": "idle",
+          "capture_blob": null,
+          "files_status": "error(blob_item_too_large)",
+          "import_blob": null,
+          "import_manifests": [],
+          "location": null,
+          "location_status": "idle",
+          "notification_opened_id": "",
+          "notification_status": "idle",
+          "permission_state": "unknown",
+          "permission_status": "idle"
+        },
+        "telemetry": {},
+        "ui": {
+          "kind": "x07.web_ui.tree",
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "k": "text",
+                    "key": "title",
+                    "text": "x07 Capture Min"
+                  },
+                  {
+                    "k": "text",
+                    "key": "intro",
+                    "text": "Canonical M0 proving app for permissions, capture/import, blob manifests, location, and local notifications."
+                  }
+                ],
+                "k": "el",
+                "key": "header",
                 "on": [],
                 "props": {
                   "attrs": {},
@@ -3136,14 +2571,14 @@
                           {
                             "k": "text",
                             "key": "text",
-                            "text": "Select"
+                            "text": "Query Camera"
                           }
                         ],
                         "k": "el",
-                        "key": "btn_select",
+                        "key": "btn_perm_query",
                         "on": [
                           {
-                            "target": "btn_select",
+                            "target": "btn_perm_query",
                             "type": "click"
                           }
                         ],
@@ -3163,14 +2598,14 @@
                           {
                             "k": "text",
                             "key": "text",
-                            "text": "Move"
+                            "text": "Request Camera"
                           }
                         ],
                         "k": "el",
-                        "key": "btn_move",
+                        "key": "btn_perm_request",
                         "on": [
                           {
-                            "target": "btn_move",
+                            "target": "btn_perm_request",
                             "type": "click"
                           }
                         ],
@@ -3190,14 +2625,14 @@
                           {
                             "k": "text",
                             "key": "text",
-                            "text": "End Turn"
+                            "text": "Capture Photo"
                           }
                         ],
                         "k": "el",
-                        "key": "btn_end_turn",
+                        "key": "btn_capture",
                         "on": [
                           {
-                            "target": "btn_end_turn",
+                            "target": "btn_capture",
                             "type": "click"
                           }
                         ],
@@ -3214,7 +2649,7 @@
                       }
                     ],
                     "k": "el",
-                    "key": "row1",
+                    "key": "controls_row1",
                     "on": [],
                     "props": {
                       "attrs": {},
@@ -3232,14 +2667,14 @@
                           {
                             "k": "text",
                             "key": "text",
-                            "text": "Copy State"
+                            "text": "Import File"
                           }
                         ],
                         "k": "el",
-                        "key": "btn_copy",
+                        "key": "btn_import",
                         "on": [
                           {
-                            "target": "btn_copy",
+                            "target": "btn_import",
                             "type": "click"
                           }
                         ],
@@ -3259,14 +2694,14 @@
                           {
                             "k": "text",
                             "key": "text",
-                            "text": "Share State"
+                            "text": "Read Location"
                           }
                         ],
                         "k": "el",
-                        "key": "btn_share",
+                        "key": "btn_location",
                         "on": [
                           {
-                            "target": "btn_share",
+                            "target": "btn_location",
                             "type": "click"
                           }
                         ],
@@ -3286,14 +2721,14 @@
                           {
                             "k": "text",
                             "key": "text",
-                            "text": "Export Plan"
+                            "text": "Toggle Alert"
                           }
                         ],
                         "k": "el",
-                        "key": "btn_export",
+                        "key": "btn_notify",
                         "on": [
                           {
-                            "target": "btn_export",
+                            "target": "btn_notify",
                             "type": "click"
                           }
                         ],
@@ -3310,42 +2745,12 @@
                       }
                     ],
                     "k": "el",
-                    "key": "row2",
+                    "key": "controls_row2",
                     "on": [],
                     "props": {
                       "attrs": {},
                       "class": [
                         "row"
-                      ],
-                      "style": {}
-                    },
-                    "tag": "div"
-                  },
-                  {
-                    "children": [
-                      {
-                        "k": "text",
-                        "key": "turn",
-                        "text": "blue"
-                      },
-                      {
-                        "k": "text",
-                        "key": "status",
-                        "text": "Blue turn. Objective secured."
-                      },
-                      {
-                        "k": "text",
-                        "key": "export_state",
-                        "text": "ok"
-                      }
-                    ],
-                    "k": "el",
-                    "key": "status_box",
-                    "on": [],
-                    "props": {
-                      "attrs": {},
-                      "class": [
-                        "section"
                       ],
                       "style": {}
                     },
@@ -3363,6 +2768,81 @@
                   "style": {}
                 },
                 "tag": "div"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "permission_line",
+                        "text": "Permission: idle | unknown"
+                      },
+                      {
+                        "k": "text",
+                        "key": "capture_line",
+                        "text": "Capture: idle | none"
+                      },
+                      {
+                        "k": "text",
+                        "key": "import_line",
+                        "text": "Import: error(blob_item_too_large) | []"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "status_row1",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "status_row"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "blob_line",
+                        "text": "Blob Stat: idle | none"
+                      },
+                      {
+                        "k": "text",
+                        "key": "location_line",
+                        "text": "Location: idle | null,null"
+                      },
+                      {
+                        "k": "text",
+                        "key": "notification_line",
+                        "text": "Notification: idle | pending"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "status_row2",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "status_row"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  }
+                ],
+                "k": "el",
+                "key": "status",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
               }
             ],
             "k": "el",
@@ -3371,7 +2851,726 @@
             "props": {
               "attrs": {},
               "class": [
-                "hex_min"
+                "capture_min"
+              ],
+              "style": {}
+            },
+            "tag": "div"
+          },
+          "v": 1
+        },
+        "v": 1
+      }
+    },
+    {
+      "env": {
+        "event": {
+          "target": "btn_import",
+          "type": "click"
+        },
+        "kind": "x07.web_ui.dispatch",
+        "state": {
+          "__x07_device": {
+            "files": {
+              "result": {
+                "capability": "files.pick",
+                "host_meta": {
+                  "platform": "android",
+                  "provider": "android_native"
+                },
+                "op": "files.pick",
+                "payload": {
+                  "reason": "blob_total_too_large"
+                },
+                "request_id": "import_file",
+                "status": "error"
+              }
+            }
+          },
+          "blob_status": "idle",
+          "camera_status": "idle",
+          "capture_blob": null,
+          "files_status": "error(blob_item_too_large)",
+          "import_blob": null,
+          "import_manifests": [],
+          "location": null,
+          "location_status": "idle",
+          "notification_opened_id": "",
+          "notification_status": "idle",
+          "permission_state": "unknown",
+          "permission_status": "idle"
+        },
+        "v": 1
+      },
+      "frame": {
+        "effects": [],
+        "kind": "x07.web_ui.frame",
+        "patches": [
+          {
+            "op": "replace",
+            "path": "",
+            "value": {
+              "kind": "x07.web_ui.tree",
+              "root": {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "title",
+                        "text": "x07 Capture Min"
+                      },
+                      {
+                        "k": "text",
+                        "key": "intro",
+                        "text": "Canonical M0 proving app for permissions, capture/import, blob manifests, location, and local notifications."
+                      }
+                    ],
+                    "k": "el",
+                    "key": "header",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Query Camera"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_perm_query",
+                            "on": [
+                              {
+                                "target": "btn_perm_query",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Request Camera"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_perm_request",
+                            "on": [
+                              {
+                                "target": "btn_perm_request",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Capture Photo"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_capture",
+                            "on": [
+                              {
+                                "target": "btn_capture",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "controls_row1",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      },
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Import File"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_import",
+                            "on": [
+                              {
+                                "target": "btn_import",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Read Location"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_location",
+                            "on": [
+                              {
+                                "target": "btn_location",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Toggle Alert"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_notify",
+                            "on": [
+                              {
+                                "target": "btn_notify",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "controls_row2",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "actions",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "permission_line",
+                            "text": "Permission: idle | unknown"
+                          },
+                          {
+                            "k": "text",
+                            "key": "capture_line",
+                            "text": "Capture: idle | none"
+                          },
+                          {
+                            "k": "text",
+                            "key": "import_line",
+                            "text": "Import: error(blob_total_too_large) | []"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "status_row1",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "status_row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "blob_line",
+                            "text": "Blob Stat: idle | none"
+                          },
+                          {
+                            "k": "text",
+                            "key": "location_line",
+                            "text": "Location: idle | null,null"
+                          },
+                          {
+                            "k": "text",
+                            "key": "notification_line",
+                            "text": "Notification: idle | pending"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "status_row2",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "status_row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "status",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  }
+                ],
+                "k": "el",
+                "key": "root",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "capture_min"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              "v": 1
+            }
+          }
+        ],
+        "state": {
+          "blob_status": "idle",
+          "camera_status": "idle",
+          "capture_blob": null,
+          "files_status": "error(blob_total_too_large)",
+          "import_blob": null,
+          "import_manifests": [],
+          "location": null,
+          "location_status": "idle",
+          "notification_opened_id": "",
+          "notification_status": "idle",
+          "permission_state": "unknown",
+          "permission_status": "idle"
+        },
+        "telemetry": {},
+        "ui": {
+          "kind": "x07.web_ui.tree",
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "k": "text",
+                    "key": "title",
+                    "text": "x07 Capture Min"
+                  },
+                  {
+                    "k": "text",
+                    "key": "intro",
+                    "text": "Canonical M0 proving app for permissions, capture/import, blob manifests, location, and local notifications."
+                  }
+                ],
+                "k": "el",
+                "key": "header",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Query Camera"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_perm_query",
+                        "on": [
+                          {
+                            "target": "btn_perm_query",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Request Camera"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_perm_request",
+                        "on": [
+                          {
+                            "target": "btn_perm_request",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Capture Photo"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_capture",
+                        "on": [
+                          {
+                            "target": "btn_capture",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "controls_row1",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "row"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Import File"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_import",
+                        "on": [
+                          {
+                            "target": "btn_import",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Read Location"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_location",
+                        "on": [
+                          {
+                            "target": "btn_location",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "text",
+                            "text": "Toggle Alert"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "btn_notify",
+                        "on": [
+                          {
+                            "target": "btn_notify",
+                            "type": "click"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "type": "button"
+                          },
+                          "class": [
+                            "control"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "button"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "controls_row2",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "row"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  }
+                ],
+                "k": "el",
+                "key": "actions",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "permission_line",
+                        "text": "Permission: idle | unknown"
+                      },
+                      {
+                        "k": "text",
+                        "key": "capture_line",
+                        "text": "Capture: idle | none"
+                      },
+                      {
+                        "k": "text",
+                        "key": "import_line",
+                        "text": "Import: error(blob_total_too_large) | []"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "status_row1",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "status_row"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "blob_line",
+                        "text": "Blob Stat: idle | none"
+                      },
+                      {
+                        "k": "text",
+                        "key": "location_line",
+                        "text": "Location: idle | null,null"
+                      },
+                      {
+                        "k": "text",
+                        "key": "notification_line",
+                        "text": "Notification: idle | pending"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "status_row2",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "status_row"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  }
+                ],
+                "k": "el",
+                "key": "status",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              }
+            ],
+            "k": "el",
+            "key": "root",
+            "on": [],
+            "props": {
+              "attrs": {},
+              "class": [
+                "capture_min"
               ],
               "style": {}
             },

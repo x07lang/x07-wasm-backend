@@ -1,6 +1,6 @@
-# WASM Phase 4 (Native Backend Targets)
+# Native backend targets
 
-Phase 4 adds **native** component emit targets to `x07-wasm component build`:
+This guide covers **native** component emit targets for `x07-wasm component build`:
 
 - `--emit http-native`: build a runnable `wasi:http/proxy` component (`http.component.wasm`)
 - `--emit cli-native`: build a runnable `wasi:cli/command` component (`cli.component.wasm`)
@@ -9,7 +9,7 @@ Phase 4 adds **native** component emit targets to `x07-wasm component build`:
 
 ## Profiles and budgets
 
-Phase 4 bumps the component profile schema to:
+The component profile schema is:
 
 - `x07.wasm.component.profile@0.2.0`
 
@@ -27,11 +27,11 @@ See:
 
 `x07-wasm component build --emit` supports:
 
-- `solve`: Phase 1 solve component (`solve.component.wasm`)
-- `http`: composed HTTP component (Phase 1 adapters + `wac plug`; does not require the C toolchain)
-- `cli`: composed CLI component (Phase 1 adapters + `wac plug`; does not require the C toolchain)
-- `http-native`: Phase 4 native HTTP component (legacy C toolchain path)
-- `cli-native`: Phase 4 native CLI component (legacy C toolchain path)
+    - `solve`: solve component (`solve.component.wasm`)
+    - `http`: composed HTTP component (adapters + `wac plug`; does not require the C toolchain)
+    - `cli`: composed CLI component (adapters + `wac plug`; does not require the C toolchain)
+    - `http-native`: native HTTP component (legacy C toolchain path)
+    - `cli-native`: native CLI component (legacy C toolchain path)
 - `http-adapter` / `cli-adapter`: legacy adapter components
 - `all` (default): build `solve + http + cli` (composed)
 
@@ -48,7 +48,7 @@ The body is represented as a stream payload (`{ bytes_len, base64 }`).
 
 ## Diagnostics and incidents
 
-Phase 4 standardizes guest->host diagnostic channels:
+This standardizes guest->host diagnostic channels:
 
 - HTTP: response headers
   - `x-x07-diag-code: <CODE>`
@@ -62,12 +62,6 @@ Phase 4 standardizes guest->host diagnostic channels:
 Host mapping failures (duplicates, invalid encodings, orphaned data) are reported as pinned
 `X07WASM_HOST_DIAG_*` diagnostics.
 
-## CI gate
+## CI coverage
 
-Run the Phase 4 loop locally:
-
-```sh
-# Required for the legacy C toolchain backend (`http-native` / `cli-native`).
-export PATH="${WASI_SDK_DIR}/bin:${PATH}"
-bash scripts/ci/check_phase4.sh
-```
+CI exercises native targets by building the legacy C toolchain outputs (`http-native` / `cli-native`) under a configured WASI SDK toolchain (`WASI_SDK_DIR`).

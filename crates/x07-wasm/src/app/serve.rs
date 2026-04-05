@@ -522,6 +522,15 @@ async fn handle_one_request(
 ) -> Result<Response<Full<Bytes>>, hyper::Error> {
     let method = req.method().clone();
     let path = req.uri().path().to_string();
+    let origin = req.headers().get(hyper::header::ORIGIN).cloned();
+    if std::env::var_os("X07_WASM_APP_SERVE_DEBUG").is_some() {
+        let origin = req
+            .headers()
+            .get(hyper::header::ORIGIN)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("-");
+        eprintln!("x07-wasm app-serve {} {path} origin={origin}", method);
+    }
 
     // Serve the bundle manifest at /app.bundle.json (bundle root).
     if path == "/app.bundle.json" {
@@ -529,14 +538,15 @@ async fn handle_one_request(
             method,
             &state.bundle_doc_json,
             "application/json; charset=utf-8",
+            origin.as_ref(),
         );
     }
 
     if is_api_path(&state.api_prefix, &path) {
-        return proxy_api_request(req, state).await;
+        return proxy_api_request(req, state, origin).await;
     }
 
-    serve_static_request(method, &path, &state.frontend_dir)
+    serve_static_request(method, &path, &state.frontend_dir, origin.as_ref())
 }
 
 fn is_api_path(api_prefix: &str, path: &str) -> bool {
@@ -556,9 +566,14 @@ fn is_api_path(api_prefix: &str, path: &str) -> bool {
 
 fn apply_api_cors_headers(
     builder: hyper::http::response::Builder,
+    origin: Option<&HeaderValue>,
 ) -> hyper::http::response::Builder {
+    let allow_origin = origin
+        .and_then(|v| v.to_str().ok())
+        .filter(|v| !v.is_empty())
+        .unwrap_or("*");
     builder
-        .header("access-control-allow-origin", "*")
+        .header("access-control-allow-origin", allow_origin)
         .header(
             "access-control-allow-methods",
             "GET, POST, PUT, PATCH, DELETE, OPTIONS",
@@ -578,13 +593,14 @@ fn api_empty_response(
     method: &Method,
     status: StatusCode,
     body: &'static [u8],
+    origin: Option<&HeaderValue>,
 ) -> Result<Response<Full<Bytes>>, hyper::Error> {
     let bytes = if *method == Method::HEAD || *method == Method::OPTIONS {
         Bytes::new()
     } else {
         Bytes::from_static(body)
     };
-    Ok(apply_api_cors_headers(Response::builder().status(status))
+    Ok(apply_api_cors_headers(Response::builder().status(status), origin)
         .body(Full::new(bytes))
         .unwrap())
 }
@@ -592,9 +608,10 @@ fn api_empty_response(
 async fn proxy_api_request(
     req: Request<Incoming>,
     state: Arc<AppServeState>,
+    origin: Option<HeaderValue>,
 ) -> Result<Response<Full<Bytes>>, hyper::Error> {
     if req.method() == Method::OPTIONS {
-        return api_empty_response(req.method(), StatusCode::NO_CONTENT, b"");
+        return api_empty_response(req.method(), StatusCode::NO_CONTENT, b"", origin.as_ref());
     }
 
     let _permit = match state.max_concurrency.acquire().await {
@@ -604,6 +621,7 @@ async fn proxy_api_request(
                 req.method(),
                 StatusCode::SERVICE_UNAVAILABLE,
                 b"server shutting down",
+                origin.as_ref(),
             );
         }
     };
@@ -619,6 +637,7 @@ async fn proxy_api_request(
                     &parts.method,
                     StatusCode::PAYLOAD_TOO_LARGE,
                     b"request too large",
+                    origin.as_ref(),
                 );
             }
         };
@@ -650,7 +669,7 @@ async fn proxy_api_request(
                     resp = resp.header(k, v);
                 }
             }
-            Ok(apply_api_cors_headers(resp)
+            Ok(apply_api_cors_headers(resp, origin.as_ref())
                 .body(Full::new(Bytes::from(buf.body)))
                 .unwrap())
         }
@@ -663,6 +682,7 @@ async fn proxy_api_request(
                 &req_method,
                 StatusCode::INTERNAL_SERVER_ERROR,
                 b"internal error",
+                origin.as_ref(),
             )
         }
     }
@@ -672,27 +692,32 @@ fn serve_static_request(
     method: Method,
     path: &str,
     dir: &Path,
+    origin: Option<&HeaderValue>,
 ) -> Result<Response<Full<Bytes>>, hyper::Error> {
     if method != Method::GET && method != Method::HEAD {
-        return Ok(Response::builder()
-            .status(StatusCode::METHOD_NOT_ALLOWED)
+        return Ok(apply_api_cors_headers(
+            Response::builder().status(StatusCode::METHOD_NOT_ALLOWED),
+            origin,
+        )
             .body(Full::new(Bytes::from_static(b"method not allowed")))
             .unwrap());
     }
 
     let Some(full) = resolve_static_path(dir, path) else {
-        return Ok(Response::builder()
-            .status(StatusCode::NOT_FOUND)
+        return Ok(apply_api_cors_headers(Response::builder().status(StatusCode::NOT_FOUND), origin)
             .body(Full::new(Bytes::from_static(b"not found")))
             .unwrap());
     };
 
     let mime = mime_for_path(&full);
     if method == Method::HEAD {
-        let mut resp = Response::builder()
-            .status(StatusCode::OK)
-            .header(hyper::header::CONTENT_TYPE, mime)
-            .header("x-content-type-options", "nosniff");
+        let mut resp = apply_api_cors_headers(
+            Response::builder()
+                .status(StatusCode::OK)
+                .header(hyper::header::CONTENT_TYPE, mime)
+                .header("x-content-type-options", "nosniff"),
+            origin,
+        );
         if mime.starts_with("text/html") {
             resp = resp.header(
                 "content-security-policy",
@@ -704,16 +729,23 @@ fn serve_static_request(
     let body = match std::fs::read(&full) {
         Ok(v) => v,
         Err(_) => {
-            return Ok(Response::builder()
-                .status(StatusCode::INTERNAL_SERVER_ERROR)
-                .body(Full::new(Bytes::from_static(b"read failed")))
-                .unwrap());
+            return Ok(
+                apply_api_cors_headers(
+                    Response::builder().status(StatusCode::INTERNAL_SERVER_ERROR),
+                    origin,
+                )
+                    .body(Full::new(Bytes::from_static(b"read failed")))
+                    .unwrap(),
+            );
         }
     };
-    let mut resp = Response::builder()
-        .status(StatusCode::OK)
-        .header(hyper::header::CONTENT_TYPE, mime)
-        .header("x-content-type-options", "nosniff");
+    let mut resp = apply_api_cors_headers(
+        Response::builder()
+            .status(StatusCode::OK)
+            .header(hyper::header::CONTENT_TYPE, mime)
+            .header("x-content-type-options", "nosniff"),
+        origin,
+    );
     if mime.starts_with("text/html") {
         resp = resp.header(
             "content-security-policy",
@@ -773,10 +805,13 @@ fn serve_bytes(
     method: Method,
     doc: &Value,
     content_type: &'static str,
+    origin: Option<&HeaderValue>,
 ) -> Result<Response<Full<Bytes>>, hyper::Error> {
     if method != Method::GET && method != Method::HEAD {
-        return Ok(Response::builder()
-            .status(StatusCode::METHOD_NOT_ALLOWED)
+        return Ok(apply_api_cors_headers(
+            Response::builder().status(StatusCode::METHOD_NOT_ALLOWED),
+            origin,
+        )
             .body(Full::new(Bytes::from_static(b"method not allowed")))
             .unwrap());
     }
@@ -787,11 +822,14 @@ fn serve_bytes(
     } else {
         Bytes::from(bytes)
     };
-    Ok(Response::builder()
-        .status(StatusCode::OK)
-        .header(hyper::header::CONTENT_TYPE, content_type)
-        .body(Full::new(body))
-        .unwrap())
+    Ok(apply_api_cors_headers(
+        Response::builder()
+            .status(StatusCode::OK)
+            .header(hyper::header::CONTENT_TYPE, content_type),
+        origin,
+    )
+    .body(Full::new(body))
+    .unwrap())
 }
 
 #[allow(clippy::too_many_arguments)]

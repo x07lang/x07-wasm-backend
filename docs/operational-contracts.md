@@ -1,6 +1,6 @@
-# WASM Phase 6 (Operational Contracts + Policy + SLO + Deploy Plans + Provenance)
+# Operational contracts, policy, SLO, deploy plans, provenance
 
-Phase 6 builds on Phase 5 by adding machine-readable operational contracts and outputs that are safe to consume by autonomous deployers:
+This guide covers machine-readable operational contracts and outputs that are safe to consume by autonomous deployers:
 
 - Ops profiles (`x07-wasm ops validate`)
 - Capability contracts (`x07-wasm caps validate`)
@@ -9,7 +9,7 @@ Phase 6 builds on Phase 5 by adding machine-readable operational contracts and o
 - Progressive delivery plan generation (`x07-wasm deploy plan`)
 - Pack provenance attest/verify (`x07-wasm provenance attest`, `x07-wasm provenance verify`)
 
-All Phase 6 commands support:
+All commands in this surface support:
 
 - `--json` / `--report-out` (machine report emission)
 - `--json-schema` / `--json-schema-id` (report contract discovery)
@@ -17,7 +17,7 @@ All Phase 6 commands support:
 
 ## Operational contracts
 
-Phase 6 adds an ops profile registry under:
+This repo includes an ops profile registry under:
 
 - `arch/app/ops/index.x07ops.json`
 
@@ -78,7 +78,7 @@ Policy cards (`x07.policy.card@0.1.0`) support:
 - allow/deny/warn/require via assertions
 - optional RFC 6902 JSON Patch mutation when assertions fail
 
-Evaluation semantics (Phase 6):
+Evaluation semantics:
 
 - Rules are evaluated in file order (cards list order, then rules list order).
 - For a matching `target`, assertions are evaluated against the current JSON doc.
@@ -144,23 +144,17 @@ Notes:
   - pack files/subjects: 256 MiB (`X07WASM_APP_VERIFY_FILE_TOO_LARGE`, `X07WASM_PROVENANCE_FILE_TOO_LARGE`)
   - DSSE attestation input: 16 MiB (`X07WASM_PROVENANCE_FILE_TOO_LARGE`)
 
-## Platform handoff (Phase 6)
+## Platform handoff
 
-Phase 6 outputs are intended to be consumed by an autonomous deployer (for example `x07-platform`) as a closed-loop contract:
+These outputs are intended to be consumed by an autonomous deployer (for example `x07-platform`) as a closed-loop contract:
 
 - **Deploy intent**: `x07-wasm deploy plan` emits `deploy.plan.json`. By default it also emits Kubernetes YAML outputs under `--out-dir` (disable via `--emit-k8s false`).
 - **Authorization**: `x07-wasm provenance verify` recomputes digests against the pack directory; platforms can gate deployment on a verified attestation and record `predicate.x07.compatibility_hash`.
 - **Promotion**: `x07-wasm app serve --mode canary --ops <ops.json>` evaluates SLOs (if referenced by ops) and emits a pinned `promote|rollback|inconclusive` decision.
 - **Incidents → regressions**: incident bundles under `.x07-wasm/incidents/...` can be converted into replayable cases via `* regress-from-incident` commands.
 
-## CI gate
+## CI coverage
 
-Run the Phase 6 gate locally:
-
-```sh
-# Only required for legacy C toolchain builds.
-export PATH="${WASI_SDK_DIR}/bin:${PATH}"
-bash scripts/ci/check_phase6.sh
-```
+CI validates these contracts and reports in the presence of pinned toolchains and deterministic fixtures, including the legacy C toolchain path when `WASI_SDK_DIR` is configured.
 
 The official full-stack showcase for this surface is [`examples/x07_atlas`](../examples/x07_atlas/README.md).

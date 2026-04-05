@@ -1,6 +1,6 @@
-# WASM Phase 7 (Native x07 → wasm backend, no C toolchain)
+# Native x07 → wasm backend (no C toolchain)
 
-Phase 7 removes the C toolchain from the default `solve-pure` wasm build path by teaching `x07` to emit core wasm directly and teaching `x07-wasm build` to use it.
+This guide covers the toolchain-free `solve-pure` wasm build path by teaching `x07` to emit core wasm directly and teaching `x07-wasm build` to use it.
 
 ## Profiles: `codegen_backend`
 
@@ -38,16 +38,11 @@ New build-path diagnostics:
 
 ## Component/app builds
 
-To keep Phase 7 toolchain-free by default:
+To keep this toolchain-free by default:
 
 - `x07-wasm component build --emit http|cli` uses the composed path (adapters + `wac plug`)
 - legacy adapterless targets remain available as `--emit http-native` / `--emit cli-native` (may require the legacy C toolchain backend)
 
-## CI gate
+## CI coverage
 
-Phase 7 adds a “no C toolchain” gate that shadows `clang`/`wasm-ld` with failing stubs:
-
-```sh
-bash scripts/ci/check_phase7.sh
-```
-
+CI enforces that the default backend path stays toolchain-free by shadowing `clang`/`wasm-ld` with failing stubs during the dedicated gate.

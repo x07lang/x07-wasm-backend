@@ -1036,7 +1036,7 @@ mod tests {
         let out_dir = tmp.join("out");
         std::fs::create_dir_all(&incident_dir).expect("create incident dir");
         let trace_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../../examples/x07_capture_min/tests/web_ui/m0_success.trace.json");
+            .join("../../examples/x07_capture_min/tests/web_ui/success.trace.json");
         let trace_doc: Value =
             serde_json::from_slice(&std::fs::read(&trace_path).expect("read trace fixture"))
                 .expect("parse trace fixture");

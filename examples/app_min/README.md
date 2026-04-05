@@ -1,6 +1,6 @@
 # app_min
 
-Minimal Phase-3 app bundle example (web-ui frontend + wasi:http/proxy backend).
+Minimal app bundle example (web-ui frontend + wasi:http/proxy backend).
 
 - Frontend renders a title and a response line.
 - On init, frontend emits a single GET /ping effect (id=req0).

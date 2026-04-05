@@ -1,6 +1,6 @@
-# WASM Phase 8 (Device bundles: system WebView host + pinned host ABI)
+# Device bundles (system WebView host + pinned ABI)
 
-Phase 8 introduces a device contract layer for running `std.web_ui` reducers in a system WebView host (desktop + mobile).
+This guide covers a device contract layer for running `std.web_ui` reducers in a system WebView host (desktop + mobile).
 
 The device bundle format pins the host ABI hash from `x07-device-host` so that a device app can reject incompatible hosts deterministically.
 
@@ -37,7 +37,7 @@ Consumer repos do not need to vendor either the device host ABI snapshot or the 
 - Device telemetry profiles: `arch/device/profiles/*.telemetry.profile.json`
 - Bundle manifest: `bundle.manifest.json` (`x07.device.bundle.manifest@0.1.0`)
 
-Telemetry profiles must advertise the standard event-class set used by the platform device-release loop and may target either `http/json` or `http/protobuf` OTLP transport. M0 device bundles also carry `x07.device.capabilities@0.2.0`, which separates build-time capability allowlisting from runtime permission outcomes for camera, audio, haptics, files, clipboard, blob storage, foreground location, local notifications, and share support. The `files` capability line now also carries the Forge builder-I/O switches for `pick_multiple`, `save`, and `drop`, while `audio`, `haptics`, `clipboard`, and `share` live under their own device subobjects.
+Telemetry profiles must advertise the standard event-class set used by the platform device-release loop and may target either `http/json` or `http/protobuf` OTLP transport. Device bundles also carry `x07.device.capabilities@0.2.0`, which separates build-time capability allowlisting from runtime permission outcomes for camera, audio, haptics, files, clipboard, blob storage, foreground location, local notifications, and share support. The `files` capability line now also carries the Forge builder-I/O switches for `pick_multiple`, `save`, and `drop`, while `audio`, `haptics`, `clipboard`, and `share` live under their own device subobjects.
 
 ## CLI
 
@@ -61,7 +61,7 @@ Bundle layout notes:
 - The resolved device profile is embedded into the bundle under `profile/device.profile.json`.
 - The resolved capabilities and telemetry sidecars are embedded under `profile/device.capabilities.json` and `profile/device.telemetry.profile.json`.
 - `x07-wasm device verify` digest-verifies all three profile-sidecar files from `bundle.manifest.json`.
-- `x07-wasm device package` projects the enabled M0 capabilities into generated iOS and Android templates so packaged apps include the required usage-description and runtime-permission declarations.
+- `x07-wasm device package` projects the enabled capabilities into generated iOS and Android templates so packaged apps include the required usage-description and runtime-permission declarations.
 
 Verify a device bundle:
 
@@ -82,8 +82,6 @@ x07-wasm device provenance attest --dir dist/device --signing-key arch/provenanc
 x07-wasm device provenance verify --attestation dist/device.provenance.dsse.json --bundle-dir dist/device --trusted-public-key arch/provenance/dev.ed25519.public_key.b64 --json
 ```
 
-## CI gate
+## CI coverage
 
-```sh
-bash scripts/ci/check_phase8.sh
-```
+CI validates device bundle construction, pinned host ABI hashing, and example bundles against deterministic fixtures.

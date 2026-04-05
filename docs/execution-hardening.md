@@ -1,6 +1,6 @@
-# WASM Phase 5 (Track-1 Hardening)
+# Execution hardening
 
-Phase 5 hardens the WASM execution loop after Phase 4:
+This guide covers hardening the WASM execution loop:
 
 - Toolchain pin validation (`x07-wasm toolchain validate`)
 - Host-enforced runtime limits (fuel, memory, table, wasm stack) with stable `X07WASM_BUDGET_EXCEEDED_*` diagnostics
@@ -10,7 +10,7 @@ Phase 5 hardens the WASM execution loop after Phase 4:
 
 ## Toolchain pin validation
 
-Phase 5 adds a data registry under:
+This repo includes a toolchain validation registry under:
 
 - `arch/wasm/toolchain/index.x07wasm.toolchain.json`
 
@@ -58,7 +58,7 @@ Shipped WASM profiles:
 
 ## App pack / verify
 
-Phase 5 adds deployable pack artifacts:
+This repo includes deployable pack artifacts:
 
 - `x07-wasm app pack` produces a content-addressed `x07.app.pack@0.1.0` manifest.
 - `x07-wasm app verify` recomputes digests and enforces required headers (notably `.wasm` must be served as `application/wasm`).
@@ -72,12 +72,6 @@ The `x07-wasm http` command group validates contracts and provides a determinist
 - `x07-wasm http test ...`
 - `x07-wasm http regress from-incident ...`
 
-## CI gate
+## CI coverage
 
-Run the Phase 5 gate locally:
-
-```sh
-# Only required for legacy C toolchain builds.
-export PATH="${WASI_SDK_DIR}/bin:${PATH}"
-bash scripts/ci/check_phase5.sh
-```
+CI exercises the hardening surfaces under both the native backend and (when configured) the legacy C toolchain path (`WASI_SDK_DIR`).

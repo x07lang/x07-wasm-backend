@@ -1,6 +1,6 @@
 # `x07 Hex Min`
 
-Reference tactics M0 app for the minimal select/move/end-turn lane in `x07-wasm-backend`.
+Reference tactics app for the minimal select/move/end-turn lane in `x07-wasm-backend`.
 
 This example keeps the reducer intentionally narrow while proving the same `std.web_ui` program across browser replay, desktop bundle smoke, and iOS/Android project generation. It is the canonical reference for:
 
@@ -11,7 +11,7 @@ This example keeps the reducer intentionally narrow while proving the same `std.
 - target-specific device capabilities, telemetry sidecars, and Android haptics permission projection
 
 - CI gate: `bash scripts/ci/check_hex_min.sh`
-- Alias gate: `bash scripts/ci/check_m0_native_surface.sh`
+- Alias gate: `bash scripts/ci/check_native_surface.sh`
 - Trace notes: [`tests/README.md`](tests/README.md)
 - Native packaging notes: [`tests/native_incidents/README.md`](tests/native_incidents/README.md)
 
@@ -20,7 +20,7 @@ This example keeps the reducer intentionally narrow while proving the same `std.
 - `std-web-ui@0.2.6` audio/haptics helpers from the vendored package path
 - One reducer packaged for desktop, iOS, and Android
 - Deterministic replay for select/move/victory, clipboard/share/export, and unsupported haptics outcomes
-- Device capability sidecars that match the tactics M0 audio/haptics/clipboard/files/share host contract
+- Device capability sidecars that match the tactics audio/haptics/clipboard/files/share host contract
 
 ## Run With Released Tools
 
@@ -61,7 +61,7 @@ PATH="<workspace>/x07/target/debug:<workspace>/x07-wasm-backend/target/debug:<wo
 - Desktop profile: [`arch/device/profiles/device_desktop_dev.json`](arch/device/profiles/device_desktop_dev.json)
 - iOS profile: [`arch/device/profiles/device_ios_dev.json`](arch/device/profiles/device_ios_dev.json)
 - Android profile: [`arch/device/profiles/device_android_dev.json`](arch/device/profiles/device_android_dev.json)
-- Turn-flow replay: [`tests/web_ui/m0_turn_flow.trace.json`](tests/web_ui/m0_turn_flow.trace.json)
-- Clipboard replay: [`tests/web_ui/m0_clipboard_success.trace.json`](tests/web_ui/m0_clipboard_success.trace.json)
-- Share/export replay: [`tests/web_ui/m0_share_export_success.trace.json`](tests/web_ui/m0_share_export_success.trace.json)
-- Negative replay: [`tests/web_ui/m0_negative.trace.json`](tests/web_ui/m0_negative.trace.json)
+- Turn-flow replay: [`tests/web_ui/turn_flow.trace.json`](tests/web_ui/turn_flow.trace.json)
+- Clipboard replay: [`tests/web_ui/clipboard_success.trace.json`](tests/web_ui/clipboard_success.trace.json)
+- Share/export replay: [`tests/web_ui/share_export_success.trace.json`](tests/web_ui/share_export_success.trace.json)
+- Negative replay: [`tests/web_ui/negative.trace.json`](tests/web_ui/negative.trace.json)

@@ -1,7 +1,7 @@
 {
   "kind": "x07.web_ui.trace",
   "meta": {
-    "name": "m0_clipboard_success",
+    "name": "clipboard_success",
     "steps": 3
   },
   "steps": [

@@ -3,8 +3,8 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 WASM_ROOT="$(cd "${ROOT_DIR}/../.." && pwd)"
-OUT_DIR="${ROOT_DIR}/dist/m0_capture"
-REPORT_DIR="${ROOT_DIR}/build/m0_capture"
+OUT_DIR="${ROOT_DIR}/dist/capture_min"
+REPORT_DIR="${ROOT_DIR}/build/capture_min"
 WEB_UI_DIST_DIR="${OUT_DIR}/web_ui_debug"
 TRACE_DIR="${ROOT_DIR}/tests/web_ui"
 
@@ -22,10 +22,10 @@ rm -rf "${OUT_DIR}" "${REPORT_DIR}"
 mkdir -p "${OUT_DIR}" "${REPORT_DIR}"
 
 WEB_UI_CASES=(
-  "${TRACE_DIR}/m0_blob_quota.trace.json"
-  "${TRACE_DIR}/m0_notification_cancel.trace.json"
-  "${TRACE_DIR}/m0_success.trace.json"
-  "${TRACE_DIR}/m0_negative.trace.json"
+  "${TRACE_DIR}/blob_quota.trace.json"
+  "${TRACE_DIR}/notification_cancel.trace.json"
+  "${TRACE_DIR}/success.trace.json"
+  "${TRACE_DIR}/negative.trace.json"
 )
 
 echo "==> validate frontend"

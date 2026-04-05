@@ -1,8 +1,8 @@
 {
   "kind": "x07.web_ui.trace",
   "meta": {
-    "name": "m0_share_success",
-    "steps": 5
+    "name": "negative",
+    "steps": 7
   },
   "steps": [
     {
@@ -790,12 +790,836 @@
     {
       "env": {
         "event": {
-          "target": "in_title",
-          "type": "input",
-          "value": "Builder Notes"
+          "target": "btn_import",
+          "type": "click"
         },
         "kind": "x07.web_ui.dispatch",
         "state": {
+          "body": "",
+          "clipboard_preview": "",
+          "clipboard_status": "idle",
+          "export_status": "idle",
+          "import_primary_name": "",
+          "import_secondary_name": "",
+          "import_source": "picker",
+          "import_status": "idle",
+          "share_status": "idle",
+          "title": "Builder Draft"
+        },
+        "v": 1
+      },
+      "frame": {
+        "effects": [
+          {
+            "capability": "files.pick",
+            "kind": "x07.web_ui.effect.device.files.pick",
+            "op": "files.pick",
+            "payload": {
+              "accept": [
+                "text/plain",
+                "application/json"
+              ],
+              "multiple": true
+            },
+            "request_id": "import_pick",
+            "v": 1
+          }
+        ],
+        "kind": "x07.web_ui.frame",
+        "patches": [
+          {
+            "op": "replace",
+            "path": "",
+            "value": {
+              "kind": "x07.web_ui.tree",
+              "root": {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "title",
+                        "text": "x07 Builder IO Min"
+                      },
+                      {
+                        "k": "text",
+                        "key": "intro",
+                        "text": "Reference builder flow for import, edit, clipboard, export, share, and deterministic replay."
+                      }
+                    ],
+                    "k": "el",
+                    "key": "header",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [],
+                        "k": "el",
+                        "key": "in_title",
+                        "on": [
+                          {
+                            "target": "in_title",
+                            "type": "input"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "placeholder": "Draft title",
+                            "type": "text",
+                            "value": "Builder Draft"
+                          },
+                          "class": [
+                            "editor_input"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "input"
+                      },
+                      {
+                        "children": [],
+                        "k": "el",
+                        "key": "in_body",
+                        "on": [
+                          {
+                            "target": "in_body",
+                            "type": "input"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "rows": "8",
+                            "value": ""
+                          },
+                          "class": [
+                            "editor_input"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "textarea"
+                      },
+                      {
+                        "k": "text",
+                        "key": "draft_preview",
+                        "text": "Builder Draft\n\n"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "editor",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "children": [
+                                  {
+                                    "k": "text",
+                                    "key": "text",
+                                    "text": "Import Files"
+                                  }
+                                ],
+                                "k": "el",
+                                "key": "btn_import",
+                                "on": [
+                                  {
+                                    "target": "btn_import",
+                                    "type": "click"
+                                  }
+                                ],
+                                "props": {
+                                  "attrs": {
+                                    "type": "button"
+                                  },
+                                  "class": [
+                                    "control"
+                                  ],
+                                  "style": {}
+                                },
+                                "tag": "button"
+                              },
+                              {
+                                "children": [
+                                  {
+                                    "k": "text",
+                                    "key": "text",
+                                    "text": "Paste Clipboard"
+                                  }
+                                ],
+                                "k": "el",
+                                "key": "btn_paste",
+                                "on": [
+                                  {
+                                    "target": "btn_paste",
+                                    "type": "click"
+                                  }
+                                ],
+                                "props": {
+                                  "attrs": {
+                                    "type": "button"
+                                  },
+                                  "class": [
+                                    "control"
+                                  ],
+                                  "style": {}
+                                },
+                                "tag": "button"
+                              },
+                              {
+                                "children": [
+                                  {
+                                    "k": "text",
+                                    "key": "text",
+                                    "text": "Copy Draft"
+                                  }
+                                ],
+                                "k": "el",
+                                "key": "btn_copy",
+                                "on": [
+                                  {
+                                    "target": "btn_copy",
+                                    "type": "click"
+                                  }
+                                ],
+                                "props": {
+                                  "attrs": {
+                                    "type": "button"
+                                  },
+                                  "class": [
+                                    "control"
+                                  ],
+                                  "style": {}
+                                },
+                                "tag": "button"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "actions_row1",
+                            "on": [],
+                            "props": {
+                              "attrs": {},
+                              "class": [
+                                "row"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "div"
+                          },
+                          {
+                            "children": [
+                              {
+                                "children": [
+                                  {
+                                    "k": "text",
+                                    "key": "text",
+                                    "text": "Save Export"
+                                  }
+                                ],
+                                "k": "el",
+                                "key": "btn_export",
+                                "on": [
+                                  {
+                                    "target": "btn_export",
+                                    "type": "click"
+                                  }
+                                ],
+                                "props": {
+                                  "attrs": {
+                                    "type": "button"
+                                  },
+                                  "class": [
+                                    "control"
+                                  ],
+                                  "style": {}
+                                },
+                                "tag": "button"
+                              },
+                              {
+                                "children": [
+                                  {
+                                    "k": "text",
+                                    "key": "text",
+                                    "text": "Share Draft"
+                                  }
+                                ],
+                                "k": "el",
+                                "key": "btn_share",
+                                "on": [
+                                  {
+                                    "target": "btn_share",
+                                    "type": "click"
+                                  }
+                                ],
+                                "props": {
+                                  "attrs": {
+                                    "type": "button"
+                                  },
+                                  "class": [
+                                    "control"
+                                  ],
+                                  "style": {}
+                                },
+                                "tag": "button"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "actions_row2",
+                            "on": [],
+                            "props": {
+                              "attrs": {},
+                              "class": [
+                                "row"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "div"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "actions",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "section"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      },
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "import_line",
+                                "text": "Import: requesting | picker"
+                              },
+                              {
+                                "k": "text",
+                                "key": "files_line",
+                                "text": "Files: none | first two names"
+                              },
+                              {
+                                "k": "text",
+                                "key": "clipboard_line",
+                                "text": "Clipboard: idle | "
+                              }
+                            ],
+                            "k": "el",
+                            "key": "status_row1",
+                            "on": [],
+                            "props": {
+                              "attrs": {},
+                              "class": [
+                                "row"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "div"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "export_line",
+                                "text": "Export: idle | builder-io-draft.txt"
+                              },
+                              {
+                                "k": "text",
+                                "key": "share_line",
+                                "text": "Share: idle | Builder Draft"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "status_row2",
+                            "on": [],
+                            "props": {
+                              "attrs": {},
+                              "class": [
+                                "row"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "div"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "status",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "section"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "footer",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  }
+                ],
+                "k": "el",
+                "key": "root",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "builder_io_min"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              "v": 1
+            }
+          }
+        ],
+        "state": {
+          "body": "",
+          "clipboard_preview": "",
+          "clipboard_status": "idle",
+          "export_status": "idle",
+          "import_primary_name": "",
+          "import_secondary_name": "",
+          "import_source": "picker",
+          "import_status": "requesting",
+          "share_status": "idle",
+          "title": "Builder Draft"
+        },
+        "telemetry": {},
+        "ui": {
+          "kind": "x07.web_ui.tree",
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "k": "text",
+                    "key": "title",
+                    "text": "x07 Builder IO Min"
+                  },
+                  {
+                    "k": "text",
+                    "key": "intro",
+                    "text": "Reference builder flow for import, edit, clipboard, export, share, and deterministic replay."
+                  }
+                ],
+                "k": "el",
+                "key": "header",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              {
+                "children": [
+                  {
+                    "children": [],
+                    "k": "el",
+                    "key": "in_title",
+                    "on": [
+                      {
+                        "target": "in_title",
+                        "type": "input"
+                      }
+                    ],
+                    "props": {
+                      "attrs": {
+                        "placeholder": "Draft title",
+                        "type": "text",
+                        "value": "Builder Draft"
+                      },
+                      "class": [
+                        "editor_input"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "input"
+                  },
+                  {
+                    "children": [],
+                    "k": "el",
+                    "key": "in_body",
+                    "on": [
+                      {
+                        "target": "in_body",
+                        "type": "input"
+                      }
+                    ],
+                    "props": {
+                      "attrs": {
+                        "rows": "8",
+                        "value": ""
+                      },
+                      "class": [
+                        "editor_input"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "textarea"
+                  },
+                  {
+                    "k": "text",
+                    "key": "draft_preview",
+                    "text": "Builder Draft\n\n"
+                  }
+                ],
+                "k": "el",
+                "key": "editor",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Import Files"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_import",
+                            "on": [
+                              {
+                                "target": "btn_import",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Paste Clipboard"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_paste",
+                            "on": [
+                              {
+                                "target": "btn_paste",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Copy Draft"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_copy",
+                            "on": [
+                              {
+                                "target": "btn_copy",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "actions_row1",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      },
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Save Export"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_export",
+                            "on": [
+                              {
+                                "target": "btn_export",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Share Draft"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_share",
+                            "on": [
+                              {
+                                "target": "btn_share",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "actions_row2",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "actions",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "import_line",
+                            "text": "Import: requesting | picker"
+                          },
+                          {
+                            "k": "text",
+                            "key": "files_line",
+                            "text": "Files: none | first two names"
+                          },
+                          {
+                            "k": "text",
+                            "key": "clipboard_line",
+                            "text": "Clipboard: idle | "
+                          }
+                        ],
+                        "k": "el",
+                        "key": "status_row1",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "export_line",
+                            "text": "Export: idle | builder-io-draft.txt"
+                          },
+                          {
+                            "k": "text",
+                            "key": "share_line",
+                            "text": "Share: idle | Builder Draft"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "status_row2",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "status",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  }
+                ],
+                "k": "el",
+                "key": "footer",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              }
+            ],
+            "k": "el",
+            "key": "root",
+            "on": [],
+            "props": {
+              "attrs": {},
+              "class": [
+                "builder_io_min"
+              ],
+              "style": {}
+            },
+            "tag": "div"
+          },
+          "v": 1
+        },
+        "v": 1
+      }
+    },
+    {
+      "env": {
+        "event": {
+          "target": "btn_import",
+          "type": "click"
+        },
+        "kind": "x07.web_ui.dispatch",
+        "state": {
+          "__x07_device": {
+            "files": {
+              "result": {
+                "host_meta": {
+                  "platform": "android",
+                  "provider": "android_native"
+                },
+                "op": "files.pick",
+                "payload": {
+                  "reason": "user_cancelled"
+                },
+                "request_id": "import_req",
+                "status": "cancelled"
+              }
+            }
+          },
           "body": "",
           "clipboard_preview": "",
           "clipboard_status": "idle",
@@ -861,7 +1685,7 @@
                           "attrs": {
                             "placeholder": "Draft title",
                             "type": "text",
-                            "value": "Builder Notes"
+                            "value": "Builder Draft"
                           },
                           "class": [
                             "editor_input"
@@ -895,7 +1719,7 @@
                       {
                         "k": "text",
                         "key": "draft_preview",
-                        "text": "Builder Notes\n\n"
+                        "text": "Builder Draft\n\n"
                       }
                     ],
                     "k": "el",
@@ -1099,7 +1923,7 @@
                               {
                                 "k": "text",
                                 "key": "import_line",
-                                "text": "Import: idle | picker"
+                                "text": "Import: cancelled | picker"
                               },
                               {
                                 "k": "text",
@@ -1134,7 +1958,7 @@
                               {
                                 "k": "text",
                                 "key": "share_line",
-                                "text": "Share: idle | Builder Notes"
+                                "text": "Share: idle | Builder Draft"
                               }
                             ],
                             "k": "el",
@@ -1200,9 +2024,9 @@
           "import_primary_name": "",
           "import_secondary_name": "",
           "import_source": "picker",
-          "import_status": "idle",
+          "import_status": "cancelled",
           "share_status": "idle",
-          "title": "Builder Notes"
+          "title": "Builder Draft"
         },
         "telemetry": {},
         "ui": {
@@ -1250,7 +2074,7 @@
                       "attrs": {
                         "placeholder": "Draft title",
                         "type": "text",
-                        "value": "Builder Notes"
+                        "value": "Builder Draft"
                       },
                       "class": [
                         "editor_input"
@@ -1284,7 +2108,7 @@
                   {
                     "k": "text",
                     "key": "draft_preview",
-                    "text": "Builder Notes\n\n"
+                    "text": "Builder Draft\n\n"
                   }
                 ],
                 "k": "el",
@@ -1488,7 +2312,7 @@
                           {
                             "k": "text",
                             "key": "import_line",
-                            "text": "Import: idle | picker"
+                            "text": "Import: cancelled | picker"
                           },
                           {
                             "k": "text",
@@ -1523,7 +2347,7 @@
                           {
                             "k": "text",
                             "key": "share_line",
-                            "text": "Share: idle | Builder Notes"
+                            "text": "Share: idle | Builder Draft"
                           }
                         ],
                         "k": "el",
@@ -1585,9 +2409,8 @@
     {
       "env": {
         "event": {
-          "target": "in_body",
-          "type": "input",
-          "value": "Package publish ready"
+          "target": "btn_paste",
+          "type": "click"
         },
         "kind": "x07.web_ui.dispatch",
         "state": {
@@ -1598,14 +2421,23 @@
           "import_primary_name": "",
           "import_secondary_name": "",
           "import_source": "picker",
-          "import_status": "idle",
+          "import_status": "cancelled",
           "share_status": "idle",
-          "title": "Builder Notes"
+          "title": "Builder Draft"
         },
         "v": 1
       },
       "frame": {
-        "effects": [],
+        "effects": [
+          {
+            "capability": "clipboard.read_text",
+            "kind": "x07.web_ui.effect.device.clipboard.read_text",
+            "op": "clipboard.read_text",
+            "payload": {},
+            "request_id": "clipboard_read",
+            "v": 1
+          }
+        ],
         "kind": "x07.web_ui.frame",
         "patches": [
           {
@@ -1656,7 +2488,7 @@
                           "attrs": {
                             "placeholder": "Draft title",
                             "type": "text",
-                            "value": "Builder Notes"
+                            "value": "Builder Draft"
                           },
                           "class": [
                             "editor_input"
@@ -1678,7 +2510,7 @@
                         "props": {
                           "attrs": {
                             "rows": "8",
-                            "value": "Package publish ready"
+                            "value": ""
                           },
                           "class": [
                             "editor_input"
@@ -1690,7 +2522,7 @@
                       {
                         "k": "text",
                         "key": "draft_preview",
-                        "text": "Builder Notes\n\nPackage publish ready"
+                        "text": "Builder Draft\n\n"
                       }
                     ],
                     "k": "el",
@@ -1894,7 +2726,7 @@
                               {
                                 "k": "text",
                                 "key": "import_line",
-                                "text": "Import: idle | picker"
+                                "text": "Import: cancelled | picker"
                               },
                               {
                                 "k": "text",
@@ -1904,7 +2736,7 @@
                               {
                                 "k": "text",
                                 "key": "clipboard_line",
-                                "text": "Clipboard: idle | "
+                                "text": "Clipboard: requesting | "
                               }
                             ],
                             "k": "el",
@@ -1929,7 +2761,7 @@
                               {
                                 "k": "text",
                                 "key": "share_line",
-                                "text": "Share: idle | Builder Notes"
+                                "text": "Share: idle | Builder Draft"
                               }
                             ],
                             "k": "el",
@@ -1988,16 +2820,16 @@
           }
         ],
         "state": {
-          "body": "Package publish ready",
+          "body": "",
           "clipboard_preview": "",
-          "clipboard_status": "idle",
+          "clipboard_status": "requesting",
           "export_status": "idle",
           "import_primary_name": "",
           "import_secondary_name": "",
           "import_source": "picker",
-          "import_status": "idle",
+          "import_status": "cancelled",
           "share_status": "idle",
-          "title": "Builder Notes"
+          "title": "Builder Draft"
         },
         "telemetry": {},
         "ui": {
@@ -2045,7 +2877,7 @@
                       "attrs": {
                         "placeholder": "Draft title",
                         "type": "text",
-                        "value": "Builder Notes"
+                        "value": "Builder Draft"
                       },
                       "class": [
                         "editor_input"
@@ -2067,7 +2899,7 @@
                     "props": {
                       "attrs": {
                         "rows": "8",
-                        "value": "Package publish ready"
+                        "value": ""
                       },
                       "class": [
                         "editor_input"
@@ -2079,7 +2911,7 @@
                   {
                     "k": "text",
                     "key": "draft_preview",
-                    "text": "Builder Notes\n\nPackage publish ready"
+                    "text": "Builder Draft\n\n"
                   }
                 ],
                 "k": "el",
@@ -2283,7 +3115,7 @@
                           {
                             "k": "text",
                             "key": "import_line",
-                            "text": "Import: idle | picker"
+                            "text": "Import: cancelled | picker"
                           },
                           {
                             "k": "text",
@@ -2293,7 +3125,7 @@
                           {
                             "k": "text",
                             "key": "clipboard_line",
-                            "text": "Clipboard: idle | "
+                            "text": "Clipboard: requesting | "
                           }
                         ],
                         "k": "el",
@@ -2318,7 +3150,817 @@
                           {
                             "k": "text",
                             "key": "share_line",
-                            "text": "Share: idle | Builder Notes"
+                            "text": "Share: idle | Builder Draft"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "status_row2",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "status",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  }
+                ],
+                "k": "el",
+                "key": "footer",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              }
+            ],
+            "k": "el",
+            "key": "root",
+            "on": [],
+            "props": {
+              "attrs": {},
+              "class": [
+                "builder_io_min"
+              ],
+              "style": {}
+            },
+            "tag": "div"
+          },
+          "v": 1
+        },
+        "v": 1
+      }
+    },
+    {
+      "env": {
+        "event": {
+          "target": "btn_paste",
+          "type": "click"
+        },
+        "kind": "x07.web_ui.dispatch",
+        "state": {
+          "__x07_device": {
+            "clipboard": {
+              "result": {
+                "host_meta": {
+                  "platform": "desktop",
+                  "provider": "desktop_native"
+                },
+                "op": "clipboard.read_text",
+                "payload": {
+                  "reason": "clipboard_unavailable"
+                },
+                "request_id": "clipboard_paste",
+                "status": "unsupported"
+              }
+            }
+          },
+          "body": "",
+          "clipboard_preview": "",
+          "clipboard_status": "idle",
+          "export_status": "idle",
+          "import_primary_name": "",
+          "import_secondary_name": "",
+          "import_source": "picker",
+          "import_status": "cancelled",
+          "share_status": "idle",
+          "title": "Builder Draft"
+        },
+        "v": 1
+      },
+      "frame": {
+        "effects": [],
+        "kind": "x07.web_ui.frame",
+        "patches": [
+          {
+            "op": "replace",
+            "path": "",
+            "value": {
+              "kind": "x07.web_ui.tree",
+              "root": {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "k": "text",
+                        "key": "title",
+                        "text": "x07 Builder IO Min"
+                      },
+                      {
+                        "k": "text",
+                        "key": "intro",
+                        "text": "Reference builder flow for import, edit, clipboard, export, share, and deterministic replay."
+                      }
+                    ],
+                    "k": "el",
+                    "key": "header",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [],
+                        "k": "el",
+                        "key": "in_title",
+                        "on": [
+                          {
+                            "target": "in_title",
+                            "type": "input"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "placeholder": "Draft title",
+                            "type": "text",
+                            "value": "Builder Draft"
+                          },
+                          "class": [
+                            "editor_input"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "input"
+                      },
+                      {
+                        "children": [],
+                        "k": "el",
+                        "key": "in_body",
+                        "on": [
+                          {
+                            "target": "in_body",
+                            "type": "input"
+                          }
+                        ],
+                        "props": {
+                          "attrs": {
+                            "rows": "8",
+                            "value": ""
+                          },
+                          "class": [
+                            "editor_input"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "textarea"
+                      },
+                      {
+                        "k": "text",
+                        "key": "draft_preview",
+                        "text": "Builder Draft\n\n"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "editor",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "children": [
+                                  {
+                                    "k": "text",
+                                    "key": "text",
+                                    "text": "Import Files"
+                                  }
+                                ],
+                                "k": "el",
+                                "key": "btn_import",
+                                "on": [
+                                  {
+                                    "target": "btn_import",
+                                    "type": "click"
+                                  }
+                                ],
+                                "props": {
+                                  "attrs": {
+                                    "type": "button"
+                                  },
+                                  "class": [
+                                    "control"
+                                  ],
+                                  "style": {}
+                                },
+                                "tag": "button"
+                              },
+                              {
+                                "children": [
+                                  {
+                                    "k": "text",
+                                    "key": "text",
+                                    "text": "Paste Clipboard"
+                                  }
+                                ],
+                                "k": "el",
+                                "key": "btn_paste",
+                                "on": [
+                                  {
+                                    "target": "btn_paste",
+                                    "type": "click"
+                                  }
+                                ],
+                                "props": {
+                                  "attrs": {
+                                    "type": "button"
+                                  },
+                                  "class": [
+                                    "control"
+                                  ],
+                                  "style": {}
+                                },
+                                "tag": "button"
+                              },
+                              {
+                                "children": [
+                                  {
+                                    "k": "text",
+                                    "key": "text",
+                                    "text": "Copy Draft"
+                                  }
+                                ],
+                                "k": "el",
+                                "key": "btn_copy",
+                                "on": [
+                                  {
+                                    "target": "btn_copy",
+                                    "type": "click"
+                                  }
+                                ],
+                                "props": {
+                                  "attrs": {
+                                    "type": "button"
+                                  },
+                                  "class": [
+                                    "control"
+                                  ],
+                                  "style": {}
+                                },
+                                "tag": "button"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "actions_row1",
+                            "on": [],
+                            "props": {
+                              "attrs": {},
+                              "class": [
+                                "row"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "div"
+                          },
+                          {
+                            "children": [
+                              {
+                                "children": [
+                                  {
+                                    "k": "text",
+                                    "key": "text",
+                                    "text": "Save Export"
+                                  }
+                                ],
+                                "k": "el",
+                                "key": "btn_export",
+                                "on": [
+                                  {
+                                    "target": "btn_export",
+                                    "type": "click"
+                                  }
+                                ],
+                                "props": {
+                                  "attrs": {
+                                    "type": "button"
+                                  },
+                                  "class": [
+                                    "control"
+                                  ],
+                                  "style": {}
+                                },
+                                "tag": "button"
+                              },
+                              {
+                                "children": [
+                                  {
+                                    "k": "text",
+                                    "key": "text",
+                                    "text": "Share Draft"
+                                  }
+                                ],
+                                "k": "el",
+                                "key": "btn_share",
+                                "on": [
+                                  {
+                                    "target": "btn_share",
+                                    "type": "click"
+                                  }
+                                ],
+                                "props": {
+                                  "attrs": {
+                                    "type": "button"
+                                  },
+                                  "class": [
+                                    "control"
+                                  ],
+                                  "style": {}
+                                },
+                                "tag": "button"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "actions_row2",
+                            "on": [],
+                            "props": {
+                              "attrs": {},
+                              "class": [
+                                "row"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "div"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "actions",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "section"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      },
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "import_line",
+                                "text": "Import: cancelled | picker"
+                              },
+                              {
+                                "k": "text",
+                                "key": "files_line",
+                                "text": "Files: none | first two names"
+                              },
+                              {
+                                "k": "text",
+                                "key": "clipboard_line",
+                                "text": "Clipboard: unsupported | "
+                              }
+                            ],
+                            "k": "el",
+                            "key": "status_row1",
+                            "on": [],
+                            "props": {
+                              "attrs": {},
+                              "class": [
+                                "row"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "div"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "export_line",
+                                "text": "Export: idle | builder-io-draft.txt"
+                              },
+                              {
+                                "k": "text",
+                                "key": "share_line",
+                                "text": "Share: idle | Builder Draft"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "status_row2",
+                            "on": [],
+                            "props": {
+                              "attrs": {},
+                              "class": [
+                                "row"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "div"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "status",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "section"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "footer",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  }
+                ],
+                "k": "el",
+                "key": "root",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "builder_io_min"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              "v": 1
+            }
+          }
+        ],
+        "state": {
+          "body": "",
+          "clipboard_preview": "",
+          "clipboard_status": "unsupported",
+          "export_status": "idle",
+          "import_primary_name": "",
+          "import_secondary_name": "",
+          "import_source": "picker",
+          "import_status": "cancelled",
+          "share_status": "idle",
+          "title": "Builder Draft"
+        },
+        "telemetry": {},
+        "ui": {
+          "kind": "x07.web_ui.tree",
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "k": "text",
+                    "key": "title",
+                    "text": "x07 Builder IO Min"
+                  },
+                  {
+                    "k": "text",
+                    "key": "intro",
+                    "text": "Reference builder flow for import, edit, clipboard, export, share, and deterministic replay."
+                  }
+                ],
+                "k": "el",
+                "key": "header",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              {
+                "children": [
+                  {
+                    "children": [],
+                    "k": "el",
+                    "key": "in_title",
+                    "on": [
+                      {
+                        "target": "in_title",
+                        "type": "input"
+                      }
+                    ],
+                    "props": {
+                      "attrs": {
+                        "placeholder": "Draft title",
+                        "type": "text",
+                        "value": "Builder Draft"
+                      },
+                      "class": [
+                        "editor_input"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "input"
+                  },
+                  {
+                    "children": [],
+                    "k": "el",
+                    "key": "in_body",
+                    "on": [
+                      {
+                        "target": "in_body",
+                        "type": "input"
+                      }
+                    ],
+                    "props": {
+                      "attrs": {
+                        "rows": "8",
+                        "value": ""
+                      },
+                      "class": [
+                        "editor_input"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "textarea"
+                  },
+                  {
+                    "k": "text",
+                    "key": "draft_preview",
+                    "text": "Builder Draft\n\n"
+                  }
+                ],
+                "k": "el",
+                "key": "editor",
+                "on": [],
+                "props": {
+                  "attrs": {},
+                  "class": [
+                    "section"
+                  ],
+                  "style": {}
+                },
+                "tag": "div"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Import Files"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_import",
+                            "on": [
+                              {
+                                "target": "btn_import",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Paste Clipboard"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_paste",
+                            "on": [
+                              {
+                                "target": "btn_paste",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Copy Draft"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_copy",
+                            "on": [
+                              {
+                                "target": "btn_copy",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "actions_row1",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      },
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Save Export"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_export",
+                            "on": [
+                              {
+                                "target": "btn_export",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          },
+                          {
+                            "children": [
+                              {
+                                "k": "text",
+                                "key": "text",
+                                "text": "Share Draft"
+                              }
+                            ],
+                            "k": "el",
+                            "key": "btn_share",
+                            "on": [
+                              {
+                                "target": "btn_share",
+                                "type": "click"
+                              }
+                            ],
+                            "props": {
+                              "attrs": {
+                                "type": "button"
+                              },
+                              "class": [
+                                "control"
+                              ],
+                              "style": {}
+                            },
+                            "tag": "button"
+                          }
+                        ],
+                        "k": "el",
+                        "key": "actions_row2",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      }
+                    ],
+                    "k": "el",
+                    "key": "actions",
+                    "on": [],
+                    "props": {
+                      "attrs": {},
+                      "class": [
+                        "section"
+                      ],
+                      "style": {}
+                    },
+                    "tag": "div"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "import_line",
+                            "text": "Import: cancelled | picker"
+                          },
+                          {
+                            "k": "text",
+                            "key": "files_line",
+                            "text": "Files: none | first two names"
+                          },
+                          {
+                            "k": "text",
+                            "key": "clipboard_line",
+                            "text": "Clipboard: unsupported | "
+                          }
+                        ],
+                        "k": "el",
+                        "key": "status_row1",
+                        "on": [],
+                        "props": {
+                          "attrs": {},
+                          "class": [
+                            "row"
+                          ],
+                          "style": {}
+                        },
+                        "tag": "div"
+                      },
+                      {
+                        "children": [
+                          {
+                            "k": "text",
+                            "key": "export_line",
+                            "text": "Export: idle | builder-io-draft.txt"
+                          },
+                          {
+                            "k": "text",
+                            "key": "share_line",
+                            "text": "Share: idle | Builder Draft"
                           }
                         ],
                         "k": "el",
@@ -2385,16 +4027,16 @@
         },
         "kind": "x07.web_ui.dispatch",
         "state": {
-          "body": "Package publish ready",
+          "body": "",
           "clipboard_preview": "",
-          "clipboard_status": "idle",
+          "clipboard_status": "unsupported",
           "export_status": "idle",
           "import_primary_name": "",
           "import_secondary_name": "",
           "import_source": "picker",
-          "import_status": "idle",
+          "import_status": "cancelled",
           "share_status": "idle",
-          "title": "Builder Notes"
+          "title": "Builder Draft"
         },
         "v": 1
       },
@@ -2405,8 +4047,8 @@
             "kind": "x07.web_ui.effect.device.share.share_text",
             "op": "share.present",
             "payload": {
-              "text": "Builder Notes\n\nPackage publish ready",
-              "title": "Builder Notes"
+              "text": "Builder Draft\n\n",
+              "title": "Builder Draft"
             },
             "request_id": "share_text",
             "v": 1
@@ -2462,7 +4104,7 @@
                           "attrs": {
                             "placeholder": "Draft title",
                             "type": "text",
-                            "value": "Builder Notes"
+                            "value": "Builder Draft"
                           },
                           "class": [
                             "editor_input"
@@ -2484,7 +4126,7 @@
                         "props": {
                           "attrs": {
                             "rows": "8",
-                            "value": "Package publish ready"
+                            "value": ""
                           },
                           "class": [
                             "editor_input"
@@ -2496,7 +4138,7 @@
                       {
                         "k": "text",
                         "key": "draft_preview",
-                        "text": "Builder Notes\n\nPackage publish ready"
+                        "text": "Builder Draft\n\n"
                       }
                     ],
                     "k": "el",
@@ -2700,7 +4342,7 @@
                               {
                                 "k": "text",
                                 "key": "import_line",
-                                "text": "Import: idle | picker"
+                                "text": "Import: cancelled | picker"
                               },
                               {
                                 "k": "text",
@@ -2710,7 +4352,7 @@
                               {
                                 "k": "text",
                                 "key": "clipboard_line",
-                                "text": "Clipboard: idle | "
+                                "text": "Clipboard: unsupported | "
                               }
                             ],
                             "k": "el",
@@ -2735,7 +4377,7 @@
                               {
                                 "k": "text",
                                 "key": "share_line",
-                                "text": "Share: requesting | Builder Notes"
+                                "text": "Share: requesting | Builder Draft"
                               }
                             ],
                             "k": "el",
@@ -2794,16 +4436,16 @@
           }
         ],
         "state": {
-          "body": "Package publish ready",
+          "body": "",
           "clipboard_preview": "",
-          "clipboard_status": "idle",
+          "clipboard_status": "unsupported",
           "export_status": "idle",
           "import_primary_name": "",
           "import_secondary_name": "",
           "import_source": "picker",
-          "import_status": "idle",
+          "import_status": "cancelled",
           "share_status": "requesting",
-          "title": "Builder Notes"
+          "title": "Builder Draft"
         },
         "telemetry": {},
         "ui": {
@@ -2851,7 +4493,7 @@
                       "attrs": {
                         "placeholder": "Draft title",
                         "type": "text",
-                        "value": "Builder Notes"
+                        "value": "Builder Draft"
                       },
                       "class": [
                         "editor_input"
@@ -2873,7 +4515,7 @@
                     "props": {
                       "attrs": {
                         "rows": "8",
-                        "value": "Package publish ready"
+                        "value": ""
                       },
                       "class": [
                         "editor_input"
@@ -2885,7 +4527,7 @@
                   {
                     "k": "text",
                     "key": "draft_preview",
-                    "text": "Builder Notes\n\nPackage publish ready"
+                    "text": "Builder Draft\n\n"
                   }
                 ],
                 "k": "el",
@@ -3089,7 +4731,7 @@
                           {
                             "k": "text",
                             "key": "import_line",
-                            "text": "Import: idle | picker"
+                            "text": "Import: cancelled | picker"
                           },
                           {
                             "k": "text",
@@ -3099,7 +4741,7 @@
                           {
                             "k": "text",
                             "key": "clipboard_line",
-                            "text": "Clipboard: idle | "
+                            "text": "Clipboard: unsupported | "
                           }
                         ],
                         "k": "el",
@@ -3124,7 +4766,7 @@
                           {
                             "k": "text",
                             "key": "share_line",
-                            "text": "Share: requesting | Builder Notes"
+                            "text": "Share: requesting | Builder Draft"
                           }
                         ],
                         "k": "el",
@@ -3195,29 +4837,28 @@
             "share": {
               "result": {
                 "host_meta": {
-                  "platform": "ios",
-                  "provider": "ios_native"
+                  "platform": "desktop",
+                  "provider": "desktop_native"
                 },
                 "op": "share.present",
                 "payload": {
-                  "shared": true,
-                  "text_bytes_len": 21
+                  "reason": "share_not_supported_on_desktop"
                 },
                 "request_id": "share_text",
-                "status": "ok"
+                "status": "unsupported"
               }
             }
           },
-          "body": "Package publish ready",
+          "body": "",
           "clipboard_preview": "",
-          "clipboard_status": "idle",
+          "clipboard_status": "unsupported",
           "export_status": "idle",
           "import_primary_name": "",
           "import_secondary_name": "",
           "import_source": "picker",
-          "import_status": "idle",
+          "import_status": "cancelled",
           "share_status": "idle",
-          "title": "Builder Notes"
+          "title": "Builder Draft"
         },
         "v": 1
       },
@@ -3273,7 +4914,7 @@
                           "attrs": {
                             "placeholder": "Draft title",
                             "type": "text",
-                            "value": "Builder Notes"
+                            "value": "Builder Draft"
                           },
                           "class": [
                             "editor_input"
@@ -3295,7 +4936,7 @@
                         "props": {
                           "attrs": {
                             "rows": "8",
-                            "value": "Package publish ready"
+                            "value": ""
                           },
                           "class": [
                             "editor_input"
@@ -3307,7 +4948,7 @@
                       {
                         "k": "text",
                         "key": "draft_preview",
-                        "text": "Builder Notes\n\nPackage publish ready"
+                        "text": "Builder Draft\n\n"
                       }
                     ],
                     "k": "el",
@@ -3511,7 +5152,7 @@
                               {
                                 "k": "text",
                                 "key": "import_line",
-                                "text": "Import: idle | picker"
+                                "text": "Import: cancelled | picker"
                               },
                               {
                                 "k": "text",
@@ -3521,7 +5162,7 @@
                               {
                                 "k": "text",
                                 "key": "clipboard_line",
-                                "text": "Clipboard: idle | "
+                                "text": "Clipboard: unsupported | "
                               }
                             ],
                             "k": "el",
@@ -3546,7 +5187,7 @@
                               {
                                 "k": "text",
                                 "key": "share_line",
-                                "text": "Share: ok | Builder Notes"
+                                "text": "Share: unsupported | Builder Draft"
                               }
                             ],
                             "k": "el",
@@ -3605,16 +5246,16 @@
           }
         ],
         "state": {
-          "body": "Package publish ready",
+          "body": "",
           "clipboard_preview": "",
-          "clipboard_status": "idle",
+          "clipboard_status": "unsupported",
           "export_status": "idle",
           "import_primary_name": "",
           "import_secondary_name": "",
           "import_source": "picker",
-          "import_status": "idle",
-          "share_status": "ok",
-          "title": "Builder Notes"
+          "import_status": "cancelled",
+          "share_status": "unsupported",
+          "title": "Builder Draft"
         },
         "telemetry": {},
         "ui": {
@@ -3662,7 +5303,7 @@
                       "attrs": {
                         "placeholder": "Draft title",
                         "type": "text",
-                        "value": "Builder Notes"
+                        "value": "Builder Draft"
                       },
                       "class": [
                         "editor_input"
@@ -3684,7 +5325,7 @@
                     "props": {
                       "attrs": {
                         "rows": "8",
-                        "value": "Package publish ready"
+                        "value": ""
                       },
                       "class": [
                         "editor_input"
@@ -3696,7 +5337,7 @@
                   {
                     "k": "text",
                     "key": "draft_preview",
-                    "text": "Builder Notes\n\nPackage publish ready"
+                    "text": "Builder Draft\n\n"
                   }
                 ],
                 "k": "el",
@@ -3900,7 +5541,7 @@
                           {
                             "k": "text",
                             "key": "import_line",
-                            "text": "Import: idle | picker"
+                            "text": "Import: cancelled | picker"
                           },
                           {
                             "k": "text",
@@ -3910,7 +5551,7 @@
                           {
                             "k": "text",
                             "key": "clipboard_line",
-                            "text": "Clipboard: idle | "
+                            "text": "Clipboard: unsupported | "
                           }
                         ],
                         "k": "el",
@@ -3935,7 +5576,7 @@
                           {
                             "k": "text",
                             "key": "share_line",
-                            "text": "Share: ok | Builder Notes"
+                            "text": "Share: unsupported | Builder Draft"
                           }
                         ],
                         "k": "el",

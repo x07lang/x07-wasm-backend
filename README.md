@@ -103,7 +103,7 @@ x07-wasm device verify --dir dist/device_ios_dev_bundle --json
 x07-wasm device package --bundle dist/device_ios_dev_bundle --target ios --out-dir dist/device_ios_dev_package --json
 ```
 
-Start from [`examples/x07_builder_io_min`](examples/x07_builder_io_min/README.md) for the current import/edit/export/share reducer path, [`examples/x07_capture_min`](examples/x07_capture_min/README.md) for the camera/location/notification-native surface, and [`examples/x07_hex_min`](examples/x07_hex_min/README.md) for the Tactics M0 select/move/audio/haptics line. Pair those with the reducer patterns in [`x07-web-ui/examples/web_ui_form`](../x07-web-ui/examples/web_ui_form). Together they are the current reference path for a consumer-owned web-ui/device app.
+Start from [`examples/x07_builder_io_min`](examples/x07_builder_io_min/README.md) for the current import/edit/export/share reducer path, [`examples/x07_capture_min`](examples/x07_capture_min/README.md) for the camera/location/notification-native surface, and [`examples/x07_hex_min`](examples/x07_hex_min/README.md) for the Tactics select/move/audio/haptics line. Pair those with the reducer patterns in [`x07-web-ui/examples/web_ui_form`](../x07-web-ui/examples/web_ui_form). Together they are the current reference path for a consumer-owned web-ui/device app.
 
 Generated Android projects now include a pinned Gradle wrapper (`./gradlew`). Build them with a supported JDK (17 or 21); on a machine with Android Studio installed, the bundled JBR is a valid `JAVA_HOME`:
 
@@ -119,7 +119,7 @@ Device profiles now keep runtime capabilities and telemetry transport settings i
 - `profile/device.capabilities.json`
 - `profile/device.telemetry.profile.json`
 
-The device-capability sidecar now carries the Forge/Tactics M0 fields consumed by `std-web-ui@0.2.6` and `x07-device-host@0.2.5`: `audio.playback`, `haptics.present`, `clipboard.read_text`, `clipboard.write_text`, `files.pick_multiple`, `files.save`, `files.drop`, and `share.present`.
+The device-capability sidecar now carries the Forge/Tactics fields consumed by `std-web-ui@0.2.6` and `x07-device-host@0.2.5`: `audio.playback`, `haptics.present`, `clipboard.read_text`, `clipboard.write_text`, `files.pick_multiple`, `files.save`, `files.drop`, and `share.present`.
 
 `x07-wasm device build` writes `app.manifest.json` into the bundle root so device hosts can reuse the same `apiPrefix`, component entrypoint, and `webUi` runtime limits that the browser host reads from app builds. `x07-wasm app serve` also answers API `OPTIONS` preflight requests with the canonical CORS headers expected by packaged device hosts calling a local or remote HTTP backend.
 
@@ -146,7 +146,7 @@ The telemetry sidecar must now declare the standard device-observability event c
 For richer end-to-end references, start with:
 
 - [`examples/x07_builder_io_min`](examples/x07_builder_io_min): builder-I/O proving app with import/edit/export, clipboard, share, and cross-target device packaging
-- [`examples/x07_hex_min`](examples/x07_hex_min): Tactics M0 reference with deterministic select/move/end-turn flow, cue audio, haptics, and cross-target device packaging
+- [`examples/x07_hex_min`](examples/x07_hex_min): Tactics reference with deterministic select/move/end-turn flow, cue audio, haptics, and cross-target device packaging
 - [`examples/x07_atlas`](examples/x07_atlas): full-stack app bundle with offline-first UI, API traces, incident regression generation, pack verification, provenance, deploy planning, and SLO checks
 - [`examples/x07_studio`](examples/x07_studio): desktop device bundle with persistent project notes, import/export flows, provenance, packaging, and desktop host smoke
 - [`examples/x07_field_notes`](examples/x07_field_notes): one reducer packaged across desktop, iOS, and Android with replay traces and embedded-assets-only mobile outputs
@@ -232,9 +232,7 @@ Supported D-OSS command surface:
 - `x07-wasm device regress from-incident`
 - `x07-wasm device package --target ios` / `--target android`
 
-Native incident replay gate: `bash scripts/ci/check_phase10_native_regressions.sh`
-
-Repo-local MCP inspect smoke: `bash scripts/ci/check_phase10_mcp_inspect.sh` (skips cleanly when `../x07-mcp` is not present and inspects repo-local `x07lang-mcp` through `x07-mcp inspect --command`)
+CI also includes a native incident replay gate and a repo-local MCP inspect smoke that skips cleanly when `../x07-mcp` is not present (it inspects repo-local `x07lang-mcp` through `x07-mcp inspect --command`).
 
 The packaged mobile templates are vendored from `x07-device-host/mobile/*` and refreshed through `scripts/vendor_x07_device_host_abi.py`; this repo no longer maintains a second editable copy of those templates.
 
@@ -252,19 +250,21 @@ The packaged mobile templates are vendored from `x07-device-host/mobile/*` and r
 
 ## CI gates
 
-| Area | Gate |
-|------|------|
-| Solve-pure wasm | `scripts/ci/check_phase0.sh` |
-| Components | `scripts/ci/check_phase1.sh` |
-| Web UI | `scripts/ci/check_phase2.sh` |
-| Full-stack app | `scripts/ci/check_phase3.sh` |
-| Native backend targets | `scripts/ci/check_phase4.sh` |
-| Hardening and HTTP | `scripts/ci/check_phase5.sh` |
-| Ops, policy, and provenance | `scripts/ci/check_phase6.sh` |
-| Native x07 wasm codegen | `scripts/ci/check_phase7.sh` |
-| Device build and verification | `scripts/ci/check_phase8.sh` |
-| Desktop host integration | `scripts/ci/check_phase9.sh` |
-| Mobile packaging, builder I/O, MCP inspect smoke, and native regressions | `scripts/ci/check_phase10.sh` |
+CI is organized as focused gates for:
+
+- solve-pure wasm
+- components
+- web UI
+- full-stack app bundles
+- native backend targets
+- execution hardening and HTTP reducers
+- ops, policy, provenance, and deploy planning
+- native x07 wasm codegen
+- device build and verification
+- desktop host integration
+- mobile project generation, builder I/O, repo-local MCP inspect smoke, and native regressions
+
+See `scripts/ci/` for the concrete entry points.
 
 Release-ready also enforces `scripts/ci/check_schema_index.sh` so newly added public schemas stay indexed.
 
@@ -290,13 +290,9 @@ cargo clippy --all-targets -- -D warnings
 
 If you touch `crates/x07-wasm/src/device/*`, run `cargo fmt --all` even when the change looks trivial. The device incident regression generator regularly trips the rustfmt gate because long schema-validation and file-write calls wrap differently than they read in review.
 
-Then run the gate(s) that match what you changed:
-- Solve-pure wasm and component toolchain changes: `check_phase0.sh`, `check_phase1.sh`
-- Web UI and app pipeline changes: `check_phase2.sh`, `check_phase3.sh`
-- Native backend, hardening, ops, and provenance changes: `check_phase4.sh` through `check_phase7.sh`
-- Device pipeline, templates, and host ABI changes: `check_phase8.sh` through `check_phase10.sh`
+Then run the focused gate(s) under `scripts/ci/` that match what you changed.
 
-If CI fails in one of those gates, run the corresponding `scripts/ci/check_phase*.sh` locally; they are the same entry points CI uses.
+If CI fails in one of those gates, run the corresponding script under `scripts/ci/` locally; CI uses the same entry points.
 
 Some gates, notably the component and web-ui checks, also validate that embedded adapter snapshots under `crates/x07-wasm/src/support/adapters/` match what `guest/*` builds produce. If you change `guest/*` or bump `rust-toolchain.toml`, refresh the snapshots:
 

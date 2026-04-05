@@ -1,6 +1,6 @@
-# WASM Phase 3 (App Bundle)
+# Full-stack app bundles
 
-Phase 3 ties Phase 2 (web-ui reducers) and Phase 1 (`wasi:http/proxy` backend components) into a single **full-stack app bundle** plus an end-to-end loop:
+This guide ties web-ui reducers and `wasi:http/proxy` backend components into a single **full-stack app bundle** plus an end-to-end loop:
 
 > **app profile → app build → app serve → app test → incident → regression**
 

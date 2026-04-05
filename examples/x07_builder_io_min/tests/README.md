@@ -5,7 +5,7 @@ Recommended local loop:
 ```sh
 x07 check --project frontend/x07.json
 x07-wasm web-ui build --project frontend/x07.json --profile web_ui_debug --out-dir dist/builder_io_min/web_ui_debug --clean --json
-x07-wasm web-ui test --dist-dir dist/builder_io_min/web_ui_debug --case tests/web_ui/m0_import_export.trace.json --json
+x07-wasm web-ui test --dist-dir dist/builder_io_min/web_ui_debug --case tests/web_ui/import_export.trace.json --json
 bash scripts/ci/check_builder_io_min.sh
 ```
 
@@ -13,10 +13,10 @@ Use `--update-golden` after changing the reducer shape and keep the env sequence
 
 Current proving traces:
 
-- `tests/web_ui/m0_import_export.trace.json`: input edits, multi-file import, and save/export success
-- `tests/web_ui/m0_clipboard_roundtrip.trace.json`: copy + read-text clipboard roundtrip
-- `tests/web_ui/m0_share_success.trace.json`: share request/result success
-- `tests/web_ui/m0_negative.trace.json`: cancelled import plus unsupported clipboard/share outcomes
+- `tests/web_ui/import_export.trace.json`: input edits, multi-file import, and save/export success
+- `tests/web_ui/clipboard_roundtrip.trace.json`: copy + read-text clipboard roundtrip
+- `tests/web_ui/share_success.trace.json`: share request/result success
+- `tests/web_ui/negative.trace.json`: cancelled import plus unsupported clipboard/share outcomes
 
 Native incident fixtures live under `tests/native_incidents/`:
 
