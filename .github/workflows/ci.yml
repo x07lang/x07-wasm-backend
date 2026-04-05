@@ -125,7 +125,7 @@ jobs:
           ASSET="wasi-sdk-${V}-${ARCH}-${OS}.tar.gz"
           URL="https://github.com/WebAssembly/wasi-sdk/releases/download/${TAG}/${ASSET}"
           mkdir -p .wasi-sdk
-          curl -fsSL --retry 10 --retry-connrefused --retry-all-errors --retry-delay 2 "$URL" -o .wasi-sdk/wasi-sdk.tar.gz
+          curl -fsSL --connect-timeout 15 --max-time 600 --retry 30 --retry-connrefused --retry-all-errors --retry-delay 5 "$URL" -o .wasi-sdk/wasi-sdk.tar.gz
           tar -xzf .wasi-sdk/wasi-sdk.tar.gz -C .wasi-sdk
           echo "WASI_SDK_DIR=${GITHUB_WORKSPACE}/.wasi-sdk/wasi-sdk-${V}-${ARCH}-${OS}" >> "${GITHUB_ENV}"
 
@@ -151,7 +151,7 @@ jobs:
           ASSET="wasmtime-v${V}-${ARCH}-${OS}.${EXT}"
           URL="https://github.com/bytecodealliance/wasmtime/releases/download/v${V}/${ASSET}"
           mkdir -p .wasmtime
-          curl -fsSL --retry 10 --retry-connrefused --retry-all-errors --retry-delay 2 "$URL" -o ".wasmtime/wasmtime.${EXT}"
+          curl -fsSL --connect-timeout 15 --max-time 600 --retry 30 --retry-connrefused --retry-all-errors --retry-delay 5 "$URL" -o ".wasmtime/wasmtime.${EXT}"
           if [[ "${EXT}" == "zip" ]]; then
             unzip -q ".wasmtime/wasmtime.${EXT}" -d .wasmtime
           else
@@ -254,7 +254,7 @@ jobs:
           ASSET="wasi-sdk-${V}-${ARCH}-${OS}.tar.gz"
           URL="https://github.com/WebAssembly/wasi-sdk/releases/download/${TAG}/${ASSET}"
           mkdir -p .wasi-sdk
-          curl -fsSL --retry 10 --retry-connrefused --retry-all-errors --retry-delay 2 "$URL" -o .wasi-sdk/wasi-sdk.tar.gz
+          curl -fsSL --connect-timeout 15 --max-time 600 --retry 30 --retry-connrefused --retry-all-errors --retry-delay 5 "$URL" -o .wasi-sdk/wasi-sdk.tar.gz
           tar -xzf .wasi-sdk/wasi-sdk.tar.gz -C .wasi-sdk
           echo "WASI_SDK_DIR=${GITHUB_WORKSPACE}/.wasi-sdk/wasi-sdk-${V}-${ARCH}-${OS}" >> "${GITHUB_ENV}"
 
@@ -280,7 +280,7 @@ jobs:
           ASSET="wasmtime-v${V}-${ARCH}-${OS}.${EXT}"
           URL="https://github.com/bytecodealliance/wasmtime/releases/download/v${V}/${ASSET}"
           mkdir -p .wasmtime
-          curl -fsSL --retry 10 --retry-connrefused --retry-all-errors --retry-delay 2 "$URL" -o ".wasmtime/wasmtime.${EXT}"
+          curl -fsSL --connect-timeout 15 --max-time 600 --retry 30 --retry-connrefused --retry-all-errors --retry-delay 5 "$URL" -o ".wasmtime/wasmtime.${EXT}"
           if [[ "${EXT}" == "zip" ]]; then
             unzip -q ".wasmtime/wasmtime.${EXT}" -d .wasmtime
           else
@@ -400,7 +400,7 @@ jobs:
           ASSET="wasi-sdk-${V}-${ARCH}-${OS}.tar.gz"
           URL="https://github.com/WebAssembly/wasi-sdk/releases/download/${TAG}/${ASSET}"
           mkdir -p .wasi-sdk
-          curl -fsSL --retry 10 --retry-connrefused --retry-all-errors --retry-delay 2 "$URL" -o .wasi-sdk/wasi-sdk.tar.gz
+          curl -fsSL --connect-timeout 15 --max-time 600 --retry 30 --retry-connrefused --retry-all-errors --retry-delay 5 "$URL" -o .wasi-sdk/wasi-sdk.tar.gz
           tar -xzf .wasi-sdk/wasi-sdk.tar.gz -C .wasi-sdk
           echo "WASI_SDK_DIR=${GITHUB_WORKSPACE}/.wasi-sdk/wasi-sdk-${V}-${ARCH}-${OS}" >> "${GITHUB_ENV}"
 
@@ -426,7 +426,7 @@ jobs:
           ASSET="wasmtime-v${V}-${ARCH}-${OS}.${EXT}"
           URL="https://github.com/bytecodealliance/wasmtime/releases/download/v${V}/${ASSET}"
           mkdir -p .wasmtime
-          curl -fsSL --retry 10 --retry-connrefused --retry-all-errors --retry-delay 2 "$URL" -o ".wasmtime/wasmtime.${EXT}"
+          curl -fsSL --connect-timeout 15 --max-time 600 --retry 30 --retry-connrefused --retry-all-errors --retry-delay 5 "$URL" -o ".wasmtime/wasmtime.${EXT}"
           if [[ "${EXT}" == "zip" ]]; then
             unzip -q ".wasmtime/wasmtime.${EXT}" -d .wasmtime
           else
@@ -534,7 +534,7 @@ jobs:
           ASSET="wasi-sdk-${V}-${ARCH}-${OS}.tar.gz"
           URL="https://github.com/WebAssembly/wasi-sdk/releases/download/${TAG}/${ASSET}"
           mkdir -p .wasi-sdk
-          curl -fsSL --retry 10 --retry-connrefused --retry-all-errors --retry-delay 2 "$URL" -o .wasi-sdk/wasi-sdk.tar.gz
+          curl -fsSL --connect-timeout 15 --max-time 600 --retry 30 --retry-connrefused --retry-all-errors --retry-delay 5 "$URL" -o .wasi-sdk/wasi-sdk.tar.gz
           tar -xzf .wasi-sdk/wasi-sdk.tar.gz -C .wasi-sdk
           echo "WASI_SDK_DIR=${GITHUB_WORKSPACE}/.wasi-sdk/wasi-sdk-${V}-${ARCH}-${OS}" >> "${GITHUB_ENV}"
 
@@ -560,7 +560,7 @@ jobs:
           ASSET="wasmtime-v${V}-${ARCH}-${OS}.${EXT}"
           URL="https://github.com/bytecodealliance/wasmtime/releases/download/v${V}/${ASSET}"
           mkdir -p .wasmtime
-          curl -fsSL --retry 10 --retry-connrefused --retry-all-errors --retry-delay 2 "$URL" -o ".wasmtime/wasmtime.${EXT}"
+          curl -fsSL --connect-timeout 15 --max-time 600 --retry 30 --retry-connrefused --retry-all-errors --retry-delay 5 "$URL" -o ".wasmtime/wasmtime.${EXT}"
           if [[ "${EXT}" == "zip" ]]; then
             unzip -q ".wasmtime/wasmtime.${EXT}" -d .wasmtime
           else
@@ -668,7 +668,7 @@ jobs:
           ASSET="wasi-sdk-${V}-${ARCH}-${OS}.tar.gz"
           URL="https://github.com/WebAssembly/wasi-sdk/releases/download/${TAG}/${ASSET}"
           mkdir -p .wasi-sdk
-          curl -fsSL --retry 10 --retry-connrefused --retry-all-errors --retry-delay 2 "$URL" -o .wasi-sdk/wasi-sdk.tar.gz
+          curl -fsSL --connect-timeout 15 --max-time 600 --retry 30 --retry-connrefused --retry-all-errors --retry-delay 5 "$URL" -o .wasi-sdk/wasi-sdk.tar.gz
           tar -xzf .wasi-sdk/wasi-sdk.tar.gz -C .wasi-sdk
           echo "WASI_SDK_DIR=${GITHUB_WORKSPACE}/.wasi-sdk/wasi-sdk-${V}-${ARCH}-${OS}" >> "${GITHUB_ENV}"
 
@@ -694,7 +694,7 @@ jobs:
           ASSET="wasmtime-v${V}-${ARCH}-${OS}.${EXT}"
           URL="https://github.com/bytecodealliance/wasmtime/releases/download/v${V}/${ASSET}"
           mkdir -p .wasmtime
-          curl -fsSL --retry 10 --retry-connrefused --retry-all-errors --retry-delay 2 "$URL" -o ".wasmtime/wasmtime.${EXT}"
+          curl -fsSL --connect-timeout 15 --max-time 600 --retry 30 --retry-connrefused --retry-all-errors --retry-delay 5 "$URL" -o ".wasmtime/wasmtime.${EXT}"
           if [[ "${EXT}" == "zip" ]]; then
             unzip -q ".wasmtime/wasmtime.${EXT}" -d .wasmtime
           else
@@ -814,7 +814,7 @@ jobs:
           ASSET="wasi-sdk-${V}-${ARCH}-${OS}.tar.gz"
           URL="https://github.com/WebAssembly/wasi-sdk/releases/download/${TAG}/${ASSET}"
           mkdir -p .wasi-sdk
-          curl -fsSL --retry 10 --retry-connrefused --retry-all-errors --retry-delay 2 "$URL" -o .wasi-sdk/wasi-sdk.tar.gz
+          curl -fsSL --connect-timeout 15 --max-time 600 --retry 30 --retry-connrefused --retry-all-errors --retry-delay 5 "$URL" -o .wasi-sdk/wasi-sdk.tar.gz
           tar -xzf .wasi-sdk/wasi-sdk.tar.gz -C .wasi-sdk
           echo "WASI_SDK_DIR=${GITHUB_WORKSPACE}/.wasi-sdk/wasi-sdk-${V}-${ARCH}-${OS}" >> "${GITHUB_ENV}"
 
@@ -840,7 +840,7 @@ jobs:
           ASSET="wasmtime-v${V}-${ARCH}-${OS}.${EXT}"
           URL="https://github.com/bytecodealliance/wasmtime/releases/download/v${V}/${ASSET}"
           mkdir -p .wasmtime
-          curl -fsSL --retry 10 --retry-connrefused --retry-all-errors --retry-delay 2 "$URL" -o ".wasmtime/wasmtime.${EXT}"
+          curl -fsSL --connect-timeout 15 --max-time 600 --retry 30 --retry-connrefused --retry-all-errors --retry-delay 5 "$URL" -o ".wasmtime/wasmtime.${EXT}"
           if [[ "${EXT}" == "zip" ]]; then
             unzip -q ".wasmtime/wasmtime.${EXT}" -d .wasmtime
           else
@@ -959,7 +959,7 @@ jobs:
           ASSET="wasmtime-v${V}-${ARCH}-${OS}.${EXT}"
           URL="https://github.com/bytecodealliance/wasmtime/releases/download/v${V}/${ASSET}"
           mkdir -p .wasmtime
-          curl -fsSL --retry 10 --retry-connrefused --retry-all-errors --retry-delay 2 "$URL" -o ".wasmtime/wasmtime.${EXT}"
+          curl -fsSL --connect-timeout 15 --max-time 600 --retry 30 --retry-connrefused --retry-all-errors --retry-delay 5 "$URL" -o ".wasmtime/wasmtime.${EXT}"
           if [[ "${EXT}" == "zip" ]]; then
             unzip -q ".wasmtime/wasmtime.${EXT}" -d .wasmtime
           else
@@ -1078,7 +1078,7 @@ jobs:
           ASSET="wasi-sdk-${V}-${ARCH}-${OS}.tar.gz"
           URL="https://github.com/WebAssembly/wasi-sdk/releases/download/${TAG}/${ASSET}"
           mkdir -p .wasi-sdk
-          curl -fsSL --retry 10 --retry-connrefused --retry-all-errors --retry-delay 2 "$URL" -o .wasi-sdk/wasi-sdk.tar.gz
+          curl -fsSL --connect-timeout 15 --max-time 600 --retry 30 --retry-connrefused --retry-all-errors --retry-delay 5 "$URL" -o .wasi-sdk/wasi-sdk.tar.gz
           tar -xzf .wasi-sdk/wasi-sdk.tar.gz -C .wasi-sdk
           echo "WASI_SDK_DIR=${GITHUB_WORKSPACE}/.wasi-sdk/wasi-sdk-${V}-${ARCH}-${OS}" >> "${GITHUB_ENV}"
 
@@ -1104,7 +1104,7 @@ jobs:
           ASSET="wasmtime-v${V}-${ARCH}-${OS}.${EXT}"
           URL="https://github.com/bytecodealliance/wasmtime/releases/download/v${V}/${ASSET}"
           mkdir -p .wasmtime
-          curl -fsSL --retry 10 --retry-connrefused --retry-all-errors --retry-delay 2 "$URL" -o ".wasmtime/wasmtime.${EXT}"
+          curl -fsSL --connect-timeout 15 --max-time 600 --retry 30 --retry-connrefused --retry-all-errors --retry-delay 5 "$URL" -o ".wasmtime/wasmtime.${EXT}"
           if [[ "${EXT}" == "zip" ]]; then
             unzip -q ".wasmtime/wasmtime.${EXT}" -d .wasmtime
           else
