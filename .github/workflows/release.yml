@@ -82,11 +82,6 @@ jobs:
         run: |
           set -euo pipefail
           bash .workflow-tools/scripts/ci/install_x07_tools.sh
-      - name: Install x07 device host (release gate)
-        shell: bash
-        run: |
-          set -euo pipefail
-          bash .workflow-tools/scripts/ci/install_x07_tools.sh x07-device-host-desktop
       - name: Install wasmtime (pinned)
         shell: bash
         run: |
@@ -123,7 +118,7 @@ jobs:
       - name: Run release gate
         shell: bash
         run: |
-          X07WASM_DEVICE_RUN_SMOKE=0 bash scripts/ci/check_release_ready.sh
+          bash scripts/ci/check_release_ready.sh
 
   build_matrix:
     name: build-${{ matrix.target }}
@@ -229,24 +224,7 @@ jobs:
         shell: bash
         run: |
           VERSION="${RELEASE_TAG#v}"
-          HOST_ABI_HASH="$(python3 - <<'PY'
-          import json
-          from pathlib import Path
-          doc = json.loads(Path('vendor/x07-device-host/host_abi.snapshot.json').read_text(encoding='utf-8'))
-          print(doc['host_abi_hash'])
-          PY
-          )"
-          STD_WEB_UI_VERSION="$(python3 - "${VERSION}" <<'PY'
-          import json
-          import sys
-          from pathlib import Path
-          compat = json.loads(Path(f"releases/compat/{sys.argv[1]}.json").read_text(encoding='utf-8'))
-          print(compat['std_web_ui'])
-          PY
-          )"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "host_abi_hash=${HOST_ABI_HASH}" >> "$GITHUB_OUTPUT"
-          echo "std_web_ui_version=${STD_WEB_UI_VERSION}" >> "$GITHUB_OUTPUT"
           echo "checksums=dist/release/x07-wasm-${VERSION}-checksums.txt" >> "$GITHUB_OUTPUT"
           echo "component_manifest=dist/release/x07-wasm-${VERSION}-release.json" >> "$GITHUB_OUTPUT"
           echo "attestations_jsonl=dist/release/x07-wasm-${VERSION}-attestations.jsonl" >> "$GITHUB_OUTPUT"
@@ -273,9 +251,6 @@ jobs:
             --repo "https://github.com/${GITHUB_REPOSITORY}" \
             --assets-dir dist/release \
             --compat-file "releases/compat/${{ steps.meta.outputs.version }}.json" \
-            --metadata "host_abi_hash=sha256:${{ steps.meta.outputs.host_abi_hash }}" \
-            --metadata "package_name=std-web-ui" \
-            --metadata "package_version=${{ steps.meta.outputs.std_web_ui_version }}" \
             --out "${{ steps.meta.outputs.component_manifest }}"
       - name: Validate component release manifest
         shell: bash

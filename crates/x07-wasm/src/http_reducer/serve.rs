@@ -6,6 +6,7 @@ use serde_json::{json, Value};
 use tokio::task::LocalSet;
 
 use crate::cli::{HttpServeArgs, HttpServeMode, MachineArgs, Scope};
+use crate::core_replay::CoreWasmRunner;
 use crate::diag::{Diagnostic, Severity, Stage};
 use crate::http_reducer::replay::{
     parse_http_fetch_allow_hosts_from_env, run_http_reducer_loop, HttpEffectLoopBudgets,
@@ -16,7 +17,6 @@ use crate::report;
 use crate::schema::SchemaStore;
 use crate::stream_payload::stream_payload_to_bytes;
 use crate::util;
-use crate::web_ui::replay::CoreWasmRunner;
 
 pub fn cmd_http_serve(
     raw_argv: &[OsString],

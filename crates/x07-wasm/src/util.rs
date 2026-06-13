@@ -99,7 +99,6 @@ pub fn write_file_atomic(out: &Path, bytes: &[u8]) -> std::io::Result<()> {
 #[derive(Debug, Clone)]
 pub struct FileReadCappedError {
     pub kind: &'static str,
-    pub path: String,
     pub bytes_len: u64,
     pub max_bytes: u64,
     pub detail: String,
@@ -108,7 +107,6 @@ pub struct FileReadCappedError {
 fn file_len_checked(path: &Path, max_bytes: u64) -> std::result::Result<u64, FileReadCappedError> {
     let md = std::fs::metadata(path).map_err(|err| FileReadCappedError {
         kind: "metadata_failed",
-        path: path.display().to_string(),
         bytes_len: 0,
         max_bytes,
         detail: format!("metadata failed: {err}"),
@@ -116,7 +114,6 @@ fn file_len_checked(path: &Path, max_bytes: u64) -> std::result::Result<u64, Fil
     if !md.is_file() {
         return Err(FileReadCappedError {
             kind: "not_file",
-            path: path.display().to_string(),
             bytes_len: md.len(),
             max_bytes,
             detail: "not a regular file".to_string(),
@@ -126,7 +123,6 @@ fn file_len_checked(path: &Path, max_bytes: u64) -> std::result::Result<u64, Fil
     if len > max_bytes {
         return Err(FileReadCappedError {
             kind: "too_large",
-            path: path.display().to_string(),
             bytes_len: len,
             max_bytes,
             detail: format!("file size {len} exceeds cap {max_bytes}"),
@@ -135,7 +131,6 @@ fn file_len_checked(path: &Path, max_bytes: u64) -> std::result::Result<u64, Fil
     if len > (usize::MAX as u64) {
         return Err(FileReadCappedError {
             kind: "too_large",
-            path: path.display().to_string(),
             bytes_len: len,
             max_bytes,
             detail: "file too large for this platform".to_string(),
@@ -151,7 +146,6 @@ pub fn read_file_capped(
     let len = file_len_checked(path, max_bytes)?;
     let mut f = std::fs::File::open(path).map_err(|err| FileReadCappedError {
         kind: "open_failed",
-        path: path.display().to_string(),
         bytes_len: len,
         max_bytes,
         detail: format!("open failed: {err}"),
@@ -159,7 +153,6 @@ pub fn read_file_capped(
     let mut buf: Vec<u8> = Vec::with_capacity(len as usize);
     f.read_to_end(&mut buf).map_err(|err| FileReadCappedError {
         kind: "read_failed",
-        path: path.display().to_string(),
         bytes_len: len,
         max_bytes,
         detail: format!("read failed: {err}"),
@@ -167,7 +160,6 @@ pub fn read_file_capped(
     if (buf.len() as u64) > max_bytes {
         return Err(FileReadCappedError {
             kind: "too_large",
-            path: path.display().to_string(),
             bytes_len: buf.len() as u64,
             max_bytes,
             detail: "read exceeded cap".to_string(),
@@ -183,7 +175,6 @@ pub fn sha256_file_hex_capped(
     let len = file_len_checked(path, max_bytes)?;
     let mut f = std::fs::File::open(path).map_err(|err| FileReadCappedError {
         kind: "open_failed",
-        path: path.display().to_string(),
         bytes_len: len,
         max_bytes,
         detail: format!("open failed: {err}"),
@@ -195,7 +186,6 @@ pub fn sha256_file_hex_capped(
     loop {
         let n = f.read(&mut buf).map_err(|err| FileReadCappedError {
             kind: "read_failed",
-            path: path.display().to_string(),
             bytes_len: len,
             max_bytes,
             detail: format!("read failed: {err}"),
@@ -207,7 +197,6 @@ pub fn sha256_file_hex_capped(
         if total > max_bytes {
             return Err(FileReadCappedError {
                 kind: "too_large",
-                path: path.display().to_string(),
                 bytes_len: total,
                 max_bytes,
                 detail: "read exceeded cap".to_string(),
@@ -255,40 +244,6 @@ pub fn canon_value_jcs(v: &mut Value) {
 
 pub fn wasmtime_version() -> Option<String> {
     option_env!("X07_WASM_WASMTIME_VERSION").map(|s| s.to_string())
-}
-
-pub fn truncate_bytes_lossy(bytes: &[u8], max_bytes: usize) -> String {
-    if bytes.len() <= max_bytes {
-        return String::from_utf8_lossy(bytes).to_string();
-    }
-    let head = &bytes[..max_bytes];
-    let mut s = String::from_utf8_lossy(head).to_string();
-    s.push_str("...(truncated)");
-    s
-}
-
-pub fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<()> {
-    let mut entries = std::fs::read_dir(src)
-        .with_context(|| format!("read dir: {}", src.display()))?
-        .collect::<std::result::Result<Vec<_>, _>>()?;
-    entries.sort_by_key(|e| e.file_name());
-
-    for e in entries {
-        let ty = e.file_type()?;
-        let name = e.file_name();
-        let src_path = e.path();
-        let dst_path = dst.join(name);
-        if ty.is_dir() {
-            std::fs::create_dir_all(&dst_path)
-                .with_context(|| format!("create dir: {}", dst_path.display()))?;
-            copy_dir_recursive(&src_path, &dst_path)?;
-        } else if ty.is_file() {
-            std::fs::copy(&src_path, &dst_path).with_context(|| {
-                format!("copy {} -> {}", src_path.display(), dst_path.display())
-            })?;
-        }
-    }
-    Ok(())
 }
 
 #[derive(Debug, Clone)]

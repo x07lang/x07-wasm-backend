@@ -10,23 +10,7 @@
       "id": "wasm_release_pooling",
       "path": "arch/wasm/profiles/wasm_release_pooling.json"
     },
-    { "id": "wasm_debug",   "path": "arch/wasm/profiles/wasm_debug.json" },
-    {
-      "id": "wasm_web_ui_release",
-      "path": "arch/wasm/profiles/wasm_web_ui_release.json"
-    },
-    {
-      "id": "wasm_web_ui_release_cached",
-      "path": "arch/wasm/profiles/wasm_web_ui_release_cached.json"
-    },
-    {
-      "id": "wasm_web_ui_release_pooling",
-      "path": "arch/wasm/profiles/wasm_web_ui_release_pooling.json"
-    },
-    {
-      "id": "wasm_web_ui_debug",
-      "path": "arch/wasm/profiles/wasm_web_ui_debug.json"
-    }
+    { "id": "wasm_debug",   "path": "arch/wasm/profiles/wasm_debug.json" }
   ],
   "defaults": {
     "default_profile_id": "wasm_release"

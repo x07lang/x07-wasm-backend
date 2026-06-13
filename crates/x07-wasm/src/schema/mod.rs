@@ -438,32 +438,6 @@ fn report_schema_id_for_scope(scope: Scope) -> &'static str {
         Scope::ProfileValidate => {
             "https://x07.io/spec/x07-wasm.profile.validate.report.schema.json"
         }
-        Scope::WebUiContractsValidate => {
-            "https://x07.io/spec/x07-wasm.web_ui.contracts.validate.report.schema.json"
-        }
-        Scope::WebUiProfileValidate => {
-            "https://x07.io/spec/x07-wasm.web_ui.profile.validate.report.schema.json"
-        }
-        Scope::WebUiBuild => "https://x07.io/spec/x07-wasm.web_ui.build.report.schema.json",
-        Scope::WebUiServe => "https://x07.io/spec/x07-wasm.web_ui.serve.report.schema.json",
-        Scope::WebUiTest => "https://x07.io/spec/x07-wasm.web_ui.test.report.schema.json",
-        Scope::WebUiRegressFromIncident => {
-            "https://x07.io/spec/x07-wasm.web_ui.regress.from.incident.report.schema.json"
-        }
-        Scope::AppContractsValidate => {
-            "https://x07.io/spec/x07-wasm.app.contracts.validate.report.schema.json"
-        }
-        Scope::AppProfileValidate => {
-            "https://x07.io/spec/x07-wasm.app.profile.validate.report.schema.json"
-        }
-        Scope::AppBuild => "https://x07.io/spec/x07-wasm.app.build.report.schema.json",
-        Scope::AppPack => "https://x07.io/spec/x07-wasm.app.pack.report.schema.json",
-        Scope::AppVerify => "https://x07.io/spec/x07-wasm.app.verify.report.schema.json",
-        Scope::AppServe => "https://x07.io/spec/x07-wasm.app.serve.report.schema.json",
-        Scope::AppTest => "https://x07.io/spec/x07-wasm.app.test.report.schema.json",
-        Scope::AppRegressFromIncident => {
-            "https://x07.io/spec/x07-wasm.app.regress.from_incident.report.schema.json"
-        }
         Scope::WorkloadBuild
         | Scope::WorkloadPack
         | Scope::WorkloadInspect
@@ -479,25 +453,6 @@ fn report_schema_id_for_scope(scope: Scope) -> &'static str {
         Scope::HttpTest => "https://x07.io/spec/x07-wasm.http.test.report.schema.json",
         Scope::HttpRegressFromIncident => {
             "https://x07.io/spec/x07-wasm.http.regress.from.incident.report.schema.json"
-        }
-        Scope::DeviceIndexValidate => {
-            "https://x07.io/spec/x07-wasm.device.index.validate.report.schema.json"
-        }
-        Scope::DeviceProfileValidate => {
-            "https://x07.io/spec/x07-wasm.device.profile.validate.report.schema.json"
-        }
-        Scope::DeviceBuild => "https://x07.io/spec/x07-wasm.device.build.report.schema.json",
-        Scope::DeviceVerify => "https://x07.io/spec/x07-wasm.device.verify.report.schema.json",
-        Scope::DeviceProvenanceAttest => {
-            "https://x07.io/spec/x07-wasm.device.provenance.attest.report.schema.json"
-        }
-        Scope::DeviceProvenanceVerify => {
-            "https://x07.io/spec/x07-wasm.device.provenance.verify.report.schema.json"
-        }
-        Scope::DeviceRun => "https://x07.io/spec/x07-wasm.device.run.report.schema.json",
-        Scope::DevicePackage => "https://x07.io/spec/x07-wasm.device.package.report.schema.json",
-        Scope::DeviceRegressFromIncident => {
-            "https://x07.io/spec/x07-wasm.device.regress.from_incident.report.schema.json"
         }
         Scope::CliSpecrowsCheck => {
             "https://x07.io/spec/x07-wasm.cli.specrows.check.report.schema.json"

@@ -32,52 +32,6 @@ const PROVENANCE_VERIFY_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../spec/schemas/x07-wasm.provenance.verify.report.schema.json");
 const PROFILE_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../spec/schemas/x07-wasm.profile.validate.report.schema.json");
-const DEVICE_INDEX_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../spec/schemas/x07-wasm.device.index.validate.report.schema.json");
-const DEVICE_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../spec/schemas/x07-wasm.device.profile.validate.report.schema.json");
-const DEVICE_BUILD_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../spec/schemas/x07-wasm.device.build.report.schema.json");
-const DEVICE_VERIFY_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../spec/schemas/x07-wasm.device.verify.report.schema.json");
-const DEVICE_PROVENANCE_ATTEST_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../spec/schemas/x07-wasm.device.provenance.attest.report.schema.json");
-const DEVICE_PROVENANCE_VERIFY_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../spec/schemas/x07-wasm.device.provenance.verify.report.schema.json");
-const DEVICE_RUN_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../spec/schemas/x07-wasm.device.run.report.schema.json");
-const DEVICE_PACKAGE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../spec/schemas/x07-wasm.device.package.report.schema.json");
-const DEVICE_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../spec/schemas/x07-wasm.device.regress.from_incident.report.schema.json");
-const WEB_UI_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../spec/schemas/x07-wasm.web_ui.contracts.validate.report.schema.json");
-const WEB_UI_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../spec/schemas/x07-wasm.web_ui.profile.validate.report.schema.json");
-const WEB_UI_BUILD_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../spec/schemas/x07-wasm.web_ui.build.report.schema.json");
-const WEB_UI_SERVE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../spec/schemas/x07-wasm.web_ui.serve.report.schema.json");
-const WEB_UI_TEST_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../spec/schemas/x07-wasm.web_ui.test.report.schema.json");
-const WEB_UI_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../spec/schemas/x07-wasm.web_ui.regress.from.incident.report.schema.json");
-const APP_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../spec/schemas/x07-wasm.app.profile.validate.report.schema.json");
-const APP_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../spec/schemas/x07-wasm.app.contracts.validate.report.schema.json");
-const APP_BUILD_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../spec/schemas/x07-wasm.app.build.report.schema.json");
-const APP_PACK_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../spec/schemas/x07-wasm.app.pack.report.schema.json");
-const APP_VERIFY_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../spec/schemas/x07-wasm.app.verify.report.schema.json");
-const APP_SERVE_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../spec/schemas/x07-wasm.app.serve.report.schema.json");
-const APP_TEST_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../spec/schemas/x07-wasm.app.test.report.schema.json");
-const APP_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../spec/schemas/x07-wasm.app.regress.from_incident.report.schema.json");
 const WORKLOAD_SURFACE_REPORT_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../spec/schemas/x07-wasm.workload.surface.report.schema.json");
 const HTTP_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES: &[u8] =
@@ -150,29 +104,6 @@ fn schema_bytes_for_scope(scope: Scope) -> Result<&'static [u8]> {
         Scope::ComponentTargets => Ok(COMPONENT_TARGETS_REPORT_SCHEMA_BYTES),
         Scope::ComponentRun => Ok(COMPONENT_RUN_REPORT_SCHEMA_BYTES),
         Scope::ProfileValidate => Ok(PROFILE_VALIDATE_REPORT_SCHEMA_BYTES),
-        Scope::DeviceIndexValidate => Ok(DEVICE_INDEX_VALIDATE_REPORT_SCHEMA_BYTES),
-        Scope::DeviceProfileValidate => Ok(DEVICE_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES),
-        Scope::DeviceBuild => Ok(DEVICE_BUILD_REPORT_SCHEMA_BYTES),
-        Scope::DeviceVerify => Ok(DEVICE_VERIFY_REPORT_SCHEMA_BYTES),
-        Scope::DeviceProvenanceAttest => Ok(DEVICE_PROVENANCE_ATTEST_REPORT_SCHEMA_BYTES),
-        Scope::DeviceProvenanceVerify => Ok(DEVICE_PROVENANCE_VERIFY_REPORT_SCHEMA_BYTES),
-        Scope::DeviceRun => Ok(DEVICE_RUN_REPORT_SCHEMA_BYTES),
-        Scope::DevicePackage => Ok(DEVICE_PACKAGE_REPORT_SCHEMA_BYTES),
-        Scope::DeviceRegressFromIncident => Ok(DEVICE_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES),
-        Scope::WebUiContractsValidate => Ok(WEB_UI_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES),
-        Scope::WebUiProfileValidate => Ok(WEB_UI_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES),
-        Scope::WebUiBuild => Ok(WEB_UI_BUILD_REPORT_SCHEMA_BYTES),
-        Scope::WebUiServe => Ok(WEB_UI_SERVE_REPORT_SCHEMA_BYTES),
-        Scope::WebUiTest => Ok(WEB_UI_TEST_REPORT_SCHEMA_BYTES),
-        Scope::WebUiRegressFromIncident => Ok(WEB_UI_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES),
-        Scope::AppContractsValidate => Ok(APP_CONTRACTS_VALIDATE_REPORT_SCHEMA_BYTES),
-        Scope::AppProfileValidate => Ok(APP_PROFILE_VALIDATE_REPORT_SCHEMA_BYTES),
-        Scope::AppBuild => Ok(APP_BUILD_REPORT_SCHEMA_BYTES),
-        Scope::AppPack => Ok(APP_PACK_REPORT_SCHEMA_BYTES),
-        Scope::AppVerify => Ok(APP_VERIFY_REPORT_SCHEMA_BYTES),
-        Scope::AppServe => Ok(APP_SERVE_REPORT_SCHEMA_BYTES),
-        Scope::AppTest => Ok(APP_TEST_REPORT_SCHEMA_BYTES),
-        Scope::AppRegressFromIncident => Ok(APP_REGRESS_FROM_INCIDENT_REPORT_SCHEMA_BYTES),
         Scope::WorkloadBuild
         | Scope::WorkloadPack
         | Scope::WorkloadInspect
@@ -209,29 +140,6 @@ fn schema_version_for_scope(scope: Scope) -> &'static str {
         Scope::ComponentTargets => "x07.wasm.component.targets.report@0.1.0",
         Scope::ComponentRun => "x07.wasm.component.run.report@0.1.0",
         Scope::ProfileValidate => "x07.wasm.profile.validate.report@0.1.0",
-        Scope::DeviceIndexValidate => "x07.wasm.device.index.validate.report@0.1.0",
-        Scope::DeviceProfileValidate => "x07.wasm.device.profile.validate.report@0.1.0",
-        Scope::DeviceBuild => "x07.wasm.device.build.report@0.1.0",
-        Scope::DeviceVerify => "x07.wasm.device.verify.report@0.2.0",
-        Scope::DeviceProvenanceAttest => "x07.wasm.device.provenance.attest.report@0.1.0",
-        Scope::DeviceProvenanceVerify => "x07.wasm.device.provenance.verify.report@0.1.0",
-        Scope::DeviceRun => "x07.wasm.device.run.report@0.1.0",
-        Scope::DevicePackage => "x07.wasm.device.package.report@0.2.0",
-        Scope::DeviceRegressFromIncident => "x07.wasm.device.regress.from_incident.report@0.2.0",
-        Scope::WebUiContractsValidate => "x07.wasm.web_ui.contracts.validate.report@0.1.0",
-        Scope::WebUiProfileValidate => "x07.wasm.web_ui.profile.validate.report@0.1.0",
-        Scope::WebUiBuild => "x07.wasm.web_ui.build.report@0.1.0",
-        Scope::WebUiServe => "x07.wasm.web_ui.serve.report@0.1.0",
-        Scope::WebUiTest => "x07.wasm.web_ui.test.report@0.1.0",
-        Scope::WebUiRegressFromIncident => "x07.wasm.web_ui.regress.from.incident.report@0.1.0",
-        Scope::AppContractsValidate => "x07.wasm.app.contracts.validate.report@0.1.0",
-        Scope::AppProfileValidate => "x07.wasm.app.profile.validate.report@0.1.0",
-        Scope::AppBuild => "x07.wasm.app.build.report@0.1.0",
-        Scope::AppPack => "x07.wasm.app.pack.report@0.1.0",
-        Scope::AppVerify => "x07.wasm.app.verify.report@0.1.0",
-        Scope::AppServe => "x07.wasm.app.serve.report@0.1.0",
-        Scope::AppTest => "x07.wasm.app.test.report@0.1.0",
-        Scope::AppRegressFromIncident => "x07.wasm.app.regress.from_incident.report@0.1.0",
         Scope::WorkloadBuild
         | Scope::WorkloadPack
         | Scope::WorkloadInspect

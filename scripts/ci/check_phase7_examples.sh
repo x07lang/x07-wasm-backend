@@ -83,23 +83,14 @@ x07-wasm run \
   --json --report-out build/phase7_examples/run.solve_pure_spin.json --quiet-json
 cmp examples/solve_pure_spin/tests/fixtures/out_small.bin "${OUT_DIR}/solve_pure_spin/out.bin"
 
-echo "==> phase7_examples: component build + app build (no clang/wasm-ld)"
-mkdir -p "${OUT_DIR}/app_min"
+echo "==> phase7_examples: http component build (no clang/wasm-ld)"
+mkdir -p "${OUT_DIR}/http_echo"
 x07-wasm component build \
-  --project examples/app_min/backend/x07.json \
+  --project examples/http_echo/x07.json \
   --profile component_release \
   --emit http \
-  --out-dir "${OUT_DIR}/app_min/component_backend" \
+  --out-dir "${OUT_DIR}/http_echo/component_backend" \
   --clean \
-  --json --report-out build/phase7_examples/component.build.app_min_backend.json --quiet-json
-test -f "${OUT_DIR}/app_min/component_backend/http.component.wasm"
-
-x07-wasm app build \
-  --profile-file examples/app_min/app_release.json \
-  --out-dir "${OUT_DIR}/app_min/app_bundle" \
-  --clean \
-  --json --report-out build/phase7_examples/app.build.app_min.json --quiet-json
-test -f "${OUT_DIR}/app_min/app_bundle/app.bundle.json"
-test -f "${OUT_DIR}/app_min/app_bundle/frontend/index.html"
-test -f "${OUT_DIR}/app_min/app_bundle/backend/app.http.component.wasm"
+  --json --report-out build/phase7_examples/component.build.http_echo_backend.json --quiet-json
+test -f "${OUT_DIR}/http_echo/component_backend/http.component.wasm"
 

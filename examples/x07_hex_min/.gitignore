@@ -1,6 +1,0 @@
-build/
-dist/
-target/
-.x07-wasm/
-frontend/.x07/
-.DS_Store

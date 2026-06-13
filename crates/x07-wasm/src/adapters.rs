@@ -15,8 +15,6 @@ pub const EMBEDDED_HTTP_STATE_DOC_ADAPTER_COMPONENT_WASM: &[u8] =
     include_bytes!("support/adapters/http-state-doc-adapter.component.wasm");
 pub const EMBEDDED_CLI_ADAPTER_COMPONENT_WASM: &[u8] =
     include_bytes!("support/adapters/cli-adapter.component.wasm");
-pub const EMBEDDED_WEB_UI_ADAPTER_COMPONENT_WASM: &[u8] =
-    include_bytes!("support/adapters/web-ui-adapter.component.wasm");
 
 pub fn adapters_from_source_enabled() -> bool {
     let Some(v) = std::env::var_os(ENV_ADAPTERS_FROM_SOURCE) else {

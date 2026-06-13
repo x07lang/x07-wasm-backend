@@ -2,8 +2,8 @@ use anyhow::Result;
 use regex::Regex;
 use serde_json::{json, Value};
 
+use crate::core_replay::apply_json_patch;
 use crate::diag::{Diagnostic, Severity, Stage};
-use crate::web_ui::replay::apply_json_patch;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PolicyTarget {

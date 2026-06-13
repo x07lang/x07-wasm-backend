@@ -9,11 +9,9 @@ set -euo pipefail
 # This script assumes the Phase-5 commands exist:
 #  - x07-wasm toolchain validate
 #  - x07-wasm profile validate
-#  - x07-wasm web-ui contracts validate
 #  - x07-wasm http contracts validate
 #  - x07-wasm http serve/test
 #  - x07-wasm build / run
-#  - x07-wasm app build / pack / verify
 
 mkdir -p build/phase5 dist/phase5 .x07-wasm/incidents
 
@@ -71,36 +69,6 @@ print("ok:", p, "exit_code=", want_exit, "has", want_code)
 PY
 }
 
-get_app_build_bundle_manifest_path() {
-  local report_path="$1"
-  "$PYTHON" - "$report_path" <<'PY'
-import json, pathlib, sys
-p = pathlib.Path(sys.argv[1])
-doc = json.loads(p.read_text(encoding="utf-8"))
-bm = doc.get("result", {}).get("stdout_json", {}).get("bundle_manifest", {})
-path = bm.get("path")
-if not isinstance(path, str) or not path:
-    print("missing result.stdout_json.bundle_manifest.path", file=sys.stderr)
-    sys.exit(1)
-print(path)
-PY
-}
-
-get_app_pack_manifest_path() {
-  local report_path="$1"
-  "$PYTHON" - "$report_path" <<'PY'
-import json, pathlib, sys
-p = pathlib.Path(sys.argv[1])
-doc = json.loads(p.read_text(encoding="utf-8"))
-pm = doc.get("result", {}).get("stdout_json", {}).get("pack_manifest", {})
-path = pm.get("path")
-if not isinstance(path, str) or not path:
-    print("missing result.stdout_json.pack_manifest.path", file=sys.stderr)
-    sys.exit(1)
-print(path)
-PY
-}
-
 echo "==> phase5: gate toolchain validate (pinned tool versions)"
 x07-wasm toolchain validate --profile arch/wasm/toolchain/profiles/toolchain_ci.json \
   --json --report-out build/phase5/toolchain.validate.json --quiet-json
@@ -115,34 +83,6 @@ echo "==> phase5: gate http contracts validate (schemas + fixtures, zero externa
 x07-wasm http contracts validate --strict \
   --json --report-out build/phase5/http.contracts.validate.json --quiet-json
 require_report_ok build/phase5/http.contracts.validate.json
-
-echo "==> phase5: gate web-ui contracts validate (strict; typed effects)"
-x07-wasm web-ui contracts validate --strict \
-  --json --report-out build/phase5/web-ui.contracts.validate.json --quiet-json
-require_report_ok build/phase5/web-ui.contracts.validate.json
-
-echo "==> phase5: gate vendored x07-web-ui snapshot integrity"
-${PYTHON} scripts/vendor_x07_web_ui.py check
-
-echo "==> phase5: gate web-ui build emits dist/wasm.profile.json and test can load it"
-(
-  web_ui_root="$(cd "vendor/x07-web-ui" && pwd)"
-  export X07_WORKSPACE_ROOT="${web_ui_root}"
-
-  counter_project="${web_ui_root}/examples/web_ui_counter/x07.json"
-  counter_trace="${web_ui_root}/examples/web_ui_counter/tests/counter.trace.json"
-
-  counter_core_dir="dist/phase5/web_ui_counter_core"
-  rm -rf "${counter_core_dir}"
-  x07-wasm web-ui build --project "${counter_project}" --profile web_ui_debug --out-dir "${counter_core_dir}" --clean \
-    --json --report-out build/phase5/web-ui.build.counter.core.json --quiet-json
-  require_report_ok build/phase5/web-ui.build.counter.core.json
-  test -f "${counter_core_dir}/wasm.profile.json"
-
-  x07-wasm web-ui test --dist-dir "${counter_core_dir}" --case "${counter_trace}" \
-    --json --report-out build/phase5/web-ui.test.counter.core.json --quiet-json
-  require_report_ok build/phase5/web-ui.test.counter.core.json
-)
 
 echo "==> phase5: gate http reducer runner loop (build + serve + trace replay)"
 x07-wasm build --project examples/http_reducer_echo/x07.json --profile wasm_release \
@@ -211,29 +151,6 @@ if [ "$code" -ne 4 ]; then
   exit 1
 fi
 check_report_exit_code_and_has_code build/phase5/run.solve_pure_spin.fuel_exceeded.json 4 X07WASM_BUDGET_EXCEEDED_CPU_FUEL
-
-echo "==> phase5: gate app_min build -> pack -> verify (positive)"
-rm -rf dist/phase5/app_min dist/phase5/app_min.pack
-x07-wasm app build --profile-file examples/app_min/app_release.json \
-  --out-dir dist/phase5/app_min --clean \
-  --json --report-out build/phase5/app.build.app_min.json --quiet-json
-require_report_ok build/phase5/app.build.app_min.json
-
-BUNDLE_MANIFEST="$(get_app_build_bundle_manifest_path build/phase5/app.build.app_min.json)"
-test -f "$BUNDLE_MANIFEST"
-
-x07-wasm app pack --bundle-manifest "$BUNDLE_MANIFEST" \
-  --out-dir dist/phase5/app_min.pack \
-  --profile-id app_min_release \
-  --json --report-out build/phase5/app.pack.app_min.json --quiet-json
-require_report_ok build/phase5/app.pack.app_min.json
-
-PACK_MANIFEST="$(get_app_pack_manifest_path build/phase5/app.pack.app_min.json)"
-test -f "$PACK_MANIFEST"
-
-x07-wasm app verify --pack-manifest "$PACK_MANIFEST" \
-  --json --report-out build/phase5/app.verify.app_min.json --quiet-json
-require_report_ok build/phase5/app.verify.app_min.json
 
 echo "==> phase5: lightweight examples-only gate (includes negative verify tests)"
 bash scripts/ci/check_phase5_examples.sh

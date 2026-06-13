@@ -214,7 +214,7 @@ PHASE9_CODES = [
 
     "X07WASM_INTERNAL_DEVICE_PACKAGE_SCHEMA_INVALID",
 
-    # Host runner codes (passed-through by `x07-wasm device run` on host-level failures).
+    # Host runner codes (frozen diagnostics retained for schema compatibility; Decision B).
     "X07DEVHOST_ASSET_LOAD_FAILED",
     "X07DEVHOST_BUNDLE_HOST_ABI_HASH_MISMATCH",
     "X07DEVHOST_BUNDLE_MANIFEST_PARSE_FAILED",

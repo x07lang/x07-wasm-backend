@@ -4,8 +4,6 @@ This guide covers hardening the WASM execution loop:
 
 - Toolchain pin validation (`x07-wasm toolchain validate`)
 - Host-enforced runtime limits (fuel, memory, table, wasm stack) with stable `X07WASM_BUDGET_EXCEEDED_*` diagnostics
-- Deployable app packs (`x07-wasm app pack` + `x07-wasm app verify`)
-- Web UI dist completeness (`dist/wasm.profile.json`) so replay/test does not depend on external profile registries
 - (Recommended) core-wasm HTTP reducer loop (`x07-wasm http ...`) with deterministic traces
 
 ## Toolchain pin validation
@@ -52,16 +50,6 @@ Shipped WASM profiles:
 - `wasm_release` (default)
 - `wasm_release_cached` (enables Wasmtime compilation cache via `arch/wasm/toolchain/wasmtime_cache.toml`)
 - `wasm_release_pooling` (enables Wasmtime pooling allocator)
-- `wasm_web_ui_release` (optimized for web-ui reducers)
-- `wasm_web_ui_release_cached` (web-ui + compilation cache)
-- `wasm_web_ui_release_pooling` (web-ui + pooling allocator)
-
-## App pack / verify
-
-This repo includes deployable pack artifacts:
-
-- `x07-wasm app pack` produces a content-addressed `x07.app.pack@0.1.0` manifest.
-- `x07-wasm app verify` recomputes digests and enforces required headers (notably `.wasm` must be served as `application/wasm`).
 
 ## Core-wasm HTTP reducers
 

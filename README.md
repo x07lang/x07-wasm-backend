@@ -2,16 +2,18 @@
 
 WebAssembly build and packaging pipeline for X07.
 
-This repo contains the `x07-wasm` toolchain, host runners, schemas, examples, and release tooling used to turn X07 projects into WASM modules, WASI components, browser UI apps, device bundles, and workload packs.
+This repo contains the `x07-wasm` toolchain, host runners, schemas, examples, and release tooling used to turn X07 projects into WASM modules, WASI components, and workload packs.
 
-**Start here:** [`examples/`](examples/) · [`x07lang/x07-web-ui`](https://github.com/x07lang/x07-web-ui) · [`x07lang/x07-device-host`](https://github.com/x07lang/x07-device-host) · [Agent Quickstart](https://x07lang.org/docs/getting-started/agent-quickstart)
+**Start here:** [`examples/`](examples/) · [Agent Quickstart](https://x07lang.org/docs/getting-started/agent-quickstart)
+
+> The browser web-ui, device-host, and full-stack app-bundle surfaces were
+> archived in the 2026-06 refocus on the core deterministic execution substrate
+> and have been removed from this repo.
 
 ## What This Repo Builds
 
 - solve-pure WASM modules
 - WASI components
-- browser UI apps
-- desktop and mobile device bundles
 - workload packs and related deploy inputs
 
 If `x07` is where you write the program, `x07-wasm-backend` is where that program becomes a runnable WASM artifact.
@@ -44,23 +46,6 @@ x07-wasm run \
 
 ## Common Paths
 
-### Browser UI apps
-
-```sh
-x07-wasm web-ui build
-x07-wasm web-ui serve
-x07-wasm web-ui test
-```
-
-### Device apps
-
-```sh
-x07-wasm device build
-x07-wasm device verify
-x07-wasm device package --target ios
-x07-wasm device package --target android
-```
-
 ### Workload and backend delivery
 
 ```sh
@@ -73,16 +58,11 @@ x07-wasm deploy plan
 ## Where To Look Next
 
 - `examples/` for end-to-end sample projects
-- [`x07lang/x07-web-ui`](https://github.com/x07lang/x07-web-ui) for reducer-side UI contracts
-- [`x07lang/x07-device-host`](https://github.com/x07lang/x07-device-host) for native device shells
-- [`x07lang/x07-platform`](https://github.com/x07lang/x07-platform) for deploy, release, incident, and regression workflows built around the artifacts produced here
 
 ## How It Fits The X07 Ecosystem
 
 - [`x07`](https://github.com/x07lang/x07) provides the language, repair loop, and package workflows
 - `x07-wasm-backend` builds the runnable WASM and packaging outputs
-- `x07-web-ui` and `x07-device-host` provide the app-side browser and device surfaces
-- `x07-platform` consumes workload, app, and device artifacts when they move into operational flows
 
 ## License
 

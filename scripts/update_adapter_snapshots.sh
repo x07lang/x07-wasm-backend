@@ -30,11 +30,10 @@ docker run --rm --platform linux/amd64 \
     rustup target add wasm32-wasip2 >/dev/null
     cargo build --release --locked --target wasm32-wasip2 --manifest-path guest/http-adapter/Cargo.toml
     cargo build --release --locked --target wasm32-wasip2 --manifest-path guest/cli-adapter/Cargo.toml
-    cargo build --release --locked --target wasm32-wasip2 --manifest-path guest/web-ui-adapter/Cargo.toml
   '
 
 echo "==> copying embedded snapshots"
-for adapter in http cli web-ui; do
+for adapter in http cli; do
   guest_out="${ROOT_DIR}/$(x07_adapter_guest_output_path "${adapter}")"
   embedded="${ROOT_DIR}/$(x07_adapter_embedded_snapshot_path "${adapter}")"
 
@@ -46,7 +45,7 @@ for adapter in http cli web-ui; do
 done
 
 echo "==> verifying embedded snapshots"
-for adapter in http cli web-ui; do
+for adapter in http cli; do
   guest_out="${ROOT_DIR}/$(x07_adapter_guest_output_path "${adapter}")"
   embedded="${ROOT_DIR}/$(x07_adapter_embedded_snapshot_path "${adapter}")"
   if ! cmp -s "${guest_out}" "${embedded}"; then

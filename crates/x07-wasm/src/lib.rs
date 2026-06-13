@@ -1,7 +1,6 @@
 #![recursion_limit = "1024"]
 
 mod adapters;
-mod app;
 mod arch;
 mod binding;
 mod blob;
@@ -9,8 +8,8 @@ mod caps;
 mod cli;
 mod cmdutil;
 mod component;
+mod core_replay;
 mod deploy;
-mod device;
 mod diag;
 mod guest_diag;
 mod http_component_host;
@@ -29,7 +28,6 @@ mod topology;
 mod util;
 mod wasm;
 mod wasmtime_limits;
-mod web_ui;
 mod wit;
 mod workload;
 

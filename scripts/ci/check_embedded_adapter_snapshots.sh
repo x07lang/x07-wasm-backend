@@ -17,7 +17,7 @@ fi
 
 adapters=("$@")
 if [[ "${#adapters[@]}" == "0" ]]; then
-  adapters=(http cli web-ui)
+  adapters=(http cli)
 fi
 
 rust_channel="$(
@@ -43,7 +43,7 @@ docker run --rm --platform linux/amd64 \
 
     adapters=("$@")
     if [[ "${#adapters[@]}" == "0" ]]; then
-      adapters=(http cli web-ui)
+      adapters=(http cli)
     fi
 
     for adapter in "${adapters[@]}"; do

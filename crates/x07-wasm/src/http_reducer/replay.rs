@@ -9,11 +9,11 @@ use hyper_util::client::legacy::{connect::HttpConnector, Client};
 use serde_json::{json, Value};
 
 use crate::caps::doc::{CapabilitiesDoc, CapabilityMode};
+use crate::core_replay::CoreWasmRunner;
 use crate::diag::{Diagnostic, Severity, Stage};
 use crate::schema::SchemaStore;
 use crate::stream_payload::{bytes_to_stream_payload, stream_payload_to_bytes};
 use crate::wasmtime_limits::{classify_budget_exceeded, BudgetExceededKind};
-use crate::web_ui::replay::CoreWasmRunner;
 
 #[derive(Debug, Clone, Copy)]
 pub struct HttpEffectLoopBudgets {

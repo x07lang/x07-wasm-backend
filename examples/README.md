@@ -1,23 +1,14 @@
 # `examples/`
 
-This directory contains both minimal command-surface fixtures and end-to-end showcase apps.
+This directory contains minimal command-surface fixtures and end-to-end
+reference projects for the core WASM toolchain.
 
-## Official Showcases
+> The web-ui, device, and full-stack app showcases (x07_studio, x07_atlas,
+> x07_field_notes, x07_builder_io_min, x07_capture_min, x07_hex_min, device_min)
+> were archived in the 2026-06 refocus and removed from this repo.
 
-- [`x07_builder_io_min/README.md`](x07_builder_io_min/README.md): builder-I/O proving app with import/edit/export, clipboard, share, and cross-target device packaging
-- [`x07_capture_min/README.md`](x07_capture_min/README.md): native proving app with permission query/request, capture/import, blob-manifest follow-up, location, notifications, and cross-target device packaging
-- [`x07_hex_min/README.md`](x07_hex_min/README.md): Tactics reference app with deterministic select/move/end-turn flow, cue audio, haptics, and cross-target device packaging
-- [`x07_atlas/README.md`](x07_atlas/README.md): full-stack app bundle with trace replay, incident capture, regression generation, pack verification, provenance, deploy planning, and SLO checks
-- [`x07_studio/README.md`](x07_studio/README.md): desktop device bundle with persistent notes, import/export flows, provenance, packaging, and desktop host smoke
-- [`x07_field_notes/README.md`](x07_field_notes/README.md): shared desktop/mobile reducer with offline storage, HTTP sync, replay traces, and iOS/Android packaging
+## References
 
-## Minimal References
-
-- `app_fullstack_hello/`
-- `app_min/`
-- `x07_builder_io_min/`
-- `x07_capture_min/`
-- `x07_hex_min/`
-- `device_min/`
-- `http_*`
-- `solve_pure_*`
+- `solve_pure_*` — solve-pure WASM modules
+- `http_*` — WASI HTTP components and core-wasm HTTP reducers
+- `json_patch/`, `task_sched/` — additional solve-pure examples

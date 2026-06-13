@@ -5,11 +5,11 @@ use anyhow::{Context, Result};
 use serde_json::{json, Value};
 
 use crate::cli::{HttpTestArgs, MachineArgs, Scope};
+use crate::core_replay::CoreWasmRunner;
 use crate::diag::{Diagnostic, Severity, Stage};
 use crate::report;
 use crate::schema::SchemaStore;
 use crate::util;
-use crate::web_ui::replay::CoreWasmRunner;
 
 pub fn cmd_http_test(
     raw_argv: &[OsString],

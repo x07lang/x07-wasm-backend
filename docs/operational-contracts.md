@@ -53,7 +53,6 @@ Runtime enforcement:
 
 - `x07-wasm serve --ops <ops.json>` applies capabilities to WASI 0.2 HTTP components (WASI Preview 2 host config + outgoing `wasi:http` allowlist).
 - `x07-wasm http serve --ops <ops.json>` applies capabilities to the core-wasm HTTP reducer effects (for example `http.fetch` and `time.now`).
-- `x07-wasm app serve --ops <ops.json>` applies capabilities to backend requests served via the in-proc component host.
 
 Clocks/random record+replay:
 
@@ -96,12 +95,8 @@ x07-wasm policy validate --card path/to/card.json --json
 SLO profiles (`x07.slo.profile@0.1.0`) can be evaluated against offline metrics snapshots (`x07.metrics.snapshot@0.1.0`):
 
 ```sh
-x07-wasm slo eval --profile examples/x07_atlas/arch/slo/slo_min.json --metrics examples/x07_atlas/tests/fixtures/metrics/atlas_canary_ok.json --json
+x07-wasm slo eval --profile arch/slo/slo_min.json --metrics arch/slo/metrics_canary_ok.json --json
 ```
-
-Canary integration:
-
-- `x07-wasm app serve --mode canary --ops <ops.json>` evaluates the referenced SLO profile (if present) and includes the decision under `result.stdout_json.canary.slo_decision`.
 
 Pinned exit codes:
 
@@ -139,9 +134,8 @@ Notes:
 - `predicateType` is schema-validated as a non-empty string; `x07-wasm provenance verify` enforces the supported SLSA v1 predicate type after signature verification.
 - `x07-wasm provenance attest` fails closed (no DSSE envelope is written) when any subject path is unsafe and emits `X07WASM_PROVENANCE_SUBJECT_PATH_UNSAFE` (exit code 1).
 - `x07-wasm provenance attest` pre-deletes `--out` and `--out.tmp` before it starts, and writes DSSE output atomically (`*.tmp` then rename).
-- `x07-wasm app verify` and `x07-wasm provenance verify` stream digests and enforce hard size caps to avoid unbounded reads:
-  - pack manifest: 8 MiB (`X07WASM_APP_VERIFY_MANIFEST_TOO_LARGE`)
-  - pack files/subjects: 256 MiB (`X07WASM_APP_VERIFY_FILE_TOO_LARGE`, `X07WASM_PROVENANCE_FILE_TOO_LARGE`)
+- `x07-wasm provenance verify` streams digests and enforces hard size caps to avoid unbounded reads:
+  - pack files/subjects: 256 MiB (`X07WASM_PROVENANCE_FILE_TOO_LARGE`)
   - DSSE attestation input: 16 MiB (`X07WASM_PROVENANCE_FILE_TOO_LARGE`)
 
 ## Platform handoff
@@ -150,11 +144,9 @@ These outputs are intended to be consumed by an autonomous deployer (for example
 
 - **Deploy intent**: `x07-wasm deploy plan` emits `deploy.plan.json`. By default it also emits Kubernetes YAML outputs under `--out-dir` (disable via `--emit-k8s false`).
 - **Authorization**: `x07-wasm provenance verify` recomputes digests against the pack directory; platforms can gate deployment on a verified attestation and record `predicate.x07.compatibility_hash`.
-- **Promotion**: `x07-wasm app serve --mode canary --ops <ops.json>` evaluates SLOs (if referenced by ops) and emits a pinned `promote|rollback|inconclusive` decision.
+- **Promotion**: `x07-wasm slo eval` evaluates SLOs against a metrics snapshot and emits a pinned `promote|rollback|inconclusive` decision.
 - **Incidents → regressions**: incident bundles under `.x07-wasm/incidents/...` can be converted into replayable cases via `* regress-from-incident` commands.
 
 ## CI coverage
 
 CI validates these contracts and reports in the presence of pinned toolchains and deterministic fixtures, including the legacy C toolchain path when `WASI_SDK_DIR` is configured.
-
-The official full-stack showcase for this surface is [`examples/x07_atlas`](../examples/x07_atlas/README.md).

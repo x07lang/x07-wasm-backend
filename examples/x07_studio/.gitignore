@@ -1,9 +1,0 @@
-# Build outputs
-build/
-dist/
-target/
-.x07-wasm/
-frontend/.x07/
-
-# Editor noise
-.DS_Store
