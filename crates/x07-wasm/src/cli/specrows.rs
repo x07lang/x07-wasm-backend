@@ -100,15 +100,6 @@ pub fn build_specrows_doc() -> Value {
             ["component-targets","opt","","--wit","wit","PATH","Path to a .wit file containing the world to target."],
             ["component-targets","opt","","--world","world","STR","World name within the WIT file."],
 
-            ["deploy-plan","about","Alias for `x07-wasm deploy plan`. Generate progressive delivery plan from pack + ops profile and emit x07.wasm.deploy.plan.report@0.1.0."],
-            ["deploy-plan","opt","","--ops","ops","PATH","Ops profile file (x07.app.ops.profile@0.1.0)."],
-            ["deploy-plan","opt","","--emit-k8s","emit.k8s","STR","Emit Kubernetes YAML outputs (true/false; default true)."],
-            ["deploy-plan","opt","","--out-dir","out_dir","PATH","Output directory for deploy plan + emitted manifests."],
-            ["deploy-plan","opt","","--environment-id","environment_id","STR","Optional environment id for emitted telemetry identity labels."],
-            ["deploy-plan","opt","","--deployment-id","deployment_id","STR","Optional deployment id for emitted telemetry identity labels."],
-            ["deploy-plan","opt","","--service-id","service_id","STR","Optional service id for emitted telemetry identity labels."],
-            ["deploy-plan","opt","","--pack-manifest","pack_manifest","PATH","App pack manifest file (x07.app.pack@0.1.0)."],
-
         ["doctor","about","Check wasm toolchain prerequisites and emit a machine report."],
 
         ["http-contracts-validate","about","Alias for `x07-wasm http contracts validate`. Validate http reducer schema set + fixtures and emit x07.wasm.http.contracts.validate.report@0.1.0."],
@@ -174,18 +165,6 @@ pub fn build_specrows_doc() -> Value {
         ["profile-validate","opt","","--profile","profile.id","STR","Validate only this profile id (looked up in the registry).",{"required":false}],
         ["profile-validate","opt","","--profile-file","profile.file","PATH","Validate a profile JSON file directly (bypass registry).",{"required":false}],
 
-        ["provenance-attest","about","Alias for `x07-wasm provenance attest`. Create SLSA provenance attestation for an app pack and emit x07.wasm.provenance.attest.report@0.1.0."],
-        ["provenance-attest","opt","","--ops","ops","PATH","Ops profile file (x07.app.ops.profile@0.1.0)."],
-        ["provenance-attest","opt","","--out","out","PATH","Output attestation file."],
-        ["provenance-attest","opt","","--pack-manifest","pack_manifest","PATH","App pack manifest file (x07.app.pack@0.1.0)."],
-        ["provenance-attest","opt","","--predicate-type","predicate_type","STR","In-toto Statement predicateType."],
-        ["provenance-attest","opt","","--signing-key","signing_key","PATH","Ed25519 signing key seed file (base64, 32 bytes)."],
-
-        ["provenance-verify","about","Alias for `x07-wasm provenance verify`. Verify SLSA provenance attestation against current artifacts and emit x07.wasm.provenance.verify.report@0.1.0."],
-        ["provenance-verify","opt","","--attestation","attestation","PATH","DSSE envelope file (x07.provenance.dsse.envelope@0.1.0)."],
-        ["provenance-verify","opt","","--pack-dir","pack_dir","PATH","Directory containing the packed assets referenced by the attestation."],
-        ["provenance-verify","opt","","--trusted-public-key","trusted_public_key","PATH","Trusted Ed25519 public key file (base64, 32 bytes)."],
-
         ["run","about","Run a wasm module exporting x07_solve_v2 under Wasmtime; emit output bytes + JSON report."],
         ["run","opt","","--arena-cap-bytes","arena.cap.bytes","U32","Arena capacity passed to x07_solve_v2 (bytes)."],
         ["run","opt","","--index","index","PATH","Path to wasm profile registry (default: arch/wasm/index.x07wasm.json)."],
@@ -213,13 +192,6 @@ pub fn build_specrows_doc() -> Value {
             ["serve","opt","","--path","path","STR","Request path for canary mode.",{"required":false}],
             ["serve","opt","","--request-body","request.body","BYTES","Request body bytes for canary mode (hex:, b64:, @path).",{"required":false}],
             ["serve","opt","","--stop-after","stop.after","U32","Stop after N requests (canary mode; or listen mode if nonzero).",{"required":false}],
-
-        ["slo-eval","about","Alias for `x07-wasm slo eval`. Evaluate SLO profile against a metrics snapshot and emit x07.wasm.slo.eval.report@0.1.0."],
-        ["slo-eval","opt","","--metrics","metrics","PATH","Metrics snapshot file (x07.metrics.snapshot@0.1.0)."],
-        ["slo-eval","opt","","--profile","profile","PATH","SLO profile file (x07.slo.profile@0.1.0)."],
-
-        ["slo-validate","about","Alias for `x07-wasm slo validate`. Validate SLO profile file and emit x07.wasm.slo.validate.report@0.1.0."],
-        ["slo-validate","opt","","--profile","profile","PATH","SLO profile file (x07.slo.profile@0.1.0)."],
 
         ["toolchain-validate","about","Alias for `x07-wasm toolchain validate`. Validate pinned toolchain requirements (versions + probes) and emit x07.wasm.toolchain.validate.report@0.1.0."],
         ["toolchain-validate","opt","","--index","index","PATH","Toolchain index file (x07.arch.wasm.toolchain.index@0.1.0).",{ "default": "arch/wasm/toolchain/index.x07wasm.toolchain.json" }],

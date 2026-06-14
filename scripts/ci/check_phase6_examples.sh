@@ -3,13 +3,7 @@ set -euo pipefail
 
 # Phase-6 examples-only gate:
 #  - Builds on Phase-5 examples (solve_pure_spin + fuel exceeded).
-#  - Adds Phase-6 ops/caps/slo checks using pinned fixtures.
-#
-# Assumptions (pinned semantics for CI):
-#  - `x07-wasm slo eval` exit codes:
-#      promote      -> exit 0, ok=true,  decision="promote"
-#      rollback     -> exit 2, ok=false, decision="rollback", diag includes X07WASM_SLO_VIOLATION
-#      inconclusive -> exit 3, ok=false, decision="inconclusive", diag includes X07WASM_SLO_EVAL_INCONCLUSIVE
+#  - Adds Phase-6 ops/caps/policy checks using pinned fixtures.
 #
 # This script depends only on:
 #   - examples/solve_pure_spin/
@@ -141,47 +135,6 @@ echo "==> phase6_examples: caps validate (allowlist parse only)"
 x07-wasm caps validate --profile arch/app/ops/caps_allow_example.json \
   --json --report-out build/phase6_examples/caps.validate.allow_example.json --quiet-json
 require_report_ok build/phase6_examples/caps.validate.allow_example.json
-
-echo "==> phase6_examples: slo validate"
-x07-wasm slo validate --profile arch/slo/slo_min.json \
-  --json --report-out build/phase6_examples/slo.validate.json --quiet-json
-require_report_ok build/phase6_examples/slo.validate.json
-
-echo "==> phase6_examples: slo eval (promote)"
-x07-wasm slo eval --profile arch/slo/slo_min.json \
-  --metrics arch/slo/metrics_canary_ok.json \
-  --json --report-out build/phase6_examples/slo.eval.ok.json --quiet-json
-require_report_ok build/phase6_examples/slo.eval.ok.json
-require_report_result_field build/phase6_examples/slo.eval.ok.json result.decision promote
-
-echo "==> phase6_examples: slo eval (rollback)"
-set +e
-x07-wasm slo eval --profile arch/slo/slo_min.json \
-  --metrics arch/slo/metrics_canary_bad.json \
-  --json --report-out build/phase6_examples/slo.eval.bad.json --quiet-json
-code=$?
-set -e
-if [ "$code" -ne 2 ]; then
-  echo "expected exit code 2 for SLO rollback, got $code" >&2
-  exit 1
-fi
-require_report_exit_and_has_code build/phase6_examples/slo.eval.bad.json 2 X07WASM_SLO_VIOLATION
-require_report_result_field build/phase6_examples/slo.eval.bad.json result.decision rollback
-
-echo "==> phase6_examples: slo eval (inconclusive - missing metric)"
-set +e
-x07-wasm slo eval --profile arch/slo/slo_min.json \
-  --metrics arch/slo/metrics_canary_missing.json \
-  --json --report-out build/phase6_examples/slo.eval.missing.json --quiet-json
-code=$?
-set -e
-if [ "$code" -ne 3 ]; then
-  echo "expected exit code 3 for SLO inconclusive, got $code" >&2
-  exit 1
-fi
-require_report_exit_and_has_code build/phase6_examples/slo.eval.missing.json 3 X07WASM_SLO_METRIC_MISSING
-require_report_exit_and_has_code build/phase6_examples/slo.eval.missing.json 3 X07WASM_SLO_EVAL_INCONCLUSIVE
-require_report_result_field build/phase6_examples/slo.eval.missing.json result.decision inconclusive
 
 echo "==> phase6_examples: ops validate (index resolution dev + release)"
 x07-wasm ops validate --index arch/app/ops/index.x07ops.json --profile-id ops_dev \

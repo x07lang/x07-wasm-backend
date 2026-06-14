@@ -1,13 +1,10 @@
-# Operational contracts, policy, SLO, deploy plans, provenance
+# Operational contracts, capabilities, policy
 
 This guide covers machine-readable operational contracts and outputs that are safe to consume by autonomous deployers:
 
 - Ops profiles (`x07-wasm ops validate`)
 - Capability contracts (`x07-wasm caps validate`)
 - Policy cards (`x07-wasm policy validate`)
-- SLO-as-code + offline evaluation (`x07-wasm slo validate`, `x07-wasm slo eval`)
-- Progressive delivery plan generation (`x07-wasm deploy plan`)
-- Pack provenance attest/verify (`x07-wasm provenance attest`, `x07-wasm provenance verify`)
 
 All commands in this surface support:
 
@@ -89,63 +86,6 @@ Validate one or more cards:
 ```sh
 x07-wasm policy validate --card path/to/card.json --json
 ```
-
-## SLO evaluation
-
-SLO profiles (`x07.slo.profile@0.1.0`) can be evaluated against offline metrics snapshots (`x07.metrics.snapshot@0.1.0`):
-
-```sh
-x07-wasm slo eval --profile arch/slo/slo_min.json --metrics arch/slo/metrics_canary_ok.json --json
-```
-
-Pinned exit codes:
-
-- `promote` → exit 0
-- `rollback` (violations) → exit 2
-- `inconclusive` (missing metrics) → exit 3
-
-## Deploy plan generation
-
-Generate a deploy plan (optionally emit Kubernetes YAMLs; Argo Rollouts concepts):
-
-```sh
-x07-wasm deploy plan --pack-manifest dist/app.pack.json --ops arch/app/ops/ops_release.json --out-dir dist/deploy_plan --json
-```
-
-Plan-only mode (no Kubernetes YAML outputs):
-
-```sh
-x07-wasm deploy plan --pack-manifest dist/app.pack.json --ops arch/app/ops/ops_release.json --emit-k8s false --out-dir dist/deploy_plan --json
-```
-
-## Provenance
-
-Create and verify a signed provenance attestation for a pack (DSSE + Ed25519):
-
-```sh
-x07-wasm provenance attest --pack-manifest dist/app.pack.json --ops arch/app/ops/ops_release.json --signing-key arch/provenance/dev.ed25519.signing_key.b64 --out dist/provenance.dsse.json --json
-x07-wasm provenance verify --attestation dist/provenance.dsse.json --pack-dir dist --trusted-public-key arch/provenance/dev.ed25519.public_key.b64 --json
-```
-
-Notes:
-
-- `x07-wasm provenance attest` includes `predicate.x07.compatibility_hash` (matches `x07-wasm ops validate`).
-- Attestations are emitted as `x07.provenance.dsse.envelope@0.1.0` (`https://x07.io/spec/x07-provenance.dsse.envelope.schema.json`) where the payload is an in-toto Statement.
-- `predicateType` is schema-validated as a non-empty string; `x07-wasm provenance verify` enforces the supported SLSA v1 predicate type after signature verification.
-- `x07-wasm provenance attest` fails closed (no DSSE envelope is written) when any subject path is unsafe and emits `X07WASM_PROVENANCE_SUBJECT_PATH_UNSAFE` (exit code 1).
-- `x07-wasm provenance attest` pre-deletes `--out` and `--out.tmp` before it starts, and writes DSSE output atomically (`*.tmp` then rename).
-- `x07-wasm provenance verify` streams digests and enforces hard size caps to avoid unbounded reads:
-  - pack files/subjects: 256 MiB (`X07WASM_PROVENANCE_FILE_TOO_LARGE`)
-  - DSSE attestation input: 16 MiB (`X07WASM_PROVENANCE_FILE_TOO_LARGE`)
-
-## Platform handoff
-
-These outputs are intended to be consumed by an autonomous deployer (for example `x07-platform`) as a closed-loop contract:
-
-- **Deploy intent**: `x07-wasm deploy plan` emits `deploy.plan.json`. By default it also emits Kubernetes YAML outputs under `--out-dir` (disable via `--emit-k8s false`).
-- **Authorization**: `x07-wasm provenance verify` recomputes digests against the pack directory; platforms can gate deployment on a verified attestation and record `predicate.x07.compatibility_hash`.
-- **Promotion**: `x07-wasm slo eval` evaluates SLOs against a metrics snapshot and emits a pinned `promote|rollback|inconclusive` decision.
-- **Incidents → regressions**: incident bundles under `.x07-wasm/incidents/...` can be converted into replayable cases via `* regress-from-incident` commands.
 
 ## CI coverage
 

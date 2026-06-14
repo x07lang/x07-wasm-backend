@@ -426,15 +426,6 @@ fn report_schema_id_for_scope(scope: Scope) -> &'static str {
         Scope::OpsValidate => "https://x07.io/spec/x07-wasm.ops.validate.report.schema.json",
         Scope::CapsValidate => "https://x07.io/spec/x07-wasm.caps.validate.report.schema.json",
         Scope::PolicyValidate => "https://x07.io/spec/x07-wasm.policy.validate.report.schema.json",
-        Scope::SloValidate => "https://x07.io/spec/x07-wasm.slo.validate.report.schema.json",
-        Scope::SloEval => "https://x07.io/spec/x07-wasm.slo.eval.report.schema.json",
-        Scope::DeployPlan => "https://x07.io/spec/x07-wasm.deploy.plan.report.schema.json",
-        Scope::ProvenanceAttest => {
-            "https://x07.io/spec/x07-wasm.provenance.attest.report.schema.json"
-        }
-        Scope::ProvenanceVerify => {
-            "https://x07.io/spec/x07-wasm.provenance.verify.report.schema.json"
-        }
         Scope::ProfileValidate => {
             "https://x07.io/spec/x07-wasm.profile.validate.report.schema.json"
         }
